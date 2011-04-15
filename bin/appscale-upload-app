@@ -1,0 +1,146 @@
+#!/usr/bin/ruby
+# Programmer: Chris Bunch
+
+$VERBOSE = nil # to supress excessive SSL cert warnings
+
+require 'base64'
+require 'openssl'
+require 'soap/rpc/driver'
+require 'yaml'
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'app_controller_client'
+require 'common_functions'
+require 'encryption_helper'
+require 'user_app_client'
+require 'vm_tools'
+
+USAGE = <<END_OF_USAGE
+#{AS_VERSION}
+
+Usage: appscale-upload-app [OPTIONS]
+
+Examples:
+  appscale-upload-app --file app.tar.gz
+  appscale-upload-app --file app.tar.gz --keyname fooscale
+    
+Flags:
+  --file: The Google App Engine app to upload into AppScale. Must be tar'ed up via "tar -czf app.tar.gz ." in the directory containing the application's app.yaml file.
+  --keyname: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name.
+END_OF_USAGE
+
+NO_FILE_PROVIDED_MSG = "You failed to provide a file to upload. Please do so" +
+  " via the --file flag and try again."
+
+DJINN_SERVER_PORT = 17443
+
+ALL_FLAGS = ["help", "h", "usage", "file", "version", "keyname", "test", "email"]
+
+require 'parse_args'
+
+file_location = FILE_LOCATION
+keyname = KEYNAME
+
+if FILE_LOCATION.nil?
+  abort(NO_FILE_PROVIDED_MSG)
+end
+
+secret_key = CommonFunctions.get_secret_key(keyname)
+head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+
+app_name, file_location, language = CommonFunctions.get_appname_from_tar(file_location)
+abort("App can't be called 'none'") if app_name == "none"
+abort("App name can only contain alphanumerics and .-@") if app_name =~ /[^[:alnum:]\.\-@]/
+apps_to_start = [app_name]
+
+acc = AppControllerClient.new(head_node_ip, secret_key)
+
+if TEST
+  user = "a@a.a"
+elsif EMAIL
+  user = EMAIL
+else
+  user = CommonFunctions.get_email
+end
+
+userappserver_ip = acc.get_userappserver_ip("high")
+
+uac = UserAppClient.new(userappserver_ip, secret_key)
+
+unless uac.does_user_exist?(user)
+  if TEST
+    pass = "aaaaaa"
+  else
+    pass = CommonFunctions.get_password
+  end
+
+  encrypted_pass = CommonFunctions.encrypt_password(user, pass)
+  uac.commit_new_user(user, encrypted_pass)
+
+  login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
+ 
+  # create xmpp account
+  # for user a@a.a, this translates to a@login_ip
+
+  pre = user.scan(/\A(.*)@/).flatten.to_s
+  xmpp_user = "#{pre}@#{login_ip}"
+  xmpp_pass = CommonFunctions.encrypt_password(xmpp_user, pass)
+  uac.commit_new_user(xmpp_user, xmpp_pass)
+  puts "XMPP account created - please login as #{xmpp_user}."
+end
+
+puts ""
+
+# TODO - this should probably fail, as uploading an app is the whole
+# point of this
+
+if file_location.nil?
+  puts "No app uploaded. Use appscale-upload-app to upload an app later."
+else
+  local_file_path = File.expand_path(file_location)
+  if uac.does_app_exist?(app_name)
+    app_already_exists = "An app with the name you provided in app.yaml" +
+      " already exists. Please change the provided name in app.yaml and" + 
+      " retry uploading your app. If you want to upload a new version of" + 
+      " your application, use appscale-remove-app to remove the old version," +
+      " then use this tool to upload the new version."
+    abort(app_already_exists)
+  end
+
+  app_admin = uac.get_app_admin(app_name)
+  if app_admin != '' and user != app_admin
+    user_not_admin = "An app with the name you provided in app.yaml has" +
+      " already been reserved by a different user. Please change the provided" +
+      " name in app.yaml and retry uploading your application."
+    abort(user_not_admin)
+  end
+
+  puts "Uploading #{app_name}..."
+  uac.commit_new_app_name(user, app_name, language)
+
+  app_dir = "/var/apps/#{app_name}/app"
+  remote_file_path = "#{app_dir}/#{app_name}.tar.gz"
+  make_app_dir = "mkdir -p #{app_dir}"
+  true_key = File.expand_path("~/.appscale/#{keyname}.key")
+
+  CommonFunctions.run_remote_command(head_node_ip,
+    make_app_dir, true_key, false)
+  sleep(1)
+  CommonFunctions.scp_file(local_file_path, remote_file_path,
+    head_node_ip, true_key)
+  acc.done_uploading(app_name, remote_file_path)
+
+  acc.update(apps_to_start)
+  url_suffix = "/apps/#{app_name}"
+
+  puts "Please wait for your app to start up."
+  loop {
+    break if acc.app_is_running(app_name)
+    sleep(5)
+  }
+
+  url = "http://#{head_node_ip}#{url_suffix}"
+  puts "\nYour app can be reached at the following URL: #{url}"
+
+  CommonFunctions.clear_app(file_location)
+end

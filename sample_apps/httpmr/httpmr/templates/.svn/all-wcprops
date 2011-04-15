@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/23/trunk/src/httpmr/templates
+END
+reduce_master.html
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/6/trunk/src/httpmr/templates/reduce_master.html
+END
+cleanup_master.html
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/23/trunk/src/httpmr/templates/cleanup_master.html
+END
+mapper.html
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/23/trunk/src/httpmr/templates/mapper.html
+END
+cleanup.html
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/23/trunk/src/httpmr/templates/cleanup.html
+END
+map_master.html
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/6/trunk/src/httpmr/templates/map_master.html
+END
+reducer.html
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/23/trunk/src/httpmr/templates/reducer.html
+END
+base.html
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/6/trunk/src/httpmr/templates/base.html
+END

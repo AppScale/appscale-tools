@@ -1,0 +1,120 @@
+Changes from AppScale Tools 1.1 to 1.4:
+
+2010-09-07  Chris Bunch  <cgb@cs.ucsb.edu>
+    * Added placement support - critical components can now be placed as the user requests.
+    * Added Scalaris support
+    
+2009-MM-DD  Chris Bunch  <cgb@cs.ucsb.edu>
+    * app_controller_client (new): Added new file to hold boilerplate code commonly used by the tools to communicate with the AppController.
+    
+    * user_app_client (new): Added new file to hold boilerplate code commonly used by the tools to communicate with the UserAppServer.
+    
+    * testGetAppName (new): Added new test code to have some regression testing since we change this code every few releases or so.
+
+    * appscale-describe-instances (main): Changed argument handling to take in name of AppScale instance.
+    (main): Changed SOAP calls to use AppControllerClient instead.
+
+    * appscale-upload-app (main): Changed argument handling to take in name of AppScale instance.
+    (main): Changed SOAP calls to use AppControllerClient and UserAppClient instead.
+
+    * appscale-reset-pwd (main): Changed SOAP calls to use AppControllerClient and UserAppClient.
+    (main): Changed argument handling to take in name of AppScale instance.
+
+    * common_functions (find_real_ssh_key): Added new method to find which SSH key works on a given host given many.
+    (get_from_yaml): Added parameter to indicate which locations.yaml file to search in instead of assuming only one instance can be run at a time.
+    (get_load_balancer_ip / get_load_balancer_id): Same as previous.
+    (parse_args): Now input flags can use either one or two dashes, e.g., -table or --table can be used. Changed appscale-* to reflect this.
+
+    * vm_tools (global): Introduced new global variable, APPSCALE_KEY_NAME, to refer to the name of the ssh key used for AppScale. Currently is set to "appscale".
+    (ensure_min_vms_available): New method to make sure there are enough VMs available before running an AppScale instance.
+    (verify_ids): Added regex check to make sure an error doesn't occur when doing ec2-describe-instances, which will catch instances where the tools are misconfigured.
+    (spawn_vms): Changed key name used to APPSCALE_KEY_NAME.
+    (spawn_vms): Changed regex on seeing if instances have terminated to only check instances created with the APPSCALE_KEY_NAME key.
+    (verify_ids): Added extra argument to specify which cloud-tools to use.
+    (spawn_vms): Added extra argument to specify which cloud-tools to use.
+    (terminate_vms): Removed this function since nothing was calling it.
+    (terminate_all_vms): Added extra argument to specify which cloud-tools to use.
+    
+    * encryption_helper (global): Added reference to APPSCALE_KEY_NAME.
+    (generate_ssh_key): Changed code to use global variable instead of ssh.key.
+    (generate_ssh_key): Added parameter to indicate which cloud-tools to use.
+    
+    * appscale-terminate-instances (main): Changed code to use global variable instead of ssh.key.
+    (main): Changed argument handling to take in name of AppScale instance as well as cloud infrastructure to use.
+    (main): Changed usage to clarify difference between cloud-tools and Xen tools.
+            
+    * appscale-add-keypair (validate_args): Removed requirement that exactly three slaves be specified since the code is already capable of taking any number of slaves larger than 0.
+    (main): Changed usage to clarify difference between cloud-tools and Xen tools.
+    
+    * appscale-run-instances (main): Changed shell command to remotely grab authorized keys file to include all ssh keys instead of manually including each key.
+    (encrypt_password): Moved this function to common_functions so that upload_app can use it also when it makes accounts.
+    (main): Moved boilerplate code that adds new user and app over to new user_app_client library file.
+    (main): Passing in min and max images used to the AppController for use dynamically spawning up nodes.
+    (main): Changed code to use find_real_ssh_key since Euca now requires that the ssh key be named the same as the name used in ec2-add-keypair on both the user's box and on the AppController.
+    (main): Changed code to allow Cassandra as a possible database to use.
+    (main): Added -infrastructure command line arg to determine which tools to use and changed key generation call to use it. Also am passing it around when spawning VMs and other modified functions in vm_tools.
+    (main): Originally the UserAppServer was assumed to always be at the head node, but with MySQL this is no longer the case. Changed code to fetch the location of the UserAppServer from the "status" soap call.
+    (main): Now reporting the current state of the system to stdout if the verbose flag is used since the tools can take quite a while to finish and the current way just outputted dots.
+
+Changes from AppScale Tools 1.0.2 to 1.0.3:
+
+2009-03-30  Chris Bunch  <cgb@cs.ucsb.edu>
+  
+    * appscale-add-keypair (main): Need to copy the ssh key used to ssh.key and ssh.key.private since the Euca setup now requires both to exist without throwing error messages.
+    
+    * common_functions (get_appname_from_tar): Changed regex used to search for app.yaml file to instead search for /app.yaml so that we don't find temp files like /_app.yaml.
+    
+    * 1.0.2-fix: Added fixed version of djinn.rb to remedy issues with version 1.0.2 of djinn so that users don't need to re-download the whole torrent file.
+
+Changes from AppScale Tools 1.0.1 to 1.0.2:
+
+2009-03-20  Chris Bunch  <cgb@cs.ucsb.edu>
+  
+    * appscale-terminate-instances (main): Changed behavior to only kill instances spawned with the key "ssh.key", the current AppScale key name.
+
+    * appscale-run-instances (main): Added environment variables that can be used instead of image, kernel, and ramdisk command line flags. image flag is now deprecated and replaced by machine flag since kernel and ramdisks are also images.
+    Changed usage to reflect new flags and typo in old usage.
+    No longer dying if we can't reach the AppController 3 times in a row since in some normal cases we are unable to reach it via is_port_open? but it in fact is still working as intended.
+
+    * vm_tools (global variables): Changed time we wait for virtual machines to come up to be one hour instead of two hours since Euca enforces a one hour timeout anyways.
+    Changed regexes to only search for IPs of boxes spawned with the key "ssh.key", the current AppScale key name.
+    
+    * common_functions (is_port_open?): Changed exception handling to rescue from any exception and return false if one is thrown instead of only handling a few specific exceptions.
+    
+    * appscale-describe-instances (main): Added rescue on OpenSSL::SSL::SSLError that would occasionally come up when decryption would fail for some unknown reason, and to retry the operation of that happens.
+    
+    * appscale-reset-pwd (main): Added rescue on OpenSSL::SSL::SSLError that would occasionally come up when decryption would fail for some unknown reason, and to retry the operation of that happens.
+
+    * appscale-upload-app (main): Added rescue on OpenSSL::SSL::SSLError that would occasionally come up when decryption would fail for some unknown reason, and to retry the operation of that happens.
+
+Changes from AppScale Tools 1.0 to 1.0.1:
+
+2009-03-11  Chris Bunch  <cgb@cs.ucsb.edu>
+
+    * appscale-add-keypair (main): Added version number and web site link to usage.
+
+    * appscale-describe-instances (main): Added version number and web site link to usage.
+    Program now returns no output if locations.yaml isn't found
+
+    * appscale-run-instances (main): Added version number and web site link to usage.
+    Changed usage text to reflect that Hypertable now works.
+    Removing ~/.appscale/locations.yaml at the beginning of execution in case user uses ec2-terminate-instances instead of appscale-terminate-instances.
+    Moved the check to ensure the AppEngine app exists before starting the EC2/Euca instances up instead of after.
+    Many changes made to cleanup output if verbose flag is not used.
+    Added code to die if the head node's djinnServer port is not open three times in a row.
+
+    * appscale-terminate-instances (main): Added version number and web site link to usage.
+    Now removing ~/.appscale/locations.yaml so that other tools act consistently between runs.
+
+    * appscale-upload-app (main): Added version number and web site link to usage.
+    Added checks to ensure that the file named with the -file flag actually exists before trying to upload it.
+    Added code to identify known failure messages from SOAP calls and display more helpful messages to the user.
+    
+    * appscale-reset-pwd (main): Revised SOAP call format and cleaned up code.
+    Added timeout in case server hangs.
+
+    * common_functions (get_appname_from_tar): Redirected standard err to standard out when removing old app.yaml files in /tmp to remove message user would see when doing run-instances and no app.yaml file is in /tmp
+
+    * vm_tools (verify_id): Added extra checks to ensure that the disk, kernel, and ramdisk images all begin with the correct suffix instead of simply just checking that they are in the database.
+
+    * encryption_helper (generate_ssh_key): Changed format of how output is produced based on the verbose flag.

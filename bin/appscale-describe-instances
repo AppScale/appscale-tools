@@ -1,0 +1,53 @@
+#!/usr/bin/ruby
+# Programmer: Chris Bunch
+
+$VERBOSE = nil # to supress excessive SSL cert warnings
+
+require 'soap/rpc/driver'
+require 'timeout'
+require 'yaml'
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'app_controller_client'
+require 'common_functions'
+require 'encryption_helper'
+
+IP_REGEX = /\d+\.\d+\.\d+\.\d+/
+FQDN_REGEX = /([\w\d\.\-]+\.){2,}/
+IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
+
+USAGE = <<END_OF_USAGE
+#{AS_VERSION}
+
+Usage: appscale-describe-instances [OPTIONS]
+
+Examples:
+  appscale-describe-instances --keyname foo
+
+Flags:
+  --keyname: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name.
+END_OF_USAGE
+
+ALL_FLAGS = ["help", "usage", "h", "keyname", "version"]
+
+require 'parse_args'
+
+keyname = KEYNAME
+
+secret_key = CommonFunctions.get_secret_key(keyname)
+head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+
+abort if head_node_ip == "" # appscale isn't running
+
+acc = AppControllerClient.new(head_node_ip, secret_key)
+head_node_status = acc.status
+abort if head_node_status.nil?
+
+all_nodes = acc.get_all_public_ips()
+
+all_nodes.each { |node|
+  if node != head_node_ip
+    acc_new = AppControllerClient.new(node, secret_key)
+    acc_new.status
+  end
+}

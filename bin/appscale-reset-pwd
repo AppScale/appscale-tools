@@ -1,0 +1,46 @@
+#!/usr/bin/ruby -w
+# Programmer: Chris Bunch
+
+$VERBOSE = nil
+
+require 'soap/rpc/driver'
+require 'yaml'
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'app_controller_client'
+require 'common_functions'
+require 'encryption_helper'
+require 'user_app_client'
+
+USAGE = <<END_OF_USAGE
+#{AS_VERSION}
+
+Usage: appscale-reset-pwd [OPTIONS]
+
+Examples:
+  appscale-reset-pwd --keyname foo
+  
+Flags:
+  --keyname: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name.
+END_OF_USAGE
+
+ALL_FLAGS = ["help", "usage", "h", "keyname", "version"]
+
+require 'parse_args'
+
+keyname = KEYNAME
+secret = CommonFunctions.get_secret_key(keyname)
+
+head_node_ip = CommonFunctions.get_load_balancer_ip(keyname)
+abort("We are not able to reset your password right now, as AppScale is not currently running.") if head_node_ip == ""
+
+user = CommonFunctions.get_email
+pass = CommonFunctions.get_password
+puts "\n"
+encrypted_pass = CommonFunctions.encrypt_password(user, pass)
+
+acc = AppControllerClient.new(head_node_ip, secret)
+userappserver_ip = acc.get_userappserver_ip
+
+uac = UserAppClient.new(userappserver_ip, secret)
+uac.change_password(user, encrypted_pass)

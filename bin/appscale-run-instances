@@ -1,0 +1,428 @@
+#!/usr/bin/ruby
+# Programmer: Chris Bunch
+
+$VERBOSE = nil # to surpress excessive SSL cert warnings
+
+require 'base64'
+require 'fileutils'
+require 'openssl'
+require 'soap/rpc/driver'
+require 'yaml'
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'app_controller_client'
+require 'common_functions'
+require 'encryption_helper'
+require 'user_app_client'
+require 'vm_tools'
+require 'node_layout'
+
+USAGE = <<END_OF_USAGE
+#{AS_VERSION}
+
+Usage: appscale-run-instances [OPTIONS]
+
+Examples:
+  appscale-run-instances --file app.tar.gz --ips ips.yaml
+  appscale-run-instances --table hbase --file app.tar.gz --ips ips.yaml
+  
+  appscale-run-instances --file app.tar.gz --keyname foo --infrastructure euca
+  appscale-run-instances --file app.tar.gz --machine emi-ABCDEFG
+  appscale-run-instances --file app.tar.gz --machine ami-ABCDEFG --instance_type m1.xlarge --infrastructure ec2
+  
+  appscale-run-instances --version
+  appscale-run-instances --usage
+Flags:
+  --file: The Google App Engine app to upload into AppScale. Must be either a directory or a tar file tar'ed up via "tar -czf app.tar.gz ." in the directory containing the application's app.yaml file.
+  --table: The database to use with AppScale. Acceptable values are "hbase",  "hypertable", "mysql", "cassandra", "voldemort", "mongodb", and "memcachedb" (default is "cassandra" if not provided).
+  
+Cloud-only Flags:
+  --machine: The machine image to use in Eucalyptus. Supercedes the contents of the environment variable APPSCALE_MACHINE, which is otherwise used if this flag is not present.
+  --instance_type: The instance type to use if using Eucalyptus. Defaults to m1.large if not provided. Supported values are m1.large, m1.xlarge, and c1.xlarge (default is "m1.large" if not provided).
+  --keyname: The name of the SSH key to use. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name (defaults to "appscale" if not provided).
+  --min: The minimum number of VMs to spawn for AppScale (defaults to 4 if not provided).
+  --max: The maximum number of VMs to spawn for AppScale (defaults to 4 if not provided).
+  --force: If the given keyname is already in use, remove it from the system and add a new key with the same name (defaults to aborting if the same keyname is in the system).
+  
+Xen-only Flags:
+  --ips: The YAML file containing the IPs of the machines to use.  
+END_OF_USAGE
+
+DJINN_SERVER_DIED_MSG = "\nEither the head node was unable to get IP" + 
+  " addresses for any slave nodes or a bug in the head node's code" + 
+  " caused it to crash. We have left your virtual machines running" + 
+  " in case you wish to submit a bug report or investigate further" +
+  " via the Troubleshooting page."
+
+IP_REGEX = /\d+\.\d+\.\d+\.\d+/
+
+ALL_FLAGS = ["help", "h", "min", "max", "file", "table", "ips"] +  
+  ["v", "verbose", "machine", "instance_type", "disk", "usage"] + 
+  [ "version", "keyname", "infrastructure", "n", "r", "w", "scp"] +  
+  ["test", "appengine", "force", "restore_from_tar", "restore_from_ebs"] +
+  ["restore_neptune_info"]
+
+
+require 'parse_args'
+
+SSH_PORT = 22
+PBSERVER_PORT = 443
+DJINN_SERVER_PORT = 17443
+UA_SERVER_PORT = 4343
+USE_SSL = true
+
+def verbose(msg)
+  puts msg if @@verbose
+end
+
+appscale_path = File.expand_path("~/.appscale")
+FileUtils.mkdir(appscale_path) if !File.exists?(appscale_path)
+
+if INFRASTRUCTURE && INFRASTRUCTURE != "hybrid" && MACHINE.nil?
+  error_msg = "You failed to provide a machine image via the --machine" +
+    " flag or the APPSCALE_MACHINE environment variable. " + 
+    "Please do so and try again."
+  abort(error_msg)
+end
+
+if IPS.nil? and MACHINE.nil?
+  abort("#{EC2_USAGE_MSG}\n\n#{USAGE}")
+end
+
+LOCATIONS_YAML = File.expand_path("~/.appscale/locations-#{KEYNAME}.yaml")
+if File.exists?(LOCATIONS_YAML) and !FORCE
+  error_msg = "An AppScale instance is already running with the given" + 
+    " keyname, #{KEYNAME}. Please terminate that instance first with the" +  
+    " following command:\n\nappscale-terminate-instances --keyname " + 
+    "#{KEYNAME} <--ips path-to-ips.yaml if using non-cloud deployment>"
+  abort(error_msg)
+end
+
+if INFRASTRUCTURE and INFRASTRUCTURE != "hybrid"
+  deployment = "cloud environment with the #{INFRASTRUCTURE} tools" +
+    " with instance type #{INSTANCE_TYPE}"
+elsif INFRASTRUCTURE and INFRASTRUCTURE == "hybrid"
+  # TODO - say which environments 
+  deployment = "hybrid environment"
+else
+  deployment = "non-cloud environment"
+end
+
+puts "About to start AppScale over a #{deployment}."
+sleep(2)
+
+# since we changed the key's name sometimes it works with storing the key
+# in ssh.key and sometimes it needs to be in KEYNAME.key{.private}
+# always do both just in case
+
+# TODO: check here to make sure that if hybrid, the keyname is free
+# in all clouds specified
+
+named_key_loc = "~/.appscale/#{KEYNAME}.key"
+named_backup_key_loc = "~/.appscale/#{KEYNAME}.private"
+ssh_key_location = named_key_loc
+
+ssh_keys = [ssh_key_location, named_key_loc, named_backup_key_loc]
+
+remote_secret_key_location = "/etc/appscale/secret.key"
+secret_key, secret_key_location = EncryptionHelper.generate_secret_key(KEYNAME)
+
+if FILE_LOCATION.nil?
+  apps_to_start = ["none"]
+else
+  app_name, file_path, language = CommonFunctions.get_appname_from_tar(FILE_LOCATION)
+  apps_to_start = [CommonFunctions.validate_appname(app_name)]
+end
+
+options = { 
+  :infrastructure => INFRASTRUCTURE,
+  :database => TABLE,
+  :min_images => MIN_IMAGES,
+  :max_images => MAX_IMAGES,
+  :replication => REPLICATION, 
+  :read_factor => VOLDEMORT_R,
+  :write_factor => VOLDEMORT_W,
+}
+
+node_layout = NodeLayout.new(IPS, options)
+
+unless node_layout.valid?
+  error_msg = "There were errors with the yaml file: \n#{node_layout.errors}"
+  abort(error_msg)
+end
+
+ips_hash = node_layout.to_hash
+
+# FIXME: Using terrible psuedo-serialization since everything gets else sanitized
+#        Need to figure a way to make it sanitizable and still work
+ips_to_use = ips_hash.map { |node,roles| "#{node}--#{roles}" }.join("..")
+head_node = node_layout.head_node
+db_master = node_layout.db_master
+db_master_ip = db_master.id
+
+if INFRASTRUCTURE == "hybrid"		
+  head_node_infra = VMTools.lookup_cloud_env(head_node.cloud)
+  VMTools.set_hybrid_creds(node_layout)
+  machine = VMTools.get_hybrid_machine(head_node_infra, "1") # get head node machine
+else
+  head_node_infra = INFRASTRUCTURE
+  machine = MACHINE
+end
+
+locations = VMTools.spawn_head_node(head_node, head_node_infra, KEYNAME, 
+  ssh_key_location, ssh_keys, FORCE, machine, INSTANCE_TYPE, @@verbose)
+
+verbose("New secret key is #{CommonFunctions.obscure_string(secret_key)}")
+
+# can't scan for ip regex anymore since it could be a FQDN
+head_node_ip = locations.split(":")[0]
+instance_id = locations.scan(/i-\w+/).flatten.to_s
+locations = [locations]
+
+true_key = CommonFunctions.find_real_ssh_key(ssh_keys, head_node_ip)
+
+if true_key.nil?
+  message = "No SSH key was found from the following list that worked" + 
+    " with IP [#{head_node_ip}]: #{ssh_keys.join(', ')}"
+  if ips_to_use != "using_tools"
+    message << "\nUse appscale-add-keypair to create an appscale key." + 
+      " See appscale-add-keypair --help."
+  end
+  abort(message)
+end
+
+verbose("Log in to your head node: ssh -i #{true_key} root@#{head_node_ip}")
+
+CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
+CommonFunctions.ensure_db_is_supported(head_node_ip, TABLE, true_key)
+
+CommonFunctions.rsync_files(head_node_ip, true_key) if SCP
+
+keypath = true_key.scan(/([\d|\w|\.]+)\Z/).flatten.to_s
+CommonFunctions.write_node_file(head_node_ip, instance_id, 
+  TABLE, secret_key, db_master_ip)
+
+local_locations_file = File.expand_path("~/.appscale/locations-#{KEYNAME}.yaml")
+remote_locations_file = "/root/.appscale/locations-#{KEYNAME}.yaml"
+CommonFunctions.scp_file(local_locations_file, remote_locations_file, head_node_ip, true_key)
+
+remote_key_location = "/root/.appscale/#{KEYNAME}.key"
+CommonFunctions.scp_file(true_key, remote_key_location, head_node_ip, true_key)
+
+
+creds = {
+  "table" => "#{TABLE}", 
+  "hostname" => "#{head_node_ip}", 
+  "ips" => "#{ips_to_use}", 
+  "keyname" => "#{KEYNAME}", 
+  "keypath" => "#{keypath}", 
+  "replication" => "#{node_layout.replication_factor}", 
+  "appengine" => "#{APPENGINE}"
+}
+
+if TABLE == "voldemort"
+  voldemort_creds = {
+    "voldemortr" => "#{node_layout.read_factor}", 
+    "voldemortw" => "#{node_layout.write_factor}"
+  }
+  creds.merge!(voldemort_creds)
+end
+
+if TABLE == "simpledb"
+  simpledb_creds = {
+    "SIMPLEDB_ACCESS_KEY" => ENV['SIMPLEDB_ACCESS_KEY'],
+    "SIMPLEDB_SECRET_KEY" => ENV['SIMPLEDB_SECRET_KEY']
+  }
+  creds.merge!(simpledb_creds)
+end
+
+if VALID_CLOUD_TYPES.include?(INFRASTRUCTURE)
+  if INFRASTRUCTURE == "hybrid"
+    creds.merge!(VMTools.get_hybrid_creds(node_layout))
+  else
+    creds.merge!(VMTools.get_cloud_creds(node_layout))
+  end
+end
+
+if RESTORE_FROM_TAR
+  db_backup_location = "/root/db-backup.tar.gz"
+  tar_creds = {"restore_from_tar" => db_backup_location}
+  creds.merge!(tar_creds)
+
+  CommonFunctions.scp_file(RESTORE_FROM_TAR, db_backup_location, 
+    head_node_ip, true_key)
+end
+
+if RESTORE_FROM_EBS
+  ebs_creds = {"restore_from_tar" => RESTORE_FROM_EBS}
+  creds.merge!(tar_creds)
+end
+
+if RESTORE_NEPTUNE_INFO
+  remote_neptune_info_location = "/etc/appscale/neptune_info.txt"
+  CommonFunctions.scp_file(RESTORE_NEPTUNE_INFO, remote_neptune_info_location,
+    head_node_ip, true_key)
+  puts "Neptune data restored!"
+end
+
+verbose(CommonFunctions.obscure_creds(creds).inspect)
+
+puts "Head node successfully created at #{head_node_ip}." + 
+  " It is now starting up #{TABLE} via the command line arguments given."
+
+sleep(10) # sometimes this helps out with ec2 / euca deployments
+  # gives them an extra moment to come up and accept scp requests
+
+creds = creds.to_a.flatten
+
+CommonFunctions.scp_file(secret_key_location, remote_secret_key_location, 
+  head_node_ip, true_key)
+
+remote_ssh_key_location = "/etc/appscale/ssh.key"
+CommonFunctions.scp_file(true_key, remote_ssh_key_location, 
+  head_node_ip, true_key)
+
+cert_loc, key_loc = VMTools.get_vmm_keys
+
+remote_cert_loc = "/etc/appscale/certs/mycert.pem"
+CommonFunctions.scp_file(cert_loc, remote_cert_loc, head_node_ip, true_key)
+
+remote_key_loc = "/etc/appscale/certs/mykey.pem"
+CommonFunctions.scp_file(key_loc, remote_key_loc, head_node_ip, true_key)
+
+if VALID_CLOUD_TYPES.include?(INFRASTRUCTURE) and INFRASTRUCTURE == "hybrid"
+  cloud_num = 1
+
+  loop {
+    cloud_type = ENV["CLOUD#{cloud_num}_TYPE"]
+    break if cloud_type.nil?
+
+    puts "Copying over credentials for cloud #{cloud_num}"
+
+    cloud_key_dir = "/etc/appscale/keys/cloud#{cloud_num}"
+    make_cloud_key_dir = "mkdir -p #{cloud_key_dir}"
+    CommonFunctions.run_remote_command(head_node_ip,
+      make_cloud_key_dir, true_key, @@verbose)
+
+    ec2_cert = ENV["CLOUD#{cloud_num}_EC2_CERT"]
+    ec2_private_key = ENV["CLOUD#{cloud_num}_EC2_PRIVATE_KEY"]
+
+    CommonFunctions.scp_file(ec2_cert, "#{cloud_key_dir}/mycert.pem", head_node_ip, true_key)
+    CommonFunctions.scp_file(ec2_private_key, "#{cloud_key_dir}/mykey.pem", head_node_ip, true_key)
+
+    cloud_num += 1
+  }
+elsif VALID_CLOUD_TYPES.include?(INFRASTRUCTURE)
+    puts "Copying over credentials for cloud"
+
+    cloud_key_dir = "/etc/appscale/keys/cloud1"
+    make_cloud_key_dir = "mkdir -p #{cloud_key_dir}"
+    CommonFunctions.run_remote_command(head_node_ip,
+      make_cloud_key_dir, true_key, @@verbose)
+
+    ec2_cert = ENV["EC2_CERT"]
+    ec2_private_key = ENV["EC2_PRIVATE_KEY"]
+
+    CommonFunctions.scp_file(ec2_cert, "#{cloud_key_dir}/mycert.pem", head_node_ip, true_key)
+    CommonFunctions.scp_file(ec2_private_key, "#{cloud_key_dir}/mykey.pem", head_node_ip, true_key)
+else
+  cloud_key_dir = "/etc/appscale/keys/cloud1"
+  make_cloud_key_dir = "mkdir -p #{cloud_key_dir}"
+  CommonFunctions.run_remote_command(head_node_ip,
+    make_cloud_key_dir, true_key, @@verbose)
+
+  remote_key_name = "#{cloud_key_dir}/#{KEYNAME}.key"
+
+  CommonFunctions.scp_file(true_key, remote_key_name, head_node_ip, true_key)
+  CommonFunctions.scp_file(cert_loc, "#{cloud_key_dir}/mycert.pem", head_node_ip, true_key)
+  CommonFunctions.scp_file(key_loc, "#{cloud_key_dir}/mykey.pem", head_node_ip, true_key)
+end
+
+start_server = "service appscale-controller start"
+puts "Starting server at #{head_node_ip}"
+
+begin
+  Timeout::timeout(60) {
+    CommonFunctions.run_remote_command(head_node_ip, 
+      start_server, true_key, @@verbose)
+
+    puts "Please wait for the controller to finish pre-processing tasks."
+    CommonFunctions.sleep_until_port_is_open(head_node_ip, 
+      DJINN_SERVER_PORT, USE_SSL)
+  }
+rescue Timeout::Error
+  retry
+end
+
+acc = AppControllerClient.new(head_node_ip, secret_key)
+acc.set_parameters(locations, creds, apps_to_start)
+
+user, pass = CommonFunctions.get_credentials(TEST)
+encrypted_pass = CommonFunctions.encrypt_password(user, pass)
+
+print "\nPlease wait for AppScale to prepare your machines for use."
+STDOUT.flush
+
+puts "\n"
+
+userappserver_ip = acc.get_userappserver_ip("high")
+verbose("Run instances: UserAppServer is at #{userappserver_ip}")
+
+#puts "hey get in now!"
+#sleep(30)
+
+uac = UserAppClient.new(userappserver_ip, secret_key)
+
+uac.commit_new_user(user, encrypted_pass) unless uac.does_user_exist?(user)
+uac.set_cloud_admin_status(user, new_status="true")
+uac.set_cloud_admin_capabilities(user)
+
+login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
+
+# create xmpp account
+# for user a@a.a, this translates to a@login_ip
+
+pre = user.scan(/\A(.*)@/).flatten.to_s
+xmpp_user = "#{pre}@#{login_ip}"
+xmpp_pass = CommonFunctions.encrypt_password(xmpp_user, pass)
+uac.commit_new_user(xmpp_user, xmpp_pass) unless uac.does_user_exist?(xmpp_user)
+
+if FILE_LOCATION.nil?
+  puts "No app uploaded. Use appscale-upload-app to upload an app later."
+  until CommonFunctions.is_port_open?(head_node_ip, 80)
+    sleep(3)
+  end
+else
+  local_file_path = File.expand_path(file_path)
+  puts "Uploading #{app_name}..."
+
+  uac.commit_new_app_name(user, app_name, language)
+
+  app_dir = "/var/apps/#{app_name}/app"
+  remote_file_path = "#{app_dir}/#{app_name}.tar.gz"
+  make_app_dir = "mkdir -p #{app_dir}"
+
+  CommonFunctions.run_remote_command(head_node_ip,
+    make_app_dir, true_key, false) # no output here - destroys the shadow's logs
+  sleep(1)
+  CommonFunctions.scp_file(local_file_path, remote_file_path, 
+    head_node_ip, true_key)
+  acc.done_uploading(app_name, remote_file_path)
+
+  puts "Please wait for your app to start up."
+  loop {
+    break if acc.app_is_running(app_name)
+    sleep(5)
+  }
+
+  url_suffix = "/apps/#{app_name}"
+  url = "http://#{login_ip}#{url_suffix}"
+  puts "\nYour app can be reached at the following URL: #{url}"
+  CommonFunctions.clear_app(file_path)
+end
+
+puts "The status of your AppScale instance is at the following" + 
+  " URL: http://#{login_ip}/status"
+
+puts "Your XMPP username is #{xmpp_user}"
+

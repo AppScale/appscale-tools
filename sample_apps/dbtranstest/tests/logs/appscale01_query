@@ -1,0 +1,260 @@
+Method:query
+RTT Start:1274264329.36
+RTT End:1274264330.54
+RTT Time:1.18411183357
+Success:True
+Start time:1274264329.38
+End time:1274264329.43
+Total Time Taken:0.0475070476532
+Cumulative DB Time Taken:0.047367811203
+Number of Keys:200
+Timings:0.047367811203
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.36
+RTT End:1274264330.59
+RTT Time:1.23078298569
+Success:True
+Start time:1274264329.38
+End time:1274264329.45
+Total Time Taken:0.0764899253845
+Cumulative DB Time Taken:0.0763671398163
+Number of Keys:200
+Timings:0.0763671398163
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.37
+RTT End:1274264330.54
+RTT Time:1.17116498947
+Success:True
+Start time:1274264329.39
+End time:1274264329.44
+Total Time Taken:0.0455341339111
+Cumulative DB Time Taken:0.0454080104828
+Number of Keys:200
+Timings:0.0454080104828
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.38
+RTT End:1274264330.69
+RTT Time:1.31259298325
+Success:True
+Start time:1274264329.42
+End time:1274264329.47
+Total Time Taken:0.0429730415344
+Cumulative DB Time Taken:0.0428431034088
+Number of Keys:200
+Timings:0.0428431034088
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.38
+RTT End:1274264330.56
+RTT Time:1.18317294121
+Success:True
+Start time:1274264329.4
+End time:1274264329.44
+Total Time Taken:0.0398309230804
+Cumulative DB Time Taken:0.0397019386292
+Number of Keys:200
+Timings:0.0397019386292
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.39
+RTT End:1274264330.52
+RTT Time:1.12879276276
+Success:True
+Start time:1274264329.42
+End time:1274264329.46
+Total Time Taken:0.0393860340118
+Cumulative DB Time Taken:0.0392549037933
+Number of Keys:200
+Timings:0.0392549037933
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.4
+RTT End:1274264331.4
+RTT Time:1.99644613266
+Success:True
+Start time:1274264330.53
+End time:1274264330.53
+Total Time Taken:0.000326156616211
+Cumulative DB Time Taken:0.000162839889526
+Number of Keys:200
+Timings:0.000162839889526
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.41
+RTT End:1274264331.57
+RTT Time:2.16183400154
+Success:True
+Start time:1274264330.53
+End time:1274264330.53
+Total Time Taken:0.000274896621704
+Cumulative DB Time Taken:0.000143051147461
+Number of Keys:200
+Timings:0.000143051147461
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.42
+RTT End:1274264331.57
+RTT Time:2.15125989914
+Success:True
+Start time:1274264330.57
+End time:1274264330.57
+Total Time Taken:0.000251054763794
+Cumulative DB Time Taken:0.000130891799927
+Number of Keys:200
+Timings:0.000130891799927
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.43
+RTT End:1274264331.67
+RTT Time:2.24534201622
+Success:True
+Start time:1274264330.61
+End time:1274264330.61
+Total Time Taken:0.00025200843811
+Cumulative DB Time Taken:0.00012993812561
+Number of Keys:200
+Timings:0.00012993812561
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.43
+RTT End:1274264331.5
+RTT Time:2.06370592117
+Success:True
+Start time:1274264330.55
+End time:1274264330.55
+Total Time Taken:0.000249147415161
+Cumulative DB Time Taken:0.000130176544189
+Number of Keys:200
+Timings:0.000130176544189
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.45
+RTT End:1274264332.71
+RTT Time:3.26276302338
+Success:True
+Start time:1274264331.68
+End time:1274264331.68
+Total Time Taken:0.000854969024658
+Cumulative DB Time Taken:0.000341892242432
+Number of Keys:200
+Timings:0.000341892242432
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.45
+RTT End:1274264332.26
+RTT Time:2.80500388145
+Success:True
+Start time:1274264331.4
+End time:1274264331.4
+Total Time Taken:0.00025200843811
+Cumulative DB Time Taken:0.000130891799927
+Number of Keys:200
+Timings:0.000130891799927
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.46
+RTT End:1274264332.28
+RTT Time:2.82014894485
+Success:True
+Start time:1274264331.47
+End time:1274264331.47
+Total Time Taken:0.000285863876343
+Cumulative DB Time Taken:0.00014591217041
+Number of Keys:200
+Timings:0.00014591217041
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.46
+RTT End:1274264332.44
+RTT Time:2.97802901268
+Success:True
+Start time:1274264331.5
+End time:1274264331.5
+Total Time Taken:0.000263929367065
+Cumulative DB Time Taken:0.000139951705933
+Number of Keys:200
+Timings:0.000139951705933
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.48
+RTT End:1274264331.69
+RTT Time:2.20842814445
+Success:True
+Start time:1274264330.71
+End time:1274264330.71
+Total Time Taken:0.000305891036987
+Cumulative DB Time Taken:0.000137090682983
+Number of Keys:200
+Timings:0.000137090682983
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.53
+RTT End:1274264332.44
+RTT Time:2.91157484055
+Success:True
+Start time:1274264331.59
+End time:1274264331.59
+Total Time Taken:0.000256061553955
+Cumulative DB Time Taken:0.000131130218506
+Number of Keys:200
+Timings:0.000131130218506
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.54
+RTT End:1274264332.4
+RTT Time:2.85969185829
+Success:True
+Start time:1274264331.69
+End time:1274264331.69
+Total Time Taken:0.000254154205322
+Cumulative DB Time Taken:0.000131845474243
+Number of Keys:200
+Timings:0.000131845474243
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.55
+RTT End:1274264332.87
+RTT Time:3.325548172
+Success:True
+Start time:1274264332.26
+End time:1274264332.26
+Total Time Taken:0.000267028808594
+Cumulative DB Time Taken:0.000138998031616
+Number of Keys:200
+Timings:0.000138998031616
+Type: Accumulator
+#
+Method:query
+RTT Start:1274264329.56
+RTT End:1274264332.97
+RTT Time:3.40950012207
+Success:True
+Start time:1274264332.28
+End time:1274264332.28
+Total Time Taken:0.000919103622437
+Cumulative DB Time Taken:0.000303983688354
+Number of Keys:200
+Timings:0.000303983688354
+Type: Accumulator
+#

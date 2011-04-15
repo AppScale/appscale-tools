@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="/css/main.css" />
+  </head>
+  <body>
+{% block title %}User Info{% endblock %}
+{% block content %}
+<h1> Profile: {{ queried_user.greeting_user.nickname }}</h1>
+<p>Email: {{ queried_user.greeting_user.email }}</p>
+<p>Website: {{ queried_user.website }}</p>
+<p>Seated: {{ queried_user.seated }}</p>
+<p>Picture: </p><img src="{{ queried_user.picture }}">
+{% endblock %}
+ </body>
+</html>

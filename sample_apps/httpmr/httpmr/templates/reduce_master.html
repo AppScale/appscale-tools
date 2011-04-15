@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block operation %}Reduce Master{% endblock %}
+
+{% block content %}
+
+  <h1>HTTPMR Reduce Master: {{ jobname }}</h1>
+  
+  <h2>Initial Reduce Tasks:</h2>
+  <ul>
+    {% for url in urls %}
+      <li><a href="{{ url }}">{{ url }}</a></li>
+    {% endfor %}
+  </ul>
+
+{% endblock %}

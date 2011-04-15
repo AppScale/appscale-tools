@@ -1,0 +1,15 @@
+application: httpmr
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: /construct_document_index.*
+  script: construct_document_index.py
+
+- url: /load_fake_documents
+  script: load_fake_documents.py

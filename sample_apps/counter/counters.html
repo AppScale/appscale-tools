@@ -1,0 +1,7 @@
+{% for counter in counters %}
+The counter is currently at {{ counter.count }}.
+{% endfor %}
+<br /><br />
+<form action="/" method="post"> 
+<input class="submit" key="Increment" name="key" type="submit" value="Increment Counter" />
+</form>

@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="/css/main.css" />
+  </head>
+  <body>
+{% block title %}User Info{% endblock %}
+{% block content %}
+<h1>My User Profile</h1>
+<p>Email: {{ queried_user.greeting_user.email }}</p>
+<form action="/edituser/{{ queried_user.greeting_user.email }}" method="POST" enctype="multipart/form-data">
+Avatar URL (around 48*48px): <br/>
+<input type="text" name="user_picture" value="{{ queried_user.picture }}"><br>
+Website: <br/>
+<input type="text" name="user_website" value="{{ queried_user.website }}"/><br>
+Seated (e.g. "2 rows back, 10 from right"): <br/>
+<input type="text" name="user_seated" value="{{ queried_user.seated }}"/><br/>
+<input type="submit" value="Save User Information">
+</form>
+{% endblock %}
+ </body>
+</html>

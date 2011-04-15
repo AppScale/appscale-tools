@@ -1,0 +1,25 @@
+AppScale Tools Version 1.4
+from the UCSB RACELab 
+http://appscale.cs.ucsb.edu
+
+This toolset automates the installation and manipulation of
+the AppScale system.  AppScale can be run as a cloud over 
+Eucalyptus or EC2, over a virtualization layer such as Xen,
+or directly on a non-virtualized cluster.
+
+The USAGE and installation for the tools can be found here:
+http://code.google.com/p/appscale/wiki/AppScale_Tools_Usage
+
+To install the tools run:
+
+sudo bash debian/appscale_build.sh
+
+This will remove any directories /usr/local/appscale-tools*
+and install the tools in /usr/local/appscale-tools.
+If you wish to change the target location, change TOOL_HOME in 
+Makefile.
+
+Please put ${TOOL_HOME}/bin (/usr/local/appscale-tools-1.4/bin 
+is the default) in your path to use the tool:
+
+export PATH=${PATH}:/usr/local/appscale-tools/bin

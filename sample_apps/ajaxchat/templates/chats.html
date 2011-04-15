@@ -1,0 +1,11 @@
+{% for greeting in greetings %}
+      <div> 
+      {% if greeting.author %}
+        <b><a href="/user/{{ greeting.author.email}}">{{ greeting.author.nickname }}</a></b>:
+      {% else %}
+      no-name:
+      {% endif %}
+      <div style="display:none">({{ greeting.date }})</div>
+      {{ greeting.content|escape }}
+      </div> 
+{% endfor %}
