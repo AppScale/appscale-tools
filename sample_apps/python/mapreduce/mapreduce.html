@@ -1,0 +1,40 @@
+<table>
+  <tr><td>
+    Results of Last MapReduce Job
+  </td></tr>
+  <tr><td>
+    Generated <font face="courier">2 ^
+    {{ power }}
+    </font> random numbers with the following properties:
+  </td></tr>
+  <tr><td>
+  <font face="courier">
+    {{ result }}
+  </font>
+  </td></tr>
+</table>
+<br />
+<br />
+<form action="/" method="post"> 
+How many random numbers should we generate? <font face="courier">2 ^ </font><input type="text" name="power" size="1" />
+<br />
+<br />
+<input class="submit" key="Increment" name="button" type="submit" value="Run MapReduce Job" />
+<input class="submit" key="Increment" name="button" type="submit" value="Get Timing Info" />
+</form>
+<br />
+<br />
+About this application:
+<p>
+This application is an implementation of the Embarassingly Parallel benchmark, one of the <a href="http://www.nas.nasa.gov/Resources/Software/npb.html">NAS Parallel Benchmarks</a>. This implementation takes in a single input from the user, <font face="courier">n</font>, and generates <font face="courier">2^n</font> random numbers via the pseudo-random number generator given in the benchmark's specification. These numbers are generated in pairs, and if the sum of the square of the numbers exceeds one, the pair of numbers is multiplied by a common factor and saved for later use. In this application, this work is all done in the Map phase of the computatation.
+</p>
+<p>
+The Reduce phase of the computation then receives the tuples generated previously and calculates the following statistics for each of them. It finds which number is greater (the first or the second, named <font face="courier">x</font> and <font face="courier">y</font> here), and for that number it calculates the floor of the number (here referred to as the 'bucket'). It also adds that number to the grand total for <font face="courier">x</font> or <font face="courier">y</font> (depending which pile it came from).
+</p>
+Implementation Details
+<p>
+The Map and Reduce functions are both written in the <a href="http://www.ruby-lang.org/">Ruby programming language</a>. If run on the distributed Google App Engine SDK packaged with <a href="http://appscale.cs.ucsb.edu">AppScale</a>, this application uses <a href="http://wiki.apache.org/hadoop/HadoopStreaming">Hadoop Streaming</a> to run the MapReduce computation. If run on the non-distributed Google App Engine SDK, it runs the following command instead:
+</p>
+<font face="courier">
+cat input | ./map | sort | ./reduce > output
+</font>

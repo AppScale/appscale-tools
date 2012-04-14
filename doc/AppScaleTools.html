@@ -1,0 +1,805 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+
+  <title>Module: AppScaleTools</title>
+
+  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+
+  <script src="./js/jquery.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/thickbox-compressed.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/quicksearch.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/darkfish.js" type="text/javascript"
+    charset="utf-8"></script>
+
+</head>
+<body class="module">
+
+  <div id="metadata">
+    <div id="home-metadata">
+      <div id="home-section" class="section">
+        <h3 class="section-header">
+          <a href="./index.html">Home</a>
+          <a href="./index.html#classes">Classes</a>
+          <a href="./index.html#methods">Methods</a>
+        </h3>
+      </div>
+    </div>
+
+    <div id="file-metadata">
+      <div id="file-list-section" class="section">
+        <h3 class="section-header">In Files</h3>
+        <div class="section-body">
+          <ul>
+          
+            <li><a href="./lib/appscale_tools_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
+              class="thickbox" title="lib/appscale_tools.rb">lib/appscale_tools.rb</a></li>
+          
+          </ul>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div id="class-metadata">
+
+      <!-- Parent Class -->
+      
+
+      <!-- Namespace Contents -->
+      
+
+      <!-- Method Quickref -->
+      
+      <div id="method-list-section" class="section">
+        <h3 class="section-header">Methods</h3>
+        <ul class="link-list">
+          
+          <li><a href="#method-c-add_keypair">::add_keypair</a></li>
+          
+          <li><a href="#method-c-describe_instances">::describe_instances</a></li>
+          
+          <li><a href="#method-c-remove_app">::remove_app</a></li>
+          
+          <li><a href="#method-c-reset_password">::reset_password</a></li>
+          
+          <li><a href="#method-c-run_instances">::run_instances</a></li>
+          
+          <li><a href="#method-c-terminate_instances">::terminate_instances</a></li>
+          
+          <li><a href="#method-c-upload_app">::upload_app</a></li>
+          
+        </ul>
+      </div>
+      
+
+      <!-- Included Modules -->
+      
+    </div>
+
+    <div id="project-metadata">
+      
+      
+      <div id="fileindex-section" class="section project-section">
+        <h3 class="section-header">Files</h3>
+        <ul>
+        
+          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
+        
+        </ul>
+      </div>
+      
+
+      <div id="classindex-section" class="section project-section">
+        <h3 class="section-header">Class/Module Index
+          <span class="search-toggle"><img src="./images/find.png"
+            height="16" width="16" alt="[+]"
+            title="show/hide quicksearch" /></span></h3>
+        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
+        <fieldset>
+          <legend>Quicksearch</legend>
+          <input type="text" name="quicksearch" value=""
+            class="quicksearch-field" />
+        </fieldset>
+        </form>
+
+        <ul class="link-list">
+        
+          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
+        
+          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
+        
+          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
+        
+          <li><a href="./AppScaleException.html">AppScaleException</a></li>
+        
+          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
+        
+          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
+        
+          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
+        
+          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
+        
+          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
+        
+          <li><a href="./GodInterface.html">GodInterface</a></li>
+        
+          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
+        
+          <li><a href="./Node.html">Node</a></li>
+        
+          <li><a href="./NodeLayout.html">NodeLayout</a></li>
+        
+          <li><a href="./Object.html">Object</a></li>
+        
+          <li><a href="./ParseArgs.html">ParseArgs</a></li>
+        
+          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
+        
+          <li><a href="./SimpleNode.html">SimpleNode</a></li>
+        
+          <li><a href="./UsageText.html">UsageText</a></li>
+        
+          <li><a href="./UserAppClient.html">UserAppClient</a></li>
+        
+          <li><a href="./VMTools.html">VMTools</a></li>
+        
+        </ul>
+        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
+      </div>
+
+      
+    </div>
+  </div>
+
+  <div id="documentation">
+    <h1 class="module">AppScaleTools</h1>
+
+    <div id="description">
+      
+    </div>
+
+    <!-- Constants -->
+    
+    <div id="constants-list" class="section">
+      <h3 class="section-header">Constants</h3>
+      <dl>
+      
+        <dt><a name="ADD_KEYPAIR_FLAGS">ADD_KEYPAIR_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="ADD_KEYPAIR_USAGE">ADD_KEYPAIR_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="IP_REGEX">IP_REGEX</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="FQDN_REGEX">FQDN_REGEX</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="IP_OR_FQDN">IP_OR_FQDN</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="DESCRIBE_INSTANCES_FLAGS">DESCRIBE_INSTANCES_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="DESCRIBE_INSTANCES_USAGE">DESCRIBE_INSTANCES_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="NO_APPNAME_GIVEN">NO_APPNAME_GIVEN</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="APP_NOT_RUNNING">APP_NOT_RUNNING</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="APP_REMOVAL_CANCELLED">APP_REMOVAL_CANCELLED</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="REMOVE_APP_FLAGS">REMOVE_APP_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="REMOVE_APP_USAGE">REMOVE_APP_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="APPSCALE_NOT_RUNNING">APPSCALE_NOT_RUNNING</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="RESET_PASSWORD_FLAGS">RESET_PASSWORD_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="RESET_PASSWORD_USAGE">RESET_PASSWORD_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="DJINN_SERVER_DIED_MSG">DJINN_SERVER_DIED_MSG</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="NO_MACHINE_SET">NO_MACHINE_SET</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="RUN_INSTANCES_FLAGS">RUN_INSTANCES_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="RUN_INSTANCES_USAGE">RUN_INSTANCES_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="SSH_PORT">SSH_PORT</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="PBSERVER_PORT">PBSERVER_PORT</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="DJINN_SERVER_PORT">DJINN_SERVER_PORT</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="UA_SERVER_PORT">UA_SERVER_PORT</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="USE_SSL">USE_SSL</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="TERMINATE_INSTANCES_FLAGS">TERMINATE_INSTANCES_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="TERMINATE_INSTANCES_USAGE">TERMINATE_INSTANCES_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="UNABLE_TO_TERMINATE_ANY_MACHINES">UNABLE_TO_TERMINATE_ANY_MACHINES</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="NO_FILE_PROVIDED_MSG">NO_FILE_PROVIDED_MSG</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="APP_ALREADY_EXISTS">APP_ALREADY_EXISTS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="USER_NOT_ADMIN">USER_NOT_ADMIN</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="UPLOAD_APP_FLAGS">UPLOAD_APP_FLAGS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="UPLOAD_APP_USAGE">UPLOAD_APP_USAGE</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+      </dl>
+    </div>
+    
+
+    <!-- Attributes -->
+    
+
+    <!-- Methods -->
+    
+    <div id="public-class-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="add_keypair-method" class="method-detail ">
+        <a name="method-c-add_keypair"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">add_keypair</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="add_keypair-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 165</span>
+def self.add_keypair(options)
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  ips_yaml = options[<span class="ruby-string">'ips'</span>]
+  auto = options[<span class="ruby-string">'auto'</span>]
+
+  if ips_yaml.nil?
+    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-constant">ADD_KEYPAIR_USAGE</span>)
+  end
+
+  node_layout = <span class="ruby-constant">NodeLayout</span>.new(ips_yaml, { :database =&gt; <span class="ruby-string">&quot;cassandra&quot;</span> } )
+
+  required_commands = [<span class="ruby-string">&quot;ssh-keygen&quot;</span>, <span class="ruby-string">&quot;ssh-copy-id&quot;</span>]
+  if auto
+    required_commands &lt;&lt; <span class="ruby-string">&quot;expect&quot;</span>
+  end
+  <span class="ruby-constant">CommonFunctions</span>.require_commands(required_commands)
+
+  <span class="ruby-constant">CommonFunctions</span>.make_appscale_directory()
+
+  path = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{keyname}&quot;)
+  pub_key, backup_key = <span class="ruby-constant">CommonFunctions</span>.generate_rsa_key(keyname)
+
+  if auto
+    print <span class="ruby-string">&quot;\nEnter SSH password of root: &quot;</span>
+    password = <span class="ruby-constant">CommonFunctions</span>.get_line_from_stdin_no_echo()
+
+    <span class="ruby-comment"># Location of expect script that interacts with ssh-copy-id</span>
+    expect_script = <span class="ruby-constant">File</span>.join(<span class="ruby-constant">File</span>.join(<span class="ruby-constant">File</span>.dirname(__FILE__), <span class="ruby-string">&quot;..&quot;</span>, <span class="ruby-string">&quot;lib&quot;</span>),<span class="ruby-string">&quot;sshcopyid&quot;</span>)
+  end
+
+  ips = node_layout.nodes.collect { |node| node.id }
+  copy_success = true
+
+  ips.each { |ip|
+    <span class="ruby-constant">CommonFunctions</span>.ssh_copy_id(ip, path, auto, expect_script, password)
+  }
+
+  head_node_ip = node_layout.head_node.id
+  <span class="ruby-constant">CommonFunctions</span>.scp_ssh_key_to_ip(head_node_ip, path, pub_key)
+ 
+  <span class="ruby-constant">FileUtils</span>.cp(path, backup_key)
+  puts <span class="ruby-string">&quot;A new ssh key has been generated for you and placed at&quot;</span> +
+    &quot; #{path}. You can now use this key to log into any of the &quot; +
+    <span class="ruby-string">&quot;machines you specified without providing a password via the&quot;</span> +
+    &quot; following command:\n\tssh root@#{head_node_ip} -i #{path}&quot;
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="describe_instances-method" class="method-detail ">
+        <a name="method-c-describe_instances"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">describe_instances</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="describe_instances-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 213</span>
+def self.describe_instances(options)
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(keyname)
+  secret_key = <span class="ruby-constant">CommonFunctions</span>.get_secret_key(keyname)
+
+  instance_info = []
+  all_ips = <span class="ruby-constant">CommonFunctions</span>.get_all_public_ips(keyname)
+  all_ips.each { |ip|
+    acc = <span class="ruby-constant">AppControllerClient</span>.new(ip, secret_key)
+    instance_info &lt;&lt; acc.status()
+  }
+
+  return {:error =&gt; nil, :result =&gt; instance_info }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="remove_app-method" class="method-detail ">
+        <a name="method-c-remove_app"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">remove_app</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="remove_app-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 229</span>
+def self.remove_app(options)
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(options[<span class="ruby-string">'keyname'</span>])
+  if options[<span class="ruby-string">'appname'</span>].nil?
+    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-constant">NO_APPNAME_GIVEN</span>)
+  end
+
+  result = <span class="ruby-constant">CommonFunctions</span>.confirm_app_removal(options[<span class="ruby-string">'confirm'</span>],
+    options[<span class="ruby-string">'appname'</span>])
+  if result == <span class="ruby-string">&quot;NO&quot;</span>
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">APP_REMOVAL_CANCELLED</span>)
+  end
+
+  <span class="ruby-constant">CommonFunctions</span>.remove_app(options[<span class="ruby-string">'appname'</span>], options[<span class="ruby-string">'keyname'</span>])
+  <span class="ruby-constant">Kernel</span>.puts &quot;Done shutting down app #{options['appname']}&quot;
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="reset_password-method" class="method-detail ">
+        <a name="method-c-reset_password"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">reset_password</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="reset_password-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 246</span>
+def self.reset_password(options)
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(keyname)
+  secret = <span class="ruby-constant">CommonFunctions</span>.get_secret_key(keyname)
+
+  head_node_ip = <span class="ruby-constant">CommonFunctions</span>.get_load_balancer_ip(keyname)
+  if head_node_ip.empty?
+    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-constant">APPSCALE_NOT_RUNNING</span>)
+  end
+
+  user = <span class="ruby-constant">CommonFunctions</span>.get_email
+  pass = <span class="ruby-constant">CommonFunctions</span>.get_password
+  puts <span class="ruby-string">&quot;\n&quot;</span>
+  encrypted_pass = <span class="ruby-constant">CommonFunctions</span>.encrypt_password(user, pass)
+
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret)
+  userappserver_ip = acc.get_userappserver_ip
+
+  uac = <span class="ruby-constant">UserAppClient</span>.new(userappserver_ip, secret)
+  uac.change_password(user, encrypted_pass)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="run_instances-method" class="method-detail ">
+        <a name="method-c-run_instances"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">run_instances</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="run_instances-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 269</span>
+def self.run_instances(options)
+  infrastructure = options[<span class="ruby-string">'infrastructure'</span>]
+  instance_type = options[<span class="ruby-string">'instance_type'</span>]
+  machine = options[<span class="ruby-string">'machine'</span>]
+  max_images = options[<span class="ruby-string">'max_images'</span>]
+  table = options[<span class="ruby-string">'table'</span>]
+
+  <span class="ruby-constant">CommonFunctions</span>.make_appscale_directory()
+  <span class="ruby-constant">CommonFunctions</span>.validate_run_instances_options(options)
+  <span class="ruby-constant">CommonFunctions</span>.print_starting_message(infrastructure, instance_type)
+  <span class="ruby-constant">RemoteLogging</span>.remote_post(max_images, table, infrastructure, <span class="ruby-string">&quot;starting&quot;</span>, <span class="ruby-string">&quot;unknown&quot;</span>)
+  sleep(2)
+
+  apps_to_start, app_info = <span class="ruby-constant">CommonFunctions</span>.get_app_info_from_options(options)
+  node_layout, result = <span class="ruby-constant">CommonFunctions</span>.generate_node_layout(options)
+  head_node_result = <span class="ruby-constant">CommonFunctions</span>.start_head_node(options, node_layout,
+    apps_to_start)
+
+  print <span class="ruby-string">&quot;\nPlease wait for AppScale to prepare your machines for use.&quot;</span>
+  <span class="ruby-constant">STDOUT</span>.flush
+  puts <span class="ruby-string">&quot;\n&quot;</span>
+
+  acc = head_node_result[:acc]
+  secret_key = head_node_result[:secret_key]
+  head_node_ip = head_node_result[:head_node_ip]
+  <span class="ruby-constant">CommonFunctions</span>.write_and_copy_node_file(options, node_layout,
+    head_node_result)
+
+  userappserver_ip = acc.get_userappserver_ip(<span class="ruby-constant">LOGS_VERBOSE</span>)
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(options[<span class="ruby-string">'keyname'</span>], [head_node_ip])
+  <span class="ruby-constant">CommonFunctions</span>.verbose(&quot;Run instances: UserAppServer is at #{userappserver_ip}&quot;, options[<span class="ruby-string">'verbose'</span>])
+  uac = <span class="ruby-constant">UserAppClient</span>.new(userappserver_ip, secret_key)
+  user, pass = <span class="ruby-constant">CommonFunctions</span>.get_credentials(options[<span class="ruby-string">'test'</span>])
+  <span class="ruby-constant">CommonFunctions</span>.create_user(user, options[<span class="ruby-string">'test'</span>], head_node_ip,
+    secret_key, uac, pass)
+
+  uac.set_cloud_admin_status(user, new_status=<span class="ruby-string">&quot;true&quot;</span>)
+  uac.set_cloud_admin_capabilities(user)
+
+  <span class="ruby-constant">CommonFunctions</span>.wait_for_nodes_to_load(head_node_ip, secret_key)
+  if options[<span class="ruby-string">'file_location'</span>].nil?
+    puts <span class="ruby-string">&quot;No app uploaded. Use appscale-upload-app to upload an app later.&quot;</span>
+  else
+    remote_file_path = <span class="ruby-constant">CommonFunctions</span>.scp_app_to_ip(app_info[:app_name], 
+      user, app_info[:language], options[<span class="ruby-string">'keyname'</span>], head_node_ip, 
+      app_info[:file], uac)
+
+    acc.done_uploading(app_info[:app_name], remote_file_path)
+
+    <span class="ruby-constant">CommonFunctions</span>.wait_for_app_to_start(head_node_ip, secret_key,
+      app_info[:app_name])
+    <span class="ruby-constant">CommonFunctions</span>.clear_app(app_info[:file])
+  end
+
+  login_ip = <span class="ruby-constant">CommonFunctions</span>.get_login_ip(head_node_ip, secret_key)
+  puts <span class="ruby-string">&quot;The status of your AppScale instance is at the following&quot;</span> + 
+    &quot; URL: http://#{login_ip}/status&quot;
+
+  <span class="ruby-constant">CommonFunctions</span>.write_and_copy_node_file(options, node_layout,
+    head_node_result)
+  <span class="ruby-constant">RemoteLogging</span>.remote_post(max_images, table, infrastructure, <span class="ruby-string">&quot;started&quot;</span>, <span class="ruby-string">&quot;success&quot;</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="terminate_instances-method" class="method-detail ">
+        <a name="method-c-terminate_instances"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">terminate_instances</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="terminate_instances-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 333</span>
+def self.terminate_instances(options)
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  locations_yaml = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/locations-#{keyname}.yaml&quot;)
+  if !<span class="ruby-constant">File</span>.exists?(locations_yaml)
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">APPSCALE_NOT_RUNNING</span>)
+  end
+
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(keyname)
+  shadow_ip = <span class="ruby-constant">CommonFunctions</span>.get_head_node_ip(keyname)
+  secret = <span class="ruby-constant">CommonFunctions</span>.get_secret_key(keyname)
+
+  if options[<span class="ruby-string">'backup_neptune_info'</span>]
+    <span class="ruby-constant">CommonFunctions</span>.backup_neptune_info(keyname, shadow_ip,
+      options[<span class="ruby-string">'backup_neptune_info'</span>])
+  end
+
+  infrastructure = <span class="ruby-constant">CommonFunctions</span>.get_infrastructure(keyname, required=true)
+  if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(infrastructure)
+    <span class="ruby-constant">CommonFunctions</span>.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+  else
+    <span class="ruby-constant">CommonFunctions</span>.terminate_via_vmm(keyname, options[<span class="ruby-string">'verbose'</span>])
+  end
+
+  <span class="ruby-constant">CommonFunctions</span>.delete_appscale_files(keyname)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="upload_app-method" class="method-detail ">
+        <a name="method-c-upload_app"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">upload_app</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="upload_app-source">
+<pre>
+<span class="ruby-comment"># File lib/appscale_tools.rb, line 360</span>
+def self.upload_app(options)
+  file_location = options[<span class="ruby-string">'file_location'</span>]
+  if file_location.nil?
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">NO_FILE_PROVIDED_MSG</span>)
+  end
+
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  <span class="ruby-constant">CommonFunctions</span>.update_locations_file(keyname)
+  secret_key = <span class="ruby-constant">CommonFunctions</span>.get_secret_key(keyname)
+  head_node_ip = <span class="ruby-constant">CommonFunctions</span>.get_head_node_ip(keyname)
+  database = <span class="ruby-constant">CommonFunctions</span>.get_table(keyname)
+
+  app_info = <span class="ruby-constant">CommonFunctions</span>.get_app_name_from_tar(file_location)
+  app_name, file_location, language = app_info[:app_name], app_info[:file], app_info[:language]
+  <span class="ruby-constant">CommonFunctions</span>.validate_app_name(app_name, database)
+
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret_key)
+  user = <span class="ruby-constant">CommonFunctions</span>.get_username_from_options(options)
+  userappserver_ip = acc.get_userappserver_ip(<span class="ruby-constant">LOGS_VERBOSE</span>)
+  uac = <span class="ruby-constant">UserAppClient</span>.new(userappserver_ip, secret_key)
+  if !uac.does_user_exist?(user)
+    <span class="ruby-constant">CommonFunctions</span>.create_user(user, options[<span class="ruby-string">'test'</span>], head_node_ip,
+      secret_key, uac)
+  end
+
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;&quot;</span>
+
+  if uac.does_app_exist?(app_name)
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">APP_ALREADY_EXISTS</span>)
+  end
+
+  app_admin = uac.get_app_admin(app_name)
+  if !app_admin.empty? and user != app_admin
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">USER_NOT_ADMIN</span>)
+  end
+
+  remote_file_path = <span class="ruby-constant">CommonFunctions</span>.scp_app_to_ip(app_name, user, language,
+    keyname, head_node_ip, file_location, uac)
+  <span class="ruby-constant">CommonFunctions</span>.update_appcontroller(head_node_ip, secret_key, app_name,
+    remote_file_path)
+  <span class="ruby-constant">CommonFunctions</span>.wait_for_app_to_start(head_node_ip, secret_key, app_name)
+  <span class="ruby-constant">CommonFunctions</span>.clear_app(file_location)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+    </div>
+  
+
+  </div>
+
+  <div id="validator-badges">
+    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
+      Rdoc Generator</a> 2</small>.</p>
+  </div>
+
+</body>
+</html>
+

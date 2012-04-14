@@ -1,0 +1,5 @@
+This is a static file.  It is served with a MIME content type of
+"application/octet-stream" because its filename ends with ".yyy", App
+Engine does not have a default MIME content type for that filename
+extension, and no content type is mapped to that extension in the
+app's web.xml file.

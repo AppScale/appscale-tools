@@ -1,0 +1,50 @@
+<html>
+  <head>
+      <script src='/_ah/channel/jsapi'></script>
+        </head>
+  <body>
+    <script type='text/javascript'>
+      var state = {
+        app_key: '{{ appid }}',
+        token: '{{ token }}' 
+      };
+
+      onOpened = function() {
+      };
+      
+      onMessage = function(m) {
+        alert('Message received: ' + m.data);
+      }
+      
+      openChannel = function() {
+        var token = '{{ token }}';
+        var channel = new goog.appengine.Channel(token);
+        var handler = {
+          'onopen': onOpened,
+          'onmessage': onMessage,
+          'onerror': function() {},
+          'onclose': function() {}
+        };
+        var socket = channel.open(handler);
+        socket.onopen = onOpened;
+        socket.onmessage = onMessage;
+      }
+      
+      initialize = function() {
+        openChannel();
+      }      
+
+      setTimeout(initialize, 100);
+
+    </script>
+    <div id='display-area'>
+      <h2>Receiver Channel Test App</h2>
+        My token: {{ token }} </br>
+        My appid: {{ appid }}
+        <h3>Links:</h3>
+        <a href='/createchannel'>Create Channel</a>
+        <a href='/sendmessage'>Send Message</a>
+        <a href='/receivemessage'>Get Message</a>
+    </div>
+  </body>
+</html>

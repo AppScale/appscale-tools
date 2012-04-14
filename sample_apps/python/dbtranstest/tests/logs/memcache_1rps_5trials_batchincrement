@@ -1,0 +1,540 @@
+Method:batchincrement
+RTT Start:1274340270.92
+RTT End:1274340274.84
+RTT Time:3.91621589661
+Success:True
+Start time:1274340271.14
+End time:1274340274.66
+Total Time Taken:3.52284812927
+Cumulative DB Time Taken:3.51856684685
+Number of Keys:1
+Timings:3.51856684685
+#
+Method:batchincrement
+RTT Start:1274340270.92
+RTT End:1274340273.98
+RTT Time:3.05390095711
+Success:True
+Start time:1274340271.94
+End time:1274340273.84
+Total Time Taken:1.90386795998
+Cumulative DB Time Taken:1.87581300735
+Number of Keys:1
+Timings:1.87581300735
+#
+Method:batchincrement
+RTT Start:1274340270.92
+RTT End:1274340274.05
+RTT Time:3.12407398224
+Success:True
+Start time:1274340271.15
+End time:1274340273.91
+Total Time Taken:2.76643776894
+Cumulative DB Time Taken:2.76210808754
+Number of Keys:1
+Timings:2.76210808754
+#
+Method:batchincrement
+RTT Start:1274340270.93
+RTT End:1274340271.35
+RTT Time:0.415980100632
+Success:True
+Start time:1274340270.93
+End time:1274340271.32
+Total Time Taken:0.39361000061
+Cumulative DB Time Taken:0.3934071064
+Number of Keys:1
+Timings:0.3934071064
+#
+Method:batchincrement
+RTT Start:1274340270.94
+RTT End:1274340271.41
+RTT Time:0.464576005936
+Success:True
+Start time:1274340270.98
+End time:1274340271.42
+Total Time Taken:0.440257072449
+Cumulative DB Time Taken:0.440039873123
+Number of Keys:1
+Timings:0.440039873123
+#
+Method:batchincrement
+RTT Start:1274340270.95
+RTT End:1274340271.41
+RTT Time:0.458709955215
+Success:True
+Start time:1274340271.04
+End time:1274340271.46
+Total Time Taken:0.422616004944
+Cumulative DB Time Taken:0.422430992126
+Number of Keys:1
+Timings:0.422430992126
+#
+Method:batchincrement
+RTT Start:1274340270.95
+RTT End:1274340273.76
+RTT Time:2.8037571907
+Success:True
+Start time:1274340271.18
+End time:1274340273.6
+Total Time Taken:2.42946481705
+Cumulative DB Time Taken:2.42190599442
+Number of Keys:1
+Timings:2.42190599442
+#
+Method:batchincrement
+RTT Start:1274340270.96
+RTT End:1274340271.42
+RTT Time:0.456655025482
+Success:True
+Start time:1274340270.88
+End time:1274340271.32
+Total Time Taken:0.434297800064
+Cumulative DB Time Taken:0.434093952179
+Number of Keys:1
+Timings:0.434093952179
+#
+Method:batchincrement
+RTT Start:1274340270.98
+RTT End:1274340271.44
+RTT Time:0.458556890488
+Success:True
+Start time:1274340271.0
+End time:1274340271.43
+Total Time Taken:0.433983802795
+Cumulative DB Time Taken:0.43373799324
+Number of Keys:1
+Timings:0.43373799324
+#
+Method:batchincrement
+RTT Start:1274340274.84
+RTT End:1274340278.06
+RTT Time:3.22573184967
+Success:True
+Start time:1274340275.04
+End time:1274340277.88
+Total Time Taken:2.84070515633
+Cumulative DB Time Taken:2.83342194557
+Number of Keys:1
+Timings:2.83342194557
+#
+Method:batchincrement
+RTT Start:1274340274.84
+RTT End:1274340279.07
+RTT Time:4.23065710068
+Success:True
+Start time:1274340275.04
+End time:1274340278.92
+Total Time Taken:3.87937784195
+Cumulative DB Time Taken:3.87518882751
+Number of Keys:1
+Timings:3.87518882751
+#
+Method:batchincrement
+RTT Start:1274340274.84
+RTT End:1274340278.1
+RTT Time:3.2515411377
+Success:True
+Start time:1274340275.08
+End time:1274340277.96
+Total Time Taken:2.88086605072
+Cumulative DB Time Taken:2.87516403198
+Number of Keys:1
+Timings:2.87516403198
+#
+Method:batchincrement
+RTT Start:1274340274.85
+RTT End:1274340275.28
+RTT Time:0.429164171219
+Success:True
+Start time:1274340274.85
+End time:1274340275.26
+Total Time Taken:0.40537405014
+Cumulative DB Time Taken:0.405166864395
+Number of Keys:1
+Timings:0.405166864395
+#
+Method:batchincrement
+RTT Start:1274340274.86
+RTT End:1274340275.33
+RTT Time:0.470853090286
+Success:True
+Start time:1274340274.91
+End time:1274340275.34
+Total Time Taken:0.429677009583
+Cumulative DB Time Taken:0.429456949234
+Number of Keys:1
+Timings:0.429456949234
+#
+Method:batchincrement
+RTT Start:1274340274.86
+RTT End:1274340275.31
+RTT Time:0.447530031204
+Success:True
+Start time:1274340274.93
+End time:1274340275.36
+Total Time Taken:0.423798084259
+Cumulative DB Time Taken:0.423609018326
+Number of Keys:1
+Timings:0.423609018326
+#
+Method:batchincrement
+RTT Start:1274340274.86
+RTT End:1274340278.97
+RTT Time:4.10631895065
+Success:True
+Start time:1274340275.1
+End time:1274340278.84
+Total Time Taken:3.73961496353
+Cumulative DB Time Taken:3.73491001129
+Number of Keys:1
+Timings:3.73491001129
+#
+Method:batchincrement
+RTT Start:1274340274.87
+RTT End:1274340275.3
+RTT Time:0.423494100571
+Success:True
+Start time:1274340274.79
+End time:1274340275.19
+Total Time Taken:0.400882005692
+Cumulative DB Time Taken:0.400676965714
+Number of Keys:1
+Timings:0.400676965714
+#
+Method:batchincrement
+RTT Start:1274340274.88
+RTT End:1274340275.34
+RTT Time:0.460479974747
+Success:True
+Start time:1274340274.9
+End time:1274340275.34
+Total Time Taken:0.436366081238
+Cumulative DB Time Taken:0.436122894287
+Number of Keys:1
+Timings:0.436122894287
+#
+Method:batchincrement
+RTT Start:1274340279.07
+RTT End:1274340282.1
+RTT Time:3.03058791161
+Success:True
+Start time:1274340279.27
+End time:1274340281.94
+Total Time Taken:2.66707181931
+Cumulative DB Time Taken:2.6623249054
+Number of Keys:1
+Timings:2.6623249054
+#
+Method:batchincrement
+RTT Start:1274340279.07
+RTT End:1274340282.88
+RTT Time:3.80907297134
+Success:True
+Start time:1274340279.3
+End time:1274340282.7
+Total Time Taken:3.39665699005
+Cumulative DB Time Taken:3.39033007622
+Number of Keys:1
+Timings:3.39033007622
+#
+Method:batchincrement
+RTT Start:1274340279.09
+RTT End:1274340282.44
+RTT Time:3.35102415085
+Success:True
+Start time:1274340279.29
+End time:1274340281.81
+Total Time Taken:2.51732802391
+Cumulative DB Time Taken:2.51244401932
+Number of Keys:1
+Timings:2.51244401932
+#
+Method:batchincrement
+RTT Start:1274340279.09
+RTT End:1274340279.52
+RTT Time:0.433965921402
+Success:True
+Start time:1274340279.09
+End time:1274340279.5
+Total Time Taken:0.400610923767
+Cumulative DB Time Taken:0.400386810303
+Number of Keys:1
+Timings:0.400386810303
+#
+Method:batchincrement
+RTT Start:1274340279.1
+RTT End:1274340279.54
+RTT Time:0.449804067612
+Success:True
+Start time:1274340279.14
+End time:1274340279.56
+Total Time Taken:0.420862913132
+Cumulative DB Time Taken:0.420637130737
+Number of Keys:1
+Timings:0.420637130737
+#
+Method:batchincrement
+RTT Start:1274340279.1
+RTT End:1274340279.53
+RTT Time:0.432579994202
+Success:True
+Start time:1274340279.17
+End time:1274340279.58
+Total Time Taken:0.407943964005
+Cumulative DB Time Taken:0.407752037048
+Number of Keys:1
+Timings:0.407752037048
+#
+Method:batchincrement
+RTT Start:1274340279.11
+RTT End:1274340282.36
+RTT Time:3.25894284248
+Success:True
+Start time:1274340279.34
+End time:1274340282.24
+Total Time Taken:2.90350008011
+Cumulative DB Time Taken:2.89788007736
+Number of Keys:1
+Timings:2.89788007736
+#
+Method:batchincrement
+RTT Start:1274340279.11
+RTT End:1274340279.55
+RTT Time:0.440440893173
+Success:True
+Start time:1274340279.03
+End time:1274340279.45
+Total Time Taken:0.418601036072
+Cumulative DB Time Taken:0.418403863907
+Number of Keys:1
+Timings:0.418403863907
+#
+Method:batchincrement
+RTT Start:1274340279.12
+RTT End:1274340279.57
+RTT Time:0.450101137161
+Success:True
+Start time:1274340279.14
+End time:1274340279.57
+Total Time Taken:0.425544023514
+Cumulative DB Time Taken:0.425249814987
+Number of Keys:1
+Timings:0.425249814987
+#
+Method:batchincrement
+RTT Start:1274340282.88
+RTT End:1274340286.58
+RTT Time:3.69378089905
+Success:True
+Start time:1274340283.56
+End time:1274340286.35
+Total Time Taken:2.78955197334
+Cumulative DB Time Taken:2.77856707573
+Number of Keys:1
+Timings:2.77856707573
+#
+Method:batchincrement
+RTT Start:1274340282.89
+RTT End:1274340285.47
+RTT Time:2.57944083214
+Success:True
+Start time:1274340283.1
+End time:1274340285.32
+Total Time Taken:2.21720600128
+Cumulative DB Time Taken:2.21228909492
+Number of Keys:1
+Timings:2.21228909492
+#
+Method:batchincrement
+RTT Start:1274340282.89
+RTT End:1274340287.37
+RTT Time:4.47982597351
+Success:True
+Start time:1274340283.23
+End time:1274340287.23
+Total Time Taken:3.99966883659
+Cumulative DB Time Taken:3.98471999168
+Number of Keys:1
+Timings:3.98471999168
+#
+Method:batchincrement
+RTT Start:1274340282.9
+RTT End:1274340283.42
+RTT Time:0.519842147827
+Success:True
+Start time:1274340282.91
+End time:1274340283.39
+Total Time Taken:0.474531888962
+Cumulative DB Time Taken:0.474147081375
+Number of Keys:1
+Timings:0.474147081375
+#
+Method:batchincrement
+RTT Start:1274340282.9
+RTT End:1274340283.37
+RTT Time:0.46582698822
+Success:True
+Start time:1274340282.94
+End time:1274340283.38
+Total Time Taken:0.439441919327
+Cumulative DB Time Taken:0.439039945602
+Number of Keys:1
+Timings:0.439039945602
+#
+Method:batchincrement
+RTT Start:1274340282.91
+RTT End:1274340283.4
+RTT Time:0.491105794907
+Success:True
+Start time:1274340282.99
+End time:1274340283.45
+Total Time Taken:0.458980083466
+Cumulative DB Time Taken:0.458791971207
+Number of Keys:1
+Timings:0.458791971207
+#
+Method:batchincrement
+RTT Start:1274340282.92
+RTT End:1274340285.76
+RTT Time:2.84334111214
+Success:True
+Start time:1274340283.16
+End time:1274340285.6
+Total Time Taken:2.44385290146
+Cumulative DB Time Taken:2.43941497803
+Number of Keys:1
+Timings:2.43941497803
+#
+Method:batchincrement
+RTT Start:1274340282.92
+RTT End:1274340283.4
+RTT Time:0.480521917343
+Success:True
+Start time:1274340282.84
+End time:1274340283.3
+Total Time Taken:0.458460092545
+Cumulative DB Time Taken:0.458259105682
+Number of Keys:1
+Timings:0.458259105682
+#
+Method:batchincrement
+RTT Start:1274340282.93
+RTT End:1274340283.41
+RTT Time:0.478250980377
+Success:True
+Start time:1274340282.95
+End time:1274340283.4
+Total Time Taken:0.453673124313
+Cumulative DB Time Taken:0.453446865082
+Number of Keys:1
+Timings:0.453446865082
+#
+Method:batchincrement
+RTT Start:1274340287.37
+RTT End:1274340290.23
+RTT Time:2.86271715164
+Success:True
+Start time:1274340287.58
+End time:1274340290.06
+Total Time Taken:2.48751997948
+Cumulative DB Time Taken:2.4797039032
+Number of Keys:1
+Timings:2.4797039032
+#
+Method:batchincrement
+RTT Start:1274340287.38
+RTT End:1274340290.24
+RTT Time:2.86343288422
+Success:True
+Start time:1274340287.58
+End time:1274340290.08
+Total Time Taken:2.50079011917
+Cumulative DB Time Taken:2.49638104439
+Number of Keys:1
+Timings:2.49638104439
+#
+Method:batchincrement
+RTT Start:1274340287.39
+RTT End:1274340290.3
+RTT Time:2.91549110413
+Success:True
+Start time:1274340287.59
+End time:1274340290.16
+Total Time Taken:2.56832814217
+Cumulative DB Time Taken:2.56383299828
+Number of Keys:1
+Timings:2.56383299828
+#
+Method:batchincrement
+RTT Start:1274340287.4
+RTT End:1274340287.81
+RTT Time:0.412935972214
+Success:True
+Start time:1274340287.39
+End time:1274340287.78
+Total Time Taken:0.389600038528
+Cumulative DB Time Taken:0.389412164688
+Number of Keys:1
+Timings:0.389412164688
+#
+Method:batchincrement
+RTT Start:1274340287.4
+RTT End:1274340287.85
+RTT Time:0.448736906052
+Success:True
+Start time:1274340287.45
+End time:1274340287.86
+Total Time Taken:0.415059804916
+Cumulative DB Time Taken:0.414838075638
+Number of Keys:1
+Timings:0.414838075638
+#
+Method:batchincrement
+RTT Start:1274340287.41
+RTT End:1274340287.83
+RTT Time:0.424917936325
+Success:True
+Start time:1274340287.47
+End time:1274340287.88
+Total Time Taken:0.402297973633
+Cumulative DB Time Taken:0.402099132538
+Number of Keys:1
+Timings:0.402099132538
+#
+Method:batchincrement
+RTT Start:1274340287.41
+RTT End:1274340291.24
+RTT Time:3.82748198509
+Success:True
+Start time:1274340288.48
+End time:1274340291.1
+Total Time Taken:2.61598610878
+Cumulative DB Time Taken:2.60329198837
+Number of Keys:1
+Timings:2.60329198837
+#
+Method:batchincrement
+RTT Start:1274340287.42
+RTT End:1274340287.89
+RTT Time:0.474617004395
+Success:True
+Start time:1274340287.34
+End time:1274340287.76
+Total Time Taken:0.420010089874
+Cumulative DB Time Taken:0.419821977615
+Number of Keys:1
+Timings:0.419821977615
+#
+Method:batchincrement
+RTT Start:1274340287.42
+RTT End:1274340287.87
+RTT Time:0.450489997864
+Success:True
+Start time:1274340287.44
+End time:1274340287.87
+Total Time Taken:0.426357030869
+Cumulative DB Time Taken:0.426135063171
+Number of Keys:1
+Timings:0.426135063171
+#

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block operation %}Reducer{% endblock %}
+
+{% block content %}
+  <h1>HTTPMR Reducer</h1>
+  
+  {% if next_url %}
+    Next: <a href="{{ next_url }}">{{ next_url }}</a>
+  {% else %}
+    Done with this shard.
+  {% endif %}
+    
+  <pre>
+{{ statistics }}
+  </pre>
+{% endblock %}

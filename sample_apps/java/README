@@ -1,0 +1,9 @@
+clock:  	allow users to set preferred timezone
+bookjps:	use jpa to persist data
+booklowlevel:	use lowlevel api to persist data
+types:		put entities of different types
+entities:	basic operations on entities
+queries:	perform queries
+javabook:	interactively put, get, delete and query, it uses JSP in the view layer
+guestbookmemcache:	javabook with memcache
+transaction:	testing transaction and commit

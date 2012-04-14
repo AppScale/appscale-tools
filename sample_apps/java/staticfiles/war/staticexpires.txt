@@ -1,0 +1,9 @@
+This is a static file.  It is served with a browser cache expiration
+duration of 1 day because of configuration in appengine-web.xml.  View
+this page in Firefox with the Web Developer toolbar extension, then
+view the response headers (Information > View Response Headers) to see
+the "Expires" header.
+
+This file is also considered a resource file and pushed to the
+application servers because it is not excluded from the set of
+resource files in appengine-web.xml.

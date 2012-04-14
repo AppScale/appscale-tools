@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 33
+/svn/!svn/ver/32/trunk/src/httpmr
+END
+base.py
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/6/trunk/src/httpmr/base.py
+END
+master.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/32/trunk/src/httpmr/master.py
+END
+driver.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/31/trunk/src/httpmr/driver.py
+END
+reducers.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2/trunk/src/httpmr/reducers.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/2/trunk/src/httpmr/__init__.py
+END
+appengine.py
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/26/trunk/src/httpmr/appengine.py
+END
+mappers.py
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/2/trunk/src/httpmr/mappers.py
+END
+sinks.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/20/trunk/src/httpmr/sinks.py
+END

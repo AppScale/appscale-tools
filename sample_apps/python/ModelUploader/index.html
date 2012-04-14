@@ -1,0 +1,219 @@
+<html> 
+<head> 
+    <title>3DViewer++: VIew your models in 3D</title> 
+    <link rel="stylesheet" href="css/lavalamp_test.css" type="text/css" media="screen"> 
+    <script type="text/javascript" src="js/jquery-1.2.3.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.easing.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.lavalamp.min.js"></script> 
+    <script type="text/javascript"> 
+
+	function getParam( name )
+	{
+  		name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  		var regexS = "[\\?&]"+name+"=([^&#]*)";
+  		var regex = new RegExp( regexS );
+  		var results = regex.exec( window.location.href );
+  		if( results == null )
+    			return "";
+  		else
+    			return results[1];
+	}
+
+	function hideAll()
+        {
+		$('#dbg').hide();
+		$('#main').hide();
+                $('#step1').hide();
+                $('#step2').hide();
+                $('#step3').hide();
+		{% for album in models %}
+		$('#{{album.name}}_table').hide();
+		{% endfor %}
+
+                
+	}
+
+
+
+        $(function() {
+            $("#1").lavaLamp({
+                fx: "backout",
+                speed: 700,
+                click: function(event, menuItem) {
+                    return false;
+                }
+            });
+        });
+		
+
+ 
+ 	$(document).ready(function() {
+		
+		
+		var tabName = '#' + getParam('tab');
+		hideAll();
+		if (tabName == '#')
+			$('#main').show();
+                else
+			$(tabName).show();
+		
+
+
+   		$('#home').click(function(){
+ 			hideAll();
+			$('#main').show();
+   		});
+
+   		$('#link1').click(function(){
+ 			hideAll();
+     			$('#step1').show();
+
+   		});
+
+  		 $('#link2').click(function(){
+ 			hideAll();
+     			$('#step2').show();
+     
+   		});
+ 
+   		$('#link3').click(function(){
+ 			hideAll();
+     			$('#step3').show();
+   		});
+
+		
+		$('#view').click(function(){
+ 			hideAll();
+     			$('#step3').show();
+			var id = '#' + $('#albums')[0].value + '_table';
+			$(id).show();
+   		});
+		
+
+                var dbg = getParam('dbg');
+		if (dbg != '') {
+			if (dbg.search("success") != -1)
+				var msg = "<div class = 'success'>" + dbg + "</div>";
+			else	
+				var msg = "<div class = 'error'>" + dbg + "</div>";
+			msg = msg.replace(/%20/g, " ");
+			$('#dbg')[0].innerHTML = msg;
+			$('#dbg').show();
+		}
+
+ 	});
+
+
+    </script> 
+
+
+</head> 
+<body>
+<div class="toolbar">
+<img src = "img/logo.png" style="float:left; padding:15px; margin:10px">
+<ul class="lavaLampNoImage" id="1"> 
+    <li class="current" id="home"><a href="#">Home</a></li> 
+    <li><a href="#" id="link1">Step 1</a></li> 
+    <li><a href="#" id="link2">Step 2</a></li> 
+    <li><a href="#" id="link3">step 3</a></li> 
+</ul> 
+</div>
+
+<div class = "content">
+
+<div id = "dbg">
+</div>
+
+<div id="main">
+<h1>View 3D Models in 1, 2, 3!</h1>
+
+<h3>Step 1: Organize</h3>
+Create a library to upload all your models to. Have one? Select your libary
+from a list of existing ones.
+
+<h3>Step 2: Upload</h3>
+Select your model and upload it to your album!
+
+<h3>Step 3: Visualize</h3>
+View your model in 3D with HMDs or your webcam! Simply print out your
+ARTags (emailed to you and available on this site) and bring it to your desination!
+</div>
+
+<div id="step1">
+<h3> Create an album! </h3>
+What is an album? An album is a collection of 3D models that you can create.
+Think of it as a photo album, except the pictures can be viewed in 3D! Have an album already?
+Proceed to Step 2 to upload to your album! <br><br>
+<form action="/createAlbum" enctype="multipart/form-data" method="POST"> 
+Please enter your album name:<br> 
+<input name="name" type="text" size="30"> 
+<br><br>
+Please enter a brief description:<br>
+<textarea name = "description" COLS=40 ROWS=6></textarea>
+<br><br>
+<input type="submit" value="Submit"> 
+</form> 
+</div>
+
+<div id="step2">
+
+<form action="/upload" enctype="multipart/form-data" method="POST"> 
+Please enter your email:<br> 
+<input name="author" type="text" size="30"> 
+<br><br>
+Please enter the name of your model:<br>
+<input name = "name" type="text" size = "30">
+<br><br>
+Select your album:<br>
+<select name = "albums">
+{% for album in albums %}
+<option value="{{album.name}}">{{album.name}}</option>
+{% endfor %}
+</select>
+<br><br>
+Please select your model:<br> 
+<input name="model" type="file"> 
+<br><br>
+If applicable, please upload your zipped texture:<br>
+<form ac
+<input name="texture" type="file">
+<br><br>
+<input type="submit" value="Submit"> 
+</form> 
+
+</div>
+<div id="step3">
+<h3>Manage and Visualize your models!</h3>
+Now that you have created your model, manage them!
+<br><br>
+
+Select an album:
+<form action="/broadcast" enctype="multipart/form-data" method="POST">
+<select name = "albums" id = "albums">
+{% for album in albums %}
+<option id = "{{album.name}}" value="{{album.name}}">{{album.name}}</option>
+{% endfor %}
+</select>
+<input type="button" id = "view" value="View">
+{% if albums %}
+<input type="submit" name="broadcast" value="Broadcast">
+{% endif %}
+</form>
+{% for album in models%}
+<div id = "{{album.name}}_table">
+<table border = "1">
+<tr><td>Check?</td><td>Name</td><td>Author</td><td>Fiducial Marker</td></tr>
+{% for model in album.content %}
+<tr>
+<td></td>
+<td>{{model.name}}</td>
+<td>{{model.author}}</td>
+<td>{{model.fiducial}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endfor %}
+</div> 
+</div>
+</body></html> 

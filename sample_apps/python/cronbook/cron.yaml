@@ -1,0 +1,5 @@
+cron:
+- description: Post to the database
+  url: /post
+  schedule: every 1 minutes
+

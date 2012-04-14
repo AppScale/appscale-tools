@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+
+  <title>Module: EncryptionHelper</title>
+
+  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+
+  <script src="./js/jquery.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/thickbox-compressed.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/quicksearch.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/darkfish.js" type="text/javascript"
+    charset="utf-8"></script>
+
+</head>
+<body class="module">
+
+  <div id="metadata">
+    <div id="home-metadata">
+      <div id="home-section" class="section">
+        <h3 class="section-header">
+          <a href="./index.html">Home</a>
+          <a href="./index.html#classes">Classes</a>
+          <a href="./index.html#methods">Methods</a>
+        </h3>
+      </div>
+    </div>
+
+    <div id="file-metadata">
+      <div id="file-list-section" class="section">
+        <h3 class="section-header">In Files</h3>
+        <div class="section-body">
+          <ul>
+          
+            <li><a href="./lib/encryption_helper_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
+              class="thickbox" title="lib/encryption_helper.rb">lib/encryption_helper.rb</a></li>
+          
+          </ul>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div id="class-metadata">
+
+      <!-- Parent Class -->
+      
+
+      <!-- Namespace Contents -->
+      
+
+      <!-- Method Quickref -->
+      
+      <div id="method-list-section" class="section">
+        <h3 class="section-header">Methods</h3>
+        <ul class="link-list">
+          
+          <li><a href="#method-c-generate_pem_files">::generate_pem_files</a></li>
+          
+          <li><a href="#method-c-generate_secret_key">::generate_secret_key</a></li>
+          
+          <li><a href="#method-c-generate_ssh_key">::generate_ssh_key</a></li>
+          
+        </ul>
+      </div>
+      
+
+      <!-- Included Modules -->
+      
+    </div>
+
+    <div id="project-metadata">
+      
+      
+      <div id="fileindex-section" class="section project-section">
+        <h3 class="section-header">Files</h3>
+        <ul>
+        
+          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
+        
+        </ul>
+      </div>
+      
+
+      <div id="classindex-section" class="section project-section">
+        <h3 class="section-header">Class/Module Index
+          <span class="search-toggle"><img src="./images/find.png"
+            height="16" width="16" alt="[+]"
+            title="show/hide quicksearch" /></span></h3>
+        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
+        <fieldset>
+          <legend>Quicksearch</legend>
+          <input type="text" name="quicksearch" value=""
+            class="quicksearch-field" />
+        </fieldset>
+        </form>
+
+        <ul class="link-list">
+        
+          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
+        
+          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
+        
+          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
+        
+          <li><a href="./AppScaleException.html">AppScaleException</a></li>
+        
+          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
+        
+          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
+        
+          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
+        
+          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
+        
+          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
+        
+          <li><a href="./GodInterface.html">GodInterface</a></li>
+        
+          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
+        
+          <li><a href="./Node.html">Node</a></li>
+        
+          <li><a href="./NodeLayout.html">NodeLayout</a></li>
+        
+          <li><a href="./Object.html">Object</a></li>
+        
+          <li><a href="./ParseArgs.html">ParseArgs</a></li>
+        
+          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
+        
+          <li><a href="./SimpleNode.html">SimpleNode</a></li>
+        
+          <li><a href="./UsageText.html">UsageText</a></li>
+        
+          <li><a href="./UserAppClient.html">UserAppClient</a></li>
+        
+          <li><a href="./VMTools.html">VMTools</a></li>
+        
+        </ul>
+        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
+      </div>
+
+      
+    </div>
+  </div>
+
+  <div id="documentation">
+    <h1 class="module">EncryptionHelper</h1>
+
+    <div id="description">
+      
+    </div>
+
+    <!-- Constants -->
+    
+
+    <!-- Attributes -->
+    
+
+    <!-- Methods -->
+    
+    <div id="public-class-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="generate_pem_files-method" class="method-detail ">
+        <a name="method-c-generate_pem_files"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">generate_pem_files</span><span
+            class="method-args">(keyname)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="generate_pem_files-source">
+<pre>
+<span class="ruby-comment"># File lib/encryption_helper.rb, line 65</span>
+def self.generate_pem_files(keyname)
+  key_loc = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{keyname}-key.pem&quot;)
+  cert_loc = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{keyname}-cert.pem&quot;)
+  
+  key = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">PKey</span>::<span class="ruby-constant">RSA</span>.generate(2048)
+  pub = key.public_key
+  ca = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">X509</span>::<span class="ruby-constant">Name</span>.parse(<span class="ruby-string">&quot;/C=US/ST=Foo/L=Bar/O=AppScale/OU=User/CN=appscale.cs.ucsb.edu/emailAddress=test@test.com&quot;</span>)
+  cert = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">X509</span>::<span class="ruby-constant">Certificate</span>.new
+  cert.version = 2
+  cert.serial = <span class="ruby-constant">Time</span>.now.to_i
+  cert.subject = ca
+  cert.issuer = ca
+  cert.public_key = pub
+  cert.not_before = <span class="ruby-constant">Time</span>.now
+  cert.not_after = <span class="ruby-constant">Time</span>.now + 3600
+  cert.sign(key, <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">Digest</span>::<span class="ruby-constant">SHA1</span>.new)
+  
+  <span class="ruby-constant">File</span>.open(key_loc, <span class="ruby-string">&quot;w&quot;</span>) { |f| f.write key.to_pem }
+  <span class="ruby-constant">File</span>.open(cert_loc, <span class="ruby-string">&quot;w&quot;</span>) { |f| f.write cert.to_pem }
+  return key_loc, cert_loc
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="generate_secret_key-method" class="method-detail ">
+        <a name="method-c-generate_secret_key"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">generate_secret_key</span><span
+            class="method-args">(keyname="appscale")</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="generate_secret_key-source">
+<pre>
+<span class="ruby-comment"># File lib/encryption_helper.rb, line 10</span>
+def self.generate_secret_key(keyname=<span class="ruby-string">&quot;appscale&quot;</span>)
+  path=&quot;~/.appscale/#{keyname}.secret&quot;
+  secret_key = <span class="ruby-string">&quot;&quot;</span>
+  possible = <span class="ruby-string">&quot;0123456789abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>
+  possibleLength = possible.length
+  
+  32.times { |index|
+    secret_key &lt;&lt; possible[rand(possibleLength)]
+  }
+  
+  full_path = <span class="ruby-constant">File</span>.expand_path(path)
+  <span class="ruby-constant">File</span>.open(full_path, <span class="ruby-string">&quot;w&quot;</span>) { |file|
+    file.puts(secret_key)
+  }
+  
+  return secret_key, path
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="generate_ssh_key-method" class="method-detail ">
+        <a name="method-c-generate_ssh_key"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">generate_ssh_key</span><span
+            class="method-args">(verbose, outputLocation, name, infrastructure, force)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="generate_ssh_key-source">
+<pre>
+<span class="ruby-comment"># File lib/encryption_helper.rb, line 28</span>
+def self.generate_ssh_key(verbose, outputLocation, name, infrastructure, force)
+  ec2_output = <span class="ruby-string">&quot;&quot;</span>
+  loop {
+    sleep(10)  <span class="ruby-comment"># to avoid euca replay error message</span>
+    ec2_output = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-add-keypair #{name} 2&gt;&amp;1&quot;)
+    break if ec2_output.include?(<span class="ruby-string">&quot;BEGIN RSA PRIVATE KEY&quot;</span>)
+    if force
+      puts &quot;Trying again. Saw this from #{infrastructure}-add-keypair: #{ec2_output}&quot; if verbose
+      sleep(10)
+      delete_output = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-delete-keypair #{name} 2&gt;&amp;1&quot;)
+      puts &quot;Saw this from #{infrastructure}-delete-keypair: #{delete_output}&quot; if verbose
+    else
+      abort(&quot;The keyname you chose is already in the system. Please either run this tool again with the --force flag or run the following:\n#{infrastructure}-delete-keypair #{name}&quot;)
+    end
+  }
+  
+  <span class="ruby-comment"># output is the ssh private key prepended with info we don't need</span>
+  <span class="ruby-comment"># delimited by the first \n, so rip it off first to get just the key</span>
+  
+  <span class="ruby-comment">#first_newline = ec2_output.index(&quot;\n&quot;)</span>
+  <span class="ruby-comment">#ssh_private_key = ec2_output[first_newline+1, ec2_output.length-1]</span>
+
+  if outputLocation.class == <span class="ruby-constant">String</span>
+    outputLocation = [outputLocation]
+  end
+  
+  outputLocation.each { |path|
+    fullPath = <span class="ruby-constant">File</span>.expand_path(path)
+    <span class="ruby-constant">File</span>.open(fullPath, <span class="ruby-string">&quot;w&quot;</span>) { |file|
+      file.puts(ec2_output)
+    }
+    <span class="ruby-constant">FileUtils</span>.chmod(0600, fullPath) <span class="ruby-comment"># else ssh won't use the key</span>
+  }
+  
+  return
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+    </div>
+  
+
+  </div>
+
+  <div id="validator-badges">
+    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
+      Rdoc Generator</a> 2</small>.</p>
+  </div>
+
+</body>
+</html>
+

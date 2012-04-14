@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="/css/main.css" />
+    <script src="/js/util.js"></script>
+    <script>
+    function updateChat() {
+	    downloadUrl("/getchats", "GET", null, onChatsReturned);
+	}
+	
+	function sendChat(form) {
+		
+		downloadUrl("/getchats", "POST", "content=" + encodeURI(document.getElementById("chattext").value), onChatsReturned);
+		document.getElementById("chattext").value = "";
+	}
+
+	function onChatsReturned(responseText) {
+		document.getElementById("chats").innerHTML = responseText;
+		scrollToBottom();
+	}
+
+	function setup() {
+		window.setInterval("updateChat()", 5000);
+		updateChat();
+	}
+	
+	function scrollToBottom() {
+	  var chatDiv = document.getElementById("chats");
+	  chatDiv.scrollTop = chatDiv.scrollHeight;
+	}
+	</script>
+  </head>
+  <body onload="setup()">
+  	{% if user %}
+    	<div align="right">Logged in as {{ user.nickname }} - 
+          <a href="/edituser/{{ user.email }}">Edit My Profile</a> -
+    	  <a href="{{log_in_out_url}}">Log out</a> </div>
+   	{% else %}
+    	<div align="right"><a href="{{log_in_out_url}}">Log in</a></div>
+    {% endif %}
+   
+    <div id="chats" style="padding:10px;background-color:white;width:100%;height:85%; overflow:auto;">
+	</div>
+	<br/>
+	<div>
+    <form action="javascript:sendChat();">
+      <div><input name="content" type="text" id="chattext" size="100"></input>
+      <input type="submit" value="Chat"></div>
+    </form>
+    </div>
+  </body>
+</html>

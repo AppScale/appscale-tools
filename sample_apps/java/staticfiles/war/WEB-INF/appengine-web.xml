@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+  <application>ae-book</application>
+  <version>exampletest</version>
+
+  <static-files>
+    <include path="static/**" />
+    <include path="staticexpires.txt" expiration="1d" />
+  </static-files>
+
+  <resource-files>
+    <exclude path="static/**" />
+  </resource-files>
+</appengine-web-app>

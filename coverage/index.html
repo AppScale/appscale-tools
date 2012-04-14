@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'>
+  <head>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <title>Tools C0 Coverage Information - RCov</title>
+    <link href="screen.css" media="all" rel="stylesheet" type="text/css" />
+    <link href="print.css" media="print" rel="stylesheet" type="text/css" />
+    
+    <script type="text/javascript" src="jquery-1.3.2.min.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="rcov.js"></script>
+  </head>
+  <body>
+    <h1>Tools C0 Coverage Information - RCov</h1>
+    
+
+    <noscript><style type="text/css">.if_js { display:none; }</style></noscript>
+
+    <div class="filters if_js">
+      <fieldset>
+        <label>File Filter:</label>
+        <select id="file_filter" class="filter">
+          <option value="all_files">Show All</option>
+          <option value="lib">lib/</option>
+        </select>
+      </fieldset>
+      <fieldset>
+        <label>Code Coverage Threshold:</label>
+        <select id="coverage_filter" class="filter">
+          <option value="all_coverage">Show All</option>
+          <option value="10">&lt; 10% Coverage</option><option value="20">&lt; 20% Coverage</option><option value="30">&lt; 30% Coverage</option><option value="40">&lt; 40% Coverage</option><option value="50">&lt; 50% Coverage</option><option value="60">&lt; 60% Coverage</option><option value="70">&lt; 70% Coverage</option><option value="80">&lt; 80% Coverage</option><option value="90">&lt; 90% Coverage</option><option value="100">&lt; 100% Coverage</option>
+          <option value="110">= 100% Coverage</option>
+        </select>
+      </fieldset>
+    </div>
+    
+    <div class="report_table_wrapper">
+      <table class='report' id='report_table'>
+        <thead>
+          <tr>
+            <th class="left_align">Name</th>
+            <th class="right_align">Total Lines</th>
+            <th class="right_align">Lines of Code</th>
+            <th class="left_align">Total Coverage</th>
+            <th class="left_align">Code Coverage</th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <td class="left_align">TOTAL</td>
+            <td class='right_align'><tt>4322</tt></td>
+            <td class='right_align'><tt>3218</tt></td>
+            <td class="left_align"><div class="percent_graph_legend"><tt class=''>50.53%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:51px"></div>
+            <div class="uncovered" style="width:49px"></div>
+          </div></td>
+            <td class="left_align"><div class="percent_graph_legend"><tt class='coverage_total'>43.44%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:43px"></div>
+            <div class="uncovered" style="width:57px"></div>
+          </div></td>
+          </tr>
+        </tfoot>
+        <tbody>
+          
+            <tr class="all_files all_coverage 30 40 50 60 70 80 90 100 lib even">
+              <td class="left_align"><a href="lib-app_controller_client_rb.html">lib/app_controller_client.rb</a></td>
+              <td class='right_align'><tt>174</tt></td>
+              <td class='right_align'><tt>135</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>32.18%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:32px"></div>
+            <div class="uncovered" style="width:68px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>20.00%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:20px"></div>
+            <div class="uncovered" style="width:80px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 80 90 100 lib odd">
+              <td class="left_align"><a href="lib-appscale_tools_rb.html">lib/appscale_tools.rb</a></td>
+              <td class='right_align'><tt>403</tt></td>
+              <td class='right_align'><tt>269</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.43%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:75px"></div>
+            <div class="uncovered" style="width:25px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>71.00%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:71px"></div>
+            <div class="uncovered" style="width:29px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 30 40 50 60 70 80 90 100 lib even">
+              <td class="left_align"><a href="lib-common_functions_rb.html">lib/common_functions.rb</a></td>
+              <td class='right_align'><tt>1458</tt></td>
+              <td class='right_align'><tt>1068</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>39.78%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:40px"></div>
+            <div class="uncovered" style="width:60px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>29.68%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:30px"></div>
+            <div class="uncovered" style="width:70px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 110 lib odd">
+              <td class="left_align"><a href="lib-custom_exceptions_rb.html">lib/custom_exceptions.rb</a></td>
+              <td class='right_align'><tt>25</tt></td>
+              <td class='right_align'><tt>10</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:100px"></div>
+            <div class="uncovered" style="width:0px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:100px"></div>
+            <div class="uncovered" style="width:0px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 20 30 40 50 60 70 80 90 100 lib even">
+              <td class="left_align"><a href="lib-encryption_helper_rb.html">lib/encryption_helper.rb</a></td>
+              <td class='right_align'><tt>86</tt></td>
+              <td class='right_align'><tt>66</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>16.28%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:16px"></div>
+            <div class="uncovered" style="width:84px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>12.12%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:12px"></div>
+            <div class="uncovered" style="width:88px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 30 40 50 60 70 80 90 100 lib odd">
+              <td class="left_align"><a href="lib-godinterface_rb.html">lib/godinterface.rb</a></td>
+              <td class='right_align'><tt>152</tt></td>
+              <td class='right_align'><tt>109</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>21.05%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:21px"></div>
+            <div class="uncovered" style="width:79px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>20.18%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:20px"></div>
+            <div class="uncovered" style="width:80px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 80 90 100 lib even">
+              <td class="left_align"><a href="lib-node_layout_rb.html">lib/node_layout.rb</a></td>
+              <td class='right_align'><tt>665</tt></td>
+              <td class='right_align'><tt>487</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.65%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:79px"></div>
+            <div class="uncovered" style="width:21px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>76.39%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:76px"></div>
+            <div class="uncovered" style="width:24px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 80 90 100 lib odd">
+              <td class="left_align"><a href="lib-parse_args_rb.html">lib/parse_args.rb</a></td>
+              <td class='right_align'><tt>411</tt></td>
+              <td class='right_align'><tt>323</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.59%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:79px"></div>
+            <div class="uncovered" style="width:21px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.54%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:76px"></div>
+            <div class="uncovered" style="width:24px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 40 50 60 70 80 90 100 lib even">
+              <td class="left_align"><a href="lib-remote_log_rb.html">lib/remote_log.rb</a></td>
+              <td class='right_align'><tt>21</tt></td>
+              <td class='right_align'><tt>19</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>38.10%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:38px"></div>
+            <div class="uncovered" style="width:62px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>31.58%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:32px"></div>
+            <div class="uncovered" style="width:68px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 100 lib odd">
+              <td class="left_align"><a href="lib-usage_text_rb.html">lib/usage_text.rb</a></td>
+              <td class='right_align'><tt>144</tt></td>
+              <td class='right_align'><tt>108</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>98.61%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:99px"></div>
+            <div class="uncovered" style="width:1px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>98.15%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:98px"></div>
+            <div class="uncovered" style="width:2px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 30 40 50 60 70 80 90 100 lib even">
+              <td class="left_align"><a href="lib-user_app_client_rb.html">lib/user_app_client.rb</a></td>
+              <td class='right_align'><tt>245</tt></td>
+              <td class='right_align'><tt>204</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>27.76%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:28px"></div>
+            <div class="uncovered" style="width:72px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>21.08%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:21px"></div>
+            <div class="uncovered" style="width:79px"></div>
+          </div></td>
+            </tr>
+          
+            <tr class="all_files all_coverage 20 30 40 50 60 70 80 90 100 lib odd">
+              <td class="left_align"><a href="lib-vm_tools_rb.html">lib/vm_tools.rb</a></td>
+              <td class='right_align'><tt>538</tt></td>
+              <td class='right_align'><tt>420</tt></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>20.26%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:20px"></div>
+            <div class="uncovered" style="width:80px"></div>
+          </div></td>
+              <td class="left_align"><div class="percent_graph_legend"><tt class=''>12.38%</tt></div>
+          <div class="percent_graph">
+            <div class="covered" style="width:12px"></div>
+            <div class="uncovered" style="width:88px"></div>
+          </div></td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+    <p>Generated on Tue Mar 20 00:09:53 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 0.9.8</a></p>
+
+    <script type="text/javascript">
+      $(document).ready(function(){$("#report_table").tablesorter({widgets: ['zebra'], textExtraction: 'complex'});});
+      $('.filter').change(function(){
+        ff = $('#file_filter').val();
+        cf = $('#coverage_filter').val();
+        $('table#report_table tbody tr').each(function(i){ 
+          if ((this.className.split(" ").indexOf(ff) > -1) && (this.className.split(" ").indexOf(cf) > -1)) {
+            this.style.display = "";
+          } else {
+            this.style.display = "none";
+          };
+          restripe();
+        })
+      })
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,2786 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+
+  <title>Module: CommonFunctions</title>
+
+  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+
+  <script src="./js/jquery.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/thickbox-compressed.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/quicksearch.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/darkfish.js" type="text/javascript"
+    charset="utf-8"></script>
+
+</head>
+<body class="module">
+
+  <div id="metadata">
+    <div id="home-metadata">
+      <div id="home-section" class="section">
+        <h3 class="section-header">
+          <a href="./index.html">Home</a>
+          <a href="./index.html#classes">Classes</a>
+          <a href="./index.html#methods">Methods</a>
+        </h3>
+      </div>
+    </div>
+
+    <div id="file-metadata">
+      <div id="file-list-section" class="section">
+        <h3 class="section-header">In Files</h3>
+        <div class="section-body">
+          <ul>
+          
+            <li><a href="./lib/common_functions_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
+              class="thickbox" title="lib/common_functions.rb">lib/common_functions.rb</a></li>
+          
+          </ul>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div id="class-metadata">
+
+      <!-- Parent Class -->
+      
+
+      <!-- Namespace Contents -->
+      
+
+      <!-- Method Quickref -->
+      
+      <div id="method-list-section" class="section">
+        <h3 class="section-header">Methods</h3>
+        <ul class="link-list">
+          
+          <li><a href="#method-c-clear_app">::clear_app</a></li>
+          
+          <li><a href="#method-c-convert_fqdn_to_ip">::convert_fqdn_to_ip</a></li>
+          
+          <li><a href="#method-c-create_user">::create_user</a></li>
+          
+          <li><a href="#method-c-encrypt_password">::encrypt_password</a></li>
+          
+          <li><a href="#method-c-find_real_ssh_key">::find_real_ssh_key</a></li>
+          
+          <li><a href="#method-c-get_all_public_ips">::get_all_public_ips</a></li>
+          
+          <li><a href="#method-c-get_app_info">::get_app_info</a></li>
+          
+          <li><a href="#method-c-get_app_info_from_options">::get_app_info_from_options</a></li>
+          
+          <li><a href="#method-c-get_app_name_from_tar">::get_app_name_from_tar</a></li>
+          
+          <li><a href="#method-c-get_app_name_via_xml">::get_app_name_via_xml</a></li>
+          
+          <li><a href="#method-c-get_app_name_via_yaml">::get_app_name_via_yaml</a></li>
+          
+          <li><a href="#method-c-get_credentials">::get_credentials</a></li>
+          
+          <li><a href="#method-c-get_db_master_ip">::get_db_master_ip</a></li>
+          
+          <li><a href="#method-c-get_email">::get_email</a></li>
+          
+          <li><a href="#method-c-get_from_yaml">::get_from_yaml</a></li>
+          
+          <li><a href="#method-c-get_head_node_ip">::get_head_node_ip</a></li>
+          
+          <li><a href="#method-c-get_infrastructure">::get_infrastructure</a></li>
+          
+          <li><a href="#method-c-get_ips_from_yaml">::get_ips_from_yaml</a></li>
+          
+          <li><a href="#method-c-get_line_from_stdin_no_echo">::get_line_from_stdin_no_echo</a></li>
+          
+          <li><a href="#method-c-get_load_balancer_id">::get_load_balancer_id</a></li>
+          
+          <li><a href="#method-c-get_load_balancer_ip">::get_load_balancer_ip</a></li>
+          
+          <li><a href="#method-c-get_login_ip">::get_login_ip</a></li>
+          
+          <li><a href="#method-c-get_password">::get_password</a></li>
+          
+          <li><a href="#method-c-get_random_alphanumeric">::get_random_alphanumeric</a></li>
+          
+          <li><a href="#method-c-get_remote_appscale_home">::get_remote_appscale_home</a></li>
+          
+          <li><a href="#method-c-get_role_from_nodes">::get_role_from_nodes</a></li>
+          
+          <li><a href="#method-c-get_secret_key">::get_secret_key</a></li>
+          
+          <li><a href="#method-c-get_table">::get_table</a></li>
+          
+          <li><a href="#method-c-get_username_from_options">::get_username_from_options</a></li>
+          
+          <li><a href="#method-c-is_port_open-3F">::is_port_open?</a></li>
+          
+          <li><a href="#method-c-make_appscale_directory">::make_appscale_directory</a></li>
+          
+          <li><a href="#method-c-move_app">::move_app</a></li>
+          
+          <li><a href="#method-c-read_file">::read_file</a></li>
+          
+          <li><a href="#method-c-read_nodes_json">::read_nodes_json</a></li>
+          
+          <li><a href="#method-c-require_commands">::require_commands</a></li>
+          
+          <li><a href="#method-c-rsync_files">::rsync_files</a></li>
+          
+          <li><a href="#method-c-run_remote_command">::run_remote_command</a></li>
+          
+          <li><a href="#method-c-scp_app_to_ip">::scp_app_to_ip</a></li>
+          
+          <li><a href="#method-c-scp_file">::scp_file</a></li>
+          
+          <li><a href="#method-c-shell">::shell</a></li>
+          
+          <li><a href="#method-c-sleep_until_port_is_closed">::sleep_until_port_is_closed</a></li>
+          
+          <li><a href="#method-c-sleep_until_port_is_open">::sleep_until_port_is_open</a></li>
+          
+          <li><a href="#method-c-start_head_node">::start_head_node</a></li>
+          
+          <li><a href="#method-c-update_appcontroller">::update_appcontroller</a></li>
+          
+          <li><a href="#method-c-update_locations_file">::update_locations_file</a></li>
+          
+          <li><a href="#method-c-user_has_cmd-3F">::user_has_cmd?</a></li>
+          
+          <li><a href="#method-c-validate_app_name">::validate_app_name</a></li>
+          
+          <li><a href="#method-c-wait_for_app_to_start">::wait_for_app_to_start</a></li>
+          
+          <li><a href="#method-c-wait_for_nodes_to_load">::wait_for_nodes_to_load</a></li>
+          
+          <li><a href="#method-c-wait_until_redirect">::wait_until_redirect</a></li>
+          
+          <li><a href="#method-c-warn_on_large_app_size">::warn_on_large_app_size</a></li>
+          
+          <li><a href="#method-c-write_and_copy_node_file">::write_and_copy_node_file</a></li>
+          
+          <li><a href="#method-c-write_file">::write_file</a></li>
+          
+          <li><a href="#method-c-write_node_file">::write_node_file</a></li>
+          
+          <li><a href="#method-c-write_nodes_json">::write_nodes_json</a></li>
+          
+        </ul>
+      </div>
+      
+
+      <!-- Included Modules -->
+      
+    </div>
+
+    <div id="project-metadata">
+      
+      
+      <div id="fileindex-section" class="section project-section">
+        <h3 class="section-header">Files</h3>
+        <ul>
+        
+          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
+        
+        </ul>
+      </div>
+      
+
+      <div id="classindex-section" class="section project-section">
+        <h3 class="section-header">Class/Module Index
+          <span class="search-toggle"><img src="./images/find.png"
+            height="16" width="16" alt="[+]"
+            title="show/hide quicksearch" /></span></h3>
+        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
+        <fieldset>
+          <legend>Quicksearch</legend>
+          <input type="text" name="quicksearch" value=""
+            class="quicksearch-field" />
+        </fieldset>
+        </form>
+
+        <ul class="link-list">
+        
+          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
+        
+          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
+        
+          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
+        
+          <li><a href="./AppScaleException.html">AppScaleException</a></li>
+        
+          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
+        
+          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
+        
+          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
+        
+          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
+        
+          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
+        
+          <li><a href="./GodInterface.html">GodInterface</a></li>
+        
+          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
+        
+          <li><a href="./Node.html">Node</a></li>
+        
+          <li><a href="./NodeLayout.html">NodeLayout</a></li>
+        
+          <li><a href="./Object.html">Object</a></li>
+        
+          <li><a href="./ParseArgs.html">ParseArgs</a></li>
+        
+          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
+        
+          <li><a href="./SimpleNode.html">SimpleNode</a></li>
+        
+          <li><a href="./UsageText.html">UsageText</a></li>
+        
+          <li><a href="./UserAppClient.html">UserAppClient</a></li>
+        
+          <li><a href="./VMTools.html">VMTools</a></li>
+        
+        </ul>
+        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
+      </div>
+
+      
+    </div>
+  </div>
+
+  <div id="documentation">
+    <h1 class="module">CommonFunctions</h1>
+
+    <div id="description">
+      
+    </div>
+
+    <!-- Constants -->
+    
+
+    <!-- Attributes -->
+    
+
+    <!-- Methods -->
+    
+    <div id="public-class-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="clear_app-method" class="method-detail ">
+        <a name="method-c-clear_app"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">clear_app</span><span
+            class="method-args">(app_path, force=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="clear_app-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 188</span>
+def self.clear_app(app_path, force=false)
+  return if !<span class="ruby-constant">File</span>.exists?(app_path)
+  return if app_path !~ <span class="ruby-regexp">/\A\/tmp/</span> and !force
+  path_to_remove = <span class="ruby-constant">File</span>.dirname(app_path)
+  <span class="ruby-constant">FileUtils</span>.rm_rf(path_to_remove, :secure =&gt; true)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="convert_fqdn_to_ip-method" class="method-detail ">
+        <a name="method-c-convert_fqdn_to_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">convert_fqdn_to_ip</span><span
+            class="method-args">(host)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="convert_fqdn_to_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 377</span>
+def self.convert_fqdn_to_ip(host)
+  nslookup = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;nslookup #{host}&quot;)
+  ip = nslookup.scan(/#{host}\nAddress:\s+(#{IP_REGEX})/).flatten.to_s
+  if ip.nil? or ip.empty?
+    raise <span class="ruby-constant">AppScaleException</span>.new(&quot;Couldn't convert #{host} to an IP &quot; +
+      &quot;address. Result of nslookup was \n#{nslookup}&quot;)
+  end
+  return ip
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="create_user-method" class="method-detail ">
+        <a name="method-c-create_user"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">create_user</span><span
+            class="method-args">(user, test, head_node_ip, secret_key, uac, pass)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="create_user-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 245</span>
+def self.create_user(user, test, head_node_ip, secret_key, uac, pass)
+  if pass
+    pass = pass <span class="ruby-comment"># TODO - can we just remove this?</span>
+  elsif options[<span class="ruby-string">'test'</span>]
+    pass = <span class="ruby-string">&quot;aaaaaa&quot;</span>
+  else
+    pass = <span class="ruby-constant">CommonFunctions</span>.get_password
+  end
+
+  encrypted_pass = <span class="ruby-constant">CommonFunctions</span>.encrypt_password(user, pass)
+  uac.commit_new_user(user, encrypted_pass)
+
+  login_ip = <span class="ruby-constant">CommonFunctions</span>.get_login_ip(head_node_ip, secret_key)
+ 
+  <span class="ruby-comment"># create xmpp account</span>
+  <span class="ruby-comment"># for user a@a.a, this translates to a@login_ip</span>
+
+  pre = user.scan(<span class="ruby-regexp">/\A(.*)@/</span>).flatten.to_s
+  xmpp_user = &quot;#{pre}@#{login_ip}&quot;
+  xmpp_pass = <span class="ruby-constant">CommonFunctions</span>.encrypt_password(xmpp_user, pass)
+  uac.commit_new_user(xmpp_user, xmpp_pass)
+  <span class="ruby-constant">Kernel</span>.puts &quot;Your XMPP username is #{xmpp_user}&quot;
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="encrypt_password-method" class="method-detail ">
+        <a name="method-c-encrypt_password"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">encrypt_password</span><span
+            class="method-args">(user, pass)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="encrypt_password-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 388</span>
+def self.encrypt_password(user, pass)
+  <span class="ruby-constant">Digest</span>::<span class="ruby-constant">SHA1</span>.hexdigest(user + pass)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="find_real_ssh_key-method" class="method-detail ">
+        <a name="method-c-find_real_ssh_key"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">find_real_ssh_key</span><span
+            class="method-args">(ssh_keys, host)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="find_real_ssh_key-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 558</span>
+def self.find_real_ssh_key(ssh_keys, host)
+  ssh_keys.each { |key|
+    key = <span class="ruby-constant">File</span>.expand_path(key)
+    return_value = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;ssh -i #{key} #{SSH_OPTIONS} 2&gt;&amp;1 root@#{host} 'touch /tmp/foo'; echo $? &quot;).chomp
+    if return_value == <span class="ruby-string">&quot;0&quot;</span>
+      return key
+    end
+  }
+  
+  raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">NO_SSH_KEY_FOUND</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_all_public_ips-method" class="method-detail ">
+        <a name="method-c-get_all_public_ips"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_all_public_ips</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_all_public_ips-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 751</span>
+def self.get_all_public_ips(keyname, required=true)
+  ips = []
+  nodes = self.read_nodes_json(keyname)
+  nodes.each { |node|
+    ips &lt;&lt; node[<span class="ruby-string">'public_ip'</span>]
+  }
+  return ips
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_app_info-method" class="method-detail ">
+        <a name="method-c-get_app_info"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_app_info</span><span
+            class="method-args">(fullpath, app_file)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_app_info-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 907</span>
+def self.get_app_info(fullpath, app_file)
+  if !<span class="ruby-constant">File</span>.exists?(fullpath)
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(<span class="ruby-string">&quot;AppEngine file not found&quot;</span>)
+  end
+  filename = fullpath.scan(<span class="ruby-regexp">/\/?([\w\.]+\Z)/</span>).flatten.to_s
+
+  temp_dir = <span class="ruby-constant">CommonFunctions</span>.get_random_alphanumeric
+  <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir}&quot;, :secure =&gt; true)
+  <span class="ruby-constant">FileUtils</span>.mkdir_p(&quot;/tmp/#{temp_dir}&quot;)
+
+  <span class="ruby-constant">CommonFunctions</span>.move_app(temp_dir, filename, app_file, fullpath)
+  app_yaml_loc = app_file
+  if !<span class="ruby-constant">File</span>.exists?(&quot;/tmp/#{temp_dir}/#{app_file}&quot;)
+    <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir}&quot;, :secure =&gt; true)
+    return nil, nil, nil
+  end
+
+  if app_file == <span class="ruby-constant">PYTHON_CONFIG</span>
+    app_name = <span class="ruby-constant">CommonFunctions</span>.get_app_name_via_yaml(temp_dir, app_yaml_loc)
+    language = <span class="ruby-string">&quot;python&quot;</span>
+    if <span class="ruby-constant">File</span>.directory?(fullpath)
+      temp_dir2 = <span class="ruby-constant">CommonFunctions</span>.get_random_alphanumeric
+      <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir2}&quot;, :secure =&gt; true)
+      <span class="ruby-constant">FileUtils</span>.mkdir_p(&quot;/tmp/#{temp_dir2}&quot;)
+      <span class="ruby-constant">CommonFunctions</span>.shell(&quot;cd /tmp/#{temp_dir}; tar -czf ../#{temp_dir2}/#{app_name}.tar.gz .&quot;)
+      file = &quot;/tmp/#{temp_dir2}/#{app_name}.tar.gz&quot;
+    else
+      file = fullpath
+    end
+  elsif app_file == <span class="ruby-constant">JAVA_CONFIG</span>
+    app_name = <span class="ruby-constant">CommonFunctions</span>.get_app_name_via_xml(temp_dir, app_yaml_loc)
+    language = <span class="ruby-string">&quot;java&quot;</span>
+    <span class="ruby-comment"># don't remove user's jar files, they may have their own jars in it</span>
+    <span class="ruby-comment">#FileUtils.rm_rf(&quot;/tmp/#{temp_dir}/war/WEB-INF/lib/&quot;, :secure =&gt; true)</span>
+    <span class="ruby-constant">FileUtils</span>.mkdir_p(&quot;/tmp/#{temp_dir}/war/WEB-INF/lib&quot;)
+    temp_dir2 = <span class="ruby-constant">CommonFunctions</span>.get_random_alphanumeric
+    <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir2}&quot;, :secure =&gt; true)
+    <span class="ruby-constant">FileUtils</span>.mkdir_p(&quot;/tmp/#{temp_dir2}&quot;)
+    <span class="ruby-constant">FileUtils</span>.rm_f(&quot;/tmp/#{temp_dir}/#{filename}&quot;)
+    <span class="ruby-constant">CommonFunctions</span>.shell(&quot;cd /tmp/#{temp_dir}; tar -czf ../#{temp_dir2}/#{app_name}.tar.gz .&quot;)
+    file = &quot;/tmp/#{temp_dir2}/#{app_name}.tar.gz&quot;
+  else
+    <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir}&quot;, :secure =&gt; true)
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(&quot;app_name was #{app_file}, &quot; +
+      <span class="ruby-string">&quot;which was not a recognized value.&quot;</span>)
+  end
+
+  if app_name.nil?
+    <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir}&quot;, :secure =&gt; true)
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(<span class="ruby-string">&quot;AppEngine tar file is invalid - &quot;</span> +
+      &quot;Doesn't have an app name in #{app_file}&quot;)
+  end
+
+  <span class="ruby-constant">FileUtils</span>.rm_rf(&quot;/tmp/#{temp_dir}&quot;, :secure =&gt; true)
+  <span class="ruby-constant">CommonFunctions</span>.warn_on_large_app_size(file)
+  return app_name, file, language 
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_app_info_from_options-method" class="method-detail ">
+        <a name="method-c-get_app_info_from_options"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_app_info_from_options</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_app_info_from_options-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 852</span>
+def self.get_app_info_from_options(options)
+  file_location = options[<span class="ruby-string">'file_location'</span>]
+  table = options[<span class="ruby-string">'table'</span>]
+
+  if file_location.nil?
+    apps_to_start = [<span class="ruby-string">&quot;none&quot;</span>]
+    return apps_to_start, {}
+  else
+    app_info = <span class="ruby-constant">CommonFunctions</span>.get_app_name_from_tar(file_location)
+    apps_to_start = [<span class="ruby-constant">CommonFunctions</span>.validate_app_name(app_info[:app_name], table)]
+    return apps_to_start, app_info
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_app_name_from_tar-method" class="method-detail ">
+        <a name="method-c-get_app_name_from_tar"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_app_name_from_tar</span><span
+            class="method-args">(fullpath)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_app_name_from_tar-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 867</span>
+def self.get_app_name_from_tar(fullpath)
+  app_name, file, language = <span class="ruby-constant">CommonFunctions</span>.get_app_info(fullpath, <span class="ruby-constant">PYTHON_CONFIG</span>)
+
+  if app_name.nil? or file.nil? or language.nil?
+    app_name, file, language = <span class="ruby-constant">CommonFunctions</span>.get_app_info(fullpath, <span class="ruby-constant">JAVA_CONFIG</span>)
+  end
+
+  if app_name.nil? or file.nil? or language.nil?
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">NO_CONFIG_FILE</span>)
+  end
+
+  return {:app_name =&gt; app_name, :file =&gt; file, :language =&gt; language}
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_app_name_via_xml-method" class="method-detail ">
+        <a name="method-c-get_app_name_via_xml"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_app_name_via_xml</span><span
+            class="method-args">(temp_dir, xml_loc)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_app_name_via_xml-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 980</span>
+def self.get_app_name_via_xml(temp_dir, xml_loc)
+  xml_loc = <span class="ruby-string">&quot;/tmp/&quot;</span> + temp_dir + <span class="ruby-string">&quot;/&quot;</span> + xml_loc
+  web_xml_contents = (<span class="ruby-constant">File</span>.open(xml_loc) { |f| f.read }).chomp
+  app_name = web_xml_contents.scan(<span class="ruby-regexp">/&lt;application&gt;([\w\d-]+)&lt;\/application&gt;/</span>).flatten.to_s
+  app_name = nil if app_name == <span class="ruby-string">&quot;&quot;</span>
+  return app_name
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_app_name_via_yaml-method" class="method-detail ">
+        <a name="method-c-get_app_name_via_yaml"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_app_name_via_yaml</span><span
+            class="method-args">(temp_dir, app_yaml_loc)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_app_name_via_yaml-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 966</span>
+def self.get_app_name_via_yaml(temp_dir, app_yaml_loc)
+  app_yaml_loc = <span class="ruby-string">&quot;/tmp/&quot;</span> + temp_dir + <span class="ruby-string">&quot;/&quot;</span> + app_yaml_loc
+  
+  begin
+    tree = <span class="ruby-constant">YAML</span>.load_file(app_yaml_loc.chomp)
+  rescue <span class="ruby-constant">ArgumentError</span>
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">MALFORMED_YAML</span>)
+  end
+  
+  app_name = <span class="ruby-constant">String</span>(tree[<span class="ruby-string">&quot;application&quot;</span>])
+  return app_name
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_credentials-method" class="method-detail ">
+        <a name="method-c-get_credentials"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_credentials</span><span
+            class="method-args">(testing)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_credentials-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 236</span>
+def self.get_credentials(testing)
+  if testing
+    return <span class="ruby-constant">DEFAULT_USERNAME</span>, <span class="ruby-constant">DEFAULT_PASSWORD</span>
+  else
+    return <span class="ruby-constant">CommonFunctions</span>.get_email, <span class="ruby-constant">CommonFunctions</span>.get_password
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_db_master_ip-method" class="method-detail ">
+        <a name="method-c-get_db_master_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_db_master_ip</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_db_master_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 761</span>
+def self.get_db_master_ip(keyname, required=true)
+  return self.get_role_from_nodes(keyname, <span class="ruby-string">'db_master'</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_email-method" class="method-detail ">
+        <a name="method-c-get_email"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_email</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_email-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 635</span>
+def self.get_email
+  email = nil
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;\nThis AppScale instance is linked to an e-mail address giving it administrator privileges.&quot;</span>
+  
+  loop {
+    <span class="ruby-constant">Kernel</span>.print <span class="ruby-string">&quot;Enter your desired administrator e-mail address: &quot;</span>
+    <span class="ruby-constant">STDOUT</span>.flush
+    email = <span class="ruby-constant">STDIN</span>.gets.chomp
+    
+    if email =~ <span class="ruby-constant">EMAIL_REGEX</span>
+      break
+    else
+      <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;The response you typed in was not an e-mail address. Please try again.\n\n&quot;</span>
+    end
+  }
+  
+  return email
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_from_yaml-method" class="method-detail ">
+        <a name="method-c-get_from_yaml"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_from_yaml</span><span
+            class="method-args">(keyname, tag, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_from_yaml-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 692</span>
+def self.get_from_yaml(keyname, tag, required=true)
+  location_file = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/locations-#{keyname}.yaml&quot;)
+
+  if !<span class="ruby-constant">File</span>.exists?(location_file)
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;An AppScale instance is not currently &quot;</span> +
+      &quot;running with the provided keyname, \&quot;#{keyname}\&quot;.&quot;)
+  end
+  
+  begin
+    tree = <span class="ruby-constant">YAML</span>.load_file(location_file)
+  rescue <span class="ruby-constant">ArgumentError</span>
+    if required
+      raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-constant">MALFORMED_YAML</span>)
+    else
+      return nil
+    end
+  end
+  
+  if !tree
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;The location file is in the wrong format.&quot;</span>)
+  end
+
+  value = tree[tag]
+
+  if value.nil? and required
+    raise <span class="ruby-constant">AppScaleException</span>.new(&quot;The location file did not contain a #{tag} tag.&quot;)
+  end
+
+  return value
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_head_node_ip-method" class="method-detail ">
+        <a name="method-c-get_head_node_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_head_node_ip</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_head_node_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 766</span>
+def self.get_head_node_ip(keyname, required=true)
+  return self.get_role_from_nodes(keyname, <span class="ruby-string">'shadow'</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_infrastructure-method" class="method-detail ">
+        <a name="method-c-get_infrastructure"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_infrastructure</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_infrastructure-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 776</span>
+def self.get_infrastructure(keyname, required=true)
+  <span class="ruby-constant">CommonFunctions</span>.get_from_yaml(keyname, :infrastructure)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_ips_from_yaml-method" class="method-detail ">
+        <a name="method-c-get_ips_from_yaml"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_ips_from_yaml</span><span
+            class="method-args">(ips)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_ips_from_yaml-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 217</span>
+def self.get_ips_from_yaml(ips)
+  return <span class="ruby-string">&quot;using_tools&quot;</span> if ips.nil?
+
+  ips_to_use = []
+  if !ips[:servers].nil?
+    ips[:servers].each { |ip|
+      if ip =~ <span class="ruby-constant">IP_REGEX</span>
+        ips_to_use &lt;&lt; ip
+      else
+        ips_to_use &lt;&lt; <span class="ruby-constant">CommonFunctions</span>.convert_fqdn_to_ip(ip)
+      end
+    }
+    ips_to_use = ips_to_use.join(<span class="ruby-string">&quot;:&quot;</span>)
+  end
+  
+  return ips_to_use
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_line_from_stdin_no_echo-method" class="method-detail ">
+        <a name="method-c-get_line_from_stdin_no_echo"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_line_from_stdin_no_echo</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_line_from_stdin_no_echo-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 682</span>
+def self.get_line_from_stdin_no_echo
+  state = <span class="ruby-constant">CommonFunctions</span>.shell(<span class="ruby-string">&quot;stty -g&quot;</span>)
+  system <span class="ruby-string">&quot;stty -echo&quot;</span> <span class="ruby-comment"># Turn off character echoing</span>
+  <span class="ruby-constant">STDOUT</span>.flush
+  line = <span class="ruby-constant">STDIN</span>.gets.chomp
+  system &quot;stty #{state}&quot;
+  return line
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_load_balancer_id-method" class="method-detail ">
+        <a name="method-c-get_load_balancer_id"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_load_balancer_id</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_load_balancer_id-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 741</span>
+def self.get_load_balancer_id(keyname, required=true)
+  return <span class="ruby-constant">CommonFunctions</span>.get_from_yaml(keyname, :instance_id)  
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_load_balancer_ip-method" class="method-detail ">
+        <a name="method-c-get_load_balancer_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_load_balancer_ip</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_load_balancer_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 736</span>
+def self.get_load_balancer_ip(keyname, required=true)
+  return self.get_role_from_nodes(keyname, <span class="ruby-string">'load_balancer'</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_login_ip-method" class="method-detail ">
+        <a name="method-c-get_login_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_login_ip</span><span
+            class="method-args">(head_node_ip, secret_key)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_login_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 174</span>
+def self.get_login_ip(head_node_ip, secret_key)
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret_key)
+  all_nodes = acc.get_all_public_ips()
+  
+  all_nodes.each { |node|
+    acc_new = <span class="ruby-constant">AppControllerClient</span>.new(node, secret_key)
+    roles = acc_new.status()
+    return node if roles.match(<span class="ruby-regexp">/Is currently:(.*)login/</span>)
+  }
+
+  raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;Unable to find login ip address!&quot;</span>)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_password-method" class="method-detail ">
+        <a name="method-c-get_password"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_password</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_password-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 655</span>
+def self.get_password()
+  pass = nil
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;\nThe new administrator password must be at least six characters long and can include non-alphanumeric characters.&quot;</span>
+  
+  loop {
+    <span class="ruby-constant">Kernel</span>.print <span class="ruby-string">&quot;Enter your new password: &quot;</span>
+    new_pass = self.get_line_from_stdin_no_echo()
+    <span class="ruby-constant">Kernel</span>.print <span class="ruby-string">&quot;\nEnter again to verify: &quot;</span>
+    verify_pass = self.get_line_from_stdin_no_echo()
+    
+    if new_pass == verify_pass
+      pass = new_pass
+      
+      if pass =~ <span class="ruby-constant">PASSWORD_REGEX</span>
+        break
+      else
+        <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;\n\nThe password you typed in was not at least six characters long. Please try again.\n\n&quot;</span>
+      end
+    else
+      <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;\n\nPasswords entered do not match. Please try again.\n\n&quot;</span>
+    end
+  }
+  
+  return pass
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_random_alphanumeric-method" class="method-detail ">
+        <a name="method-c-get_random_alphanumeric"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_random_alphanumeric</span><span
+            class="method-args">(length=10)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_random_alphanumeric-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 839</span>
+def self.get_random_alphanumeric(length=10)
+  random = <span class="ruby-string">&quot;&quot;</span>
+  possible = <span class="ruby-string">&quot;0123456789abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>
+  possibleLength = possible.length
+
+  length.times { |index|
+    random &lt;&lt; possible[rand(possibleLength)]
+  }
+
+  return random
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_remote_appscale_home-method" class="method-detail ">
+        <a name="method-c-get_remote_appscale_home"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_remote_appscale_home</span><span
+            class="method-args">(ip, key)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_remote_appscale_home-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 459</span>
+def self.get_remote_appscale_home(ip, key)
+  cat = <span class="ruby-string">&quot;cat /etc/appscale/home&quot;</span>
+  remote_cmd = &quot;ssh -i #{key} #{SSH_OPTIONS} 2&gt;&amp;1 root@#{ip} '#{cat}'&quot;
+  possible_home = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{remote_cmd}&quot;).chomp
+  if possible_home.nil? or possible_home.empty?
+    return <span class="ruby-string">&quot;/root/appscale/&quot;</span>
+  else
+    return possible_home
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_role_from_nodes-method" class="method-detail ">
+        <a name="method-c-get_role_from_nodes"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_role_from_nodes</span><span
+            class="method-args">(keyname, role)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_role_from_nodes-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 724</span>
+def self.get_role_from_nodes(keyname, role)
+  nodes = self.read_nodes_json(keyname)
+  nodes.each { |node|
+    if node[<span class="ruby-string">'jobs'</span>].include?(role)
+      return node[<span class="ruby-string">'public_ip'</span>]
+    end
+  }
+
+  return <span class="ruby-string">&quot;&quot;</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_secret_key-method" class="method-detail ">
+        <a name="method-c-get_secret_key"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_secret_key</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_secret_key-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 771</span>
+def self.get_secret_key(keyname, required=true)
+  <span class="ruby-constant">CommonFunctions</span>.get_from_yaml(keyname, :secret)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_table-method" class="method-detail ">
+        <a name="method-c-get_table"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_table</span><span
+            class="method-args">(keyname, required=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_table-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 746</span>
+def self.get_table(keyname, required=true)
+  return <span class="ruby-constant">CommonFunctions</span>.get_from_yaml(keyname, :table, required)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="get_username_from_options-method" class="method-detail ">
+        <a name="method-c-get_username_from_options"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">get_username_from_options</span><span
+            class="method-args">(options)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="get_username_from_options-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 624</span>
+def self.get_username_from_options(options)
+  if options[<span class="ruby-string">'test'</span>]
+    return <span class="ruby-constant">DEFAULT_USERNAME</span>
+  elsif options[<span class="ruby-string">'email'</span>]
+    return options[<span class="ruby-string">'email'</span>]
+  else
+    return <span class="ruby-constant">CommonFunctions</span>.get_email
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="is_port_open-3F-method" class="method-detail ">
+        <a name="method-c-is_port_open-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">is_port_open?</span><span
+            class="method-args">(ip, port, use_ssl=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="is_port_open-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 409</span>
+def self.is_port_open?(ip, port, use_ssl=false)
+  begin
+    <span class="ruby-constant">Timeout</span>::timeout(1) do
+      begin
+        sock = <span class="ruby-constant">TCPSocket</span>.new(ip, port)
+        if use_ssl
+          ssl_context = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">SSL</span>::<span class="ruby-constant">SSLContext</span>.new() 
+          unless ssl_context.verify_mode 
+            ssl_context.verify_mode = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">SSL</span>::<span class="ruby-constant">VERIFY_NONE</span> 
+          end 
+          sslsocket = <span class="ruby-constant">OpenSSL</span>::<span class="ruby-constant">SSL</span>::<span class="ruby-constant">SSLSocket</span>.new(sock, ssl_context) 
+          sslsocket.sync_close = true 
+          sslsocket.connect          
+        end
+        sock.close
+        return true
+      rescue <span class="ruby-constant">Exception</span>
+        return false
+      end
+    end
+  rescue <span class="ruby-constant">Timeout</span>::<span class="ruby-constant">Error</span>
+  end
+
+  return false
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="make_appscale_directory-method" class="method-detail ">
+        <a name="method-c-make_appscale_directory"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">make_appscale_directory</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="make_appscale_directory-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 781</span>
+def self.make_appscale_directory()
+  <span class="ruby-comment"># AppScale generates private keys for each cloud that machines are </span>
+  <span class="ruby-comment"># running in. It stores this data (and a YAML file detailing IP address </span>
+  <span class="ruby-comment"># mappings) in ~/.appscale - create this location if it doesn't exist.</span>
+  appscale_path = <span class="ruby-constant">File</span>.expand_path(<span class="ruby-string">&quot;~/.appscale&quot;</span>)
+  if !<span class="ruby-constant">File</span>.exists?(appscale_path)
+    <span class="ruby-constant">FileUtils</span>.mkdir(appscale_path)
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="move_app-method" class="method-detail ">
+        <a name="method-c-move_app"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">move_app</span><span
+            class="method-args">(temp_dir, filename, app_file, fullpath)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="move_app-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 882</span>
+def self.move_app(temp_dir, filename, app_file, fullpath)
+  if <span class="ruby-constant">File</span>.directory?(fullpath)
+    <span class="ruby-constant">CommonFunctions</span>.shell(&quot;cp -r #{fullpath}/* /tmp/#{temp_dir}/&quot;)
+    return
+  else
+    <span class="ruby-constant">FileUtils</span>.cp(fullpath, &quot;/tmp/#{temp_dir}/#{filename}&quot;)
+    <span class="ruby-constant">FileUtils</span>.rm_f(&quot;/tmp/#{temp_dir}/#{app_file}&quot;)
+    tar_file = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;cd /tmp/#{temp_dir}; tar zxvfm #{filename} 2&gt;&amp;1; echo $?&quot;).chomp
+    tar_ret_val = tar_file.scan(<span class="ruby-regexp">/\d+\Z/</span>).to_s
+    if tar_ret_val != <span class="ruby-string">&quot;0&quot;</span>
+      raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;Untar'ing the given tar file in /tmp failed&quot;</span>)
+    end
+  end
+  return
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="read_file-method" class="method-detail ">
+        <a name="method-c-read_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">read_file</span><span
+            class="method-args">(location, chomp=true)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>A convenience function that returns a file’s contents as a string.</p>
+          
+
+          
+          <div class="method-source-code"
+            id="read_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 90</span>
+def self.read_file(location, chomp=true)
+  file = <span class="ruby-constant">File</span>.open(location) { |f| f.read }
+  if chomp
+    return file.chomp
+  else
+    return file
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="read_nodes_json-method" class="method-detail ">
+        <a name="method-c-read_nodes_json"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">read_nodes_json</span><span
+            class="method-args">(keyname)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>Reads the JSON file that stores information about which roles run on which
+nodes.</p>
+          
+
+          
+          <div class="method-source-code"
+            id="read_nodes_json-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 794</span>
+def self.read_nodes_json(keyname)
+  filename = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/locations-#{keyname}.json&quot;)
+  return <span class="ruby-constant">JSON</span>.load(self.read_file(filename))
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="require_commands-method" class="method-detail ">
+        <a name="method-c-require_commands"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">require_commands</span><span
+            class="method-args">(commands)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="require_commands-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 366</span>
+def self.require_commands(commands)
+  commands.each { |cmd|
+    if !<span class="ruby-constant">CommonFunctions</span>.user_has_cmd?(cmd)
+      raise <span class="ruby-constant">BadConfigurationException</span>.new(&quot;You do not have the '#{cmd}' &quot; +
+        <span class="ruby-string">&quot;command in your PATH. Please ensure that it is in your path and &quot;</span> +
+        <span class="ruby-string">&quot;try again.&quot;</span>)
+    end
+  }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="rsync_files-method" class="method-detail ">
+        <a name="method-c-rsync_files"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">rsync_files</span><span
+            class="method-args">(dest_ip, ssh_key, local)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>Uses rsync to copy over a copy of the AppScale main codebase (e.g., not the
+AppScale Tools) from this machine to a remote machine. TODO(cgb): This
+function doesn’t copy files in the main directory, like the firewall
+rules. It should be changed accordingly.</p>
+          
+
+          
+          <div class="method-source-code"
+            id="rsync_files-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 112</span>
+def self.rsync_files(dest_ip, ssh_key, local)
+  local = <span class="ruby-constant">File</span>.expand_path(local)
+  controller = &quot;#{local}/AppController&quot;
+  server = &quot;#{local}/AppServer&quot;
+  loadbalancer = &quot;#{local}/AppLoadBalancer&quot;
+  monitoring = &quot;#{local}/AppMonitoring&quot;
+  appdb = &quot;#{local}/AppDB&quot;
+  neptune = &quot;#{local}/Neptune&quot;
+  loki = &quot;#{local}/Loki&quot;
+
+  if !<span class="ruby-constant">File</span>.exists?(controller)
+    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The location you &quot;</span> +
+      &quot;specified to rsync from, #{local}, doesn't exist or contain &quot; +
+      <span class="ruby-string">&quot;AppScale data.&quot;</span>)
+  end
+
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController&quot;)
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer&quot;)
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer&quot;)
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring&quot;)
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB&quot;)
+  self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune&quot;)
+  <span class="ruby-comment">#self.shell(&quot;rsync -e 'ssh -i #{ssh_key}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki&quot;)</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="run_remote_command-method" class="method-detail ">
+        <a name="method-c-run_remote_command"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">run_remote_command</span><span
+            class="method-args">(ip, command, public_key_loc, want_output)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="run_remote_command-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 436</span>
+def self.run_remote_command(ip, command, public_key_loc, want_output)
+  if public_key_loc.class == <span class="ruby-constant">Array</span>
+    public_key_loc.each { |key|
+      key = <span class="ruby-constant">File</span>.expand_path(key)
+    }
+
+    remote_cmd = &quot;ssh -i #{public_key_loc.join(' -i ')} #{SSH_OPTIONS} 2&gt;&amp;1 root@#{ip} '#{command}&quot;
+  else
+    public_key_loc = <span class="ruby-constant">File</span>.expand_path(public_key_loc)
+    remote_cmd = &quot;ssh -i #{public_key_loc} #{SSH_OPTIONS} root@#{ip} '#{command} &quot;
+  end
+  
+  if want_output
+    remote_cmd &lt;&lt; &quot;&gt; /tmp/#{ip}.log 2&gt;&amp;1 &amp;' &amp;&quot;
+  else
+    remote_cmd &lt;&lt; <span class="ruby-string">&quot;&gt; /dev/null 2&gt;&amp;1 &amp;' &amp;&quot;</span>
+  end
+
+  <span class="ruby-constant">Kernel</span>.system remote_cmd
+  return remote_cmd
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="scp_app_to_ip-method" class="method-detail ">
+        <a name="method-c-scp_app_to_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">scp_app_to_ip</span><span
+            class="method-args">(app_name, user, language, keyname, head_node_ip, file_location, uac)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="scp_app_to_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 270</span>
+def self.scp_app_to_ip(app_name, user, language, keyname, head_node_ip,
+  file_location, uac)
+
+  <span class="ruby-constant">Kernel</span>.puts &quot;Uploading #{app_name}...&quot;
+  uac.commit_new_app_name(user, app_name, language)
+
+  local_file_path = <span class="ruby-constant">File</span>.expand_path(file_location)
+
+  app_dir = &quot;/var/apps/#{app_name}/app&quot;
+  remote_file_path = &quot;#{app_dir}/#{app_name}.tar.gz&quot;
+  make_app_dir = &quot;mkdir -p #{app_dir}&quot;
+  true_key = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{keyname}.key&quot;)
+  
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Creating remote directory to copy app into&quot;</span>
+  <span class="ruby-constant">CommonFunctions</span>.run_remote_command(head_node_ip,
+    make_app_dir, true_key, false)
+  <span class="ruby-constant">Kernel</span>.sleep(1)
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Copying over app&quot;</span>
+  <span class="ruby-constant">CommonFunctions</span>.scp_file(local_file_path, remote_file_path,
+    head_node_ip, true_key)
+
+  return remote_file_path
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="scp_file-method" class="method-detail ">
+        <a name="method-c-scp_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">scp_file</span><span
+            class="method-args">(local_file_loc, remote_file_loc, target_ip, public_key_loc)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="scp_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 571</span>
+def self.scp_file(local_file_loc, remote_file_loc, target_ip, public_key_loc)
+  cmd = <span class="ruby-string">&quot;&quot;</span>
+  local_file_loc = <span class="ruby-constant">File</span>.expand_path(local_file_loc)
+  retval_file = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/retval-#{rand()}&quot;)
+ 
+  if public_key_loc.class == <span class="ruby-constant">Array</span>
+    public_key_loc.each { |key|
+      key = <span class="ruby-constant">File</span>.expand_path(key)
+    }
+    
+    cmd = &quot;scp -i #{public_key_loc.join(' -i ')} #{SSH_OPTIONS} 2&gt;&amp;1 #{local_file_loc} root@#{target_ip}:#{remote_file_loc}&quot;
+  else
+    public_key_loc = <span class="ruby-constant">File</span>.expand_path(public_key_loc)
+    cmd = &quot;scp -i #{public_key_loc} #{SSH_OPTIONS} 2&gt;&amp;1 #{local_file_loc} root@#{target_ip}:#{remote_file_loc}&quot;
+  end
+
+  cmd &lt;&lt; &quot;; echo $? &gt; #{retval_file}&quot;
+
+  <span class="ruby-constant">FileUtils</span>.rm_f(retval_file)
+
+  begin
+    <span class="ruby-constant">Timeout</span>::timeout(<span class="ruby-constant">INFINITY</span>) { <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{cmd}&quot;) }
+  rescue <span class="ruby-constant">Timeout</span>::<span class="ruby-constant">Error</span>
+    raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;Remotely copying over files failed. Is &quot;</span> +
+      <span class="ruby-string">&quot;the destination machine on and reachable from this computer? We &quot;</span> +
+      &quot;tried the following command:\n\n#{cmd}&quot;)
+  end
+
+  loop {
+    break if <span class="ruby-constant">File</span>.exists?(retval_file)
+    <span class="ruby-constant">Kernel</span>.sleep(5)
+  }
+
+  retval = (<span class="ruby-constant">File</span>.open(retval_file) { |f| f.read }).chomp
+
+  fails = 0
+  loop {
+    break if retval == <span class="ruby-string">&quot;0&quot;</span>
+    <span class="ruby-constant">Kernel</span>.puts &quot;\n\n[#{cmd}] returned #{retval} instead of 0 as expected. Will try to copy again momentarily...&quot;
+    fails += 1
+    if fails &gt;= 5
+      raise <span class="ruby-constant">AppScaleException</span>.new(<span class="ruby-string">&quot;SCP failed&quot;</span>)
+    end
+    <span class="ruby-constant">Kernel</span>.sleep(1)
+    <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{cmd}&quot;)
+    retval = (<span class="ruby-constant">File</span>.open(retval_file) { |f| f.read }).chomp
+  }
+
+  <span class="ruby-constant">FileUtils</span>.rm_f(retval_file)
+  return cmd
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="shell-method" class="method-detail ">
+        <a name="method-c-shell"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">shell</span><span
+            class="method-args">(command)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>cgb: added in shell function for backticks so that we can unit test it
+Flexmock doesn’t like backticks since its name is non-alphanumeric e.g.,
+its name is Kernel:`</p>
+          
+
+          
+          <div class="method-source-code"
+            id="shell-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 103</span>
+def self.shell(command)
+  `#{command}`
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="sleep_until_port_is_closed-method" class="method-detail ">
+        <a name="method-c-sleep_until_port_is_closed"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">sleep_until_port_is_closed</span><span
+            class="method-args">(ip, port, use_ssl=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="sleep_until_port_is_closed-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 401</span>
+def self.sleep_until_port_is_closed(ip, port, use_ssl=false)
+  loop {
+    return unless <span class="ruby-constant">CommonFunctions</span>.is_port_open?(ip, port, use_ssl)
+    <span class="ruby-constant">Kernel</span>.sleep(1)
+  }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="sleep_until_port_is_open-method" class="method-detail ">
+        <a name="method-c-sleep_until_port_is_open"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">sleep_until_port_is_open</span><span
+            class="method-args">(ip, port, use_ssl=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="sleep_until_port_is_open-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 393</span>
+def self.sleep_until_port_is_open(ip, port, use_ssl=false)
+  loop {
+    return if <span class="ruby-constant">CommonFunctions</span>.is_port_open?(ip, port, use_ssl)
+    <span class="ruby-constant">Kernel</span>.sleep(1)
+  }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="start_head_node-method" class="method-detail ">
+        <a name="method-c-start_head_node"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">start_head_node</span><span
+            class="method-args">(options, node_layout, apps_to_start)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="start_head_node-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 471</span>
+def self.start_head_node(options, node_layout, apps_to_start)
+  <span class="ruby-comment"># since we changed the key's name sometimes it works with storing the key</span>
+  <span class="ruby-comment"># in ssh.key and sometimes it needs to be in keyname.key{.private}</span>
+  <span class="ruby-comment"># always do both just in case</span>
+
+  <span class="ruby-comment"># TODO: check here to make sure that if hybrid, the keyname is free</span>
+  <span class="ruby-comment"># in all clouds specified</span>
+
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  named_key_loc = &quot;~/.appscale/#{keyname}.key&quot;
+  named_backup_key_loc = &quot;~/.appscale/#{keyname}.private&quot;
+  ssh_key_location = named_key_loc
+  ssh_keys = [ssh_key_location, named_key_loc, named_backup_key_loc]
+  secret_key, secret_key_location = <span class="ruby-constant">EncryptionHelper</span>.generate_secret_key(keyname)
+  self.verbose(&quot;New secret key is #{CommonFunctions.obscure_string(secret_key)}&quot;, options[<span class="ruby-string">'verbose'</span>])
+
+  <span class="ruby-comment"># TODO: serialize via json instead of this hacky way</span>
+  ips_hash = node_layout.to_hash
+  ips_to_use = ips_hash.map { |node,roles| &quot;#{node}--#{roles}&quot; }.join(<span class="ruby-string">&quot;..&quot;</span>)
+   
+  head_node = node_layout.head_node
+  infrastructure = options[<span class="ruby-string">'infrastructure'</span>]
+  if infrastructure == <span class="ruby-string">&quot;hybrid&quot;</span>   
+    head_node_infra = <span class="ruby-constant">VMTools</span>.lookup_cloud_env(head_node.cloud)
+    <span class="ruby-constant">VMTools</span>.set_hybrid_creds(node_layout)
+    machine = <span class="ruby-constant">VMTools</span>.get_hybrid_machine(head_node_infra, <span class="ruby-string">&quot;1&quot;</span>)
+  else
+    head_node_infra = infrastructure
+    machine = options[<span class="ruby-string">'machine'</span>]
+  end
+   
+  locations = <span class="ruby-constant">VMTools</span>.spawn_head_node(head_node, head_node_infra, keyname,
+    ssh_key_location, ssh_keys, options[<span class="ruby-string">'force'</span>], machine,
+    options[<span class="ruby-string">'instance_type'</span>], options[<span class="ruby-string">'group'</span>], options[<span class="ruby-string">'verbose'</span>])
+ 
+  head_node_ip = locations.split(<span class="ruby-string">&quot;:&quot;</span>)[0]
+  instance_id = locations.scan(<span class="ruby-regexp">/i-\w+/</span>).flatten.to_s
+  locations = [locations]
+ 
+  true_key = <span class="ruby-constant">CommonFunctions</span>.find_real_ssh_key(ssh_keys, head_node_ip)
+ 
+  self.verbose(&quot;Log in to your head node: ssh -i #{true_key} &quot; +
+    &quot;root@#{head_node_ip}&quot;, options[<span class="ruby-string">'verbose'</span>])
+ 
+  <span class="ruby-constant">CommonFunctions</span>.ensure_image_is_appscale(head_node_ip, true_key)
+  <span class="ruby-constant">CommonFunctions</span>.ensure_db_is_supported(head_node_ip, options[<span class="ruby-string">'table'</span>],
+    true_key)
+ 
+  scp = options[<span class="ruby-string">'scp'</span>]
+  if scp
+    <span class="ruby-constant">Kernel</span>.puts &quot;Copying over local copy of AppScale from #{scp}&quot;
+    <span class="ruby-constant">CommonFunctions</span>.rsync_files(head_node_ip, true_key, scp)
+  end
+ 
+  keypath = true_key.scan(<span class="ruby-regexp">/([\d|\w|\.]+)\Z/</span>).flatten.to_s
+  remote_key_location = &quot;/root/.appscale/#{keyname}.key&quot;
+  <span class="ruby-constant">CommonFunctions</span>.scp_file(true_key, remote_key_location, head_node_ip, true_key)
+ 
+  creds = <span class="ruby-constant">CommonFunctions</span>.generate_appscale_credentials(options, node_layout,
+    head_node_ip, ips_to_use, true_key)
+  self.verbose(<span class="ruby-constant">CommonFunctions</span>.obscure_creds(creds).inspect, options[<span class="ruby-string">'verbose'</span>])
+ 
+  <span class="ruby-constant">Kernel</span>.puts &quot;Head node successfully created at #{head_node_ip}. It is now &quot; +
+    &quot;starting up #{options['table']} via the command line arguments given.&quot;
+ 
+  <span class="ruby-constant">RemoteLogging</span>.remote_post(options[<span class="ruby-string">'max_images'</span>], options[<span class="ruby-string">'table'</span>],
+    infrastructure, <span class="ruby-string">&quot;started headnode&quot;</span>, <span class="ruby-string">&quot;success&quot;</span>)
+ 
+  <span class="ruby-constant">Kernel</span>.sleep(10) <span class="ruby-comment"># sometimes this helps out with ec2 / euca deployments</span>
+    <span class="ruby-comment"># gives them an extra moment to come up and accept scp requests</span>
+ 
+  <span class="ruby-constant">CommonFunctions</span>.copy_keys(secret_key_location, head_node_ip, true_key,
+    options)
+ 
+  <span class="ruby-constant">CommonFunctions</span>.start_appcontroller(head_node_ip, true_key,
+    options[<span class="ruby-string">'verbose'</span>])
+ 
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret_key)
+  creds = creds.to_a.flatten
+  acc.set_parameters(locations, creds, apps_to_start)
+
+  return {:acc =&gt; acc, :head_node_ip =&gt; head_node_ip,
+    :instance_id =&gt; instance_id, :true_key =&gt; true_key,
+    :secret_key =&gt; secret_key}
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="update_appcontroller-method" class="method-detail ">
+        <a name="method-c-update_appcontroller"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">update_appcontroller</span><span
+            class="method-args">(head_node_ip, secret, app_name, remote_file_path)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="update_appcontroller-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 295</span>
+def self.update_appcontroller(head_node_ip, secret, app_name,
+  remote_file_path)
+
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret)
+  acc.done_uploading(app_name, remote_file_path)
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Updating AppController&quot;</span>
+  acc.update([app_name])
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="update_locations_file-method" class="method-detail ">
+        <a name="method-c-update_locations_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">update_locations_file</span><span
+            class="method-args">(keyname, ips=nil)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>This function tries to contact a node in the AppScale deployment to get the
+most up-to-date information on the current state of the deployment (as the
+number of nodes could change, or the roles that nodes have taken on).</p>
+          
+
+          
+          <div class="method-source-code"
+            id="update_locations_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 142</span>
+def self.update_locations_file(keyname, ips=nil)
+  secret = self.get_secret_key(keyname)
+
+  <span class="ruby-comment"># Don't worry about prioritizing the Shadow over any other nodes,</span>
+  <span class="ruby-comment"># as all nodes should be checking ZooKeeper and keeping themselves</span>
+  <span class="ruby-comment"># up-to-date already.</span>
+  new_role_info = nil
+
+  if ips
+    all_ips = ips
+  else
+    all_ips = self.get_all_public_ips(keyname)
+  end
+
+  all_ips.each { |ip|
+    begin
+      acc = <span class="ruby-constant">AppControllerClient</span>.new(ip, secret)
+      new_role_info = acc.get_role_info()
+      break
+    rescue <span class="ruby-constant">Exception</span>
+      <span class="ruby-constant">Kernel</span>.puts(&quot;Couldn't contact AppController at #{ip}, skipping...&quot;)
+    end
+  }
+
+  if new_role_info.nil?
+    abort(<span class="ruby-string">&quot;Couldn't contact any AppControllers - is AppScale running?&quot;</span>)
+  end
+
+  <span class="ruby-constant">CommonFunctions</span>.write_nodes_json(new_role_info, keyname)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="user_has_cmd-3F-method" class="method-detail ">
+        <a name="method-c-user_has_cmd-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">user_has_cmd?</span><span
+            class="method-args">(command)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="user_has_cmd-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 356</span>
+def self.user_has_cmd?(command)
+  output = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;which #{command}&quot;)
+  if output.empty?
+    return false
+  else
+    return true
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="validate_app_name-method" class="method-detail ">
+        <a name="method-c-validate_app_name"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">validate_app_name</span><span
+            class="method-args">(app_name, database)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="validate_app_name-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 196</span>
+def self.validate_app_name(app_name, database)
+  disallowed = [<span class="ruby-string">&quot;none&quot;</span>, <span class="ruby-string">&quot;auth&quot;</span>, <span class="ruby-string">&quot;login&quot;</span>, <span class="ruby-string">&quot;new_user&quot;</span>, <span class="ruby-string">&quot;load_balancer&quot;</span>]
+  if disallowed.include?(app_name)
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(<span class="ruby-string">&quot;App cannot be called &quot;</span> +
+      &quot;'#{not_allowed}' - this is a reserved name.&quot;)
+  end
+
+  if app_name =~ <span class="ruby-regexp">/[^[a-z]-]/</span>
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(<span class="ruby-string">&quot;App name can only contain &quot;</span> +
+      <span class="ruby-string">&quot;numeric and lowercase alphabetical characters.&quot;</span>)
+  end
+
+  if app_name.include?(<span class="ruby-string">&quot;-&quot;</span>) and database == <span class="ruby-string">&quot;hypertable&quot;</span>
+    raise <span class="ruby-constant">AppEngineConfigException</span>.new(<span class="ruby-string">&quot;App name cannot contain &quot;</span> +
+      <span class="ruby-string">&quot;dashes when Hypertable is the underlying database.&quot;</span>) 
+  end
+
+  return app_name
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="wait_for_app_to_start-method" class="method-detail ">
+        <a name="method-c-wait_for_app_to_start"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">wait_for_app_to_start</span><span
+            class="method-args">(head_node_ip, secret, app_name)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="wait_for_app_to_start-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 322</span>
+def self.wait_for_app_to_start(head_node_ip, secret, app_name)
+  acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret)
+
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Please wait for your app to start up.&quot;</span>
+  loop {
+    break if acc.app_is_running?(app_name)
+    <span class="ruby-constant">Kernel</span>.sleep(5)
+  }
+
+  url_suffix = &quot;/apps/#{app_name}&quot;
+  url = &quot;http://#{head_node_ip}#{url_suffix}&quot;
+  <span class="ruby-constant">Kernel</span>.puts &quot;\nYour app can be reached at the following URL: #{url}&quot;
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="wait_for_nodes_to_load-method" class="method-detail ">
+        <a name="method-c-wait_for_nodes_to_load"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">wait_for_nodes_to_load</span><span
+            class="method-args">(head_node_ip, secret)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="wait_for_nodes_to_load-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 304</span>
+def self.wait_for_nodes_to_load(head_node_ip, secret)
+  head_acc = <span class="ruby-constant">AppControllerClient</span>.new(head_node_ip, secret)
+  
+  <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Please wait for AppScale to finish starting up.&quot;</span>
+  all_ips = head_acc.get_all_public_ips()
+  loop {
+    done_starting = true
+    all_ips.each { |ip|
+      acc = <span class="ruby-constant">AppControllerClient</span>.new(ip, secret)
+      if !acc.is_done_loading?
+        done_starting = false
+      end
+    }
+    break if done_starting
+    <span class="ruby-constant">Kernel</span>.sleep(5)
+  }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="wait_until_redirect-method" class="method-detail ">
+        <a name="method-c-wait_until_redirect"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">wait_until_redirect</span><span
+            class="method-args">(host, url_suffix)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="wait_until_redirect-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 337</span>
+def self.wait_until_redirect(host, url_suffix)
+  uri = &quot;http://#{host}#{url_suffix}&quot;
+  loop {
+    response = <span class="ruby-string">&quot;&quot;</span>
+    begin
+      response = <span class="ruby-constant">Net</span>::<span class="ruby-constant">HTTP</span>.get_response(<span class="ruby-constant">URI</span>.parse(uri))
+    rescue <span class="ruby-constant">Errno</span>::<span class="ruby-constant">ECONNREFUSED</span>, <span class="ruby-constant">EOFError</span>
+      <span class="ruby-constant">Kernel</span>.sleep(1)
+      next
+    rescue <span class="ruby-constant">Exception</span> =&gt; e
+      raise e
+    end
+    
+    return if response[<span class="ruby-string">'location'</span>] != &quot;http://#{host}/status&quot;
+    <span class="ruby-constant">Kernel</span>.sleep(1)
+  }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="warn_on_large_app_size-method" class="method-detail ">
+        <a name="method-c-warn_on_large_app_size"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">warn_on_large_app_size</span><span
+            class="method-args">(fullpath)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="warn_on_large_app_size-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 899</span>
+def self.warn_on_large_app_size(fullpath)
+  size = <span class="ruby-constant">File</span>.size(fullpath)
+  if size &gt; <span class="ruby-constant">MAX_FILE_SIZE</span>
+    <span class="ruby-constant">Kernel</span>.puts <span class="ruby-string">&quot;Warning: Your application is large enough that it may take a while to upload.&quot;</span>
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="write_and_copy_node_file-method" class="method-detail ">
+        <a name="method-c-write_and_copy_node_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">write_and_copy_node_file</span><span
+            class="method-args">(options, node_layout, head_node_result)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="write_and_copy_node_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 808</span>
+def self.write_and_copy_node_file(options, node_layout, head_node_result)
+  keyname = options[<span class="ruby-string">'keyname'</span>]
+  head_node_ip = head_node_result[:head_node_ip]
+
+  all_ips = head_node_result[:acc].get_all_public_ips()
+  db_master_ip = node_layout.db_master.id
+
+  locations_yaml = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/locations-#{keyname}.yaml&quot;)
+  <span class="ruby-constant">CommonFunctions</span>.write_node_file(head_node_ip,
+    head_node_result[:instance_id], options[<span class="ruby-string">'table'</span>],
+    head_node_result[:secret_key], db_master_ip, all_ips,
+    options[<span class="ruby-string">'infrastructure'</span>], locations_yaml)
+  remote_locations_file = &quot;/root/.appscale/locations-#{keyname}.yaml&quot;
+  <span class="ruby-constant">CommonFunctions</span>.scp_file(locations_yaml, remote_locations_file,
+    head_node_ip, head_node_result[:true_key])
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="write_file-method" class="method-detail ">
+        <a name="method-c-write_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">write_file</span><span
+            class="method-args">(location, contents)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>A convenience function that can be used to write a string to a file.</p>
+          
+
+          
+          <div class="method-source-code"
+            id="write_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 84</span>
+def self.write_file(location, contents)
+  <span class="ruby-constant">File</span>.open(location, <span class="ruby-string">&quot;w+&quot;</span>) { |file| file.write(contents) }
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="write_node_file-method" class="method-detail ">
+        <a name="method-c-write_node_file"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">write_node_file</span><span
+            class="method-args">(head_node_ip, instance_id, table, secret, db_master, ips, infrastructure, locations_yaml)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="write_node_file-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 826</span>
+def self.write_node_file(head_node_ip, instance_id, table, secret, db_master,
+  ips, infrastructure, locations_yaml)
+
+  infrastructure ||= <span class="ruby-string">&quot;xen&quot;</span>
+  tree = { :load_balancer =&gt; head_node_ip, :instance_id =&gt; instance_id , 
+           :table =&gt; table, :shadow =&gt; head_node_ip, 
+           :secret =&gt; secret , :db_master =&gt; db_master,
+           :ips =&gt; ips , :infrastructure =&gt; infrastructure }
+  loc_path = <span class="ruby-constant">File</span>.expand_path(locations_yaml)
+  <span class="ruby-constant">File</span>.open(loc_path, <span class="ruby-string">&quot;w&quot;</span>) {|file| <span class="ruby-constant">YAML</span>.dump(tree, file)}
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="write_nodes_json-method" class="method-detail ">
+        <a name="method-c-write_nodes_json"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">write_nodes_json</span><span
+            class="method-args">(new_role_info, keyname)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>Writes the given JSON to the ~/.appscale directory so that we can read it
+later and determine what nodes run what services.</p>
+          
+
+          
+          <div class="method-source-code"
+            id="write_nodes_json-source">
+<pre>
+<span class="ruby-comment"># File lib/common_functions.rb, line 802</span>
+def self.write_nodes_json(new_role_info, keyname)
+  filename = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/locations-#{keyname}.json&quot;)
+  self.write_file(filename, <span class="ruby-constant">JSON</span>.dump(new_role_info))
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+    </div>
+  
+
+  </div>
+
+  <div id="validator-badges">
+    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
+      Rdoc Generator</a> 2</small>.</p>
+  </div>
+
+</body>
+</html>
+

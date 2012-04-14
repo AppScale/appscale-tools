@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://java.sun.com/xml/ns/javaee"
+xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+	<servlet>
+		<servlet-name>Guestbook_memcache</servlet-name>
+		<servlet-class>guestbook_memcached.Guestbook_memcacheServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Guestbook_memcache</servlet-name>
+		<url-pattern>/guestbook_memcache</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+        <servlet-name>sign</servlet-name>
+        <servlet-class>guestbook_memcached.SignGuestbookServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>sign</servlet-name>
+        <url-pattern>/sign</url-pattern>
+    </servlet-mapping>
+    
+     <servlet-mapping>
+        <servlet-name>deleteEntry</servlet-name>
+        <url-pattern>/deleteEntry</url-pattern>
+    </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>deleteEntry</servlet-name>
+        <servlet-class>guestbook_memcached.DeleteServlet</servlet-class>
+    </servlet>
+    
+    
+	
+	<welcome-file-list>
+		<welcome-file>guestbook.jsp</welcome-file>
+	</welcome-file-list>
+</web-app>

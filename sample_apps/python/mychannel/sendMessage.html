@@ -1,0 +1,63 @@
+<html>
+  <head>
+      <script src='/_ah/channel/jsapi'></script>
+        </head>
+  <body>
+    <script type='text/javascript'>
+      // this is the app key to send to
+      var state = {
+        app_key: '{{ appid }}',
+        token: '{{ token }}',
+        msg: '{{message}}'
+      };
+
+      sendMessage = function(path) {
+        //alert("send called");
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', path, true);
+        xhr.send();
+        //console.log("message sent");
+      };
+      onOpened = function() {
+        //alert("on open called");
+        //console.log("connection opened");
+        sendMessage('/postmessage');
+      };
+      
+      onMessage = function(m) {
+        alert('Message received ' + m.data);
+      };
+      
+      openChannel = function() {
+        var token = '{{ token }}';
+        var channel = new goog.appengine.Channel(token);
+        var handler = {
+          'onopen': onOpened,
+          'onmessage': onMessage,
+          'onerror': function() {},
+          'onclose': function() {}
+        };
+        var socket = channel.open(handler);
+        socket.onopen = onOpened;
+        socket.onmessage = onMessage;
+      };
+      
+      initialize = function() {
+        openChannel();
+      };
+
+      setTimeout(initialize, 100);
+
+    </script>
+    <div id='display-area'>
+      <h2>Send Message Channel Test App</h2>
+        Using token: {{token}}</br>
+        Sending to app key: {{appid}}</br>
+        Sending message: {{message}}</br>
+        <h3>Links:</h3>
+        <a href='/createchannel'>Create Channel</a>
+        <a href='/sendmessage'>Send Message</a>
+        <a href='/receivemessage'>Get Message</a>
+    </div>
+  </body>
+</html>

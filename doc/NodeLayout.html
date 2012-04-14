@@ -1,0 +1,1391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+
+  <title>Class: NodeLayout</title>
+
+  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+
+  <script src="./js/jquery.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/thickbox-compressed.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/quicksearch.js" type="text/javascript"
+    charset="utf-8"></script>
+  <script src="./js/darkfish.js" type="text/javascript"
+    charset="utf-8"></script>
+
+</head>
+<body class="class">
+
+  <div id="metadata">
+    <div id="home-metadata">
+      <div id="home-section" class="section">
+        <h3 class="section-header">
+          <a href="./index.html">Home</a>
+          <a href="./index.html#classes">Classes</a>
+          <a href="./index.html#methods">Methods</a>
+        </h3>
+      </div>
+    </div>
+
+    <div id="file-metadata">
+      <div id="file-list-section" class="section">
+        <h3 class="section-header">In Files</h3>
+        <div class="section-body">
+          <ul>
+          
+            <li><a href="./lib/node_layout_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
+              class="thickbox" title="lib/node_layout.rb">lib/node_layout.rb</a></li>
+          
+          </ul>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div id="class-metadata">
+
+      <!-- Parent Class -->
+      
+      <div id="parent-class-section" class="section">
+        <h3 class="section-header">Parent</h3>
+        
+        <p class="link"><a href="Object.html">Object</a></p>
+        
+      </div>
+      
+
+      <!-- Namespace Contents -->
+      
+
+      <!-- Method Quickref -->
+      
+      <div id="method-list-section" class="section">
+        <h3 class="section-header">Methods</h3>
+        <ul class="link-list">
+          
+          <li><a href="#method-c-new">::new</a></li>
+          
+          <li><a href="#method-i-db_master">#db_master</a></li>
+          
+          <li><a href="#method-i-errors">#errors</a></li>
+          
+          <li><a href="#method-i-generate_cloud_layout">#generate_cloud_layout</a></li>
+          
+          <li><a href="#method-i-head_node">#head_node</a></li>
+          
+          <li><a href="#method-i-is_advanced_format-3F">#is_advanced_format?</a></li>
+          
+          <li><a href="#method-i-is_simple_format-3F">#is_simple_format?</a></li>
+          
+          <li><a href="#method-i-login_node">#login_node</a></li>
+          
+          <li><a href="#method-i-max_images">#max_images</a></li>
+          
+          <li><a href="#method-i-min_images">#min_images</a></li>
+          
+          <li><a href="#method-i-nodes">#nodes</a></li>
+          
+          <li><a href="#method-i-other_nodes">#other_nodes</a></li>
+          
+          <li><a href="#method-i-parse_ip">#parse_ip</a></li>
+          
+          <li><a href="#method-i-read_factor">#read_factor</a></li>
+          
+          <li><a href="#method-i-replication_factor">#replication_factor</a></li>
+          
+          <li><a href="#method-i-to_hash">#to_hash</a></li>
+          
+          <li><a href="#method-i-valid-3F">#valid?</a></li>
+          
+          <li><a href="#method-i-valid_advanced_format-3F">#valid_advanced_format?</a></li>
+          
+          <li><a href="#method-i-valid_database_replication-3F">#valid_database_replication?</a></li>
+          
+          <li><a href="#method-i-valid_simple_format-3F">#valid_simple_format?</a></li>
+          
+          <li><a href="#method-i-write_factor">#write_factor</a></li>
+          
+        </ul>
+      </div>
+      
+
+      <!-- Included Modules -->
+      
+    </div>
+
+    <div id="project-metadata">
+      
+      
+      <div id="fileindex-section" class="section project-section">
+        <h3 class="section-header">Files</h3>
+        <ul>
+        
+          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
+        
+        </ul>
+      </div>
+      
+
+      <div id="classindex-section" class="section project-section">
+        <h3 class="section-header">Class/Module Index
+          <span class="search-toggle"><img src="./images/find.png"
+            height="16" width="16" alt="[+]"
+            title="show/hide quicksearch" /></span></h3>
+        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
+        <fieldset>
+          <legend>Quicksearch</legend>
+          <input type="text" name="quicksearch" value=""
+            class="quicksearch-field" />
+        </fieldset>
+        </form>
+
+        <ul class="link-list">
+        
+          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
+        
+          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
+        
+          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
+        
+          <li><a href="./AppScaleException.html">AppScaleException</a></li>
+        
+          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
+        
+          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
+        
+          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
+        
+          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
+        
+          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
+        
+          <li><a href="./GodInterface.html">GodInterface</a></li>
+        
+          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
+        
+          <li><a href="./Node.html">Node</a></li>
+        
+          <li><a href="./NodeLayout.html">NodeLayout</a></li>
+        
+          <li><a href="./Object.html">Object</a></li>
+        
+          <li><a href="./ParseArgs.html">ParseArgs</a></li>
+        
+          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
+        
+          <li><a href="./SimpleNode.html">SimpleNode</a></li>
+        
+          <li><a href="./UsageText.html">UsageText</a></li>
+        
+          <li><a href="./UserAppClient.html">UserAppClient</a></li>
+        
+          <li><a href="./VMTools.html">VMTools</a></li>
+        
+        </ul>
+        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
+      </div>
+
+      
+    </div>
+  </div>
+
+  <div id="documentation">
+    <h1 class="class">NodeLayout</h1>
+
+    <div id="description">
+      
+    </div>
+
+    <!-- Constants -->
+    
+    <div id="constants-list" class="section">
+      <h3 class="section-header">Constants</h3>
+      <dl>
+      
+        <dt><a name="SIMPLE_FORMAT_KEYS">SIMPLE_FORMAT_KEYS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+        <dt><a name="ADVANCED_FORMAT_KEYS">ADVANCED_FORMAT_KEYS</a></dt>
+        
+        <dd class="description"></dd>
+        
+      
+      </dl>
+    </div>
+    
+
+    <!-- Attributes -->
+    
+
+    <!-- Methods -->
+    
+    <div id="public-class-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="new-method" class="method-detail ">
+        <a name="method-c-new"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">new</span><span
+            class="method-args">(input_yaml, options, skip_replication=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>Required options are: database_type</p>
+          
+
+          
+          <div class="method-source-code"
+            id="new-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 30</span>
+def initialize(input_yaml, options, skip_replication=false)
+  <span class="ruby-ivar">@input_yaml</span> = (input_yaml.kind_of?(<span class="ruby-constant">String</span>) ? <span class="ruby-constant">YAML</span>.load(input_yaml) : input_yaml)
+
+  <span class="ruby-ivar">@infrastructure</span> = options[:infrastructure]
+  <span class="ruby-ivar">@database_type</span> = options[:database]
+  <span class="ruby-ivar">@database_type</span> = <span class="ruby-ivar">@database_type</span>.to_sym if !<span class="ruby-ivar">@database_type</span>.nil?
+  <span class="ruby-ivar">@min_images</span> = options[:min_images]
+  <span class="ruby-ivar">@max_images</span> = options[:max_images]
+  <span class="ruby-ivar">@replication</span> = options[:replication]
+  <span class="ruby-ivar">@read_factor</span> = options[:read_factor]
+  <span class="ruby-ivar">@write_factor</span> = options[:write_factor]
+  
+  <span class="ruby-ivar">@nodes</span> = []
+  <span class="ruby-ivar">@skip_replication</span> = skip_replication
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+    </div>
+  
+    <div id="public-instance-method-details" class="method-section section">
+      <h3 class="section-header">Public Instance Methods</h3>
+
+    
+      <div id="db_master-method" class="method-detail ">
+        <a name="method-i-db_master"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">db_master</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="db_master-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 517</span>
+def db_master
+  return nil unless valid?
+
+  db_master = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_db_master? }.compact
+  
+  db_master.empty? ? nil : db_master[0]
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="errors-method" class="method-detail ">
+        <a name="method-i-errors"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">errors</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="errors-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 56</span>
+def errors
+  return [] if valid?
+
+  if is_simple_format? 
+    valid_simple_format?[:message]
+  elsif is_advanced_format?
+    valid_advanced_format?[:message]
+  elsif <span class="ruby-ivar">@input_yaml</span>.nil?
+    [<span class="ruby-constant">INPUT_YAML_REQUIRED</span>]
+  else
+    keys = <span class="ruby-ivar">@input_yaml</span>.keys
+
+    keys.each { |key|
+      if !(<span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.include?(key) || <span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.include?(key))
+        return [&quot;The flag #{key} is not a supported flag&quot;]
+      end
+    }
+
+    return [<span class="ruby-constant">USED_SIMPLE_AND_ADVANCED_KEYS</span>]
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="generate_cloud_layout-method" class="method-detail ">
+        <a name="method-i-generate_cloud_layout"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">generate_cloud_layout</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>Generates an yaml file for non-hybrid cloud layouts which don’t have them</p>
+          
+
+          
+          <div class="method-source-code"
+            id="generate_cloud_layout-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 447</span>
+def generate_cloud_layout
+  layout = {:controller =&gt; <span class="ruby-string">&quot;node-0&quot;</span>}
+  servers = []
+  num_slaves = <span class="ruby-ivar">@min_images</span> - 1
+  num_slaves.times do |i|
+    servers &lt;&lt; &quot;node-#{i+1}&quot;
+  end
+
+  layout[:servers] = servers
+  <span class="ruby-constant">YAML</span>.load(layout.to_yaml)
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="head_node-method" class="method-detail ">
+        <a name="method-i-head_node"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">head_node</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>head node -&gt; shadow</p>
+          
+
+          
+          <div class="method-source-code"
+            id="head_node-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 500</span>
+def head_node
+  return nil unless valid?
+
+  head_node = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_shadow? }.compact
+  
+  <span class="ruby-comment"># TODO: is the last guard necessary?</span>
+  head_node.empty? ? nil : head_node[0]
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="is_advanced_format-3F-method" class="method-detail ">
+        <a name="method-i-is_advanced_format-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">is_advanced_format?</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="is_advanced_format-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 97</span>
+def is_advanced_format?
+  return false if <span class="ruby-ivar">@input_yaml</span>.nil?
+
+  <span class="ruby-ivar">@input_yaml</span>.keys.each do |key|
+    return false if !<span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.include?(key)
+  end
+
+  true
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="is_simple_format-3F-method" class="method-detail ">
+        <a name="method-i-is_simple_format-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">is_simple_format?</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="is_simple_format-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 78</span>
+def is_simple_format?
+  if <span class="ruby-ivar">@input_yaml</span>.nil?
+    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>) and <span class="ruby-ivar">@infrastructure</span> != <span class="ruby-string">&quot;hybrid&quot;</span>
+      <span class="ruby-comment"># When used with the cloud, the simple format doesn't require a yaml</span>
+      <span class="ruby-comment"># Note this is not so in the hybrid model - a yaml is required in</span>
+      <span class="ruby-comment"># that scenario.</span>
+      return true
+    else
+      return false
+    end
+  end
+
+  <span class="ruby-ivar">@input_yaml</span>.keys.each do |key|
+    return false if !<span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.include?(key)
+  end
+
+ true
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="login_node-method" class="method-detail ">
+        <a name="method-i-login_node"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">login_node</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="login_node-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 525</span>
+def login_node
+  return nil unless valid?
+
+  login = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_login? }.compact
+  
+  login.empty? ? nil : login[0]
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="max_images-method" class="method-detail ">
+        <a name="method-i-max_images"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">max_images</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="max_images-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 486</span>
+def max_images
+  return nil unless valid?
+  
+  <span class="ruby-ivar">@max_images</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="min_images-method" class="method-detail ">
+        <a name="method-i-min_images"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">min_images</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="min_images-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 480</span>
+def min_images
+  return nil unless valid? 
+
+  <span class="ruby-ivar">@min_images</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="nodes-method" class="method-detail ">
+        <a name="method-i-nodes"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">nodes</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="nodes-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 492</span>
+def nodes
+  return [] unless valid?
+  
+  <span class="ruby-comment"># Since the valid? check has succeded @nodes has been initialized</span>
+  <span class="ruby-ivar">@nodes</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="other_nodes-method" class="method-detail ">
+        <a name="method-i-other_nodes"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">other_nodes</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="other_nodes-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 509</span>
+def other_nodes
+  return [] unless valid?
+
+  other_nodes = <span class="ruby-ivar">@nodes</span>.select { |n| !n.is_shadow? }.compact
+  
+  other_nodes.empty? ? [] : other_nodes
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="parse_ip-method" class="method-detail ">
+        <a name="method-i-parse_ip"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">parse_ip</span><span
+            class="method-args">(ip)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="parse_ip-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 107</span>
+def parse_ip(ip)
+  id, cloud = nil, nil
+
+  match = <span class="ruby-constant">NODE_ID_REGEX</span>.match(ip)
+  if match.nil?
+    id = ip
+    cloud = <span class="ruby-string">&quot;not-cloud&quot;</span>
+  else
+    id = match[0]
+    cloud = match[1]
+  end
+
+  return id, cloud
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="read_factor-method" class="method-detail ">
+        <a name="method-i-read_factor"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">read_factor</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          <p>TODO: can we just replace the if w/ unless and change ! to = ? or does that
+not exactly work due to the || ?</p>
+          
+
+          
+          <div class="method-source-code"
+            id="read_factor-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 468</span>
+def read_factor
+  return nil if !valid? || <span class="ruby-ivar">@database_type</span> != :voldemort
+
+  <span class="ruby-ivar">@read_factor</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="replication_factor-method" class="method-detail ">
+        <a name="method-i-replication_factor"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">replication_factor</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="replication_factor-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 459</span>
+def replication_factor
+  return nil unless valid?
+
+  <span class="ruby-ivar">@replication</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="to_hash-method" class="method-detail ">
+        <a name="method-i-to_hash"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">to_hash</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="to_hash-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 534</span>
+def to_hash
+  result = {}
+  <span class="ruby-comment"># Put all nodes except the head node in the hash</span>
+  other_nodes.each do |node|
+    result[node.id] = node.roles.join(<span class="ruby-string">&quot;:&quot;</span>)
+  end
+  result
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="valid-3F-method" class="method-detail ">
+        <a name="method-i-valid-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">valid?</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="valid-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 46</span>
+def valid?
+  if is_simple_format? 
+    valid_simple_format?[:result]
+  elsif is_advanced_format?
+    valid_advanced_format?[:result]
+  else
+    false
+  end
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="valid_advanced_format-3F-method" class="method-detail ">
+        <a name="method-i-valid_advanced_format-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">valid_advanced_format?</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="valid_advanced_format-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 227</span>
+def valid_advanced_format?
+  <span class="ruby-comment"># We already computed the nodes, its valid</span>
+  return valid if !<span class="ruby-ivar">@nodes</span>.empty?
+
+  node_hash = {}
+  <span class="ruby-ivar">@input_yaml</span>.each_pair do |role, ips|
+    
+    ips.each_with_index do |ip, index|
+      node = nil
+      if node_hash[ip].nil?
+        id, cloud = parse_ip(ip)
+        node = <span class="ruby-constant">AdvancedNode</span>.new(id, cloud)
+      else
+        node = node_hash[ip]
+      end
+
+      if role.to_sym == :database
+        <span class="ruby-comment"># The first database node is the master</span>
+        is_master = index.zero?
+        node.add_db_role <span class="ruby-ivar">@database_type</span>, is_master
+      elsif role.to_sym == :db_master
+        node.add_role :zookeeper
+        node.add_role role
+      elsif role.to_sym == :rabbitmq
+        <span class="ruby-comment"># Like the database, the first rabbitmq node is the master</span>
+        is_master = index.zero?
+        node.add_role :rabbitmq
+        node.add_rabbitmq_role is_master
+      else
+        node.add_role role
+      end
+      
+      node_hash[ip] = node
+    end
+  end
+
+  <span class="ruby-comment"># Dont need the hash any more, make a nodes list</span>
+  nodes = node_hash.values
+
+  nodes.each do |node|
+    return invalid(node.errors.join(<span class="ruby-string">&quot;,&quot;</span>)) unless node.valid?
+
+    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
+      error_message = &quot;Invalid cloud node ID: #{node.id} \n&quot; + 
+        <span class="ruby-string">&quot;Cloud node ID must be in the format 'node-{IDNUMBER}'&quot;</span> +
+        <span class="ruby-string">&quot;\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments&quot;</span>
+      return invalid(error_message) if <span class="ruby-constant">NODE_ID_REGEX</span>.match(node.id.to_s).nil?
+    else
+      <span class="ruby-comment"># Xen/KVM should be using the ip address as the node id</span>
+      error_message = &quot;Invalid virtualized node ID: #{node.id} \n&quot; + 
+        <span class="ruby-string">&quot;Virtualized node IDs must be a valid IP address&quot;</span>
+      return invalid(error_message) if <span class="ruby-constant">IP_REGEX</span>.match(node.id.to_s).nil?
+    end
+  end
+
+  master_nodes = nodes.select { |node| node.is_shadow? }.compact
+
+  <span class="ruby-comment"># need exactly one master</span>
+  if master_nodes.length == 0
+    return invalid(<span class="ruby-string">&quot;No master was specified&quot;</span>)
+  elsif master_nodes.length &gt; 1
+    return invalid(<span class="ruby-string">&quot;Only one master is allowed&quot;</span>)
+  end
+
+  master_node = master_nodes.first
+
+  login_node = nodes.select { |node| node.is_login? }.compact
+  <span class="ruby-comment"># If a login node was not specified, make the master into the login node</span>
+  if login_node.empty?
+    master_node.add_role :login
+  end
+
+  appengine_count = 0
+  nodes.each do |node|
+    if node.is_appengine?
+      appengine_count += 1
+    end
+  end
+
+  if appengine_count &lt; 1
+    return invalid(<span class="ruby-string">&quot;Not enough appengine nodes were provided.&quot;</span>)
+  end
+
+  memcache_count = 0
+  nodes.each do |node|
+    if node.is_memcache?
+      memcache_count += 1
+    end
+  end
+
+  <span class="ruby-comment"># if no memcache nodes were specified, make all appengine nodes</span>
+  <span class="ruby-comment"># into memcache nodes</span>
+  if memcache_count &lt; 1
+    nodes.each { |node|
+      node.add_role :memcache if node.is_appengine?
+    }
+  end
+
+  if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
+    <span class="ruby-comment"># If min and max aren't specified, they default to the number of nodes in the system</span>
+    <span class="ruby-ivar">@min_images</span> ||= nodes.length
+    <span class="ruby-ivar">@max_images</span> ||= nodes.length
+
+    <span class="ruby-comment"># TODO: look into if that first guard is really necessary with the preceding lines</span>
+
+    if <span class="ruby-ivar">@min_images</span> &amp;&amp; nodes.length &lt; <span class="ruby-ivar">@min_images</span>
+      return invalid(&quot;Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum&quot;)
+    end
+ 
+    if <span class="ruby-ivar">@max_images</span> &amp;&amp; nodes.length &gt; <span class="ruby-ivar">@max_images</span>
+      return invalid(&quot;Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum&quot;)
+    end
+  end
+
+  zookeeper_count = 0
+  nodes.each do |node|
+    if node.is_zookeeper?
+      zookeeper_count += 1
+    end
+  end
+  master_node.add_role :zookeeper if zookeeper_count.zero?
+
+  <span class="ruby-comment"># If no rabbitmq nodes are specified, make the shadow the rabbitmq_master</span>
+  rabbitmq_count = 0
+  nodes.each do |node|
+    if node.is_rabbitmq?
+      rabbitmq_count += 1
+    end
+  end
+  if rabbitmq_count.zero?
+    master_node.add_role :rabbitmq
+    master_node.add_role :rabbitmq_master
+  end
+
+  <span class="ruby-comment"># Any node that runs appengine needs rabbitmq to dispatch task requests to</span>
+  <span class="ruby-comment"># It's safe to add the slave role since we ensure above that somebody</span>
+  <span class="ruby-comment"># already has the master role</span>
+  nodes.each do |node|
+    if node.is_appengine? and !node.is_rabbitmq?
+      node.add_role :rabbitmq_slave
+    end
+  end
+
+  database_count = 0
+  nodes.each do |node|
+    if node.is_database?
+      database_count += 1
+    end
+  end
+
+  if <span class="ruby-ivar">@skip_replication</span>
+    <span class="ruby-ivar">@nodes</span> = nodes
+    return valid
+  end
+
+  rep = valid_database_replication? nodes
+  return rep unless rep[:result]
+
+  <span class="ruby-comment"># Wait until it is validated to assign it</span>
+  <span class="ruby-ivar">@nodes</span> = nodes
+
+  return valid
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="valid_database_replication-3F-method" class="method-detail ">
+        <a name="method-i-valid_database_replication-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">valid_database_replication?</span><span
+            class="method-args">(nodes)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="valid_database_replication-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 391</span>
+def valid_database_replication? nodes
+  database_node_count = 0
+  nodes.each do |node|
+    if node.is_database? or node.is_db_master?
+      database_node_count += 1
+    end
+  end
+
+  if database_node_count.zero?
+    return invalid(<span class="ruby-string">&quot;At least one database node must be provided.&quot;</span>)
+  end
+
+  if <span class="ruby-ivar">@replication</span>.nil?
+    if database_node_count &gt; 3
+      <span class="ruby-comment"># If there are a lot of database nodes, we default to 3x replication</span>
+      <span class="ruby-ivar">@replication</span> = 3
+    else
+      <span class="ruby-comment"># If there are only a few nodes, replicate to each one of the nodes</span>
+      <span class="ruby-ivar">@replication</span> = database_node_count
+    end
+  end
+
+  if <span class="ruby-ivar">@replication</span> &gt; database_node_count
+    return invalid(<span class="ruby-string">&quot;The provided replication factor is too high. The replication factor (-n flag) cannot be greater than the number of database nodes.&quot;</span>)
+  end
+
+  <span class="ruby-comment"># Perform all the database specific checks here</span>
+  if <span class="ruby-ivar">@database_type</span> == :mysql &amp;&amp; database_node_count % <span class="ruby-ivar">@replication</span> != 0
+    return invalid(&quot;MySQL requires that the amount of replication be divisible by the number of nodes (e.g. with 6 nodes, 2 or 3 times replication). You specified #{database_node_count} database nodes which is not divisible by #{@replication} times replication.&quot;)
+  end
+
+  if <span class="ruby-ivar">@database_type</span> == :voldemort
+    <span class="ruby-ivar">@read_factor</span> ||= <span class="ruby-ivar">@replication</span>
+    <span class="ruby-ivar">@write_factor</span> ||= <span class="ruby-ivar">@replication</span>
+
+    if <span class="ruby-ivar">@read_factor</span> &gt; <span class="ruby-ivar">@replication</span>
+      return invalid(<span class="ruby-string">&quot;The provided read factor is too high. The read factor (-r flag) cannot be greater than the replication factor.&quot;</span>)
+    elsif <span class="ruby-ivar">@write_factor</span> &gt; <span class="ruby-ivar">@replication</span>
+      return invalid(<span class="ruby-string">&quot;The provided write factor is too high. The write factor (-w flag) cannot be greater than the replication factor.&quot;</span>)
+    end
+  end
+
+  if <span class="ruby-ivar">@database_type</span> == :simpledb
+    if <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_ACCESS_KEY'</span>].nil?
+      return invalid(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_ACCESS_KEY be set to your AWS access key.&quot;</span>)
+    end
+
+    if <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_SECRET_KEY'</span>].nil?
+      return invalid(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_SECRET_KEY be set to your AWS secret key.&quot;</span>)
+    end
+  end
+  
+  valid
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="valid_simple_format-3F-method" class="method-detail ">
+        <a name="method-i-valid_simple_format-3F"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">valid_simple_format?</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="valid_simple_format-3F-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 122</span>
+def valid_simple_format?
+  <span class="ruby-comment"># We already computed the nodes, its valid</span>
+  <span class="ruby-comment"># cgb: an optimization to ensure we don't keep calling this</span>
+  <span class="ruby-comment"># when it always returns the same thing anyways</span>
+  return valid if !<span class="ruby-ivar">@nodes</span>.empty?
+
+  if <span class="ruby-ivar">@input_yaml</span>.nil?
+    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>) and <span class="ruby-ivar">@infrastructure</span> != <span class="ruby-string">&quot;hybrid&quot;</span>
+      if <span class="ruby-ivar">@min_images</span>.nil?
+        return invalid(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MIN_IMAGES</span>)
+      end
+
+      if <span class="ruby-ivar">@max_images</span>.nil?
+        return invalid(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MAX_IMAGES</span>)
+      end
+
+      <span class="ruby-comment"># No yaml was created so we will create a generic one and then allow it to be validated</span>
+      <span class="ruby-ivar">@input_yaml</span> = generate_cloud_layout
+    else
+      return invalid(<span class="ruby-constant">INPUT_YAML_REQUIRED</span>)
+    end
+  end
+
+  nodes = []
+  <span class="ruby-ivar">@input_yaml</span>.each_pair do |role, ips|
+    next if ips.nil?
+
+    ips.each do |ip|
+      id, cloud = parse_ip(ip)
+      node = <span class="ruby-constant">SimpleNode</span>.new id, cloud, [role]
+
+      <span class="ruby-comment"># In simple deployments the db master and rabbitmq master is always on</span>
+      <span class="ruby-comment"># the shadow node, and db slave / rabbitmq slave is always on the other</span>
+      <span class="ruby-comment"># nodes</span>
+      is_master = node.is_shadow?
+      node.add_db_role <span class="ruby-ivar">@database_type</span>, is_master
+      node.add_rabbitmq_role is_master
+
+      return invalid(node.errors.join(<span class="ruby-string">&quot;,&quot;</span>)) if !node.valid?
+
+      if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
+        error_message = &quot;Invalid cloud node ID: #{node.id} \n&quot; +
+          <span class="ruby-string">&quot;Cloud node IDs must be in the format 'node-{IDNUMBER}'&quot;</span> +
+          <span class="ruby-string">&quot;\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments&quot;</span>
+        return invalid(error_message) if <span class="ruby-constant">NODE_ID_REGEX</span>.match(node.id.to_s).nil?
+      else
+        <span class="ruby-comment"># Xen/KVM should be using the ip address as the node id</span>
+        error_message = &quot;Invalid virtualized node ID: #{node.id} \n&quot; + 
+          <span class="ruby-string">&quot;Virtualized node IDs must be a valid IP address&quot;</span>
+        return invalid(error_message) if <span class="ruby-constant">IP_REGEX</span>.match(node.id.to_s).nil?
+      end
+
+      nodes &lt;&lt; node
+    end
+  end
+
+  <span class="ruby-comment"># make sure that the user hasn't erroneously specified the same ip</span>
+  <span class="ruby-comment"># address more than once</span>
+  all_ips = <span class="ruby-ivar">@input_yaml</span>.values.flatten
+  duplicate_ips = all_ips.length - all_ips.uniq.length
+
+  unless duplicate_ips.zero?
+    return invalid(<span class="ruby-constant">DUPLICATE_IPS</span>)
+  end
+
+  if nodes.length == 1
+    <span class="ruby-comment"># Singleton node should be master and app engine</span>
+    nodes.first.add_role :appengine
+    nodes.first.add_role :memcache
+  end
+
+  <span class="ruby-comment"># controller -&gt; shadow</span>
+  controller_count = 0
+  nodes.each do |node|
+    if node.is_shadow?
+      controller_count += 1
+    end
+  end
+
+  if controller_count == 0
+    return invalid(<span class="ruby-constant">NO_CONTROLLER</span>)
+  elsif controller_count &gt; 1
+    return invalid(<span class="ruby-constant">ONLY_ONE_CONTROLLER</span>)
+  end
+
+  database_count = 0
+  nodes.each do |node|
+    if node.is_database?
+      database_count += 1
+    end
+  end
+
+  if <span class="ruby-ivar">@skip_replication</span>
+    <span class="ruby-ivar">@nodes</span> = nodes
+    return valid
+  end
+
+  rep = valid_database_replication? nodes
+  return rep unless rep[:result]
+
+  <span class="ruby-comment"># Wait until it is validated to assign it</span>
+  <span class="ruby-ivar">@nodes</span> = nodes
+  valid
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+      <div id="write_factor-method" class="method-detail ">
+        <a name="method-i-write_factor"></a>
+
+        
+        <div class="method-heading">
+          <span class="method-name">write_factor</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code"
+            id="write_factor-source">
+<pre>
+<span class="ruby-comment"># File lib/node_layout.rb, line 474</span>
+def write_factor
+  return nil if !valid? || <span class="ruby-ivar">@database_type</span> != :voldemort
+
+  <span class="ruby-ivar">@write_factor</span>
+end</pre>
+          </div>
+          
+        </div>
+
+        
+
+        
+      </div>
+
+    
+    </div>
+  
+
+  </div>
+
+  <div id="validator-badges">
+    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
+      Rdoc Generator</a> 2</small>.</p>
+  </div>
+
+</body>
+</html>
+

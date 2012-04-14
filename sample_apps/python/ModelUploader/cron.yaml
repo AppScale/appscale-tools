@@ -1,0 +1,6 @@
+cron:
+- description: clear models daily
+  url: /delete
+  schedule: every day 00:00
+  timezone: America/Los_Angeles
+ 

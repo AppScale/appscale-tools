@@ -1,0 +1,21 @@
+application: deferred-xample
+version: 1
+runtime: python
+api_version: 1
+
+builtins:
+- deferred: on
+
+handlers:
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+
+- url: .*
+  script: main.py
+
+#- url: /_ah/queue/deferred
+#  script: $PYTHON_LIB/google/appengine/ext/deferred/handler.py
+#  login: admin
+
+

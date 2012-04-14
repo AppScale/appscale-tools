@@ -1,0 +1,24 @@
+RTT Start:1274260925.92
+RTT End:1274260925.95
+RTT Time:0.0293328762054
+Success:True
+Start time:1274260925.93
+End time:1274260925.94
+Total Time Taken:0.00390911102295
+Cumulative DB Time Taken:0.00378894805908
+Number of Keys:1
+Timings:0.00378894805908
+Type: Accumulator
+#
+RTT Start:1274260925.92
+RTT End:1274260925.95
+RTT Time:0.0274999141693
+Success:True
+Start time:1274260925.93
+End time:1274260925.94
+Total Time Taken:0.00378894805908
+Cumulative DB Time Taken:0.00366997718811
+Number of Keys:1
+Timings:0.00366997718811
+Type: Accumulator
+#
