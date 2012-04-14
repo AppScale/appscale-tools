@@ -2,14 +2,29 @@
 # Programmer: Jonathan Kupferman
 # Updated by Chris Bunch to add hybrid cloud support
 
-NODE_ID_REGEX = /(node|cloud(\d+))-(\d+)/
+USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
+  " Only simple (controller, servers) or advanced (master, appengine, etc) " +
+  "can be used"
+NO_INPUT_YAML_REQUIRES_MIN_IMAGES = "If no input yaml is specified, " +
+  "min_images must be specified."
+NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
+  "max_images must be specified."
+INPUT_YAML_REQUIRED = "An input yaml file is required for Xen, KVM, and " +
+  "hybrid cloud deployments"
+DUPLICATE_IPS = "You specified some IP addresses more than once, which is " +
+  "not allowed in simple deployments."
+NO_CONTROLLER = "No controller was specified"
+ONLY_ONE_CONTROLLER = "Only one controller is allowed"
 
+NODE_ID_REGEX = /(node|cloud(\d+))-(\d+)/
+DEFAULT_NUM_NODES = 1
 VALID_ROLES = [:master, :appengine, :database, :shadow, :open] + 
-  [:load_balancer, :login, :db_master, :db_slave, :zookeeper]
+  [:load_balancer, :login, :db_master, :db_slave, :zookeeper, :memcache] +
+  [:rabbitmq, :rabbitmq_master, :rabbitmq_slave]
 
 class NodeLayout
   SIMPLE_FORMAT_KEYS = [:controller, :servers]
-  ADVANCED_FORMAT_KEYS = [:master, :database, :appengine, :open, :login, :zookeeper]
+  ADVANCED_FORMAT_KEYS = [:master, :database, :appengine, :open, :login, :zookeeper, :memcache, :rabbitmq]
 
   # Required options are: database_type
   def initialize(input_yaml, options, skip_replication=false)
@@ -46,16 +61,17 @@ class NodeLayout
     elsif is_advanced_format?
       valid_advanced_format?[:message]
     elsif @input_yaml.nil?
-      ["An IPs yaml file must be specified when running on Xen"]
+      [INPUT_YAML_REQUIRED]
     else
       keys = @input_yaml.keys
-      any_valid_keys = false
-      keys.each { |key| any_valid_keys = true if SIMPLE_FORMAT_KEYS.include?(key) || ADVANCED_FORMAT_KEYS.include?(key) }
-      if any_valid_keys
-        ["Used both simple and advanced layout roles. Only simple (controller, servers) or advanced (master, appengine, etc) can be used"]
-      else
-        ["Invalid roles! You must specify nodes using valid roles (e.g. controller, servers)"]
-      end
+
+      keys.each { |key|
+        if !(SIMPLE_FORMAT_KEYS.include?(key) || ADVANCED_FORMAT_KEYS.include?(key))
+          return ["The flag #{key} is not a supported flag"]
+        end
+      }
+
+      return [USED_SIMPLE_AND_ADVANCED_KEYS]
     end
   end
 
@@ -111,10 +127,18 @@ class NodeLayout
 
     if @input_yaml.nil?
       if VALID_CLOUD_TYPES.include?(@infrastructure) and @infrastructure != "hybrid"
+        if @min_images.nil?
+          return invalid(NO_INPUT_YAML_REQUIRES_MIN_IMAGES)
+        end
+
+        if @max_images.nil?
+          return invalid(NO_INPUT_YAML_REQUIRES_MAX_IMAGES)
+        end
+
         # No yaml was created so we will create a generic one and then allow it to be validated
         @input_yaml = generate_cloud_layout
       else
-        return invalid("IPs yaml file is required for xen deployments")
+        return invalid(INPUT_YAML_REQUIRED)
       end
     end
 
@@ -126,10 +150,12 @@ class NodeLayout
         id, cloud = parse_ip(ip)
         node = SimpleNode.new id, cloud, [role]
 
-        # In simple deployments the db master is always on the shadow
+        # In simple deployments the db master and rabbitmq master is always on
+        # the shadow node, and db slave / rabbitmq slave is always on the other
+        # nodes
         is_master = node.is_shadow?
         node.add_db_role @database_type, is_master
-        node.add_role :zookeeper if is_master
+        node.add_rabbitmq_role is_master
 
         return invalid(node.errors.join(",")) if !node.valid?
 
@@ -149,21 +175,41 @@ class NodeLayout
       end
     end
 
+    # make sure that the user hasn't erroneously specified the same ip
+    # address more than once
+    all_ips = @input_yaml.values.flatten
+    duplicate_ips = all_ips.length - all_ips.uniq.length
+
+    unless duplicate_ips.zero?
+      return invalid(DUPLICATE_IPS)
+    end
+
     if nodes.length == 1
       # Singleton node should be master and app engine
       nodes.first.add_role :appengine
+      nodes.first.add_role :memcache
     end
 
     # controller -> shadow
-    controller_count = nodes.count { |node| node.is_shadow? }
-
-    if controller_count == 0
-      return invalid("No controller was specified")
-    elsif controller_count > 1
-      return invalid("Only one controller is allowed")
+    controller_count = 0
+    nodes.each do |node|
+      if node.is_shadow?
+        controller_count += 1
+      end
     end
 
-    database_count = nodes.count { |node| node.is_database? }
+    if controller_count == 0
+      return invalid(NO_CONTROLLER)
+    elsif controller_count > 1
+      return invalid(ONLY_ONE_CONTROLLER)
+    end
+
+    database_count = 0
+    nodes.each do |node|
+      if node.is_database?
+        database_count += 1
+      end
+    end
 
     if @skip_replication
       @nodes = nodes
@@ -198,6 +244,14 @@ class NodeLayout
           # The first database node is the master
           is_master = index.zero?
           node.add_db_role @database_type, is_master
+        elsif role.to_sym == :db_master
+          node.add_role :zookeeper
+          node.add_role role
+        elsif role.to_sym == :rabbitmq
+          # Like the database, the first rabbitmq node is the master
+          is_master = index.zero?
+          node.add_role :rabbitmq
+          node.add_rabbitmq_role is_master
         else
           node.add_role role
         end
@@ -214,7 +268,7 @@ class NodeLayout
 
       if VALID_CLOUD_TYPES.include?(@infrastructure)
         error_message = "Invalid cloud node ID: #{node.id} \n" + 
-          "Cloud node IDd must be in the format 'node-{IDNUMBER}'" +
+          "Cloud node ID must be in the format 'node-{IDNUMBER}'" +
           "\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments"
         return invalid(error_message) if NODE_ID_REGEX.match(node.id.to_s).nil?
       else
@@ -242,10 +296,30 @@ class NodeLayout
       master_node.add_role :login
     end
 
-    appengine_count = nodes.count { |node| node.is_appengine? }
+    appengine_count = 0
+    nodes.each do |node|
+      if node.is_appengine?
+        appengine_count += 1
+      end
+    end
 
     if appengine_count < 1
       return invalid("Not enough appengine nodes were provided.")
+    end
+
+    memcache_count = 0
+    nodes.each do |node|
+      if node.is_memcache?
+        memcache_count += 1
+      end
+    end
+
+    # if no memcache nodes were specified, make all appengine nodes
+    # into memcache nodes
+    if memcache_count < 1
+      nodes.each { |node|
+        node.add_role :memcache if node.is_appengine?
+      }
     end
 
     if VALID_CLOUD_TYPES.include?(@infrastructure)
@@ -264,10 +338,41 @@ class NodeLayout
       end
     end
 
-    zookeeper_count = nodes.count { |node| node.is_zookeeper? }
-    master_node.add_role :zookeeper if zookeeper_count < 1
+    zookeeper_count = 0
+    nodes.each do |node|
+      if node.is_zookeeper?
+        zookeeper_count += 1
+      end
+    end
+    master_node.add_role :zookeeper if zookeeper_count.zero?
 
-    database_count = nodes.count { |node| node.is_database? }
+    # If no rabbitmq nodes are specified, make the shadow the rabbitmq_master
+    rabbitmq_count = 0
+    nodes.each do |node|
+      if node.is_rabbitmq?
+        rabbitmq_count += 1
+      end
+    end
+    if rabbitmq_count.zero?
+      master_node.add_role :rabbitmq
+      master_node.add_role :rabbitmq_master
+    end
+
+    # Any node that runs appengine needs rabbitmq to dispatch task requests to
+    # It's safe to add the slave role since we ensure above that somebody
+    # already has the master role
+    nodes.each do |node|
+      if node.is_appengine? and !node.is_rabbitmq?
+        node.add_role :rabbitmq_slave
+      end
+    end
+
+    database_count = 0
+    nodes.each do |node|
+      if node.is_database?
+        database_count += 1
+      end
+    end
 
     if @skip_replication
       @nodes = nodes
@@ -284,7 +389,16 @@ class NodeLayout
   end
 
   def valid_database_replication? nodes
-    database_node_count = nodes.count { |node| node.is_database? }
+    database_node_count = 0
+    nodes.each do |node|
+      if node.is_database? or node.is_db_master?
+        database_node_count += 1
+      end
+    end
+
+    if database_node_count.zero?
+      return invalid("At least one database node must be provided.")
+    end
 
     if @replication.nil?
       if database_node_count > 3
@@ -331,23 +445,14 @@ class NodeLayout
 
   # Generates an yaml file for non-hybrid cloud layouts which don't have them
   def generate_cloud_layout
-    layout = {}
-    
-    layout[:controller] = "node-0"
-
+    layout = {:controller => "node-0"}
     servers = []
-
-    # If min and max aren't specified we default them to four
-    @min_images ||= 4
-    @max_images ||= 4
-
     num_slaves = @min_images - 1
     num_slaves.times do |i|
       servers << "node-#{i+1}"
     end
 
     layout[:servers] = servers
-
     YAML.load(layout.to_yaml)
   end
 
@@ -459,9 +564,20 @@ class Node
   end
 
   def add_db_role db_type, is_master
-    db_role = is_master ? 'db_master' : 'db_slave'
-    add_role :database
-    add_role db_role
+    if is_master
+      add_role :db_master
+      add_role :zookeeper
+    else
+      add_role :db_slave
+    end
+  end
+
+  def add_rabbitmq_role is_master
+    if is_master
+      add_role :rabbitmq_master
+    else
+      add_role :rabbitmq_slave
+    end
   end
 
   def add_role role
@@ -500,17 +616,21 @@ class SimpleNode < Node
       @roles << :shadow
       @roles << :load_balancer
       @roles << :database
+      @roles << :memcache # the database needs memcache
       @roles << :login
       @roles << :zookeeper
+      @roles << :rabbitmq
     end
 
     # If they specify a servers role, expand it out to
-    # be database and appengine
+    # be database, appengine, and memcache
     if @roles.include?(:servers)
       @roles.delete(:servers)
       @roles << :appengine
+      @roles << :memcache
       @roles << :database
       @roles << :load_balancer
+      @roles << :rabbitmq
     end
 
     @roles.uniq!
@@ -525,7 +645,6 @@ class AdvancedNode < Node
       @roles.delete(:master)
       @roles << :shadow
       @roles << :load_balancer
-      #@roles << :login
       @roles << :zookeeper
     end
 
@@ -535,6 +654,10 @@ class AdvancedNode < Node
 
     if @roles.include?(:appengine)
       @roles << :load_balancer
+    end
+
+    if @roles.include?(:database)
+      @roles << :memcache
     end
 
     @roles.uniq!

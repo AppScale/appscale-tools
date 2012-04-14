@@ -1,114 +1,15 @@
-#!/usr/bin/ruby -w
+#!/usr/bin/env ruby
 # Programmer: Chris Bunch
 
 $VERBOSE = nil # to supress excessive SSL cert warnings
 
-require 'fileutils'
-require 'yaml'
 
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'common_functions'
-require 'node_layout'
+require 'appscale_tools'
 
 
-USAGE = <<END_OF_USAGE
-#{AS_VERSION}
-
-Usage: appscale-add-keypair [OPTIONS]
-
-Examples:
-  appscale-add-keypair --ips ips.yaml
-  
-Flags:
-  --ips: The YAML file containing the IPs of the machines to use if not using a cloud infrastructure (for example, Xen).
-  --auto: Requests the SSH login password from the user once, and then automatically reuses the password to install the public key 
-          in each machine.
-END_OF_USAGE
-
-ALL_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", "auto"]
-
-require 'parse_args'
-
-
-keyname = KEYNAME
-ips_yaml = IPS
-auto = AUTO
-
-node_layout = NodeLayout.new(IPS, { :database => "cassandra" } )
-
-["ssh-keygen", "ssh-copy-id"].each { |cmd|
-  abort("You do not have the '#{cmd}' command in your PATH. Please ensure that it is in your path and try again.") unless CommonFunctions.user_has_cmd?(cmd)
-}
-
-appscale_dir = File.expand_path("~/.appscale")
-FileUtils.mkdir(appscale_dir) unless File.exists?(appscale_dir)
-
-path = File.expand_path("~/.appscale/#{keyname}")
-backup_key = File.expand_path("~/.appscale/#{keyname}.key")
-pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
-
-#FileUtils.rm_f([path, backup_key, pub_key])
-unless File.exists?(path) and File.exists?(pub_key)
-  FileUtils.rm_f([path, backup_key, pub_key])
-  puts CommonFunctions.shell("ssh-keygen -t rsa -N '' -f #{path}")
-end
-FileUtils.chmod(0600, [path, pub_key])
-
-if auto
-  unless CommonFunctions.user_has_cmd?("expect")
-    need_expect_msg = "\nYou do not have the 'expect' command in your PATH. " + 
-      "Please ensure that it is in your path and try again.\nIf 'expect'" + 
-      " is not installed, then you can install it using : " + 
-      "sudo apt-get install expect.\n\n"
-    abort(need_expect_msg)
-  end
-
-  #Get current state of terminal
-  @state = CommonFunctions.shell("stty -g")
-
-  print "\nEnter SSH password of root: "
-
-  #Switch off echoing on terminal
-  CommonFunctions.shell("stty -echo")
-  password = STDIN.gets
-
-  #Restore terminal state
-  CommonFunctions.shell("stty #{@state}")
-  
-  #Location of expect script that interacts with ssh-copy-id
-  expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
-end
-
-ips = node_layout.nodes.collect { |node| node.id }
-copy_success = true
-
-ips.each { |ip|
-  puts "\n\n"  
-  puts "Executing ssh-copy-id for host : " + ip
-  puts "------------------------------"
-
-  if auto
-    puts CommonFunctions.shell("#{expect_script} root@#{ip} #{path} #{password}")
-  else
-    puts CommonFunctions.shell("ssh-copy-id -i #{path} root@#{ip}")
-  end
-  
-  #Checking the exit status of the above shell command
-  if $?.to_i != 0
-    puts "\n\nERROR ! Unable to ssh-copy-id to host : "+ip
-    puts "\nTerminating script"
-    copy_success = false
-    break
-  end
-}
-
-if copy_success
-  head_ip = node_layout.head_node.id
-  puts CommonFunctions.shell("scp -i #{path} #{path} root@#{head_ip}:.ssh/id_rsa")
-  # this is needed for EC2 integration.
-  puts CommonFunctions.shell("scp -i #{path} #{path} root@#{head_ip}:.ssh/id_dsa")
-  puts CommonFunctions.shell("scp -i #{path} #{pub_key} root@#{head_ip}:.ssh/id_rsa.pub")
-  
-  FileUtils.cp(path, backup_key)
-  puts "A new ssh key has been generated for you and placed at #{path}. You can now use this key to log into any of the machines you specified without providing a password via the following command:\n\tssh root@XXX.XXX.XXX.XXX -i #{path}"
+if __FILE__ == $0
+  options = ParseArgs.get_vals_from_args(ARGV, AppScaleTools::ADD_KEYPAIR_FLAGS,
+    AppScaleTools::ADD_KEYPAIR_USAGE)
+  AppScaleTools.add_keypair(options)
 end

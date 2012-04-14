@@ -13,6 +13,10 @@ NO_TIMEOUT = -1
 RETRY_ON_FAIL = true
 ABORT_ON_FAIL = false
 
+# A constant that indicates that verbose logging should be produced.
+LOGS_VERBOSE = "high"
+
+
 class AppControllerClient
   attr_reader :conn, :ip, :secret
   
@@ -25,16 +29,17 @@ class AppControllerClient
     @conn.add_method("status", "secret")
     @conn.add_method("update", "app_names", "secret")
     @conn.add_method("done_uploading", "appname", "location", "secret")
+    @conn.add_method("is_done_loading", "secret")
     @conn.add_method("is_app_running", "appname", "secret")
     @conn.add_method("stop_app", "app_name", "secret")    
     @conn.add_method("get_all_public_ips", "secret")
-    @conn.add_method("backup_appscale", "backup_in_info", "secret")
     @conn.add_method("kill", "secret")
+    @conn.add_method("get_role_info", "secret")
   end
   
-  def make_call(time, retry_on_except)
+  def make_call(time, retry_on_except, want_output=true)
     refused_count = 0
-    max = 1000
+    max = 10
 
     begin
       Timeout::timeout(time) {
@@ -42,7 +47,11 @@ class AppControllerClient
       }
     rescue Errno::ECONNREFUSED
       if refused_count > max
-        abort("Connection was refused. Is the AppController running?")
+        if want_output
+          abort("Connection with #{@ip} was refused. Is the AppController running?")
+        else
+          raise Exception
+        end
       else
         refused_count += 1
         sleep(1)
@@ -54,8 +63,25 @@ class AppControllerClient
       if retry_on_except
         retry
       else
-        abort("We saw an unexpected error of the type #{except.class} with the following message:\n#{except}.")
+        if want_output
+          abort("We saw an unexpected error of the type #{except.class} with the following message:\n#{except}.")
+        else
+          raise except
+        end
       end
+    end
+  end
+
+  def is_live?
+    uri = "https://#{@ip}:17443"
+
+    begin
+      Timeout::timeout(5) {
+        make_call(1, ABORT_ON_FAIL, want_output=false) { @conn.status(@secret) }
+      }
+      return true
+    rescue Exception
+      return false
     end
   end
 
@@ -65,7 +91,7 @@ class AppControllerClient
       status = get_status()
 
       new_state = status.scan(/Current State: ([\w\s\d\.,]+)\n/).flatten.to_s.chomp
-      if verbose_level == "high" and new_state != state
+      if verbose_level == LOGS_VERBOSE and new_state != state
         puts new_state
         state = new_state
       end
@@ -93,15 +119,8 @@ class AppControllerClient
     abort(result) if result =~ /Error:/
   end
 
-  def status(print_output=true)
-    status = get_status()
-         
-    if print_output
-      puts "Status of node at #{ip}:"
-      puts "#{status}"
-    end
-
-    return status
+  def status()
+    return "Status of node at #{ip}:\n" + get_status()
   end
 
   def get_status()
@@ -120,19 +139,36 @@ class AppControllerClient
     make_call(30, RETRY_ON_FAIL) { @conn.get_all_public_ips(@secret) }
   end
 
-  def backup_appscale(backup_info)
-    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.backup_appscale(backup_info, @secret) }
-  end
-
   def kill()
     make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.kill(@secret) }
   end
 
-  def done_uploading(appname, location)
-    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.done_uploading(appname, location, @secret) }
+  def is_done_loading?()
+    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.is_done_loading(@secret) }
   end
 
-  def app_is_running(appname)
-    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.is_app_running(appname, @secret) }
+  def done_uploading(appname, location)
+    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { 
+      @conn.done_uploading(appname, location, @secret) 
+    }
   end
+
+
+  def app_is_running?(appname)
+    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { 
+      @conn.is_app_running(appname, @secret) 
+    }
+  end
+
+
+  # Asks the AppController to see what roles each node is running in AppScale.
+  # The result is an Array, where each item is a Hash that contains information
+  # about the given node.
+  def get_role_info()
+    make_call(NO_TIMEOUT, ABORT_ON_FAIL) { 
+      @conn.get_role_info(@secret) 
+    }
+  end
+
+
 end

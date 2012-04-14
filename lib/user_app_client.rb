@@ -142,10 +142,16 @@ class UserAppClient
   def does_app_exist?(app, retry_on_except=true)
     result = ""
     make_call(10, retry_on_except) {
-      result = @conn.is_app_enabled(app, @secret)
+      result = @conn.get_app_data(app, @secret)
     }
-    
-    if result == "true"
+
+    begin
+      num_hosts = Integer(result.scan(/num_ports:(\d+)/).flatten.to_s)
+    rescue Exception
+      num_hosts = 0
+    end
+
+    if num_hosts > 0
       return true
     else
       return false

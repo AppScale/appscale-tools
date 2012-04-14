@@ -11,7 +11,7 @@ Architecture: any
 Depends:
 # tools
  openssh-client,
- ruby1.8, libopenssl-ruby, curl,
+ ruby1.8, libopenssl-ruby, curl, wget,
 # euca2ools
  euca2ools,
  ec2-api-tools, ec2-ami-tools,

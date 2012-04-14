@@ -28,10 +28,12 @@ module EncryptionHelper
   def self.generate_ssh_key(verbose, outputLocation, name, infrastructure, force)
     ec2_output = ""
     loop {
+      sleep(10)  # to avoid euca replay error message
       ec2_output = CommonFunctions.shell("#{infrastructure}-add-keypair #{name} 2>&1")
       break if ec2_output.include?("BEGIN RSA PRIVATE KEY")
       if force
         puts "Trying again. Saw this from #{infrastructure}-add-keypair: #{ec2_output}" if verbose
+        sleep(10)
         delete_output = CommonFunctions.shell("#{infrastructure}-delete-keypair #{name} 2>&1")
         puts "Saw this from #{infrastructure}-delete-keypair: #{delete_output}" if verbose
       else

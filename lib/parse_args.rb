@@ -1,6 +1,12 @@
 #!/usr/bin/ruby
 # Programmer: Chris Bunch
 
+$:.unshift File.join(File.dirname(__FILE__))
+require 'common_functions'
+require 'custom_exceptions'
+
+        
+NO_APP_FOUND = "The specified App Engine app didn't exist."
 FILE_FLAG_NOT_VALID_MSG = "File must be either a directory or end with .tar.gz"
 IPS_FLAG_NOT_A_YAML_MSG = "YAML file must end with .yaml or .yml"
 MIN_FLAG_NOT_A_NUM_MSG = "Min images must be a positive integer"
@@ -46,283 +52,360 @@ RESTORE_TAR_NOT_EXISTS_MSG = "The tar file you specified to back up" +
 RESTORE_NEPTUNE_INFO_NOT_EXISTS_MSG = "The Neptune info file you specified" +
   " does not exist. Please specify a new file name and try again."
 
+CONFIG_FILE_NOT_FOUND = "The configuration file you specified did not exist." +
+  " Please specify one that exists and try again."
+NO_MIN_OR_MAX_WITH_IPS = "When using the ips flag, the min or max flags " +
+  "cannot be specified. Please only use either (1) the min and max flags or " +
+  "(2) the ips flag."
+
 FILE_REGEX = /\.tar\.gz$/
 POS_NUM_REGEX = /^[1-9]\d*$/
 TAR_REGEX = /\.tar\.gz$/
 YAML_REGEX = /\.ya?ml$/
 
-def parse_args(command_line)
-  raise if command_line.class != Array
+DEFAULT_DATASTORE = "cassandra"
+
+
+module ParseArgs
+  public
   
-  arg_hash = {}
-  
-  arg_found = nil
-  command_line.each { |arg|
-    if arg[0].chr == "-"
-      arg = arg[1, arg.length]
-      arg = arg[1, arg.length] if arg[0].chr == "-" # to handle --arg
-      arg_found = arg
-      if !ALL_FLAGS.include?(arg)
-        abort "The flag #{arg} cannot be used here.\n\n#{USAGE}"
-      end
-      
-      arg_hash[arg] = "NO ARG"
-    elsif !arg_found.nil?
-      arg_hash[arg_found] = arg
-      arg_found = nil
-    else
-      abort "The parameter #{arg} was specified without a corresponding flag."
+  def self.get_vals_from_args(arg_list, all_flags, usage)
+    val_hash = {}
+
+    arg_hash = parse_argv(arg_list, all_flags, usage)
+
+    if arg_hash['help'] || arg_hash['h'] || arg_hash['usage']
+      raise BadCommandLineArgException.new(usage)
     end
-  }
+
+    if arg_hash['version']
+      raise BadCommandLineArgException.new(AS_VERSION)
+    end
+
+    self.get_min_and_max_images_and_ips(arg_hash, val_hash)
+
+    if arg_hash['file']
+      true_location = File.expand_path(arg_hash['file'])
+      if !File.exists?(true_location)
+        raise BadCommandLineArgException.new(NO_APP_FOUND)
+      end
+
+      if !((File.directory?(true_location)) or (true_location =~ TAR_REGEX))
+        raise BadCommandLineArgException.new(FILE_FLAG_NOT_VALID_MSG) 
+      end
+
+      val_hash['file_location'] = arg_hash['file']
+    else
+      val_hash['file_location'] = nil
+    end
+
+    self.get_table_args(arg_hash, val_hash)
+    self.get_cloud_args(arg_hash, val_hash)
+
+    if arg_hash['keyname']
+      val_hash['keyname'] = arg_hash['keyname']
+    else
+      val_hash['keyname'] = "appscale"
+    end
+
+    if arg_hash['appname']
+      val_hash['appname'] = arg_hash['appname'].gsub(/[^\w\d-]/, "")
+    else
+      val_hash['appname'] = nil
+    end
+
+    if arg_hash['appengine']
+      val_hash['appengine'] = Integer(arg_hash['appengine'])
+    else
+      val_hash['appengine'] = 3
+    end
+
+    if arg_hash['separate']
+      val_hash['separate'] = true
+    else
+      val_hash['separate'] = false
+    end
+
+    val_hash['confirm'] = !arg_hash['confirm'].nil?
+
+    self.get_backup_and_restore_params(arg_hash, val_hash)
+    self.get_developer_flags(arg_hash, val_hash)
+
+    return val_hash
+  end
+
+  private
   
-  return arg_hash
-end
+  def self.parse_argv(command_line, all_flags, usage)
+    if command_line.class != Array
+      raise BadCommandLineArgException.new("argv was not an Array, but was a #{command_line.class}")
+    end
 
-arg_hash = parse_args(ARGV)
-
-flags = arg_hash.keys
-flags.each { |flag|
-  unless ALL_FLAGS.include?(flag)
-    message = "Flag #{flag} not recognized.\n\n" + USAGE
-    abort(message)
-  end
-}
-
-if arg_hash['help'] || arg_hash['h'] || arg_hash['usage']
-  abort(USAGE)
-end
-
-if arg_hash['version']
-  abort(AS_VERSION)
-end
-
-if arg_hash['min']
-  abort(MIN_FLAG_NOT_A_NUM_MSG) if arg_hash['min'] !~ POS_NUM_REGEX
-  min_images = Integer(arg_hash['min'])
-  if min_images < 1
-    abort("--min needs to be at least one")
-  end
-else
-  #min_images = 4
-end
-
-if arg_hash['max']
-  abort(MAX_FLAG_NOT_A_NUM_MSG) if arg_hash['max'] !~ POS_NUM_REGEX
-  max_images = Integer(arg_hash['max'])
+    arg_hash = {}
   
-  unless arg_hash['min']
-    min_images = max_images
-  end
-else
-  #max_images = min_images
-end
-
-#if min_images > max_images
-#  abort(MAX_SMALLER_THAN_MIN_MSG)
-#end
-
-if arg_hash['file']
-  true_location = File.expand_path(arg_hash['file'])
-  file_doesnt_exist = "The specified AppEngine program, #{arg_hash['file']}," + 
-    " didn't exist. Please specify one that exists and try again"
-  abort(file_doesnt_exist) unless File.exists?(true_location)
-
-  if not ((File.directory?(true_location)) or (true_location =~ TAR_REGEX))
-    abort(FILE_FLAG_NOT_VALID_MSG) 
-  end
-  FILE_LOCATION = arg_hash['file']
-else
-  FILE_LOCATION = nil
-end
-
-if arg_hash['table']
-  abort(TABLE_FLAG_NOT_IN_SET_MSG) unless VALID_TABLE_TYPES.include?(arg_hash['table'])
-  TABLE = arg_hash['table']
-else
-  TABLE = "cassandra"
-end
-
-if arg_hash['infrastructure']
-  abort(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG) unless VALID_CLOUD_TYPES.include?(arg_hash['infrastructure'])
-  INFRASTRUCTURE = arg_hash['infrastructure']
-else
-  INFRASTRUCTURE = nil
-end
-
-if arg_hash['ips']
-  begin
-    IPS = YAML.load_file(arg_hash['ips'])
-  rescue Errno::ENOENT
-    ips_doesnt_exist = "The configuration file you specified, " + 
-      "#{arg_hash['ips']}, did not exist. Please specify one that" + 
-      " exists and try again."
-    abort(ips_doesnt_exist)
-  end
-else
-  IPS = nil
-end
-
-if arg_hash['n']
-  abort("n must be a positive integer") if arg_hash['n'] !~ POS_NUM_REGEX
+    arg_found = nil
+    command_line.each { |arg|
+      if arg[0].chr == "-"
+        arg = arg[1, arg.length]
+        arg = arg[1, arg.length] if arg[0].chr == "-" # to handle --arg
+        arg_found = arg
+        if !all_flags.include?(arg)
+          raise BadCommandLineArgException.new("The flag #{arg} cannot be used here.")
+        end
+      
+        arg_hash[arg] = "NO ARG"
+      elsif !arg_found.nil?
+        arg_hash[arg_found] = arg
+        arg_found = nil
+      else
+        raise BadCommandLineArgException.new("The parameter #{arg} was specified without a corresponding flag.")
+      end
+    }
   
-  REPLICATION = Integer(arg_hash['n'])
-else
-  REPLICATION = nil
-end
+    return arg_hash
+  end
 
-if arg_hash['r']
-  abort(RW_REQUIRES_VOLDEMORT_MSG) if TABLE != "voldemort"
+  def self.get_min_and_max_images_and_ips(arg_hash, val_hash)
+    if arg_hash['min']
+      if arg_hash['min'] !~ POS_NUM_REGEX
+        raise BadCommandLineArgException.new(MIN_FLAG_NOT_A_NUM_MSG)
+      end
+
+      min_images = Integer(arg_hash['min'])
+    end
+
+    if arg_hash['max']
+      if arg_hash['max'] !~ POS_NUM_REGEX
+        raise BadCommandLineArgException.new(MAX_FLAG_NOT_A_NUM_MSG)
+      end
+
+      max_images = Integer(arg_hash['max'])
   
-  VOLDEMORT_R = Integer(arg_hash['r'])
-else
-  VOLDEMORT_R = nil
-end
+      if !arg_hash['min']
+        min_images = max_images
+      end
+    end
 
-if arg_hash['w']
-  abort(RW_REQUIRES_VOLDEMORT_MSG) if TABLE != "voldemort"
+    if min_images and max_images and min_images > max_images
+      raise BadCommandLineArgException.new(MAX_SMALLER_THAN_MIN_MSG)
+    end
+
+    val_hash['min_images'] = min_images
+    val_hash['max_images'] = max_images
+
+    if arg_hash['ips']
+      # users shouldn't be allowed to specify ips and min/max
+      if arg_hash['min'] or arg_hash['max']
+        raise BadCommandLineArgException.new(NO_MIN_OR_MAX_WITH_IPS)
+      end
+
+      begin
+        val_hash['ips'] = YAML.load_file(arg_hash['ips'])
+      rescue Errno::ENOENT
+        abort(CONFIG_FILE_NOT_FOUND)
+      end
+    else
+      val_hash['ips'] = nil
+    end
+  end
+
+  def self.get_table_args(arg_hash, val_hash)
+    if arg_hash['table']
+      if !VALID_TABLE_TYPES.include?(arg_hash['table'])
+        raise BadCommandLineArgException.new(TABLE_FLAG_NOT_IN_SET_MSG)
+      end
+      val_hash['table'] = arg_hash['table']
+    else
+      val_hash['table'] = DEFAULT_DATASTORE
+    end
+
+    if arg_hash['n']
+      if arg_hash['n'] !~ POS_NUM_REGEX
+        raise BadCommandLineArgException.new("n must be a positive integer")
+      end
   
-  VOLDEMORT_W = Integer(arg_hash['w'])
-else
-  VOLDEMORT_W = nil
-end
+      val_hash['replication'] = Integer(arg_hash['n'])
+    else
+      val_hash['replication'] = nil
+    end
 
-MIN_IMAGES = min_images
-MAX_IMAGES = max_images
+    if val_hash['table'] != 'voldemort' and (arg_hash['r'] or arg_hash['w'])
+      raise BadCommandLineArgException.new(RW_REQUIRES_VOLDEMORT_MSG)
+    end
 
-if arg_hash['machine']
-  MACHINE = arg_hash['machine']
-  if MACHINE == "NO ARG"
-    abort("You failed to provide an argument for the #{flag} flag. Please do so and try again.")
-  end
-else
-  MACHINE = ENV['APPSCALE_MACHINE']
-end 
+    if arg_hash['r']
+      if arg_hash['r'] !~ POS_NUM_REGEX
+        raise BadCommandLineArgException.new("r must be a positive integer")
+      end
 
-possible_instance_types = ["m1.large", "m1.xlarge", "c1.xlarge"]
-if arg_hash['instance_type']
-  abort(INSTANCE_FLAG_NOT_IN_SET_MSG) unless possible_instance_types.include?(arg_hash['instance_type'])
-  INSTANCE_TYPE = arg_hash['instance_type']
-else
-  INSTANCE_TYPE = "m1.large"
-end
+      val_hash['voldemort_r'] = Integer(arg_hash['r'])
+    else
+      val_hash['voldemort_r'] = nil
+    end
 
-if arg_hash['v'] or arg_hash['verbose']
-  @@verbose = true
-else
-  @@verbose = false
-end
+    if arg_hash['w']
+      if arg_hash['w'] !~ POS_NUM_REGEX
+        raise BadCommandLineArgException.new("w must be a positive integer")
+      end
 
-if arg_hash['scp']
-  SCP = true
-else
-  SCP = false
-end
-
-if arg_hash['test']
-  TEST = true
-else
-  TEST = false
-end
-
-if arg_hash['keyname']
-  KEYNAME = arg_hash['keyname']
-else
-  KEYNAME = "appscale"
-end
-
-if arg_hash['auto']
-  AUTO = true
-else
-  AUTO = false
-end
-
-if arg_hash['appname']
-  APPNAME = arg_hash['appname'].gsub(/[^\w\d-]/, "")
-else
-  APPNAME = nil
-end
-
-if arg_hash['appengine']
-  APPENGINE = Integer(arg_hash['appengine'])
-else
-  APPENGINE = 3
-end
-
-if arg_hash['force']
-  FORCE = true
-else
-  FORCE = false
-end
-
-if arg_hash['separate']
-  SEPARATE = true
-else
-  SEPARATE = false
-end
-
-if arg_hash['email']
-  EMAIL = arg_hash['email']
-else
-  EMAIL = false
-end
-
-CONFIRM = !arg_hash['confirm'].nil?
-
-if arg_hash['backup_to_tar']
-  if File.exists?(arg_hash['backup_to_tar'])
-    abort(BACKUP_TAR_EXISTS_MSG)
+      val_hash['voldemort_w'] = Integer(arg_hash['w'])
+    else
+      val_hash['voldemort_w'] = nil
+    end
   end
 
-  BACKUP_TAR_LOCATION = arg_hash['backup_to_tar']
-else
-  BACKUP_TAR_LOCATION = nil
-end
+  def self.get_cloud_args(arg_hash, val_hash)
+    if arg_hash['infrastructure'] 
+      infra = arg_hash['infrastructure']
+      if !VALID_CLOUD_TYPES.include?(infra)
+        raise BadCommandLineArgException.new(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG)
+      end
 
-if arg_hash['backup_to_ebs']
-  BACKUP_EBS_LOCATION = arg_hash['backup_to_ebs']
-else
-  BACKUP_EBS_LOCATION = nil
-end
+      if infra == "iaas"
+        val_hash['infrastructure'] = "euca"
+      else
+        val_hash['infrastructure'] = infra
+      end
+    else
+      val_hash['infrastructure'] = nil
+    end
 
-if arg_hash['backup_neptune_info']
-  if File.exists?(File.expand_path(arg_hash['backup_neptune_info']))
-    abort(BACKUP_NEPTUNE_INFO_EXISTS_MSG)
+    #Override if --iaas is set
+    if arg_hash['iaas']
+      if arg_hash['iaas'] == "hybrid"
+        val_hash['infrastructure'] = "hybrid"
+      else
+        val_hash['infrastructure'] = "euca"
+      end
+    end
+
+    if arg_hash['machine']
+      val_hash['machine'] = arg_hash['machine']
+      if val_hash['machine'] == "NO ARG"
+        raise BadCommandLineArgException.new("You failed to provide an argument for the #{flag} flag. Please do so and try again.")
+      end
+    else
+      val_hash['machine'] = ENV['APPSCALE_MACHINE']
+    end 
+
+    possible_instance_types = ["m1.large", "m1.xlarge", "c1.xlarge"]
+    if arg_hash['instance_type']
+      if !possible_instance_types.include?(arg_hash['instance_type'])
+        raise BadCommandLineArgException.new(INSTANCE_FLAG_NOT_IN_SET_MSG)
+      end
+      val_hash['instance_type'] = arg_hash['instance_type']
+    else
+      val_hash['instance_type'] = "m1.large"
+    end
+
+    if arg_hash['v'] or arg_hash['verbose']
+      val_hash['verbose'] = true
+    else
+      val_hash['verbose'] = false
+    end
+
+    # The group flag is used to indicate the name of the security group that should
+    # be used in EC2 and Eucalyptus deployments. If used in Xen and KVM deployments,
+    # this flag has no effect. The security group should not exist prior to running
+    # AppScale - if it does exist, the tools will abort accordingly.
+    if arg_hash['group']
+      val_hash['group'] = arg_hash['group']
+    else
+      val_hash['group'] = "appscale"
+    end
   end
 
-  BACKUP_NEPTUNE_INFO = File.expand_path(arg_hash['backup_neptune_info'])
-else
-  BACKUP_NEPTUNE_INFO = nil
-end
+  def self.get_backup_and_restore_params(arg_hash, val_hash)
+    if arg_hash['backup_to_tar']
+      if File.exists?(arg_hash['backup_to_tar'])
+        raise BadCommandLineArgException.new(BACKUP_TAR_EXISTS_MSG)
+      end
 
-if arg_hash['restore_from_tar']
-  unless File.exists?(arg_hash['restore_from_tar'])
-    abort(RESTORE_TAR_NOT_EXISTS_MSG)
+      val_hash['backup_tar_location'] = arg_hash['backup_to_tar']
+    else
+      val_hash['backup_tar_location'] = nil
+    end
+
+    if arg_hash['backup_to_ebs']
+      val_hash['backup_ebs_location'] = arg_hash['backup_to_ebs']
+    else
+      val_hash['backup_ebs_location'] = nil
+    end
+
+    if arg_hash['backup_neptune_info']
+      if File.exists?(File.expand_path(arg_hash['backup_neptune_info']))
+        raise BadCommandLineArgException.new(BACKUP_NEPTUNE_INFO_EXISTS_MSG)
+      end
+
+      val_hash['backup_neptune_info'] = File.expand_path(arg_hash['backup_neptune_info'])
+    else
+      val_hash['backup_neptune_info'] = nil
+    end
+
+    if arg_hash['restore_from_tar']
+      unless File.exists?(arg_hash['restore_from_tar'])
+        raise BadCommandLineArgException.new(RESTORE_TAR_NOT_EXISTS_MSG)
+      end
+
+      val_hash['restore_from_tar'] = arg_hash['restore_from_tar']
+    else
+      val_hash['restore_from_tar'] = nil
+    end
+
+    if arg_hash['restore_neptune_info']
+      unless File.exists?(arg_hash['restore_neptune_info'])
+        raise BadCommandLineArgException.new(RESTORE_NEPTUNE_INFO_NOT_EXISTS_MSG)
+      end
+
+      val_hash['restore_neptune_info'] = arg_hash['restore_neptune_info']
+    else
+      val_hash['restore_neptune_info'] = nil
+    end
+
+    if val_hash['file_location'] && (val_hash['restore_from_tar'] || val_hash['restore_from_ebs'])
+      bad_restore_params = "You cannot restore an AppScale instance " + 
+        "and upload a new application. Please remove one and try again."
+      raise BadCommandLineArgException.new(bad_restore_params)
+    end
   end
 
-  RESTORE_FROM_TAR = arg_hash['restore_from_tar']
-else
-  RESTORE_FROM_TAR = nil
-end
+  # These flags are considered to be 'advanced use' flags, handling things that
+  # may not be necessary in standard AppScale deployments. This includes the
+  # functionality to rsync over an AppScale directory (scp), use 'expect' to
+  # automatically inject the user's SSH password (auto), and so on.
+  def self.get_developer_flags(arg_hash, val_hash)
+    if arg_hash['auto']
+      val_hash['auto'] = true
+    else
+      val_hash['auto'] = false
+    end
 
-if arg_hash['restore_from_ebs']
-  RESTORE_FROM_EBS = arg_hash['restore_from_ebs']
-else
-  RESTORE_FROM_EBS = nil
-end
+    if arg_hash['force']
+      val_hash['force'] = true
+    else
+      val_hash['force'] = false
+    end
 
+    if arg_hash['scp']
+      if arg_hash['scp'] == 'NO ARG'
+        val_hash['scp'] = "~/appscale"
+      else
+        val_hash['scp'] = arg_hash['scp']
+      end
+    else
+      val_hash['scp'] = false
+    end
 
-if arg_hash['restore_neptune_info']
-  unless File.exists?(arg_hash['restore_neptune_info'])
-    abort(RESTORE_NEPTUNE_INFO_NOT_EXISTS_MSG)
+    if arg_hash['test']
+      val_hash['test'] = true
+    else
+      val_hash['test'] = false
+    end
+
+    if arg_hash['email']
+      val_hash['email'] = arg_hash['email']
+    else
+      val_hash['email'] = false
+    end
   end
-
-  RESTORE_NEPTUNE_INFO = arg_hash['restore_neptune_info']
-else
-  RESTORE_NEPTUNE_INFO = nil
-end
-
-if FILE_LOCATION && (RESTORE_FROM_TAR || RESTORE_FROM_EBS)
-  bad_restore_params = "You cannot restore an AppScale instance " + 
-    "and upload a new application. Please remove one and try again."
-  abort(bad_restore_params)
 end

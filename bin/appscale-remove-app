@@ -1,80 +1,13 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 # Programmer: Chris Bunch
 
-$VERBOSE = nil # to supress excessive SSL cert warnings
-
-require 'base64'
-require 'openssl'
-require 'soap/rpc/driver'
-require 'yaml'
 
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'app_controller_client'
-require 'common_functions'
-require 'encryption_helper'
-require 'user_app_client'
-require 'vm_tools'
+require 'appscale_tools'
 
-USAGE = <<END_OF_USAGE
-#{AS_VERSION}
 
-Usage: appscale-remove-app [OPTIONS]
-
-Examples:
-  appscale-remove-app --appname guestbook
-  appscale-remove-app --appname tasks --keyname fooscale
-    
-Flags:
-  --appname: The name of the application to remove from the given AppScale instance.
-  --keyname: The name of the SSH key to use. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name. Defaults to 'appscale' if not provided.
-END_OF_USAGE
-
-IP_REGEX = /\d+\.\d+\.\d+\.\d+/
-
-ALL_FLAGS = ["help", "h", "usage", "appname", "version", "keyname", "confirm"]
-
-require 'parse_args'
-
-abort(USAGE) if APPNAME.nil?
-appname = APPNAME
-keyname = KEYNAME
-
-print "We are about to attempt to remove your application, #{appname}.\nAre you sure you want to remove this application (Y/N)? " if !CONFIRM
-STDOUT.flush
-
-loop {
-  if CONFIRM
-    result = "YES"
-  else
-    result = STDIN.gets.chomp    
-  end
-  result.upcase!
-  break if result == "Y" or result == "YES"
-  abort("\nApplication removal cancelled.") if result == "N" or result == "NO"
-  print "Please type in 'yes' or 'no'.\nAre you sure you want to remove this application (Y/N)? "
-}
-
-secret_key = CommonFunctions.get_secret_key(keyname)
-head_node_ip = CommonFunctions.get_head_node_ip(keyname)
-
-acc = AppControllerClient.new(head_node_ip, secret_key)
-userappserver_ip = acc.get_userappserver_ip
-
-uac = UserAppClient.new(userappserver_ip, secret_key)
-app_exists = uac.does_app_exist?(appname, retry_on_except=true)
-
-unless app_exists
-  abort("We could not stop your application because it was not running.")
+if __FILE__ == $0
+  options = ParseArgs.get_vals_from_args(ARGV, AppScaleTools::REMOVE_APP_FLAGS,
+    AppScaleTools::REMOVE_APP_USAGE)
+  AppScaleTools.remove_app(options)
 end
-
-load_balancer_ip = CommonFunctions.get_load_balancer_ip(keyname)
-result = acc.stop_app(appname)
-
-if result == "true" or result == "" or result == true
-  puts "Your application was successfully removed."
-elsif result == "false"
-  puts "We could not stop your application because it was not running."
-else
-  puts "We could not stop your application due to an unknown error: [#{result}]"
-end
-
