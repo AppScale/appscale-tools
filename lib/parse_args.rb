@@ -118,10 +118,10 @@ module ParseArgs
     # per application, then don't use the autoscaling support.
     if arg_hash['appengine']
       val_hash['appengine'] = Integer(arg_hash['appengine'])
-      val_hash['autoscaling'] = false
+      val_hash['autoscale'] = false
     else
       val_hash['appengine'] = 1
-      val_hash['autoscaling'] = true
+      val_hash['autoscale'] = true
     end
 
     if arg_hash['separate']
