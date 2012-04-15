@@ -114,10 +114,14 @@ module ParseArgs
       val_hash['appname'] = nil
     end
 
+    # If the user tells us exactly how many application servers they want
+    # per application, then don't use the autoscaling support.
     if arg_hash['appengine']
       val_hash['appengine'] = Integer(arg_hash['appengine'])
+      val_hash['autoscaling'] = false
     else
-      val_hash['appengine'] = 3
+      val_hash['appengine'] = 1
+      val_hash['autoscaling'] = true
     end
 
     if arg_hash['separate']

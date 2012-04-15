@@ -1218,6 +1218,7 @@ module CommonFunctions
       "keypath" => "#{keypath}",
       "replication" => "#{node_layout.replication_factor}",
       "appengine" => "#{options['appengine']}",
+      "autoscale" => "#{options['autoscale']}",
       "group" => "#{options['group']}"
     }
 
