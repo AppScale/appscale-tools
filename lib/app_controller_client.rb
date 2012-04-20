@@ -29,6 +29,7 @@ class AppControllerClient
     @conn.add_method("status", "secret")
     @conn.add_method("update", "app_names", "secret")
     @conn.add_method("done_uploading", "appname", "location", "secret")
+    @conn.add_method("is_done_initializing", "secret")
     @conn.add_method("is_done_loading", "secret")
     @conn.add_method("is_app_running", "appname", "secret")
     @conn.add_method("stop_app", "app_name", "secret")    
@@ -54,7 +55,7 @@ class AppControllerClient
         end
       else
         refused_count += 1
-        sleep(1)
+        Kernel.sleep(1)
         retry
       end
     rescue OpenSSL::SSL::SSLError, NotImplementedError, Errno::EPIPE, Timeout::Error, Errno::ECONNRESET
@@ -141,6 +142,12 @@ class AppControllerClient
 
   def kill()
     make_call(NO_TIMEOUT, RETRY_ON_FAIL) { @conn.kill(@secret) }
+  end
+
+  def is_done_initializing?()
+    make_call(NO_TIMEOUT, RETRY_ON_FAIL) { 
+      @conn.is_done_initializing(@secret) 
+    }
   end
 
   def is_done_loading?()
