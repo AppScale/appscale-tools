@@ -310,7 +310,7 @@ module CommonFunctions
       done_starting = true
       all_ips.each { |ip|
         acc = AppControllerClient.new(ip, secret)
-        if !acc.is_done_loading?
+        if !acc.is_done_initializing?
           done_starting = false
         end
       }
