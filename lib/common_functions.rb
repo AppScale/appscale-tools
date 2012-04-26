@@ -118,6 +118,7 @@ module CommonFunctions
     appdb = "#{local}/AppDB"
     neptune = "#{local}/Neptune"
     loki = "#{local}/Loki"
+    iaas_manager = "#{local}/InfrastructureManager"
 
     if !File.exists?(controller)
       raise BadConfigurationException.new("The location you " +
@@ -132,6 +133,7 @@ module CommonFunctions
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
     #self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
   end
 
 
