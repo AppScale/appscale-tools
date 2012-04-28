@@ -71,10 +71,11 @@ VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra", "voldemort"] +
 VALID_CLOUD_TYPES = ["ec2", "euca", "hybrid"]
 
 
-# Some operations use an infinite timeout, and while -1 or 1.0/0 work in
-# Ruby 1.8.7, they don't work in Ruby 1.9 as timeouts. Instead, just use
-# a large number, which will work on both (although it is not as elegant).
-INFINITY = 10000
+# Some operations use an infinite timeout, and while -1 or 1.0/0 work in older
+# versions of Ruby 1.8.7 (default on Ubuntu Lucid and before), they don't work
+# in newer versions of Ruby 1.8.7 and Ruby 1.9. Instead, just use a large 
+# number, which will work on both.
+INFINITY = 1000000
 
 
 module CommonFunctions

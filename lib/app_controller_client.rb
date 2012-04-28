@@ -9,7 +9,7 @@ IP_REGEX = /\d+\.\d+\.\d+\.\d+/
 FQDN_REGEX = /[\w\d\.\-]+/
 IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 
-NO_TIMEOUT = -1
+NO_TIMEOUT = 1000000
 RETRY_ON_FAIL = true
 ABORT_ON_FAIL = false
 
