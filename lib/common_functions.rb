@@ -192,7 +192,7 @@ module CommonFunctions
     return if !File.exists?(app_path)
     return if app_path !~ /\A\/tmp/ and !force
     path_to_remove = File.dirname(app_path)
-    FileUtils.rm_f(path_to_remove, :secure => true)
+    FileUtils.rm_f(path_to_remove)
   end
 
 
