@@ -245,10 +245,10 @@ module CommonFunctions
   end
 
 
-  def self.create_user(user, test, head_node_ip, secret_key, uac, pass)
+  def self.create_user(user, test, head_node_ip, secret_key, uac, pass=nil)
     if pass
       pass = pass # TODO - can we just remove this?
-    elsif options['test']
+    elsif test
       pass = "aaaaaa"
     else
       pass = CommonFunctions.get_password
@@ -664,6 +664,7 @@ module CommonFunctions
       new_pass = self.get_line_from_stdin_no_echo()
       Kernel.print "\nEnter again to verify: "
       verify_pass = self.get_line_from_stdin_no_echo()
+      Kernel.print "\n"
       
       if new_pass == verify_pass
         pass = new_pass
