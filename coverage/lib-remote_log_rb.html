@@ -9,7 +9,7 @@
     <script type="text/javascript" src="rcov.js"></script>
   </head>
   <body>
-    <h1>Tools C0 Coverage Information - RCov</h1>
+    <h1>Appscale Tools C0 Coverage Information - RCov</h1>
     <h2>lib/remote_log.rb</h2>
 
     
@@ -28,17 +28,17 @@
         <tbody>
           <tr>
             <td class="left_align"><a href="lib-remote_log_rb.html">lib/remote_log.rb</a></td>
-            <td class='right_align'><tt>21</tt></td>
-            <td class='right_align'><tt>19</tt></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class=''>38.10%</tt></div>
+            <td class='right_align'><tt>46</tt></td>
+            <td class='right_align'><tt>22</tt></td>
+            <td class="left_align"><div class="percent_graph_legend"><tt class=''>60.87%</tt></div>
           <div class="percent_graph">
-            <div class="covered" style="width:38px"></div>
-            <div class="uncovered" style="width:62px"></div>
+            <div class="covered" style="width:61px"></div>
+            <div class="uncovered" style="width:39px"></div>
           </div></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class=''>31.58%</tt></div>
+            <td class="left_align"><div class="percent_graph_legend"><tt class=''>27.27%</tt></div>
           <div class="percent_graph">
-            <div class="covered" style="width:32px"></div>
-            <div class="uncovered" style="width:68px"></div>
+            <div class="covered" style="width:27px"></div>
+            <div class="uncovered" style="width:73px"></div>
           </div></td>
           </tr>
         </tbody>
@@ -62,128 +62,278 @@
         
           
           
-          <tr class="marked">
-            <td><pre><a name="line2">2</a> require 'net/http'</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line3">3</a> require 'uri'</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line4">4</a> REMOTE_URL = &quot;http://heart-beat.appspot.com/sign2&quot;</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line2">2</a> </pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line5">5</a> </pre></td>
+            <td><pre><a name="line3">3</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line4">4</a> # Imports within Ruby's standard libraries</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line6">6</a> module RemoteLogging</pre></td>
+            <td><pre><a name="line5">5</a> require 'net/http'</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line7">7</a>   def self.remote_post(nnodes, db, infras, state, success)</pre></td>
+            <td><pre><a name="line6">6</a> require 'uri'</pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line8">8</a>     params = {&quot;key&quot; =&gt; &quot;appscale&quot;,</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line7">7</a> </pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line9">9</a>               &quot;infras&quot; =&gt; infras,</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line8">8</a> </pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line10">10</a>               &quot;num_nodes&quot; =&gt; nnodes.to_s(),</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line9">9</a> # RemoteLogging provides callers with a mechanism by which they can save</pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line11">11</a>               &quot;state&quot; =&gt; state,</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line10">10</a> # information about when the AppScale tools are successfully used. Callers</pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line12">12</a>               &quot;success&quot; =&gt; success,</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line11">11</a> # should use these methods to indicate when AppScale has failed to start,</pre></td>
           </tr>
         
           
           
-          <tr class="uncovered">
-            <td><pre><a name="line13">13</a>               &quot;db&quot; =&gt; db}        </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line14">14</a>     post(params)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line15">15</a>   end</pre></td>
+          <tr class="inferred">
+            <td><pre><a name="line12">12</a> # and possibly any information that can be used to debug the problem.</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line16">16</a>   def self.post(params)</pre></td>
+            <td><pre><a name="line13">13</a> module RemoteLogging</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line14">14</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line15">15</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line16">16</a>   # The location where the Google App Engine application runs that stores</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line17">17</a>   # profiling information about how often the AppScale tools run successfully.</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line18">18</a>   REMOTE_URL = &quot;http://heart-beat.appspot.com/sign2&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line19">19</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line20">20</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line21">21</a>   # Provides a convenient interface to self.post that callers can use to</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line22">22</a>   # save profiling information about running the AppScale tools.</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line23">23</a>   def self.remote_post(num_nodes, database, infrastructure, state, success)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line17">17</a>     uri = URI.parse(REMOTE_URL)</pre></td>
+            <td><pre><a name="line24">24</a>     params = {&quot;key&quot; =&gt; &quot;appscale&quot;,</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line18">18</a>     response = Net::HTTP.post_form(uri, params)</pre></td>
+            <td><pre><a name="line25">25</a>               &quot;infras&quot; =&gt; infrastructure,</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line19">19</a>     return response.body</pre></td>
+            <td><pre><a name="line26">26</a>               &quot;num_nodes&quot; =&gt; &quot;#{num_nodes}&quot;,</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line20">20</a>   end</pre></td>
+            <td><pre><a name="line27">27</a>               &quot;state&quot; =&gt; state,</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line21">21</a> end</pre></td>
+            <td><pre><a name="line28">28</a>               &quot;success&quot; =&gt; success,</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line29">29</a>               &quot;db&quot; =&gt; database}</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line30">30</a>     self.post(params)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line31">31</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line32">32</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line33">33</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line34">34</a>   # Posts a Hash of parameters to the Google App Engine application that</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line35">35</a>   # keeps statistics about when AppScale was started successfully or failed.</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line36">36</a>   def self.post(params)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line37">37</a>     begin</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line38">38</a>       uri = URI.parse(REMOTE_URL)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line39">39</a>       response = Net::HTTP.post_form(uri, params)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line40">40</a>       return response.body</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line41">41</a>     rescue Exception  # e.g., if the app is unresponsive</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line42">42</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line43">43</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line44">44</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line45">45</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line46">46</a> end</pre></td>
           </tr>
         
       </tbody>
     </table>
 
-    <p>Generated on Tue Mar 20 00:09:54 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 0.9.8</a></p>
+    <p>Generated on Wed May 16 23:29:49 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 1.0.0</a></p>
 
   </body>
 </html>

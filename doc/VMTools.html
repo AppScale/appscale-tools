@@ -1,223 +1,212 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+
+<html>
 <head>
-  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
 
-  <title>Module: VMTools</title>
+<title>module VMTools - RDoc Documentation</title>
 
-  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
 
-  <script src="./js/jquery.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/thickbox-compressed.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/quicksearch.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/darkfish.js" type="text/javascript"
-    charset="utf-8"></script>
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
 
-</head>
-<body class="module">
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
 
-  <div id="metadata">
-    <div id="home-metadata">
-      <div id="home-section" class="section">
-        <h3 class="section-header">
-          <a href="./index.html">Home</a>
-          <a href="./index.html#classes">Classes</a>
-          <a href="./index.html#methods">Methods</a>
-        </h3>
-      </div>
-    </div>
 
-    <div id="file-metadata">
-      <div id="file-list-section" class="section">
-        <h3 class="section-header">In Files</h3>
-        <div class="section-body">
-          <ul>
-          
-            <li><a href="./lib/vm_tools_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
-              class="thickbox" title="lib/vm_tools.rb">lib/vm_tools.rb</a></li>
-          
-          </ul>
-        </div>
-      </div>
+<body id="top" class="module">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
 
-      
-    </div>
 
-    <div id="class-metadata">
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
 
-      <!-- Parent Class -->
-      
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
 
-      <!-- Namespace Contents -->
-      
 
-      <!-- Method Quickref -->
-      
-      <div id="method-list-section" class="section">
-        <h3 class="section-header">Methods</h3>
-        <ul class="link-list">
-          
-          <li><a href="#method-c-ensure_keyname_not_in_use">::ensure_keyname_not_in_use</a></li>
-          
-          <li><a href="#method-c-ensure_min_vms_available">::ensure_min_vms_available</a></li>
-          
-          <li><a href="#method-c-ensure_tools_are_installed">::ensure_tools_are_installed</a></li>
-          
-          <li><a href="#method-c-get_cloud_creds">::get_cloud_creds</a></li>
-          
-          <li><a href="#method-c-get_creds_from_env">::get_creds_from_env</a></li>
-          
-          <li><a href="#method-c-get_hybrid_creds">::get_hybrid_creds</a></li>
-          
-          <li><a href="#method-c-get_hybrid_env_vars">::get_hybrid_env_vars</a></li>
-          
-          <li><a href="#method-c-get_hybrid_machine">::get_hybrid_machine</a></li>
-          
-          <li><a href="#method-c-get_initial_layout">::get_initial_layout</a></li>
-          
-          <li><a href="#method-c-get_ips">::get_ips</a></li>
-          
-          <li><a href="#method-c-get_public_ips">::get_public_ips</a></li>
-          
-          <li><a href="#method-c-get_vmm_keys">::get_vmm_keys</a></li>
-          
-          <li><a href="#method-c-local_ip">::local_ip</a></li>
-          
-          <li><a href="#method-c-lookup_cloud_env">::lookup_cloud_env</a></li>
-          
-          <li><a href="#method-c-open_ports_in_cloud">::open_ports_in_cloud</a></li>
-          
-          <li><a href="#method-c-set_hybrid_creds">::set_hybrid_creds</a></li>
-          
-          <li><a href="#method-c-spawn_head_node">::spawn_head_node</a></li>
-          
-          <li><a href="#method-c-spawn_head_node_via_cloud">::spawn_head_node_via_cloud</a></li>
-          
-          <li><a href="#method-c-spawn_head_node_via_vmm">::spawn_head_node_via_vmm</a></li>
-          
-          <li><a href="#method-c-spawn_vms">::spawn_vms</a></li>
-          
-          <li><a href="#method-c-terminate_all_vms">::terminate_all_vms</a></li>
-          
-          <li><a href="#method-c-terminate_infrastructure_machines">::terminate_infrastructure_machines</a></li>
-          
-          <li><a href="#method-c-verify_credentials_are_set_correctly">::verify_credentials_are_set_correctly</a></li>
-          
-          <li><a href="#method-c-verify_credentials_exist">::verify_credentials_exist</a></li>
-          
-          <li><a href="#method-c-verify_ids">::verify_ids</a></li>
-          
-        </ul>
-      </div>
-      
+  <div id="file-metadata">
+    <nav id="file-list-section" class="section">
+  <h3 class="section-header">Defined In</h3>
+  <ul>
+    <li>lib/vm_tools.rb
+  </ul>
+</nav>
 
-      <!-- Included Modules -->
-      
-    </div>
-
-    <div id="project-metadata">
-      
-      
-      <div id="fileindex-section" class="section project-section">
-        <h3 class="section-header">Files</h3>
-        <ul>
-        
-          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
-        
-        </ul>
-      </div>
-      
-
-      <div id="classindex-section" class="section project-section">
-        <h3 class="section-header">Class/Module Index
-          <span class="search-toggle"><img src="./images/find.png"
-            height="16" width="16" alt="[+]"
-            title="show/hide quicksearch" /></span></h3>
-        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
-        <fieldset>
-          <legend>Quicksearch</legend>
-          <input type="text" name="quicksearch" value=""
-            class="quicksearch-field" />
-        </fieldset>
-        </form>
-
-        <ul class="link-list">
-        
-          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
-        
-          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
-        
-          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
-        
-          <li><a href="./AppScaleException.html">AppScaleException</a></li>
-        
-          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
-        
-          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
-        
-          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
-        
-          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
-        
-          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
-        
-          <li><a href="./GodInterface.html">GodInterface</a></li>
-        
-          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
-        
-          <li><a href="./Node.html">Node</a></li>
-        
-          <li><a href="./NodeLayout.html">NodeLayout</a></li>
-        
-          <li><a href="./Object.html">Object</a></li>
-        
-          <li><a href="./ParseArgs.html">ParseArgs</a></li>
-        
-          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
-        
-          <li><a href="./SimpleNode.html">SimpleNode</a></li>
-        
-          <li><a href="./UsageText.html">UsageText</a></li>
-        
-          <li><a href="./UserAppClient.html">UserAppClient</a></li>
-        
-          <li><a href="./VMTools.html">VMTools</a></li>
-        
-        </ul>
-        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
-      </div>
-
-      
-    </div>
+    
   </div>
 
-  <div id="documentation">
-    <h1 class="module">VMTools</h1>
+  <div id="class-metadata">
+    
+    
+    
+    <!-- Method Quickref -->
+<nav id="method-list-section" class="section">
+  <h3 class="section-header">Methods</h3>
 
-    <div id="description">
-      
-    </div>
+  <ul class="link-list">
+    
+    <li><a href="#method-c-ensure_keyname_not_in_use">::ensure_keyname_not_in_use</a>
+    
+    <li><a href="#method-c-ensure_min_vms_available">::ensure_min_vms_available</a>
+    
+    <li><a href="#method-c-ensure_tools_are_installed">::ensure_tools_are_installed</a>
+    
+    <li><a href="#method-c-get_cloud_creds">::get_cloud_creds</a>
+    
+    <li><a href="#method-c-get_creds_from_env">::get_creds_from_env</a>
+    
+    <li><a href="#method-c-get_hybrid_creds">::get_hybrid_creds</a>
+    
+    <li><a href="#method-c-get_hybrid_env_vars">::get_hybrid_env_vars</a>
+    
+    <li><a href="#method-c-get_hybrid_machine">::get_hybrid_machine</a>
+    
+    <li><a href="#method-c-get_initial_layout">::get_initial_layout</a>
+    
+    <li><a href="#method-c-get_ips">::get_ips</a>
+    
+    <li><a href="#method-c-get_public_ips">::get_public_ips</a>
+    
+    <li><a href="#method-c-get_vmm_keys">::get_vmm_keys</a>
+    
+    <li><a href="#method-c-local_ip">::local_ip</a>
+    
+    <li><a href="#method-c-lookup_cloud_env">::lookup_cloud_env</a>
+    
+    <li><a href="#method-c-open_ports_in_cloud">::open_ports_in_cloud</a>
+    
+    <li><a href="#method-c-set_hybrid_creds">::set_hybrid_creds</a>
+    
+    <li><a href="#method-c-spawn_head_node">::spawn_head_node</a>
+    
+    <li><a href="#method-c-spawn_head_node_via_cloud">::spawn_head_node_via_cloud</a>
+    
+    <li><a href="#method-c-spawn_head_node_via_vmm">::spawn_head_node_via_vmm</a>
+    
+    <li><a href="#method-c-spawn_vms">::spawn_vms</a>
+    
+    <li><a href="#method-c-terminate_all_vms">::terminate_all_vms</a>
+    
+    <li><a href="#method-c-terminate_infrastructure_machines">::terminate_infrastructure_machines</a>
+    
+    <li><a href="#method-c-verify_credentials_are_set_correctly">::verify_credentials_are_set_correctly</a>
+    
+    <li><a href="#method-c-verify_credentials_exist">::verify_credentials_exist</a>
+    
+    <li><a href="#method-c-verify_ids">::verify_ids</a>
+    
+  </ul>
+</nav>
 
-    <!-- Constants -->
+  </div>
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./AdvancedNode.html">AdvancedNode</a>
+  
+    <li><a href="./AppControllerClient.html">AppControllerClient</a>
+  
+    <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a>
+  
+    <li><a href="./AppScaleException.html">AppScaleException</a>
+  
+    <li><a href="./AppScaleTools.html">AppScaleTools</a>
+  
+    <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a>
+  
+    <li><a href="./BadConfigurationException.html">BadConfigurationException</a>
+  
+    <li><a href="./CommonFunctions.html">CommonFunctions</a>
+  
+    <li><a href="./EncryptionHelper.html">EncryptionHelper</a>
+  
+    <li><a href="./GodInterface.html">GodInterface</a>
+  
+    <li><a href="./InfrastructureException.html">InfrastructureException</a>
+  
+    <li><a href="./Node.html">Node</a>
+  
+    <li><a href="./NodeLayout.html">NodeLayout</a>
+  
+    <li><a href="./Object.html">Object</a>
+  
+    <li><a href="./ParseArgs.html">ParseArgs</a>
+  
+    <li><a href="./RemoteLogging.html">RemoteLogging</a>
+  
+    <li><a href="./SimpleNode.html">SimpleNode</a>
+  
+    <li><a href="./UsageText.html">UsageText</a>
+  
+    <li><a href="./UserAppClient.html">UserAppClient</a>
+  
+    <li><a href="./VMTools.html">VMTools</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation">
+  <h1 class="module">module VMTools</h1>
+
+  <div id="description" class="description">
+    
+  </div><!-- description -->
+
+  
+  
+  
+  <section id="5Buntitled-5D" class="documentation-section">
     
 
-    <!-- Attributes -->
+    
+
+    
+
     
 
     <!-- Methods -->
     
-    <div id="public-class-method-details" class="method-section section">
+     <section id="public-class-5Buntitled-5D-method-details" class="method-section section">
       <h3 class="section-header">Public Class Methods</h3>
 
     
-      <div id="ensure_keyname_not_in_use-method" class="method-detail ">
-        <a name="method-c-ensure_keyname_not_in_use"></a>
-
+      <div id="method-c-ensure_keyname_not_in_use" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">ensure_keyname_not_in_use</span><span
@@ -232,30 +221,26 @@
           
 
           
-          <div class="method-source-code"
-            id="ensure_keyname_not_in_use-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 108</span>
-def self.ensure_keyname_not_in_use(keyname, infrastructure)
-  describe_instances = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;)
-  if describe_instances =~ /\s#{keyname}\s/
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;The keyname you chose is &quot;</span> +
+          <div class="method-source-code" id="ensure_keyname_not_in_use-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 108</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">ensure_keyname_not_in_use</span>(<span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">infrastructure</span>)
+  <span class="ruby-identifier">describe_instances</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">describe_instances</span> <span class="ruby-operator">=~</span> <span class="ruby-node">%r\s#{keyname}\s/</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The keyname you chose is &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;already in use. Please choose another keyname and try again.&quot;</span>)
-  end
-end</pre>
-          </div>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- ensure_keyname_not_in_use-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- ensure_keyname_not_in_use-method -->
 
     
-      <div id="ensure_min_vms_available-method" class="method-detail ">
-        <a name="method-c-ensure_min_vms_available"></a>
-
+      <div id="method-c-ensure_min_vms_available" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">ensure_min_vms_available</span><span
@@ -270,40 +255,36 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="ensure_min_vms_available-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 116</span>
-def self.ensure_min_vms_available(min_vms_needed, instance_type, infrastructure)
-  puts <span class="ruby-string">&quot;warn: this doesn't work on ec2 - euca only&quot;</span>
-  availability_zones = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-availability-zones verbose 2&gt;&amp;1&quot;)
+          <div class="method-source-code" id="ensure_min_vms_available-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 116</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">ensure_min_vms_available</span>(<span class="ruby-identifier">min_vms_needed</span>, <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">infrastructure</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;warn: this doesn't work on ec2 - euca only&quot;</span>
+  <span class="ruby-identifier">availability_zones</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-availability-zones verbose 2&gt;&amp;1&quot;</span>)
   <span class="ruby-comment"># check for errors from last command</span>
-  vms_str = availability_zones.scan(/#{instance_type}\t([\d]+)/).flatten.to_s
-  if vms_str.nil? or vms_str.empty?
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;There was a problem seeing how many &quot;</span> +
-      &quot;virtual machines were available. We saw [#{availability_zones}].&quot;)
-  end
+  <span class="ruby-identifier">vms_str</span> = <span class="ruby-identifier">availability_zones</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%r#{instance_type}\t([\d]+)/</span>).<span class="ruby-identifier">flatten</span>.<span class="ruby-identifier">to_s</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">vms_str</span>.<span class="ruby-identifier">nil?</span> <span class="ruby-keyword">or</span> <span class="ruby-identifier">vms_str</span>.<span class="ruby-identifier">empty?</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;There was a problem seeing how many &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;virtual machines were available. We saw [#{availability_zones}].&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  free_vms = <span class="ruby-constant">Integer</span>(vms_str)
-  if free_vms &lt; min_vms_needed
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;Not enough VMs were free of the &quot;</span> +
-      &quot;type #{instance_type}. Needed #{min_vms_needed} but only #{free_vms}&quot; +
+  <span class="ruby-identifier">free_vms</span> = <span class="ruby-constant">Integer</span>(<span class="ruby-identifier">vms_str</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">free_vms</span> <span class="ruby-operator">&lt;</span> <span class="ruby-identifier">min_vms_needed</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;Not enough VMs were free of the &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;type #{instance_type}. Needed #{min_vms_needed} but only #{free_vms}&quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot; were available.&quot;</span>)
-  end
-end</pre>
-          </div>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- ensure_min_vms_available-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- ensure_min_vms_available-method -->
 
     
-      <div id="ensure_tools_are_installed-method" class="method-detail ">
-        <a name="method-c-ensure_tools_are_installed"></a>
-
+      <div id="method-c-ensure_tools_are_installed" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">ensure_tools_are_installed</span><span
@@ -318,34 +299,30 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="ensure_tools_are_installed-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 87</span>
-def self.ensure_tools_are_installed(infrastructure)
-  commands = [<span class="ruby-string">&quot;-add-group&quot;</span>, <span class="ruby-string">&quot;-authorize&quot;</span>, <span class="ruby-string">&quot;-describe-instances&quot;</span>, <span class="ruby-string">&quot;-run-instances&quot;</span>, <span class="ruby-string">&quot;-terminate-instances&quot;</span>]
-  commands.each { |cmd|
-    full_cmd = &quot;#{infrastructure}#{cmd}&quot;
-    if !<span class="ruby-constant">CommonFunctions</span>.user_has_cmd?(full_cmd)
-      raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;You do not appear to &quot;</span> +
-        &quot;have the command '#{full_cmd}'. Please put it in your PATH and &quot; +
+          <div class="method-source-code" id="ensure_tools_are_installed-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 87</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">ensure_tools_are_installed</span>(<span class="ruby-identifier">infrastructure</span>)
+  <span class="ruby-identifier">commands</span> = [<span class="ruby-string">&quot;-add-group&quot;</span>, <span class="ruby-string">&quot;-authorize&quot;</span>, <span class="ruby-string">&quot;-describe-instances&quot;</span>, <span class="ruby-string">&quot;-run-instances&quot;</span>, <span class="ruby-string">&quot;-terminate-instances&quot;</span>]
+  <span class="ruby-identifier">commands</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">cmd</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">full_cmd</span> = <span class="ruby-node">&quot;#{infrastructure}#{cmd}&quot;</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">user_has_cmd?</span>(<span class="ruby-identifier">full_cmd</span>)
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;You do not appear to &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;have the command '#{full_cmd}'. Please put it in your PATH and &quot;</span> <span class="ruby-operator">+</span>
         <span class="ruby-string">&quot;try again.&quot;</span>)
-    end
+    <span class="ruby-keyword">end</span>
   }
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- ensure_tools_are_installed-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- ensure_tools_are_installed-method -->
 
     
-      <div id="get_cloud_creds-method" class="method-detail ">
-        <a name="method-c-get_cloud_creds"></a>
-
+      <div id="method-c-get_cloud_creds" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_cloud_creds</span><span
@@ -360,34 +337,30 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_cloud_creds-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 376</span>
-def self.get_cloud_creds(node_layout, val_hash)
-  cloud_creds = {
-    <span class="ruby-string">&quot;machine&quot;</span> =&gt; &quot;#{val_hash['machine']}&quot;,
-    <span class="ruby-string">&quot;instance_type&quot;</span> =&gt; &quot;#{val_hash['instance_type']}&quot;,
-    <span class="ruby-string">&quot;infrastructure&quot;</span> =&gt; &quot;#{val_hash['infrastructure']}&quot;,
-    <span class="ruby-string">&quot;min_images&quot;</span> =&gt; &quot;#{node_layout.min_images}&quot;,
-    <span class="ruby-string">&quot;max_images&quot;</span> =&gt; &quot;#{node_layout.max_images}&quot;
+          <div class="method-source-code" id="get_cloud_creds-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 376</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_cloud_creds</span>(<span class="ruby-identifier">node_layout</span>, <span class="ruby-identifier">val_hash</span>)
+  <span class="ruby-identifier">cloud_creds</span> = {
+    <span class="ruby-string">&quot;machine&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{val_hash['machine']}&quot;</span>,
+    <span class="ruby-string">&quot;instance_type&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{val_hash['instance_type']}&quot;</span>,
+    <span class="ruby-string">&quot;infrastructure&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{val_hash['infrastructure']}&quot;</span>,
+    <span class="ruby-string">&quot;min_images&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{node_layout.min_images}&quot;</span>,
+    <span class="ruby-string">&quot;max_images&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{node_layout.max_images}&quot;</span>
   }
-  cloud_creds.merge!(<span class="ruby-constant">VMTools</span>.get_creds_from_env)
-  return cloud_creds
-end</pre>
-          </div>
+  <span class="ruby-identifier">cloud_creds</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">get_creds_from_env</span>)
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">cloud_creds</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_cloud_creds-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_cloud_creds-method -->
 
     
-      <div id="get_creds_from_env-method" class="method-detail ">
-        <a name="method-c-get_creds_from_env"></a>
-
+      <div id="method-c-get_creds_from_env" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_creds_from_env</span><span
@@ -402,44 +375,40 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_creds_from_env-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 65</span>
-def self.get_creds_from_env
-  creds = {}
-  optional = {<span class="ruby-string">&quot;ec2_url&quot;</span> =&gt; <span class="ruby-string">&quot;https://us-east-1.ec2.amazonaws.com&quot;</span>}
-  required = [<span class="ruby-string">&quot;ec2_access_key&quot;</span>, <span class="ruby-string">&quot;ec2_secret_key&quot;</span>]
+          <div class="method-source-code" id="get_creds_from_env-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 65</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_creds_from_env</span>
+  <span class="ruby-identifier">creds</span> = {}
+  <span class="ruby-identifier">optional</span> = {<span class="ruby-string">&quot;ec2_url&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-string">&quot;https://us-east-1.ec2.amazonaws.com&quot;</span>}
+  <span class="ruby-identifier">required</span> = [<span class="ruby-string">&quot;ec2_access_key&quot;</span>, <span class="ruby-string">&quot;ec2_secret_key&quot;</span>]
 
-  optional.each { |k, v|
-    creds[k] = <span class="ruby-constant">ENV</span>[k.upcase] or v
+  <span class="ruby-identifier">optional</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">k</span>, <span class="ruby-identifier">v</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">creds</span>[<span class="ruby-identifier">k</span>] = <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">k</span>.<span class="ruby-identifier">upcase</span>] <span class="ruby-keyword">or</span> <span class="ruby-identifier">v</span>
   }
 
-  required.each { |var|
-    if <span class="ruby-constant">ENV</span>[var.upcase]
-      creds[var] = <span class="ruby-constant">ENV</span>[var.upcase]
-    else
-      raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The required &quot;</span> +
-        &quot;environment variable #{var.upcase} was not set. Please set it &quot; +
+  <span class="ruby-identifier">required</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">var</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">var</span>.<span class="ruby-identifier">upcase</span>]
+      <span class="ruby-identifier">creds</span>[<span class="ruby-identifier">var</span>] = <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">var</span>.<span class="ruby-identifier">upcase</span>]
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The required &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;environment variable #{var.upcase} was not set. Please set it &quot;</span> <span class="ruby-operator">+</span>
         <span class="ruby-string">&quot;and try running AppScale again.&quot;</span>)
-    end
+    <span class="ruby-keyword">end</span>
   }
 
-  return creds
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">creds</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_creds_from_env-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_creds_from_env-method -->
 
     
-      <div id="get_hybrid_creds-method" class="method-detail ">
-        <a name="method-c-get_hybrid_creds"></a>
-
+      <div id="method-c-get_hybrid_creds" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_hybrid_creds</span><span
@@ -454,47 +423,43 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_hybrid_creds-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 409</span>
-def self.get_hybrid_creds(node_layout, set_head_node_creds=false)
-  cloud_creds = {
-    <span class="ruby-string">&quot;infrastructure&quot;</span> =&gt; <span class="ruby-string">&quot;hybrid&quot;</span>,
-    <span class="ruby-string">&quot;min_images&quot;</span> =&gt; &quot;#{node_layout.min_images}&quot;,
-    <span class="ruby-string">&quot;max_images&quot;</span> =&gt; &quot;#{node_layout.max_images}&quot;
+          <div class="method-source-code" id="get_hybrid_creds-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 409</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_hybrid_creds</span>(<span class="ruby-identifier">node_layout</span>, <span class="ruby-identifier">set_head_node_creds</span>=<span class="ruby-keyword">false</span>)
+  <span class="ruby-identifier">cloud_creds</span> = {
+    <span class="ruby-string">&quot;infrastructure&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-string">&quot;hybrid&quot;</span>,
+    <span class="ruby-string">&quot;min_images&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{node_layout.min_images}&quot;</span>,
+    <span class="ruby-string">&quot;max_images&quot;</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-node">&quot;#{node_layout.max_images}&quot;</span>
   }
 
-  cloud_num = 1
-  loop {
-    cloud_type = <span class="ruby-constant">ENV</span>[&quot;CLOUD#{cloud_num}_TYPE&quot;] 
-    break if cloud_type.nil?
+  <span class="ruby-identifier">cloud_num</span> = <span class="ruby-value">1</span>
+  <span class="ruby-identifier">loop</span> {
+    <span class="ruby-identifier">cloud_type</span> = <span class="ruby-constant">ENV</span>[<span class="ruby-node">&quot;CLOUD#{cloud_num}_TYPE&quot;</span>] 
+    <span class="ruby-keyword">break</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">cloud_type</span>.<span class="ruby-identifier">nil?</span>
 
-    if cloud_num == 1 and set_head_node_creds
-      set_vars = true
-    else
-      set_vars = false
-    end
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">cloud_num</span> <span class="ruby-operator">==</span> <span class="ruby-value">1</span> <span class="ruby-keyword">and</span> <span class="ruby-identifier">set_head_node_creds</span>
+      <span class="ruby-identifier">set_vars</span> = <span class="ruby-keyword">true</span>
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">set_vars</span> = <span class="ruby-keyword">false</span>
+    <span class="ruby-keyword">end</span>
 
-    cloud_creds.merge!(self.get_hybrid_env_vars(cloud_type, cloud_num, set_vars))
-    cloud_num += 1 
+    <span class="ruby-identifier">cloud_creds</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_hybrid_env_vars</span>(<span class="ruby-identifier">cloud_type</span>, <span class="ruby-identifier">cloud_num</span>, <span class="ruby-identifier">set_vars</span>))
+    <span class="ruby-identifier">cloud_num</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span> 
   }
 
-  return cloud_creds
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">cloud_creds</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_hybrid_creds-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_hybrid_creds-method -->
 
     
-      <div id="get_hybrid_env_vars-method" class="method-detail ">
-        <a name="method-c-get_hybrid_env_vars"></a>
-
+      <div id="method-c-get_hybrid_env_vars" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_hybrid_env_vars</span><span
@@ -509,55 +474,51 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_hybrid_env_vars-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 438</span>
-def self.get_hybrid_env_vars(cloud_type, cloud_num, set_vars=false)
-  creds = {}
+          <div class="method-source-code" id="get_hybrid_env_vars-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 438</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_hybrid_env_vars</span>(<span class="ruby-identifier">cloud_type</span>, <span class="ruby-identifier">cloud_num</span>, <span class="ruby-identifier">set_vars</span>=<span class="ruby-keyword">false</span>)
+  <span class="ruby-identifier">creds</span> = {}
 
-  if cloud_type == <span class="ruby-string">&quot;euca&quot;</span>
-    required = <span class="ruby-constant">REQUIRED_EUCA_CREDS_FOR_HYBRID</span>
-  elsif cloud_type == <span class="ruby-string">&quot;ec2&quot;</span>
-    required = <span class="ruby-constant">REQUIRED_EC2_CREDS_FOR_HYBRID</span>
-  else
-    puts &quot;Incorrect cloud type of #{cloud_type}&quot;
-    fail
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">cloud_type</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;euca&quot;</span>
+    <span class="ruby-identifier">required</span> = <span class="ruby-constant">REQUIRED_EUCA_CREDS_FOR_HYBRID</span>
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">cloud_type</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;ec2&quot;</span>
+    <span class="ruby-identifier">required</span> = <span class="ruby-constant">REQUIRED_EC2_CREDS_FOR_HYBRID</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Incorrect cloud type of #{cloud_type}&quot;</span>
+    <span class="ruby-identifier">fail</span>
+  <span class="ruby-keyword">end</span>
 
-  required.each { |cred|
-    key = &quot;CLOUD#{cloud_num}_#{cred}&quot;
-    val = <span class="ruby-constant">ENV</span>[key]
+  <span class="ruby-identifier">required</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">cred</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">key</span> = <span class="ruby-node">&quot;CLOUD#{cloud_num}_#{cred}&quot;</span>
+    <span class="ruby-identifier">val</span> = <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">key</span>]
 
-    if val.nil?
-      raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The required &quot;</span> +
-        &quot;environment variable #{key} was not set. Please set it and &quot; +
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">val</span>.<span class="ruby-identifier">nil?</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The required &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;environment variable #{key} was not set. Please set it and &quot;</span> <span class="ruby-operator">+</span>
         <span class="ruby-string">&quot;try again.&quot;</span>)
-    end
+    <span class="ruby-keyword">end</span>
 
-    if set_vars
-      puts &quot;Setting #{cred} to #{val}&quot;
-      <span class="ruby-constant">ENV</span>[cred] = val
-    end
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">set_vars</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Setting #{cred} to #{val}&quot;</span>
+      <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">cred</span>] = <span class="ruby-identifier">val</span>
+    <span class="ruby-keyword">end</span>
 
-    creds[key] = val
+    <span class="ruby-identifier">creds</span>[<span class="ruby-identifier">key</span>] = <span class="ruby-identifier">val</span>
   }
 
-  return creds
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">creds</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_hybrid_env_vars-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_hybrid_env_vars-method -->
 
     
-      <div id="get_hybrid_machine-method" class="method-detail ">
-        <a name="method-c-get_hybrid_machine"></a>
-
+      <div id="method-c-get_hybrid_machine" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_hybrid_machine</span><span
@@ -572,35 +533,31 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_hybrid_machine-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 471</span>
-def self.get_hybrid_machine(infra, cloud_num)
-  if infra == <span class="ruby-string">&quot;euca&quot;</span>
-    key = &quot;CLOUD#{cloud_num}_EMI&quot;
-  elsif infra == <span class="ruby-string">&quot;ec2&quot;</span>
-    key = &quot;CLOUD#{cloud_num}_AMI&quot;
-  else
-    raise <span class="ruby-constant">BadConfigurationException</span>.new(&quot;infrastructure #{infra} &quot; +
+          <div class="method-source-code" id="get_hybrid_machine-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 471</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_hybrid_machine</span>(<span class="ruby-identifier">infra</span>, <span class="ruby-identifier">cloud_num</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">infra</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;euca&quot;</span>
+    <span class="ruby-identifier">key</span> = <span class="ruby-node">&quot;CLOUD#{cloud_num}_EMI&quot;</span>
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">infra</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;ec2&quot;</span>
+    <span class="ruby-identifier">key</span> = <span class="ruby-node">&quot;CLOUD#{cloud_num}_AMI&quot;</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-node">&quot;infrastructure #{infra} &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;is not a supported value.&quot;</span>)
-  end
+  <span class="ruby-keyword">end</span>
 
-  return <span class="ruby-constant">ENV</span>[key]
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">key</span>]
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_hybrid_machine-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_hybrid_machine-method -->
 
     
-      <div id="get_initial_layout-method" class="method-detail ">
-        <a name="method-c-get_initial_layout"></a>
-
+      <div id="method-c-get_initial_layout" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_initial_layout</span><span
@@ -615,37 +572,33 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_initial_layout-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 44</span>
-def self.get_initial_layout(head_node, separate, num_of_nodes, total_nodes)
-  if head_node
-    if separate
-      raise <span class="ruby-constant">NotImplementedError</span>.new(<span class="ruby-string">&quot;haven't done head node, separate yet&quot;</span>)
-    else
-      layout = <span class="ruby-string">&quot;shadow:load_balancer:db_master&quot;</span>
-      layout &lt;&lt; <span class="ruby-string">&quot;:appengine&quot;</span> if total_nodes == 1
-    end
-  else
-    raise <span class="ruby-constant">NotImplementedError</span>.new(<span class="ruby-string">&quot;haven't done slave nodes, separate yet&quot;</span>)
-  end
+          <div class="method-source-code" id="get_initial_layout-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 44</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_initial_layout</span>(<span class="ruby-identifier">head_node</span>, <span class="ruby-identifier">separate</span>, <span class="ruby-identifier">num_of_nodes</span>, <span class="ruby-identifier">total_nodes</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">head_node</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">separate</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">NotImplementedError</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;haven't done head node, separate yet&quot;</span>)
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">layout</span> = <span class="ruby-string">&quot;shadow:load_balancer:db_master&quot;</span>
+      <span class="ruby-identifier">layout</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-string">&quot;:appengine&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">total_nodes</span> <span class="ruby-operator">==</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">NotImplementedError</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;haven't done slave nodes, separate yet&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  return layout
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">layout</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_initial_layout-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_initial_layout-method -->
 
     
-      <div id="get_ips-method" class="method-detail ">
-        <a name="method-c-get_ips"></a>
-
+      <div id="method-c-get_ips" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_ips</span><span
@@ -660,56 +613,52 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_ips-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 159</span>
-def self.get_ips(ips, verbose)
-  if ips.length % 2 != 0
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;ips not even length array&quot;</span>)
-  end
-  reported_public = []
-  reported_private = []
-  ips.each_index { |index|
-    if index % 2 == 0
-      reported_public &lt;&lt; ips[index]
-    else
-      reported_private &lt;&lt; ips[index]
-    end
+          <div class="method-source-code" id="get_ips-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 159</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_ips</span>(<span class="ruby-identifier">ips</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">%</span> <span class="ruby-value">2</span> <span class="ruby-operator">!=</span> <span class="ruby-value">0</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;ips not even length array&quot;</span>)
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">reported_public</span> = []
+  <span class="ruby-identifier">reported_private</span> = []
+  <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">each_index</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">index</span> <span class="ruby-operator">%</span> <span class="ruby-value">2</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+      <span class="ruby-identifier">reported_public</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">ips</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">reported_private</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">ips</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">end</span>
   }
   
-  if verbose
-    puts &quot;Reported Public IPs: [#{reported_public.join(', ')}]&quot;
-    puts &quot;Reported Private IPs: [#{reported_private.join(', ')}]&quot;
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Reported Public IPs: [#{reported_public.join(', ')}]&quot;</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Reported Private IPs: [#{reported_private.join(', ')}]&quot;</span>
+  <span class="ruby-keyword">end</span>
   
-  actual_public = []
-  actual_private = []
+  <span class="ruby-identifier">actual_public</span> = []
+  <span class="ruby-identifier">actual_private</span> = []
   
-  reported_public.each_index { |index|
-    pub = reported_public[index]
-    pri = reported_private[index]
-    if pub != <span class="ruby-string">&quot;0.0.0.0&quot;</span> and pri != <span class="ruby-string">&quot;0.0.0.0&quot;</span>
-      actual_public &lt;&lt; pub
-      actual_private &lt;&lt; pri
-    end
+  <span class="ruby-identifier">reported_public</span>.<span class="ruby-identifier">each_index</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">pub</span> = <span class="ruby-identifier">reported_public</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-identifier">pri</span> = <span class="ruby-identifier">reported_private</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">pub</span> <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;0.0.0.0&quot;</span> <span class="ruby-keyword">and</span> <span class="ruby-identifier">pri</span> <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;0.0.0.0&quot;</span>
+      <span class="ruby-identifier">actual_public</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">pub</span>
+      <span class="ruby-identifier">actual_private</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">pri</span>
+    <span class="ruby-keyword">end</span>
   }
   
-  return actual_public, actual_private
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">actual_public</span>, <span class="ruby-identifier">actual_private</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_ips-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_ips-method -->
 
     
-      <div id="get_public_ips-method" class="method-detail ">
-        <a name="method-c-get_public_ips"></a>
-
+      <div id="method-c-get_public_ips" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_public_ips</span><span
@@ -724,52 +673,48 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_public_ips-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 193</span>
-def self.get_public_ips(ips, verbose)
-  if ips.length % 2 != 0
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;ips not even length array&quot;</span>)
-  end
+          <div class="method-source-code" id="get_public_ips-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 193</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_public_ips</span>(<span class="ruby-identifier">ips</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">%</span> <span class="ruby-value">2</span> <span class="ruby-operator">!=</span> <span class="ruby-value">0</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;ips not even length array&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  reported_public = []
-  reported_private = []
-  ips.each_index { |index|
-    if index % 2 == 0
-      reported_public &lt;&lt; ips[index]
-    else
-      reported_private &lt;&lt; ips[index]
-    end
+  <span class="ruby-identifier">reported_public</span> = []
+  <span class="ruby-identifier">reported_private</span> = []
+  <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">each_index</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">index</span> <span class="ruby-operator">%</span> <span class="ruby-value">2</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+      <span class="ruby-identifier">reported_public</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">ips</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">reported_private</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">ips</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">end</span>
   }
   
-  puts &quot;Reported Public IPs: [#{reported_public.join(', ')}]&quot; if verbose
-  puts &quot;Reported Private IPs: [#{reported_private.join(', ')}]&quot; if verbose
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Reported Public IPs: [#{reported_public.join(', ')}]&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Reported Private IPs: [#{reported_private.join(', ')}]&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
   
-  public_ips = []
-  reported_public.each_index { |index|
-    if reported_public[index] != <span class="ruby-string">&quot;0.0.0.0&quot;</span>
-      public_ips &lt;&lt; reported_public[index]
-    elsif reported_private[index] != <span class="ruby-string">&quot;0.0.0.0&quot;</span>
-      public_ips &lt;&lt; reported_private[index]
-    end
+  <span class="ruby-identifier">public_ips</span> = []
+  <span class="ruby-identifier">reported_public</span>.<span class="ruby-identifier">each_index</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">reported_public</span>[<span class="ruby-identifier">index</span>] <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;0.0.0.0&quot;</span>
+      <span class="ruby-identifier">public_ips</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">reported_public</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">reported_private</span>[<span class="ruby-identifier">index</span>] <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;0.0.0.0&quot;</span>
+      <span class="ruby-identifier">public_ips</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">reported_private</span>[<span class="ruby-identifier">index</span>]
+    <span class="ruby-keyword">end</span>
   }
   
-  return public_ips.flatten
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">public_ips</span>.<span class="ruby-identifier">flatten</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_public_ips-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_public_ips-method -->
 
     
-      <div id="get_vmm_keys-method" class="method-detail ">
-        <a name="method-c-get_vmm_keys"></a>
-
+      <div id="method-c-get_vmm_keys" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">get_vmm_keys</span><span
@@ -784,31 +729,27 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="get_vmm_keys-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 388</span>
-def self.get_vmm_keys(val_hash)
-  puts <span class="ruby-string">&quot;Generating certificate and private key&quot;</span>
-  key, cert = <span class="ruby-constant">EncryptionHelper</span>.generate_pem_files(val_hash[<span class="ruby-string">'keyname'</span>])
-  key = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{val_hash['keyname']}-key.pem&quot;)
-  cert = <span class="ruby-constant">File</span>.expand_path(&quot;~/.appscale/#{val_hash['keyname']}-cert.pem&quot;)
+          <div class="method-source-code" id="get_vmm_keys-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 388</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_vmm_keys</span>(<span class="ruby-identifier">val_hash</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;Generating certificate and private key&quot;</span>
+  <span class="ruby-identifier">key</span>, <span class="ruby-identifier">cert</span> = <span class="ruby-constant">EncryptionHelper</span>.<span class="ruby-identifier">generate_pem_files</span>(<span class="ruby-identifier">val_hash</span>[<span class="ruby-string">'keyname'</span>])
+  <span class="ruby-identifier">key</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">expand_path</span>(<span class="ruby-node">&quot;~/.appscale/#{val_hash['keyname']}-key.pem&quot;</span>)
+  <span class="ruby-identifier">cert</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">expand_path</span>(<span class="ruby-node">&quot;~/.appscale/#{val_hash['keyname']}-cert.pem&quot;</span>)
 
-  return cert, key
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">cert</span>, <span class="ruby-identifier">key</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get_vmm_keys-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- get_vmm_keys-method -->
 
     
-      <div id="local_ip-method" class="method-detail ">
-        <a name="method-c-local_ip"></a>
-
+      <div id="method-c-local_ip" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">local_ip</span><span
@@ -819,32 +760,28 @@ end</pre>
 
         <div class="method-description">
           
-          <p>Code for <a href="VMTools.html#method-c-local_ip">local_ip</a> taken from 
+          <p>Code for <a href="VMTools.html#method-c-local_ip">::local_ip</a> taken from
 <a
 href="http://coderrr.wordpress.com/2008/05/28/get-your-local-ip-address/">coderrr.wordpress.com/2008/05/28/get-your-local-ip-address/</a></p>
           
 
           
-          <div class="method-source-code"
-            id="local_ip-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 61</span>
-def self.local_ip
-  <span class="ruby-constant">UDPSocket</span>.open {|s| s.connect(<span class="ruby-string">&quot;64.233.187.99&quot;</span>, 1); s.addr.last }
-end</pre>
-          </div>
+          <div class="method-source-code" id="local_ip-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 61</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">local_ip</span>
+  <span class="ruby-constant">UDPSocket</span>.<span class="ruby-identifier">open</span> {<span class="ruby-operator">|</span><span class="ruby-identifier">s</span><span class="ruby-operator">|</span> <span class="ruby-identifier">s</span>.<span class="ruby-identifier">connect</span>(<span class="ruby-string">&quot;64.233.187.99&quot;</span>, <span class="ruby-value">1</span>); <span class="ruby-identifier">s</span>.<span class="ruby-identifier">addr</span>.<span class="ruby-identifier">last</span> }
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- local_ip-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- local_ip-method -->
 
     
-      <div id="lookup_cloud_env-method" class="method-detail ">
-        <a name="method-c-lookup_cloud_env"></a>
-
+      <div id="method-c-lookup_cloud_env" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">lookup_cloud_env</span><span
@@ -859,34 +796,30 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="lookup_cloud_env-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 397</span>
-def self.lookup_cloud_env(cloud)
-  cloud_type_var = cloud.upcase + <span class="ruby-string">&quot;_TYPE&quot;</span>
-  cloud_type = <span class="ruby-constant">ENV</span>[cloud_type_var]
+          <div class="method-source-code" id="lookup_cloud_env-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 397</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">lookup_cloud_env</span>(<span class="ruby-identifier">cloud</span>)
+  <span class="ruby-identifier">cloud_type_var</span> = <span class="ruby-identifier">cloud</span>.<span class="ruby-identifier">upcase</span> <span class="ruby-operator">+</span> <span class="ruby-string">&quot;_TYPE&quot;</span>
+  <span class="ruby-identifier">cloud_type</span> = <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">cloud_type_var</span>]
 
-  if cloud_type.nil?
-    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The environment variable &quot;</span> +
-      &quot;#{cloud_type_var} was not set. Please set it and try again.&quot;)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">cloud_type</span>.<span class="ruby-identifier">nil?</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The environment variable &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;#{cloud_type_var} was not set. Please set it and try again.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  return cloud_type
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">cloud_type</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- lookup_cloud_env-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- lookup_cloud_env-method -->
 
     
-      <div id="open_ports_in_cloud-method" class="method-detail ">
-        <a name="method-c-open_ports_in_cloud"></a>
-
+      <div id="method-c-open_ports_in_cloud" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">open_ports_in_cloud</span><span
@@ -901,31 +834,27 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="open_ports_in_cloud-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 99</span>
-def self.open_ports_in_cloud(infrastructure, group, verbose)
-  retn = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-authorize #{group} -p 1-65535 -s 0.0.0.0/0 -P udp 2&gt;&amp;1&quot;)
-  puts retn if verbose
-  retn = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-authorize #{group} -p 1-65535 -s 0.0.0.0/0 -P tcp 2&gt;&amp;1&quot;)
-  puts retn if verbose
-  retn = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-authorize #{group} -s 0.0.0.0/0 -P icmp -t -1:-1 2&gt;&amp;1&quot;)
-  puts retn if verbose
-end</pre>
-          </div>
+          <div class="method-source-code" id="open_ports_in_cloud-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 99</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">open_ports_in_cloud</span>(<span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-identifier">retn</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-authorize #{group} -p 1-65535 -s 0.0.0.0/0 -P udp 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-identifier">retn</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-identifier">retn</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-authorize #{group} -p 1-65535 -s 0.0.0.0/0 -P tcp 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-identifier">retn</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-identifier">retn</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-authorize #{group} -s 0.0.0.0/0 -P icmp -t -1:-1 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-identifier">retn</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- open_ports_in_cloud-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- open_ports_in_cloud-method -->
 
     
-      <div id="set_hybrid_creds-method" class="method-detail ">
-        <a name="method-c-set_hybrid_creds"></a>
-
+      <div id="method-c-set_hybrid_creds" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">set_hybrid_creds</span><span
@@ -940,26 +869,22 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="set_hybrid_creds-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 434</span>
-def self.set_hybrid_creds(node_layout)
-  return self.get_hybrid_creds(node_layout, set_head_node_creds=true)
-end</pre>
-          </div>
+          <div class="method-source-code" id="set_hybrid_creds-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 434</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">set_hybrid_creds</span>(<span class="ruby-identifier">node_layout</span>)
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">get_hybrid_creds</span>(<span class="ruby-identifier">node_layout</span>, <span class="ruby-identifier">set_head_node_creds</span>=<span class="ruby-keyword">true</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- set_hybrid_creds-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- set_hybrid_creds-method -->
 
     
-      <div id="spawn_head_node-method" class="method-detail ">
-        <a name="method-c-spawn_head_node"></a>
-
+      <div id="method-c-spawn_head_node" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">spawn_head_node</span><span
@@ -974,35 +899,31 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="spawn_head_node-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 327</span>
-def self.spawn_head_node(head_node, infrastructure, keyname, 
-  ssh_key_location, ssh_keys, force, machine, instance_type, group, verbose)
+          <div class="method-source-code" id="spawn_head_node-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 327</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">spawn_head_node</span>(<span class="ruby-identifier">head_node</span>, <span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">keyname</span>, 
+  <span class="ruby-identifier">ssh_key_location</span>, <span class="ruby-identifier">ssh_keys</span>, <span class="ruby-identifier">force</span>, <span class="ruby-identifier">machine</span>, <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
 
-  head_node_jobs = head_node.roles.join(<span class="ruby-string">&quot;:&quot;</span>)
-  if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(infrastructure)
-    <span class="ruby-constant">VMTools</span>.spawn_head_node_via_cloud(infrastructure, keyname, 
-      ssh_key_location, ssh_keys, force, head_node_jobs, machine, 
-      instance_type, group, verbose)
-  else
-    <span class="ruby-constant">VMTools</span>.spawn_head_node_via_vmm(head_node, keyname, head_node_jobs)
-  end
-end</pre>
-          </div>
+  <span class="ruby-identifier">head_node_jobs</span> = <span class="ruby-identifier">head_node</span>.<span class="ruby-identifier">roles</span>.<span class="ruby-identifier">join</span>(<span class="ruby-string">&quot;:&quot;</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">infrastructure</span>)
+    <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">spawn_head_node_via_cloud</span>(<span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">keyname</span>, 
+      <span class="ruby-identifier">ssh_key_location</span>, <span class="ruby-identifier">ssh_keys</span>, <span class="ruby-identifier">force</span>, <span class="ruby-identifier">head_node_jobs</span>, <span class="ruby-identifier">machine</span>, 
+      <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">spawn_head_node_via_vmm</span>(<span class="ruby-identifier">head_node</span>, <span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">head_node_jobs</span>)
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- spawn_head_node-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- spawn_head_node-method -->
 
     
-      <div id="spawn_head_node_via_cloud-method" class="method-detail ">
-        <a name="method-c-spawn_head_node_via_cloud"></a>
-
+      <div id="method-c-spawn_head_node_via_cloud" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">spawn_head_node_via_cloud</span><span
@@ -1017,50 +938,46 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="spawn_head_node_via_cloud-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 340</span>
-def self.spawn_head_node_via_cloud(infrastructure, keyname, 
-  ssh_key_location, ssh_keys, force, head_node_jobs, machine, 
-  instance_type, group, verbose)
+          <div class="method-source-code" id="spawn_head_node_via_cloud-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 340</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">spawn_head_node_via_cloud</span>(<span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">keyname</span>, 
+  <span class="ruby-identifier">ssh_key_location</span>, <span class="ruby-identifier">ssh_keys</span>, <span class="ruby-identifier">force</span>, <span class="ruby-identifier">head_node_jobs</span>, <span class="ruby-identifier">machine</span>, 
+  <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
 
-  <span class="ruby-constant">VMTools</span>.ensure_tools_are_installed(infrastructure)
+  <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">ensure_tools_are_installed</span>(<span class="ruby-identifier">infrastructure</span>)
   <span class="ruby-comment">#VMTools.verify_ids(machine, infrastructure)</span>
-  <span class="ruby-constant">VMTools</span>.ensure_keyname_not_in_use(keyname, infrastructure)
+  <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">ensure_keyname_not_in_use</span>(<span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">infrastructure</span>)
   <span class="ruby-comment">#VMTools.ensure_min_vms_available(min_images, instance_type, infrastructure)</span>
-  <span class="ruby-constant">EncryptionHelper</span>.generate_ssh_key(verbose, ssh_keys, keyname, infrastructure, force)
-  locations = <span class="ruby-constant">VMTools</span>.spawn_vms(1, head_node_jobs, machine, instance_type, keyname, infrastructure, group, verbose)
-  puts <span class="ruby-string">&quot;Please wait for your instance to complete the bootup process.&quot;</span>
-  head_node_ip = locations[0].split(<span class="ruby-string">&quot;:&quot;</span>)[0]
-  <span class="ruby-constant">CommonFunctions</span>.sleep_until_port_is_open(head_node_ip, <span class="ruby-constant">SSH_PORT</span>)
-  sleep(10)
-  options = <span class="ruby-string">&quot;-o StrictHostkeyChecking=no -o NumberOfPasswordPrompts=0&quot;</span>
-  enable_root_login = <span class="ruby-string">&quot;sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/&quot;</span>
-  `ssh -i #{ssh_keys.join(&quot; -i &quot;)} #{options} 2&gt;&amp;1 ubuntu@#{head_node_ip} '#{enable_root_login}'` <span class="ruby-comment"># kloogy ec2 fix</span>
-  <span class="ruby-constant">CommonFunctions</span>.scp_file(ssh_key_location, <span class="ruby-string">&quot;/root/.ssh/id_dsa&quot;</span>, head_node_ip, ssh_keys) <span class="ruby-comment"># kloogy ec2 fix</span>
-  <span class="ruby-constant">CommonFunctions</span>.scp_file(ssh_key_location, <span class="ruby-string">&quot;/root/.ssh/id_rsa&quot;</span>, head_node_ip, ssh_keys)
-  <span class="ruby-constant">CommonFunctions</span>.shell(&quot;scp -i #{ssh_keys.join(&quot; -i &quot;)} -o StrictHostkeyChecking=no 2&gt;&amp;1 root@#{head_node_ip}:/root/.ssh/authorized_keys /tmp/remote_keys&quot;)
-  remote_keys = (<span class="ruby-constant">File</span>.open(<span class="ruby-string">&quot;/tmp/remote_keys&quot;</span>) { |f| f.read }).chomp
-  public_key_contents = remote_keys.scan(<span class="ruby-regexp">/ssh-rsa [\w+\/=]+ [\w@]+/</span>).flatten.to_s
-  <span class="ruby-constant">File</span>.open(<span class="ruby-string">&quot;/tmp/id_rsa.pub&quot;</span>, <span class="ruby-string">&quot;w+&quot;</span>) { |file| file.write(public_key_contents) }  
-  <span class="ruby-constant">CommonFunctions</span>.scp_file(<span class="ruby-string">&quot;/tmp/id_rsa.pub&quot;</span>, <span class="ruby-string">&quot;/root/.ssh/id_rsa.pub&quot;</span>, head_node_ip, ssh_keys)  
-  locations = locations.flatten.to_s
-  return locations
-end</pre>
-          </div>
+  <span class="ruby-constant">EncryptionHelper</span>.<span class="ruby-identifier">generate_ssh_key</span>(<span class="ruby-identifier">verbose</span>, <span class="ruby-identifier">ssh_keys</span>, <span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">force</span>)
+  <span class="ruby-identifier">locations</span> = <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">spawn_vms</span>(<span class="ruby-value">1</span>, <span class="ruby-identifier">head_node_jobs</span>, <span class="ruby-identifier">machine</span>, <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;Please wait for your instance to complete the bootup process.&quot;</span>
+  <span class="ruby-identifier">head_node_ip</span> = <span class="ruby-identifier">locations</span>[<span class="ruby-value">0</span>].<span class="ruby-identifier">split</span>(<span class="ruby-string">&quot;:&quot;</span>)[<span class="ruby-value">0</span>]
+  <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">sleep_until_port_is_open</span>(<span class="ruby-identifier">head_node_ip</span>, <span class="ruby-constant">AppScaleTools</span><span class="ruby-operator">::</span><span class="ruby-constant">SSH_PORT</span>)
+  <span class="ruby-identifier">sleep</span>(<span class="ruby-value">10</span>)
+  <span class="ruby-identifier">options</span> = <span class="ruby-string">&quot;-o StrictHostkeyChecking=no -o NumberOfPasswordPrompts=0&quot;</span>
+  <span class="ruby-identifier">enable_root_login</span> = <span class="ruby-string">&quot;sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/&quot;</span>
+  <span class="ruby-node">%xssh -i #{ssh_keys.join(&quot; -i &quot;)} #{options} 2&gt;&amp;1 ubuntu@#{head_node_ip} '#{enable_root_login}'`</span> <span class="ruby-comment"># kloogy ec2 fix</span>
+  <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">scp_file</span>(<span class="ruby-identifier">ssh_key_location</span>, <span class="ruby-string">&quot;/root/.ssh/id_dsa&quot;</span>, <span class="ruby-identifier">head_node_ip</span>, <span class="ruby-identifier">ssh_keys</span>) <span class="ruby-comment"># kloogy ec2 fix</span>
+  <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">scp_file</span>(<span class="ruby-identifier">ssh_key_location</span>, <span class="ruby-string">&quot;/root/.ssh/id_rsa&quot;</span>, <span class="ruby-identifier">head_node_ip</span>, <span class="ruby-identifier">ssh_keys</span>)
+  <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;scp -i #{ssh_keys.join(&quot; -i &quot;)} -o StrictHostkeyChecking=no 2&gt;&amp;1 root@#{head_node_ip}:/root/.ssh/authorized_keys /tmp/remote_keys&quot;</span>)
+  <span class="ruby-identifier">remote_keys</span> = (<span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-string">&quot;/tmp/remote_keys&quot;</span>) { <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span> <span class="ruby-identifier">f</span>.<span class="ruby-identifier">read</span> }).<span class="ruby-identifier">chomp</span>
+  <span class="ruby-identifier">public_key_contents</span> = <span class="ruby-identifier">remote_keys</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-regexp">%rssh-rsa [\w+\/=]+ [\w@]+/</span>).<span class="ruby-identifier">flatten</span>.<span class="ruby-identifier">to_s</span>
+  <span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-string">&quot;/tmp/id_rsa.pub&quot;</span>, <span class="ruby-string">&quot;w+&quot;</span>) { <span class="ruby-operator">|</span><span class="ruby-identifier">file</span><span class="ruby-operator">|</span> <span class="ruby-identifier">file</span>.<span class="ruby-identifier">write</span>(<span class="ruby-identifier">public_key_contents</span>) }  
+  <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">scp_file</span>(<span class="ruby-string">&quot;/tmp/id_rsa.pub&quot;</span>, <span class="ruby-string">&quot;/root/.ssh/id_rsa.pub&quot;</span>, <span class="ruby-identifier">head_node_ip</span>, <span class="ruby-identifier">ssh_keys</span>)  
+  <span class="ruby-identifier">locations</span> = <span class="ruby-identifier">locations</span>.<span class="ruby-identifier">flatten</span>.<span class="ruby-identifier">to_s</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">locations</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- spawn_head_node_via_cloud-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- spawn_head_node_via_cloud-method -->
 
     
-      <div id="spawn_head_node_via_vmm-method" class="method-detail ">
-        <a name="method-c-spawn_head_node_via_vmm"></a>
-
+      <div id="method-c-spawn_head_node_via_vmm" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">spawn_head_node_via_vmm</span><span
@@ -1075,30 +992,26 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="spawn_head_node_via_vmm-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 368</span>
-def self.spawn_head_node_via_vmm(node, keyname, head_node_jobs)
+          <div class="method-source-code" id="spawn_head_node_via_vmm-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 368</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">spawn_head_node_via_vmm</span>(<span class="ruby-identifier">node</span>, <span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">head_node_jobs</span>)
   <span class="ruby-comment"># We don't care about the instance's ID if not using cloud-tools</span>
   <span class="ruby-comment"># and for Xen, public ip = private ip</span>
-  head_node = &quot;#{node.id}:#{node.id}:#{head_node_jobs}:i-ZFOOBARZ:cloud1&quot;
-  locations = [head_node].flatten.to_s
-  return locations
-end</pre>
-          </div>
+  <span class="ruby-identifier">head_node</span> = <span class="ruby-node">&quot;#{node.id}:#{node.id}:#{head_node_jobs}:i-ZFOOBARZ:cloud1&quot;</span>
+  <span class="ruby-identifier">locations</span> = [<span class="ruby-identifier">head_node</span>].<span class="ruby-identifier">flatten</span>.<span class="ruby-identifier">to_s</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">locations</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- spawn_head_node_via_vmm-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- spawn_head_node_via_vmm-method -->
 
     
-      <div id="spawn_vms-method" class="method-detail ">
-        <a name="method-c-spawn_vms"></a>
-
+      <div id="method-c-spawn_vms" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">spawn_vms</span><span
@@ -1113,118 +1026,114 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="spawn_vms-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 223</span>
-def self.spawn_vms(num_of_vms_to_spawn, job, image_id, instance_type, keyname,
-  infrastructure, group, verbose)
+          <div class="method-source-code" id="spawn_vms-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 223</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">spawn_vms</span>(<span class="ruby-identifier">num_of_vms_to_spawn</span>, <span class="ruby-identifier">job</span>, <span class="ruby-identifier">image_id</span>, <span class="ruby-identifier">instance_type</span>, <span class="ruby-identifier">keyname</span>,
+  <span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
   <span class="ruby-comment">#adding check first so that we don't do any of this if the infrastructure setting is wrong</span>
-  if !<span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(infrastructure)
-    raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;Infrastructure must be &quot;</span> +
-      &quot;iaas, ec2, or euca, but instead was #{infrastructure}&quot;)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">infrastructure</span>)
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;Infrastructure must be &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;iaas, ec2, or euca, but instead was #{infrastructure}&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  if infrastructure == <span class="ruby-string">&quot;ec2&quot;</span>
-      check_group = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-group #{group} 2&gt;&amp;1&quot;)
-      make_group = check_group.include? <span class="ruby-string">'InvalidGroup.NotFound'</span>
-  elsif infrastructure == <span class="ruby-string">&quot;euca&quot;</span>
-      check_group = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-groups #{group} 2&gt;&amp;1&quot;)
-      make_group = check_group.empty?
-  end
-  if make_group
-     puts &quot;Creating security group #{group}&quot; if verbose
-     create_sec_group = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-add-group #{group} -d #{group} 2&gt;&amp;1&quot;)
-     puts create_sec_group if verbose
-  else <span class="ruby-comment"># security group exists</span>
-    raise <span class="ruby-constant">InfrastructureException</span>.new(&quot;Security group #{group} exists, &quot; +
-      &quot;delete this group via #{infrastructure}-delete-group #{group}, &quot; +
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">infrastructure</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;ec2&quot;</span>
+      <span class="ruby-identifier">check_group</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-group #{group} 2&gt;&amp;1&quot;</span>)
+      <span class="ruby-identifier">make_group</span> = <span class="ruby-identifier">check_group</span>.<span class="ruby-identifier">include?</span> <span class="ruby-string">'InvalidGroup.NotFound'</span>
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">infrastructure</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;euca&quot;</span>
+      <span class="ruby-identifier">check_group</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-groups #{group} 2&gt;&amp;1&quot;</span>)
+      <span class="ruby-identifier">make_group</span> = <span class="ruby-identifier">check_group</span>.<span class="ruby-identifier">empty?</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">make_group</span>
+     <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Creating security group #{group}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+     <span class="ruby-identifier">create_sec_group</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-add-group #{group} -d #{group} 2&gt;&amp;1&quot;</span>)
+     <span class="ruby-identifier">puts</span> <span class="ruby-identifier">create_sec_group</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-keyword">else</span> <span class="ruby-comment"># security group exists</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-node">&quot;Security group #{group} exists, &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;delete this group via #{infrastructure}-delete-group #{group}, &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;prior to starting an AppScale cloud&quot;</span>)
-  end
-  puts &quot;Security group #{group} in place&quot; if verbose
-  <span class="ruby-constant">VMTools</span>.open_ports_in_cloud(infrastructure, group, verbose)
-  puts &quot;Ports set for security group #{group}&quot; if verbose
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Security group #{group} in place&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">open_ports_in_cloud</span>(<span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">group</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Ports set for security group #{group}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
   
-  describe_instances = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;)
-  puts describe_instances if verbose
-  all_ip_addrs = describe_instances.scan(/\s+(#{IP_OR_FQDN})\s+(#{IP_OR_FQDN})\s+running\s+#{keyname}\s/).flatten
-  ips_up_already = <span class="ruby-constant">VMTools</span>.get_public_ips(all_ip_addrs, verbose)
-  vms_up_already = ips_up_already.length  
+  <span class="ruby-identifier">describe_instances</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-identifier">puts</span> <span class="ruby-identifier">describe_instances</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-identifier">all_ip_addrs</span> = <span class="ruby-identifier">describe_instances</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%r\s+(#{IP_OR_FQDN})\s+(#{IP_OR_FQDN})\s+running\s+#{keyname}\s/</span>).<span class="ruby-identifier">flatten</span>
+  <span class="ruby-identifier">ips_up_already</span> = <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">get_public_ips</span>(<span class="ruby-identifier">all_ip_addrs</span>, <span class="ruby-identifier">verbose</span>)
+  <span class="ruby-identifier">vms_up_already</span> = <span class="ruby-identifier">ips_up_already</span>.<span class="ruby-identifier">length</span>  
 
-  command_to_run = &quot;#{infrastructure}-run-instances -k #{keyname} -n #{num_of_vms_to_spawn} --instance-type #{instance_type} --group #{group} #{image_id}&quot; 
+  <span class="ruby-identifier">command_to_run</span> = <span class="ruby-node">&quot;#{infrastructure}-run-instances -k #{keyname} -n #{num_of_vms_to_spawn} --instance-type #{instance_type} --group #{group} #{image_id}&quot;</span> 
   
-  puts command_to_run if verbose
-  run_instances = <span class="ruby-string">&quot;&quot;</span>
-  loop {
-    run_instances = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{command_to_run} 2&gt;&amp;1&quot;)
-    puts &quot;run_instances: [#{run_instances}]&quot; if verbose
-    if run_instances =~ <span class="ruby-regexp">/Please try again later./</span>
-      puts &quot;Error with run_instances: #{run_instances}. Will try again in a moment.&quot;
-    elsif run_instances =~ <span class="ruby-regexp">/try --addressing private/</span>
-      puts <span class="ruby-string">&quot;Need to retry with addressing private. Will try again in a moment.&quot;</span>
-      command_to_run &lt;&lt; <span class="ruby-string">&quot; --addressing private&quot;</span>
-    elsif run_instances =~ <span class="ruby-regexp">/PROBLEM/</span>
-      raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;Saw the following error message &quot;</span> +
-        <span class="ruby-string">&quot;from iaas tools. Please resolve the issue and try again:\n&quot;</span> +
-        &quot;#{run_instances}&quot;)
-    else
-      puts <span class="ruby-string">&quot;Run instances message sent successfully. Waiting for the image to start up.&quot;</span>
-      break
-    end
+  <span class="ruby-identifier">puts</span> <span class="ruby-identifier">command_to_run</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+  <span class="ruby-identifier">run_instances</span> = <span class="ruby-string">&quot;&quot;</span>
+  <span class="ruby-identifier">loop</span> {
+    <span class="ruby-identifier">run_instances</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{command_to_run} 2&gt;&amp;1&quot;</span>)
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;run_instances: [#{run_instances}]&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">run_instances</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp">%rPlease try again later./</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Error with run_instances: #{run_instances}. Will try again in a moment.&quot;</span>
+    <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">run_instances</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp">%rtry --addressing private/</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;Need to retry with addressing private. Will try again in a moment.&quot;</span>
+      <span class="ruby-identifier">command_to_run</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-string">&quot; --addressing private&quot;</span>
+    <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">run_instances</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp">%rPROBLEM/</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;Saw the following error message &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-string">&quot;from iaas tools. Please resolve the issue and try again:\n&quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;#{run_instances}&quot;</span>)
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;Run instances message sent successfully. Waiting for the image to start up.&quot;</span>
+      <span class="ruby-keyword">break</span>
+    <span class="ruby-keyword">end</span>
   }
   
-  instance_ids = run_instances.scan(/INSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/).flatten
+  <span class="ruby-identifier">instance_ids</span> = <span class="ruby-identifier">run_instances</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%rINSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/</span>).<span class="ruby-identifier">flatten</span>
    
-  end_time = <span class="ruby-constant">Time</span>.now + <span class="ruby-constant">MAX_VM_CREATION_TIME</span>
-  while (now = <span class="ruby-constant">Time</span>.now) &lt; end_time
-    describe_instances = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;)
-    puts &quot;[#{Time.now}] #{end_time - now} seconds left until timeout...&quot;
-    puts describe_instances if verbose
+  <span class="ruby-identifier">end_time</span> = <span class="ruby-constant">Time</span>.<span class="ruby-identifier">now</span> <span class="ruby-operator">+</span> <span class="ruby-constant">MAX_VM_CREATION_TIME</span>
+  <span class="ruby-keyword">while</span> (<span class="ruby-identifier">now</span> = <span class="ruby-constant">Time</span>.<span class="ruby-identifier">now</span>) <span class="ruby-operator">&lt;</span> <span class="ruby-identifier">end_time</span>
+    <span class="ruby-identifier">describe_instances</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;</span>)
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;[#{Time.now}] #{end_time - now} seconds left until timeout...&quot;</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-identifier">describe_instances</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">verbose</span>
     
-    if describe_instances =~ /terminated\s#{keyname}\s/
-      raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;An instance was unexpectedly &quot;</span> +
-        <span class="ruby-string">&quot;terminated. Please contact your cloud administrator to determine &quot;</span> +
-        &quot;why and try again. \n#{describe_instances}&quot;)
-    end
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">describe_instances</span> <span class="ruby-operator">=~</span> <span class="ruby-node">%rterminated\s#{keyname}\s/</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;An instance was unexpectedly &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-string">&quot;terminated. Please contact your cloud administrator to determine &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;why and try again. \n#{describe_instances}&quot;</span>)
+    <span class="ruby-keyword">end</span>
     
-    all_ip_addrs = describe_instances.scan(/\s+(#{IP_OR_FQDN})\s+(#{IP_OR_FQDN})\s+running\s+#{keyname}\s/).flatten
-    instance_ids = describe_instances.scan(/INSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/).flatten
-    public_ips, private_ips = <span class="ruby-constant">VMTools</span>.get_ips(all_ip_addrs, verbose)
-    break if public_ips.length == num_of_vms_to_spawn + vms_up_already
-    sleep(<span class="ruby-constant">SLEEP_TIME</span>)
-  end
+    <span class="ruby-identifier">all_ip_addrs</span> = <span class="ruby-identifier">describe_instances</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%r\s+(#{IP_OR_FQDN})\s+(#{IP_OR_FQDN})\s+running\s+#{keyname}\s/</span>).<span class="ruby-identifier">flatten</span>
+    <span class="ruby-identifier">instance_ids</span> = <span class="ruby-identifier">describe_instances</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%rINSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/</span>).<span class="ruby-identifier">flatten</span>
+    <span class="ruby-identifier">public_ips</span>, <span class="ruby-identifier">private_ips</span> = <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">get_ips</span>(<span class="ruby-identifier">all_ip_addrs</span>, <span class="ruby-identifier">verbose</span>)
+    <span class="ruby-keyword">break</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">public_ips</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">num_of_vms_to_spawn</span> <span class="ruby-operator">+</span> <span class="ruby-identifier">vms_up_already</span>
+    <span class="ruby-identifier">sleep</span>(<span class="ruby-constant">SLEEP_TIME</span>)
+  <span class="ruby-keyword">end</span>
   
-  if public_ips.length.zero?
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;No public IPs were able to be &quot;</span> +
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">public_ips</span>.<span class="ruby-identifier">length</span>.<span class="ruby-identifier">zero?</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;No public IPs were able to be &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;procured within the time limit.&quot;</span>)
-  end
+  <span class="ruby-keyword">end</span>
      
-  if public_ips.length != instance_ids.length
-    puts &quot;Public IPs: #{public_ips.join(', ')}, Instance ids: #{instance_ids.join(', ')}&quot;
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;Public IPs size didn't match &quot;</span> +
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">public_ips</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">!=</span> <span class="ruby-identifier">instance_ids</span>.<span class="ruby-identifier">length</span>
+    <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;Public IPs: #{public_ips.join(', ')}, Instance ids: #{instance_ids.join(', ')}&quot;</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;Public IPs size didn't match &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;instance names size&quot;</span>)
-  end
+  <span class="ruby-keyword">end</span>
 
-  instances_created = []
-  public_ips.each_index { |index|
-    instances_created &lt;&lt; &quot;#{public_ips[index]}:#{private_ips[index]}:#{job}:#{instance_ids[index]}:cloud1&quot;
+  <span class="ruby-identifier">instances_created</span> = []
+  <span class="ruby-identifier">public_ips</span>.<span class="ruby-identifier">each_index</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">instances_created</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;#{public_ips[index]}:#{private_ips[index]}:#{job}:#{instance_ids[index]}:cloud1&quot;</span>
   }
   
-  return instances_created    
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">instances_created</span>    
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- spawn_vms-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- spawn_vms-method -->
 
     
-      <div id="terminate_all_vms-method" class="method-detail ">
-        <a name="method-c-terminate_all_vms"></a>
-
+      <div id="method-c-terminate_all_vms" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">terminate_all_vms</span><span
@@ -1239,30 +1148,26 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="terminate_all_vms-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 319</span>
-def self.terminate_all_vms(keyname, infrastructure)
-  desc_instances = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;)
-  instances = desc_instances.scan(/INSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/).flatten
-  return 0 if instances.length == 0
-  puts <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-terminate-instances #{instances.join(' ')} 2&gt;&amp;1&quot;)
-  return instances.length
-end</pre>
-          </div>
+          <div class="method-source-code" id="terminate_all_vms-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 319</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">terminate_all_vms</span>(<span class="ruby-identifier">keyname</span>, <span class="ruby-identifier">infrastructure</span>)
+  <span class="ruby-identifier">desc_instances</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-instances 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-identifier">instances</span> = <span class="ruby-identifier">desc_instances</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-node">%rINSTANCE\s+(i-\w+)\s+[\w\-\s\.]+#{keyname}\s/</span>).<span class="ruby-identifier">flatten</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-value">0</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">instances</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-terminate-instances #{instances.join(' ')} 2&gt;&amp;1&quot;</span>)
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">instances</span>.<span class="ruby-identifier">length</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- terminate_all_vms-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- terminate_all_vms-method -->
 
     
-      <div id="terminate_infrastructure_machines-method" class="method-detail ">
-        <a name="method-c-terminate_infrastructure_machines"></a>
-
+      <div id="method-c-terminate_infrastructure_machines" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">terminate_infrastructure_machines</span><span
@@ -1277,40 +1182,36 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="terminate_infrastructure_machines-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 521</span>
-def self.terminate_infrastructure_machines(infrastructure, keyname)
+          <div class="method-source-code" id="terminate_infrastructure_machines-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 521</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">terminate_infrastructure_machines</span>(<span class="ruby-identifier">infrastructure</span>, <span class="ruby-identifier">keyname</span>)
   <span class="ruby-comment"># TODO: if we know all the other ips in the system, contact one</span>
   <span class="ruby-comment"># of them instead</span>
 
-  if keyname == <span class="ruby-string">&quot;appscale&quot;</span>  <span class="ruby-comment"># appscale keyname messes up the next command</span>
-    abort(<span class="ruby-string">&quot;Error seen trying to terminate your machines - please do so manually.&quot;</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">keyname</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;appscale&quot;</span>  <span class="ruby-comment"># appscale keyname messes up the next command</span>
+    <span class="ruby-identifier">abort</span>(<span class="ruby-string">&quot;Error seen trying to terminate your machines - please do so manually.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># for now, just kill them the hard way</span>
-  desc = &quot;#{infrastructure}-describe-instances&quot;
-  term = &quot;#{infrastructure}-terminate-instances&quot;
-  cmd = &quot;#{desc} | grep #{keyname} | awk '{print $2}' | xargs #{term}&quot;
-  puts <span class="ruby-string">&quot;Unable to contact shadow node, shutting down via tools...&quot;</span>
-  puts `#{cmd}`
-  cmd = &quot;#{infrastructure}-delete-group appscale&quot;
-  puts `#{cmd}`
-end</pre>
-          </div>
+  <span class="ruby-identifier">desc</span> = <span class="ruby-node">&quot;#{infrastructure}-describe-instances&quot;</span>
+  <span class="ruby-identifier">term</span> = <span class="ruby-node">&quot;#{infrastructure}-terminate-instances&quot;</span>
+  <span class="ruby-identifier">cmd</span> = <span class="ruby-node">&quot;#{desc} | grep #{keyname} | awk '{print $2}' | xargs #{term}&quot;</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-string">&quot;Unable to contact shadow node, shutting down via tools...&quot;</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">%x#{cmd}`</span>
+  <span class="ruby-identifier">cmd</span> = <span class="ruby-node">&quot;#{infrastructure}-delete-group appscale&quot;</span>
+  <span class="ruby-identifier">puts</span> <span class="ruby-node">%x#{cmd}`</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- terminate_infrastructure_machines-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- terminate_infrastructure_machines-method -->
 
     
-      <div id="verify_credentials_are_set_correctly-method" class="method-detail ">
-        <a name="method-c-verify_credentials_are_set_correctly"></a>
-
+      <div id="method-c-verify_credentials_are_set_correctly" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">verify_credentials_are_set_correctly</span><span
@@ -1325,47 +1226,43 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="verify_credentials_are_set_correctly-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 484</span>
-def self.verify_credentials_are_set_correctly(infrastructure)
+          <div class="method-source-code" id="verify_credentials_are_set_correctly-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 484</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">verify_credentials_are_set_correctly</span>(<span class="ruby-identifier">infrastructure</span>)
   <span class="ruby-comment"># In non-hybrid cloud environments, the user has to provide us with their</span>
   <span class="ruby-comment"># EC2 credentials. If they didn't, let them know and abort.</span>
-  <span class="ruby-constant">EC2_ENVIRONMENT_VARIABLES</span>.each { |var|
-    if <span class="ruby-constant">ENV</span>[var].nil?
-      raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The required &quot;</span> +
-        &quot;environment variable #{var} was not set. Please set it and try &quot; +
+  <span class="ruby-constant">EC2_ENVIRONMENT_VARIABLES</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">var</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">var</span>].<span class="ruby-identifier">nil?</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The required &quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot;environment variable #{var} was not set. Please set it and try &quot;</span> <span class="ruby-operator">+</span>
         <span class="ruby-string">&quot;again.&quot;</span>)
-    end
+    <span class="ruby-keyword">end</span>
   }
  
-  <span class="ruby-constant">VMTools</span>.verify_credentials_exist()
+  <span class="ruby-constant">VMTools</span>.<span class="ruby-identifier">verify_credentials_exist</span>()
  
   <span class="ruby-comment"># The euca2ools default to using localhost as the EC2_URL and S3_URL if</span>
   <span class="ruby-comment"># it's not set, so make sure the user has explicitly set it.</span>
-  if infrastructure == <span class="ruby-string">&quot;euca&quot;</span>
-    [<span class="ruby-string">'EC2_URL'</span>, <span class="ruby-string">'S3_URL'</span>].each { |var|
-      if <span class="ruby-constant">ENV</span>[var].nil?
-        raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;When running over &quot;</span> +
-          &quot;Eucalyptus, the environment variable #{var} must be set.&quot;)
-      end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">infrastructure</span> <span class="ruby-operator">==</span> <span class="ruby-string">&quot;euca&quot;</span>
+    [<span class="ruby-string">'EC2_URL'</span>, <span class="ruby-string">'S3_URL'</span>].<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">var</span><span class="ruby-operator">|</span>
+      <span class="ruby-keyword">if</span> <span class="ruby-constant">ENV</span>[<span class="ruby-identifier">var</span>].<span class="ruby-identifier">nil?</span>
+        <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;When running over &quot;</span> <span class="ruby-operator">+</span>
+          <span class="ruby-node">&quot;Eucalyptus, the environment variable #{var} must be set.&quot;</span>)
+      <span class="ruby-keyword">end</span>
     }
-  end
-end</pre>
-          </div>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- verify_credentials_are_set_correctly-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- verify_credentials_are_set_correctly-method -->
 
     
-      <div id="verify_credentials_exist-method" class="method-detail ">
-        <a name="method-c-verify_credentials_exist"></a>
-
+      <div id="method-c-verify_credentials_exist" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">verify_credentials_exist</span><span
@@ -1381,32 +1278,28 @@ Eucalyptus both refer to files that exist, aborting if either do not exist.</p>
           
 
           
-          <div class="method-source-code"
-            id="verify_credentials_exist-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 511</span>
-def self.verify_credentials_exist()
-  [<span class="ruby-string">&quot;EC2_PRIVATE_KEY&quot;</span>, <span class="ruby-string">&quot;EC2_CERT&quot;</span>].each { |var|
-    file_path = <span class="ruby-constant">File</span>.expand_path(<span class="ruby-constant">ENV</span>[var])
-    if !<span class="ruby-constant">File</span>.exists?(file_path)
-      raise <span class="ruby-constant">BadConfigurationException</span>.new(<span class="ruby-string">&quot;The environment variable&quot;</span> +
-        &quot; #{var} pointed to the file #{file_path}, which didn't exist.&quot;)
-    end
+          <div class="method-source-code" id="verify_credentials_exist-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 511</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">verify_credentials_exist</span>()
+  [<span class="ruby-string">&quot;EC2_PRIVATE_KEY&quot;</span>, <span class="ruby-string">&quot;EC2_CERT&quot;</span>].<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">var</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">file_path</span> = <span class="ruby-constant">File</span>.<span class="ruby-identifier">expand_path</span>(<span class="ruby-constant">ENV</span>[<span class="ruby-identifier">var</span>])
+    <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-constant">File</span>.<span class="ruby-identifier">exists?</span>(<span class="ruby-identifier">file_path</span>)
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">BadConfigurationException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The environment variable&quot;</span> <span class="ruby-operator">+</span>
+        <span class="ruby-node">&quot; #{var} pointed to the file #{file_path}, which didn't exist.&quot;</span>)
+    <span class="ruby-keyword">end</span>
   }
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- verify_credentials_exist-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- verify_credentials_exist-method -->
 
     
-      <div id="verify_ids-method" class="method-detail ">
-        <a name="method-c-verify_ids"></a>
-
+      <div id="method-c-verify_ids" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">verify_ids</span><span
@@ -1421,55 +1314,52 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="verify_ids-source">
-<pre>
-<span class="ruby-comment"># File lib/vm_tools.rb, line 134</span>
-def self.verify_ids(disk, infrastructure)
-  ec2_images = <span class="ruby-constant">CommonFunctions</span>.shell(&quot;#{infrastructure}-describe-images 2&gt;&amp;1&quot;)
+          <div class="method-source-code" id="verify_ids-source">
+            <pre><span class="ruby-comment"># File lib/vm_tools.rb, line 134</span>
+<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">verify_ids</span>(<span class="ruby-identifier">disk</span>, <span class="ruby-identifier">infrastructure</span>)
+  <span class="ruby-identifier">ec2_images</span> = <span class="ruby-constant">CommonFunctions</span>.<span class="ruby-identifier">shell</span>(<span class="ruby-node">&quot;#{infrastructure}-describe-images 2&gt;&amp;1&quot;</span>)
 
-  if disk !~ <span class="ruby-regexp">/[a|e]mi/</span>
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;The disk image you specified was &quot;</span> +
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">disk</span> <span class="ruby-operator">!~</span> <span class="ruby-regexp">%r[a|e]mi/</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;The disk image you specified was &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;not in the proper format. Please correct this and try again.&quot;</span>)
-  end
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># if the tools are not configured properly an error message will show up</span>
   <span class="ruby-comment"># be sure to catch it and die if so</span>
-  if ec2_images =~ <span class="ruby-regexp">/\AServer:/</span>
-    raise <span class="ruby-constant">InfrastructureException</span>.new(<span class="ruby-string">&quot;Problem with &quot;</span> +
-      &quot;#{infrastructure}-tools: &quot; + ec2_images)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">ec2_images</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp">%r\AServer:/</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-string">&quot;Problem with &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;#{infrastructure}-tools: &quot;</span> <span class="ruby-operator">+</span> <span class="ruby-identifier">ec2_images</span>)
+  <span class="ruby-keyword">end</span>
 
-  id = <span class="ruby-string">&quot;disk&quot;</span>
-  id_value = eval(id)
-  if ec2_images !~ /IMAGE\t#{id_value}/
-    raise <span class="ruby-constant">InfrastructureException</span>.new(&quot;The #{id} image you specified, &quot; +
-      &quot;#{id_value}, was not found when querying &quot; +
-      &quot;#{infrastructure}-describe-images. Please specify a #{id} image in &quot; +
+  <span class="ruby-identifier">id</span> = <span class="ruby-string">&quot;disk&quot;</span>
+  <span class="ruby-identifier">id_value</span> = <span class="ruby-identifier">eval</span>(<span class="ruby-identifier">id</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">ec2_images</span> <span class="ruby-operator">!~</span> <span class="ruby-node">%rIMAGE\t#{id_value}/</span>
+    <span class="ruby-identifier">raise</span> <span class="ruby-constant">InfrastructureException</span>.<span class="ruby-identifier">new</span>(<span class="ruby-node">&quot;The #{id} image you specified, &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;#{id_value}, was not found when querying &quot;</span> <span class="ruby-operator">+</span>
+      <span class="ruby-node">&quot;#{infrastructure}-describe-images. Please specify a #{id} image in &quot;</span> <span class="ruby-operator">+</span>
       <span class="ruby-string">&quot;the database and try again.&quot;</span>)
-  end
-end</pre>
-          </div>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- verify_ids-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- verify_ids-method -->
 
     
-    </div>
+    </section><!-- public-class-method-details -->
   
+  </section><!-- 5Buntitled-5D -->
 
-  </div>
+</div><!-- documentation -->
 
-  <div id="validator-badges">
-    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
-    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
-      Rdoc Generator</a> 2</small>.</p>
-  </div>
 
-</body>
-</html>
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
 

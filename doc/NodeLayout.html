@@ -1,291 +1,228 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+
+<html>
 <head>
-  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
 
-  <title>Class: NodeLayout</title>
+<title>class NodeLayout - RDoc Documentation</title>
 
-  <link rel="stylesheet" href="./rdoc.css" type="text/css" media="screen" />
+<link type="text/css" media="screen" href="./rdoc.css" rel="stylesheet">
 
-  <script src="./js/jquery.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/thickbox-compressed.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/quicksearch.js" type="text/javascript"
-    charset="utf-8"></script>
-  <script src="./js/darkfish.js" type="text/javascript"
-    charset="utf-8"></script>
+<script type="text/javascript">
+  var rdoc_rel_prefix = "./";
+</script>
 
-</head>
-<body class="class">
+<script type="text/javascript" charset="utf-8" src="./js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/darkfish.js"></script>
 
-  <div id="metadata">
-    <div id="home-metadata">
-      <div id="home-section" class="section">
-        <h3 class="section-header">
-          <a href="./index.html">Home</a>
-          <a href="./index.html#classes">Classes</a>
-          <a href="./index.html#methods">Methods</a>
-        </h3>
-      </div>
-    </div>
 
-    <div id="file-metadata">
-      <div id="file-list-section" class="section">
-        <h3 class="section-header">In Files</h3>
-        <div class="section-body">
-          <ul>
-          
-            <li><a href="./lib/node_layout_rb.html?TB_iframe=true&amp;height=550&amp;width=785"
-              class="thickbox" title="lib/node_layout.rb">lib/node_layout.rb</a></li>
-          
-          </ul>
-        </div>
-      </div>
+<body id="top" class="class">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="./index.html">Home</a>
+    <a href="./table_of_contents.html#classes">Classes</a>
+    <a href="./table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
 
-      
-    </div>
 
-    <div id="class-metadata">
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
 
-      <!-- Parent Class -->
-      
-      <div id="parent-class-section" class="section">
-        <h3 class="section-header">Parent</h3>
-        
-        <p class="link"><a href="Object.html">Object</a></p>
-        
-      </div>
-      
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
 
-      <!-- Namespace Contents -->
-      
 
-      <!-- Method Quickref -->
-      
-      <div id="method-list-section" class="section">
-        <h3 class="section-header">Methods</h3>
-        <ul class="link-list">
-          
-          <li><a href="#method-c-new">::new</a></li>
-          
-          <li><a href="#method-i-db_master">#db_master</a></li>
-          
-          <li><a href="#method-i-errors">#errors</a></li>
-          
-          <li><a href="#method-i-generate_cloud_layout">#generate_cloud_layout</a></li>
-          
-          <li><a href="#method-i-head_node">#head_node</a></li>
-          
-          <li><a href="#method-i-is_advanced_format-3F">#is_advanced_format?</a></li>
-          
-          <li><a href="#method-i-is_simple_format-3F">#is_simple_format?</a></li>
-          
-          <li><a href="#method-i-login_node">#login_node</a></li>
-          
-          <li><a href="#method-i-max_images">#max_images</a></li>
-          
-          <li><a href="#method-i-min_images">#min_images</a></li>
-          
-          <li><a href="#method-i-nodes">#nodes</a></li>
-          
-          <li><a href="#method-i-other_nodes">#other_nodes</a></li>
-          
-          <li><a href="#method-i-parse_ip">#parse_ip</a></li>
-          
-          <li><a href="#method-i-read_factor">#read_factor</a></li>
-          
-          <li><a href="#method-i-replication_factor">#replication_factor</a></li>
-          
-          <li><a href="#method-i-to_hash">#to_hash</a></li>
-          
-          <li><a href="#method-i-valid-3F">#valid?</a></li>
-          
-          <li><a href="#method-i-valid_advanced_format-3F">#valid_advanced_format?</a></li>
-          
-          <li><a href="#method-i-valid_database_replication-3F">#valid_database_replication?</a></li>
-          
-          <li><a href="#method-i-valid_simple_format-3F">#valid_simple_format?</a></li>
-          
-          <li><a href="#method-i-write_factor">#write_factor</a></li>
-          
-        </ul>
-      </div>
-      
+  <div id="file-metadata">
+    <nav id="file-list-section" class="section">
+  <h3 class="section-header">Defined In</h3>
+  <ul>
+    <li>lib/node_layout.rb
+  </ul>
+</nav>
 
-      <!-- Included Modules -->
-      
-    </div>
-
-    <div id="project-metadata">
-      
-      
-      <div id="fileindex-section" class="section project-section">
-        <h3 class="section-header">Files</h3>
-        <ul>
-        
-          <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a></li>
-        
-        </ul>
-      </div>
-      
-
-      <div id="classindex-section" class="section project-section">
-        <h3 class="section-header">Class/Module Index
-          <span class="search-toggle"><img src="./images/find.png"
-            height="16" width="16" alt="[+]"
-            title="show/hide quicksearch" /></span></h3>
-        <form action="#" method="get" accept-charset="utf-8" class="initially-hidden">
-        <fieldset>
-          <legend>Quicksearch</legend>
-          <input type="text" name="quicksearch" value=""
-            class="quicksearch-field" />
-        </fieldset>
-        </form>
-
-        <ul class="link-list">
-        
-          <li><a href="./AdvancedNode.html">AdvancedNode</a></li>
-        
-          <li><a href="./AppControllerClient.html">AppControllerClient</a></li>
-        
-          <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a></li>
-        
-          <li><a href="./AppScaleException.html">AppScaleException</a></li>
-        
-          <li><a href="./AppScaleTools.html">AppScaleTools</a></li>
-        
-          <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a></li>
-        
-          <li><a href="./BadConfigurationException.html">BadConfigurationException</a></li>
-        
-          <li><a href="./CommonFunctions.html">CommonFunctions</a></li>
-        
-          <li><a href="./EncryptionHelper.html">EncryptionHelper</a></li>
-        
-          <li><a href="./GodInterface.html">GodInterface</a></li>
-        
-          <li><a href="./InfrastructureException.html">InfrastructureException</a></li>
-        
-          <li><a href="./Node.html">Node</a></li>
-        
-          <li><a href="./NodeLayout.html">NodeLayout</a></li>
-        
-          <li><a href="./Object.html">Object</a></li>
-        
-          <li><a href="./ParseArgs.html">ParseArgs</a></li>
-        
-          <li><a href="./RemoteLogging.html">RemoteLogging</a></li>
-        
-          <li><a href="./SimpleNode.html">SimpleNode</a></li>
-        
-          <li><a href="./UsageText.html">UsageText</a></li>
-        
-          <li><a href="./UserAppClient.html">UserAppClient</a></li>
-        
-          <li><a href="./VMTools.html">VMTools</a></li>
-        
-        </ul>
-        <div id="no-class-search-results" style="display: none;">No matching classes.</div>
-      </div>
-
-      
-    </div>
+    
   </div>
 
-  <div id="documentation">
-    <h1 class="class">NodeLayout</h1>
-
-    <div id="description">
-      
-    </div>
-
-    <!-- Constants -->
+  <div id="class-metadata">
     
-    <div id="constants-list" class="section">
+    <nav id="parent-class-section" class="section">
+  <h3 class="section-header">Parent</h3>
+  
+  <p class="link"><a href="Object.html">Object</a>
+  
+</nav>
+
+    
+    <!-- Method Quickref -->
+<nav id="method-list-section" class="section">
+  <h3 class="section-header">Methods</h3>
+
+  <ul class="link-list">
+    
+    <li><a href="#method-c-new">::new</a>
+    
+    <li><a href="#method-i-db_master">#db_master</a>
+    
+    <li><a href="#method-i-errors">#errors</a>
+    
+    <li><a href="#method-i-generate_cloud_layout">#generate_cloud_layout</a>
+    
+    <li><a href="#method-i-head_node">#head_node</a>
+    
+    <li><a href="#method-i-is_advanced_format-3F">#is_advanced_format?</a>
+    
+    <li><a href="#method-i-is_simple_format-3F">#is_simple_format?</a>
+    
+    <li><a href="#method-i-login_node">#login_node</a>
+    
+    <li><a href="#method-i-max_images">#max_images</a>
+    
+    <li><a href="#method-i-min_images">#min_images</a>
+    
+    <li><a href="#method-i-nodes">#nodes</a>
+    
+    <li><a href="#method-i-other_nodes">#other_nodes</a>
+    
+    <li><a href="#method-i-parse_ip">#parse_ip</a>
+    
+    <li><a href="#method-i-read_factor">#read_factor</a>
+    
+    <li><a href="#method-i-replication_factor">#replication_factor</a>
+    
+    <li><a href="#method-i-to_hash">#to_hash</a>
+    
+    <li><a href="#method-i-valid-3F">#valid?</a>
+    
+    <li><a href="#method-i-valid_advanced_format-3F">#valid_advanced_format?</a>
+    
+    <li><a href="#method-i-valid_database_replication-3F">#valid_database_replication?</a>
+    
+    <li><a href="#method-i-valid_simple_format-3F">#valid_simple_format?</a>
+    
+    <li><a href="#method-i-write_factor">#write_factor</a>
+    
+  </ul>
+</nav>
+
+  </div>
+
+  <div id="project-metadata">
+    <nav id="fileindex-section" class="section project-section">
+  <h3 class="section-header">Pages</h3>
+
+  <ul>
+  
+    <li class="file"><a href="./lib/sshcopyid.html">sshcopyid</a>
+  
+  </ul>
+</nav>
+
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="./AdvancedNode.html">AdvancedNode</a>
+  
+    <li><a href="./AppControllerClient.html">AppControllerClient</a>
+  
+    <li><a href="./AppEngineConfigException.html">AppEngineConfigException</a>
+  
+    <li><a href="./AppScaleException.html">AppScaleException</a>
+  
+    <li><a href="./AppScaleTools.html">AppScaleTools</a>
+  
+    <li><a href="./BadCommandLineArgException.html">BadCommandLineArgException</a>
+  
+    <li><a href="./BadConfigurationException.html">BadConfigurationException</a>
+  
+    <li><a href="./CommonFunctions.html">CommonFunctions</a>
+  
+    <li><a href="./EncryptionHelper.html">EncryptionHelper</a>
+  
+    <li><a href="./GodInterface.html">GodInterface</a>
+  
+    <li><a href="./InfrastructureException.html">InfrastructureException</a>
+  
+    <li><a href="./Node.html">Node</a>
+  
+    <li><a href="./NodeLayout.html">NodeLayout</a>
+  
+    <li><a href="./Object.html">Object</a>
+  
+    <li><a href="./ParseArgs.html">ParseArgs</a>
+  
+    <li><a href="./RemoteLogging.html">RemoteLogging</a>
+  
+    <li><a href="./SimpleNode.html">SimpleNode</a>
+  
+    <li><a href="./UsageText.html">UsageText</a>
+  
+    <li><a href="./UserAppClient.html">UserAppClient</a>
+  
+    <li><a href="./VMTools.html">VMTools</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation">
+  <h1 class="class">class NodeLayout</h1>
+
+  <div id="description" class="description">
+    
+  </div><!-- description -->
+
+  
+  
+  
+  <section id="5Buntitled-5D" class="documentation-section">
+    
+
+    
+
+    
+    <!-- Constants -->
+    <section id="constants-list" class="section">
       <h3 class="section-header">Constants</h3>
       <dl>
       
-        <dt><a name="SIMPLE_FORMAT_KEYS">SIMPLE_FORMAT_KEYS</a></dt>
+        <dt id="ADVANCED_FORMAT_KEYS">ADVANCED_FORMAT_KEYS
         
-        <dd class="description"></dd>
+        <dd class="description">
         
       
-        <dt><a name="ADVANCED_FORMAT_KEYS">ADVANCED_FORMAT_KEYS</a></dt>
+        <dt id="SIMPLE_FORMAT_KEYS">SIMPLE_FORMAT_KEYS
         
-        <dd class="description"></dd>
+        <dd class="description">
         
       
       </dl>
-    </div>
+    </section>
     
 
-    <!-- Attributes -->
     
 
     <!-- Methods -->
     
-    <div id="public-class-method-details" class="method-section section">
-      <h3 class="section-header">Public Class Methods</h3>
-
-    
-      <div id="new-method" class="method-detail ">
-        <a name="method-c-new"></a>
-
-        
-        <div class="method-heading">
-          <span class="method-name">new</span><span
-            class="method-args">(input_yaml, options, skip_replication=false)</span>
-          <span class="method-click-advice">click to toggle source</span>
-        </div>
-        
-
-        <div class="method-description">
-          
-          <p>Required options are: database_type</p>
-          
-
-          
-          <div class="method-source-code"
-            id="new-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 30</span>
-def initialize(input_yaml, options, skip_replication=false)
-  <span class="ruby-ivar">@input_yaml</span> = (input_yaml.kind_of?(<span class="ruby-constant">String</span>) ? <span class="ruby-constant">YAML</span>.load(input_yaml) : input_yaml)
-
-  <span class="ruby-ivar">@infrastructure</span> = options[:infrastructure]
-  <span class="ruby-ivar">@database_type</span> = options[:database]
-  <span class="ruby-ivar">@database_type</span> = <span class="ruby-ivar">@database_type</span>.to_sym if !<span class="ruby-ivar">@database_type</span>.nil?
-  <span class="ruby-ivar">@min_images</span> = options[:min_images]
-  <span class="ruby-ivar">@max_images</span> = options[:max_images]
-  <span class="ruby-ivar">@replication</span> = options[:replication]
-  <span class="ruby-ivar">@read_factor</span> = options[:read_factor]
-  <span class="ruby-ivar">@write_factor</span> = options[:write_factor]
-  
-  <span class="ruby-ivar">@nodes</span> = []
-  <span class="ruby-ivar">@skip_replication</span> = skip_replication
-end</pre>
-          </div>
-          
-        </div>
-
-        
-
-        
-      </div>
-
-    
-    </div>
-  
-    <div id="public-instance-method-details" class="method-section section">
+     <section id="public-instance-5Buntitled-5D-method-details" class="method-section section">
       <h3 class="section-header">Public Instance Methods</h3>
 
     
-      <div id="db_master-method" class="method-detail ">
-        <a name="method-i-db_master"></a>
-
+      <div id="method-i-db_master" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">db_master</span><span
@@ -300,30 +237,26 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="db_master-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 517</span>
-def db_master
-  return nil unless valid?
+          <div class="method-source-code" id="db_master-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 517</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">db_master</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
 
-  db_master = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_db_master? }.compact
+  <span class="ruby-identifier">db_master</span> = <span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span> <span class="ruby-identifier">n</span>.<span class="ruby-identifier">is_db_master?</span> }.<span class="ruby-identifier">compact</span>
   
-  db_master.empty? ? nil : db_master[0]
-end</pre>
-          </div>
+  <span class="ruby-identifier">db_master</span>.<span class="ruby-identifier">empty?</span> <span class="ruby-operator">?</span> <span class="ruby-keyword">nil</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">db_master</span>[<span class="ruby-value">0</span>]
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- db_master-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- db_master-method -->
 
     
-      <div id="errors-method" class="method-detail ">
-        <a name="method-i-errors"></a>
-
+      <div id="method-i-errors" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">errors</span><span
@@ -338,44 +271,40 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="errors-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 56</span>
-def errors
-  return [] if valid?
+          <div class="method-source-code" id="errors-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 56</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">errors</span>
+  <span class="ruby-keyword">return</span> [] <span class="ruby-keyword">if</span> <span class="ruby-identifier">valid?</span>
 
-  if is_simple_format? 
-    valid_simple_format?[:message]
-  elsif is_advanced_format?
-    valid_advanced_format?[:message]
-  elsif <span class="ruby-ivar">@input_yaml</span>.nil?
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">is_simple_format?</span> 
+    <span class="ruby-identifier">valid_simple_format?</span>[<span class="ruby-value">:message</span>]
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">is_advanced_format?</span>
+    <span class="ruby-identifier">valid_advanced_format?</span>[<span class="ruby-value">:message</span>]
+  <span class="ruby-keyword">elsif</span> <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">nil?</span>
     [<span class="ruby-constant">INPUT_YAML_REQUIRED</span>]
-  else
-    keys = <span class="ruby-ivar">@input_yaml</span>.keys
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">keys</span> = <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">keys</span>
 
-    keys.each { |key|
-      if !(<span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.include?(key) || <span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.include?(key))
-        return [&quot;The flag #{key} is not a supported flag&quot;]
-      end
+    <span class="ruby-identifier">keys</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">key</span><span class="ruby-operator">|</span>
+      <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span>(<span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">key</span>) <span class="ruby-operator">||</span> <span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">key</span>))
+        <span class="ruby-keyword">return</span> [<span class="ruby-node">&quot;The flag #{key} is not a supported flag&quot;</span>]
+      <span class="ruby-keyword">end</span>
     }
 
-    return [<span class="ruby-constant">USED_SIMPLE_AND_ADVANCED_KEYS</span>]
-  end
-end</pre>
-          </div>
+    <span class="ruby-keyword">return</span> [<span class="ruby-constant">USED_SIMPLE_AND_ADVANCED_KEYS</span>]
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- errors-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- errors-method -->
 
     
-      <div id="generate_cloud_layout-method" class="method-detail ">
-        <a name="method-i-generate_cloud_layout"></a>
-
+      <div id="method-i-generate_cloud_layout" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">generate_cloud_layout</span><span
@@ -390,34 +319,30 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="generate_cloud_layout-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 447</span>
-def generate_cloud_layout
-  layout = {:controller =&gt; <span class="ruby-string">&quot;node-0&quot;</span>}
-  servers = []
-  num_slaves = <span class="ruby-ivar">@min_images</span> - 1
-  num_slaves.times do |i|
-    servers &lt;&lt; &quot;node-#{i+1}&quot;
-  end
+          <div class="method-source-code" id="generate_cloud_layout-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 447</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">generate_cloud_layout</span>
+  <span class="ruby-identifier">layout</span> = {<span class="ruby-value">:controller</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-string">&quot;node-0&quot;</span>}
+  <span class="ruby-identifier">servers</span> = []
+  <span class="ruby-identifier">num_slaves</span> = <span class="ruby-ivar">@min_images</span> <span class="ruby-operator">-</span> <span class="ruby-value">1</span>
+  <span class="ruby-identifier">num_slaves</span>.<span class="ruby-identifier">times</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">i</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">servers</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;node-#{i+1}&quot;</span>
+  <span class="ruby-keyword">end</span>
 
-  layout[:servers] = servers
-  <span class="ruby-constant">YAML</span>.load(layout.to_yaml)
-end</pre>
-          </div>
+  <span class="ruby-identifier">layout</span>[<span class="ruby-value">:servers</span>] = <span class="ruby-identifier">servers</span>
+  <span class="ruby-constant">YAML</span>.<span class="ruby-identifier">load</span>(<span class="ruby-identifier">layout</span>.<span class="ruby-identifier">to_yaml</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- generate_cloud_layout-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- generate_cloud_layout-method -->
 
     
-      <div id="head_node-method" class="method-detail ">
-        <a name="method-i-head_node"></a>
-
+      <div id="method-i-head_node" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">head_node</span><span
@@ -432,31 +357,27 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="head_node-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 500</span>
-def head_node
-  return nil unless valid?
+          <div class="method-source-code" id="head_node-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 500</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">head_node</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
 
-  head_node = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_shadow? }.compact
+  <span class="ruby-identifier">head_node</span> = <span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span> <span class="ruby-identifier">n</span>.<span class="ruby-identifier">is_shadow?</span> }.<span class="ruby-identifier">compact</span>
   
   <span class="ruby-comment"># TODO: is the last guard necessary?</span>
-  head_node.empty? ? nil : head_node[0]
-end</pre>
-          </div>
+  <span class="ruby-identifier">head_node</span>.<span class="ruby-identifier">empty?</span> <span class="ruby-operator">?</span> <span class="ruby-keyword">nil</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">head_node</span>[<span class="ruby-value">0</span>]
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- head_node-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- head_node-method -->
 
     
-      <div id="is_advanced_format-3F-method" class="method-detail ">
-        <a name="method-i-is_advanced_format-3F"></a>
-
+      <div id="method-i-is_advanced_format-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">is_advanced_format?</span><span
@@ -471,32 +392,28 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="is_advanced_format-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 97</span>
-def is_advanced_format?
-  return false if <span class="ruby-ivar">@input_yaml</span>.nil?
+          <div class="method-source-code" id="is_advanced_format-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 97</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">is_advanced_format?</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">false</span> <span class="ruby-keyword">if</span> <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">nil?</span>
 
-  <span class="ruby-ivar">@input_yaml</span>.keys.each do |key|
-    return false if !<span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.include?(key)
-  end
+  <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">keys</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">key</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-keyword">false</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-constant">ADVANCED_FORMAT_KEYS</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">key</span>)
+  <span class="ruby-keyword">end</span>
 
-  true
-end</pre>
-          </div>
+  <span class="ruby-keyword">true</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- is_advanced_format-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- is_advanced_format-3F-method -->
 
     
-      <div id="is_simple_format-3F-method" class="method-detail ">
-        <a name="method-i-is_simple_format-3F"></a>
-
+      <div id="method-i-is_simple_format-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">is_simple_format?</span><span
@@ -511,41 +428,37 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="is_simple_format-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 78</span>
-def is_simple_format?
-  if <span class="ruby-ivar">@input_yaml</span>.nil?
-    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>) and <span class="ruby-ivar">@infrastructure</span> != <span class="ruby-string">&quot;hybrid&quot;</span>
+          <div class="method-source-code" id="is_simple_format-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 78</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">is_simple_format?</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">nil?</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-ivar">@infrastructure</span>) <span class="ruby-keyword">and</span> <span class="ruby-ivar">@infrastructure</span> <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;hybrid&quot;</span>
       <span class="ruby-comment"># When used with the cloud, the simple format doesn't require a yaml</span>
       <span class="ruby-comment"># Note this is not so in the hybrid model - a yaml is required in</span>
       <span class="ruby-comment"># that scenario.</span>
-      return true
-    else
-      return false
-    end
-  end
+      <span class="ruby-keyword">return</span> <span class="ruby-keyword">true</span>
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-keyword">false</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  <span class="ruby-ivar">@input_yaml</span>.keys.each do |key|
-    return false if !<span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.include?(key)
-  end
+  <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">keys</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">key</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-keyword">false</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-constant">SIMPLE_FORMAT_KEYS</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">key</span>)
+  <span class="ruby-keyword">end</span>
 
- true
-end</pre>
-          </div>
+ <span class="ruby-keyword">true</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- is_simple_format-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- is_simple_format-3F-method -->
 
     
-      <div id="login_node-method" class="method-detail ">
-        <a name="method-i-login_node"></a>
-
+      <div id="method-i-login_node" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">login_node</span><span
@@ -560,30 +473,26 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="login_node-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 525</span>
-def login_node
-  return nil unless valid?
+          <div class="method-source-code" id="login_node-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 525</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">login_node</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
 
-  login = <span class="ruby-ivar">@nodes</span>.select { |n| n.is_login? }.compact
+  <span class="ruby-identifier">login</span> = <span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span> <span class="ruby-identifier">n</span>.<span class="ruby-identifier">is_login?</span> }.<span class="ruby-identifier">compact</span>
   
-  login.empty? ? nil : login[0]
-end</pre>
-          </div>
+  <span class="ruby-identifier">login</span>.<span class="ruby-identifier">empty?</span> <span class="ruby-operator">?</span> <span class="ruby-keyword">nil</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">login</span>[<span class="ruby-value">0</span>]
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- login_node-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- login_node-method -->
 
     
-      <div id="max_images-method" class="method-detail ">
-        <a name="method-i-max_images"></a>
-
+      <div id="method-i-max_images" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">max_images</span><span
@@ -598,28 +507,24 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="max_images-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 486</span>
-def max_images
-  return nil unless valid?
+          <div class="method-source-code" id="max_images-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 486</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">max_images</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
   
   <span class="ruby-ivar">@max_images</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- max_images-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- max_images-method -->
 
     
-      <div id="min_images-method" class="method-detail ">
-        <a name="method-i-min_images"></a>
-
+      <div id="method-i-min_images" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">min_images</span><span
@@ -634,28 +539,24 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="min_images-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 480</span>
-def min_images
-  return nil unless valid? 
+          <div class="method-source-code" id="min_images-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 480</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">min_images</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span> 
 
   <span class="ruby-ivar">@min_images</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- min_images-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- min_images-method -->
 
     
-      <div id="nodes-method" class="method-detail ">
-        <a name="method-i-nodes"></a>
-
+      <div id="method-i-nodes" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">nodes</span><span
@@ -670,29 +571,25 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="nodes-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 492</span>
-def nodes
-  return [] unless valid?
+          <div class="method-source-code" id="nodes-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 492</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">nodes</span>
+  <span class="ruby-keyword">return</span> [] <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
   
   <span class="ruby-comment"># Since the valid? check has succeded @nodes has been initialized</span>
   <span class="ruby-ivar">@nodes</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- nodes-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- nodes-method -->
 
     
-      <div id="other_nodes-method" class="method-detail ">
-        <a name="method-i-other_nodes"></a>
-
+      <div id="method-i-other_nodes" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">other_nodes</span><span
@@ -707,30 +604,26 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="other_nodes-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 509</span>
-def other_nodes
-  return [] unless valid?
+          <div class="method-source-code" id="other_nodes-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 509</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">other_nodes</span>
+  <span class="ruby-keyword">return</span> [] <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
 
-  other_nodes = <span class="ruby-ivar">@nodes</span>.select { |n| !n.is_shadow? }.compact
+  <span class="ruby-identifier">other_nodes</span> = <span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span> <span class="ruby-operator">!</span><span class="ruby-identifier">n</span>.<span class="ruby-identifier">is_shadow?</span> }.<span class="ruby-identifier">compact</span>
   
-  other_nodes.empty? ? [] : other_nodes
-end</pre>
-          </div>
+  <span class="ruby-identifier">other_nodes</span>.<span class="ruby-identifier">empty?</span> <span class="ruby-operator">?</span> [] <span class="ruby-operator">:</span> <span class="ruby-identifier">other_nodes</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- other_nodes-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- other_nodes-method -->
 
     
-      <div id="parse_ip-method" class="method-detail ">
-        <a name="method-i-parse_ip"></a>
-
+      <div id="method-i-parse_ip" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">parse_ip</span><span
@@ -745,37 +638,33 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="parse_ip-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 107</span>
-def parse_ip(ip)
-  id, cloud = nil, nil
+          <div class="method-source-code" id="parse_ip-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 107</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">parse_ip</span>(<span class="ruby-identifier">ip</span>)
+  <span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span> = <span class="ruby-keyword">nil</span>, <span class="ruby-keyword">nil</span>
 
-  match = <span class="ruby-constant">NODE_ID_REGEX</span>.match(ip)
-  if match.nil?
-    id = ip
-    cloud = <span class="ruby-string">&quot;not-cloud&quot;</span>
-  else
-    id = match[0]
-    cloud = match[1]
-  end
+  <span class="ruby-identifier">match</span> = <span class="ruby-constant">NODE_ID_REGEX</span>.<span class="ruby-identifier">match</span>(<span class="ruby-identifier">ip</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">match</span>.<span class="ruby-identifier">nil?</span>
+    <span class="ruby-identifier">id</span> = <span class="ruby-identifier">ip</span>
+    <span class="ruby-identifier">cloud</span> = <span class="ruby-string">&quot;not-cloud&quot;</span>
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-identifier">id</span> = <span class="ruby-identifier">match</span>[<span class="ruby-value">0</span>]
+    <span class="ruby-identifier">cloud</span> = <span class="ruby-identifier">match</span>[<span class="ruby-value">1</span>]
+  <span class="ruby-keyword">end</span>
 
-  return id, cloud
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- parse_ip-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- parse_ip-method -->
 
     
-      <div id="read_factor-method" class="method-detail ">
-        <a name="method-i-read_factor"></a>
-
+      <div id="method-i-read_factor" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">read_factor</span><span
@@ -791,28 +680,24 @@ not exactly work due to the || ?</p>
           
 
           
-          <div class="method-source-code"
-            id="read_factor-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 468</span>
-def read_factor
-  return nil if !valid? || <span class="ruby-ivar">@database_type</span> != :voldemort
+          <div class="method-source-code" id="read_factor-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 468</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">read_factor</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-identifier">valid?</span> <span class="ruby-operator">||</span> <span class="ruby-ivar">@database_type</span> <span class="ruby-operator">!=</span> <span class="ruby-value">:voldemort</span>
 
   <span class="ruby-ivar">@read_factor</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- read_factor-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- read_factor-method -->
 
     
-      <div id="replication_factor-method" class="method-detail ">
-        <a name="method-i-replication_factor"></a>
-
+      <div id="method-i-replication_factor" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">replication_factor</span><span
@@ -827,28 +712,24 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="replication_factor-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 459</span>
-def replication_factor
-  return nil unless valid?
+          <div class="method-source-code" id="replication_factor-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 459</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">replication_factor</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">valid?</span>
 
   <span class="ruby-ivar">@replication</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- replication_factor-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- replication_factor-method -->
 
     
-      <div id="to_hash-method" class="method-detail ">
-        <a name="method-i-to_hash"></a>
-
+      <div id="method-i-to_hash" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">to_hash</span><span
@@ -863,31 +744,27 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="to_hash-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 534</span>
-def to_hash
-  result = {}
+          <div class="method-source-code" id="to_hash-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 534</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">to_hash</span>
+  <span class="ruby-identifier">result</span> = {}
   <span class="ruby-comment"># Put all nodes except the head node in the hash</span>
-  other_nodes.each do |node|
-    result[node.id] = node.roles.join(<span class="ruby-string">&quot;:&quot;</span>)
-  end
-  result
-end</pre>
-          </div>
+  <span class="ruby-identifier">other_nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-identifier">result</span>[<span class="ruby-identifier">node</span>.<span class="ruby-identifier">id</span>] = <span class="ruby-identifier">node</span>.<span class="ruby-identifier">roles</span>.<span class="ruby-identifier">join</span>(<span class="ruby-string">&quot;:&quot;</span>)
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">result</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- to_hash-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- to_hash-method -->
 
     
-      <div id="valid-3F-method" class="method-detail ">
-        <a name="method-i-valid-3F"></a>
-
+      <div id="method-i-valid-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">valid?</span><span
@@ -902,32 +779,28 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="valid-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 46</span>
-def valid?
-  if is_simple_format? 
-    valid_simple_format?[:result]
-  elsif is_advanced_format?
-    valid_advanced_format?[:result]
-  else
-    false
-  end
-end</pre>
-          </div>
+          <div class="method-source-code" id="valid-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 46</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">valid?</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">is_simple_format?</span> 
+    <span class="ruby-identifier">valid_simple_format?</span>[<span class="ruby-value">:result</span>]
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">is_advanced_format?</span>
+    <span class="ruby-identifier">valid_advanced_format?</span>[<span class="ruby-value">:result</span>]
+  <span class="ruby-keyword">else</span>
+    <span class="ruby-keyword">false</span>
+  <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- valid-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- valid-3F-method -->
 
     
-      <div id="valid_advanced_format-3F-method" class="method-detail ">
-        <a name="method-i-valid_advanced_format-3F"></a>
-
+      <div id="method-i-valid_advanced_format-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">valid_advanced_format?</span><span
@@ -942,186 +815,182 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="valid_advanced_format-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 227</span>
-def valid_advanced_format?
+          <div class="method-source-code" id="valid_advanced_format-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 227</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">valid_advanced_format?</span>
   <span class="ruby-comment"># We already computed the nodes, its valid</span>
-  return valid if !<span class="ruby-ivar">@nodes</span>.empty?
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">valid</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">empty?</span>
 
-  node_hash = {}
-  <span class="ruby-ivar">@input_yaml</span>.each_pair do |role, ips|
+  <span class="ruby-identifier">node_hash</span> = {}
+  <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">each_pair</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">role</span>, <span class="ruby-identifier">ips</span><span class="ruby-operator">|</span>
     
-    ips.each_with_index do |ip, index|
-      node = nil
-      if node_hash[ip].nil?
-        id, cloud = parse_ip(ip)
-        node = <span class="ruby-constant">AdvancedNode</span>.new(id, cloud)
-      else
-        node = node_hash[ip]
-      end
+    <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">each_with_index</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">ip</span>, <span class="ruby-identifier">index</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">node</span> = <span class="ruby-keyword">nil</span>
+      <span class="ruby-keyword">if</span> <span class="ruby-identifier">node_hash</span>[<span class="ruby-identifier">ip</span>].<span class="ruby-identifier">nil?</span>
+        <span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span> = <span class="ruby-identifier">parse_ip</span>(<span class="ruby-identifier">ip</span>)
+        <span class="ruby-identifier">node</span> = <span class="ruby-constant">AdvancedNode</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span>)
+      <span class="ruby-keyword">else</span>
+        <span class="ruby-identifier">node</span> = <span class="ruby-identifier">node_hash</span>[<span class="ruby-identifier">ip</span>]
+      <span class="ruby-keyword">end</span>
 
-      if role.to_sym == :database
+      <span class="ruby-keyword">if</span> <span class="ruby-identifier">role</span>.<span class="ruby-identifier">to_sym</span> <span class="ruby-operator">==</span> <span class="ruby-value">:database</span>
         <span class="ruby-comment"># The first database node is the master</span>
-        is_master = index.zero?
-        node.add_db_role <span class="ruby-ivar">@database_type</span>, is_master
-      elsif role.to_sym == :db_master
-        node.add_role :zookeeper
-        node.add_role role
-      elsif role.to_sym == :rabbitmq
+        <span class="ruby-identifier">is_master</span> = <span class="ruby-identifier">index</span>.<span class="ruby-identifier">zero?</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_db_role</span> <span class="ruby-ivar">@database_type</span>, <span class="ruby-identifier">is_master</span>
+      <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">role</span>.<span class="ruby-identifier">to_sym</span> <span class="ruby-operator">==</span> <span class="ruby-value">:db_master</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:zookeeper</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-identifier">role</span>
+      <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">role</span>.<span class="ruby-identifier">to_sym</span> <span class="ruby-operator">==</span> <span class="ruby-value">:rabbitmq</span>
         <span class="ruby-comment"># Like the database, the first rabbitmq node is the master</span>
-        is_master = index.zero?
-        node.add_role :rabbitmq
-        node.add_rabbitmq_role is_master
-      else
-        node.add_role role
-      end
+        <span class="ruby-identifier">is_master</span> = <span class="ruby-identifier">index</span>.<span class="ruby-identifier">zero?</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:rabbitmq</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_rabbitmq_role</span> <span class="ruby-identifier">is_master</span>
+      <span class="ruby-keyword">else</span>
+        <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-identifier">role</span>
+      <span class="ruby-keyword">end</span>
       
-      node_hash[ip] = node
-    end
-  end
+      <span class="ruby-identifier">node_hash</span>[<span class="ruby-identifier">ip</span>] = <span class="ruby-identifier">node</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># Dont need the hash any more, make a nodes list</span>
-  nodes = node_hash.values
+  <span class="ruby-identifier">nodes</span> = <span class="ruby-identifier">node_hash</span>.<span class="ruby-identifier">values</span>
 
-  nodes.each do |node|
-    return invalid(node.errors.join(<span class="ruby-string">&quot;,&quot;</span>)) unless node.valid?
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">errors</span>.<span class="ruby-identifier">join</span>(<span class="ruby-string">&quot;,&quot;</span>)) <span class="ruby-keyword">unless</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">valid?</span>
 
-    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
-      error_message = &quot;Invalid cloud node ID: #{node.id} \n&quot; + 
-        <span class="ruby-string">&quot;Cloud node ID must be in the format 'node-{IDNUMBER}'&quot;</span> +
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-ivar">@infrastructure</span>)
+      <span class="ruby-identifier">error_message</span> = <span class="ruby-node">&quot;Invalid cloud node ID: #{node.id} \n&quot;</span> <span class="ruby-operator">+</span> 
+        <span class="ruby-string">&quot;Cloud node ID must be in the format 'node-{IDNUMBER}'&quot;</span> <span class="ruby-operator">+</span>
         <span class="ruby-string">&quot;\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments&quot;</span>
-      return invalid(error_message) if <span class="ruby-constant">NODE_ID_REGEX</span>.match(node.id.to_s).nil?
-    else
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">error_message</span>) <span class="ruby-keyword">if</span> <span class="ruby-constant">NODE_ID_REGEX</span>.<span class="ruby-identifier">match</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">id</span>.<span class="ruby-identifier">to_s</span>).<span class="ruby-identifier">nil?</span>
+    <span class="ruby-keyword">else</span>
       <span class="ruby-comment"># Xen/KVM should be using the ip address as the node id</span>
-      error_message = &quot;Invalid virtualized node ID: #{node.id} \n&quot; + 
+      <span class="ruby-identifier">error_message</span> = <span class="ruby-node">&quot;Invalid virtualized node ID: #{node.id} \n&quot;</span> <span class="ruby-operator">+</span> 
         <span class="ruby-string">&quot;Virtualized node IDs must be a valid IP address&quot;</span>
-      return invalid(error_message) if <span class="ruby-constant">IP_REGEX</span>.match(node.id.to_s).nil?
-    end
-  end
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">error_message</span>) <span class="ruby-keyword">if</span> <span class="ruby-constant">IP_REGEX</span>.<span class="ruby-identifier">match</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">id</span>.<span class="ruby-identifier">to_s</span>).<span class="ruby-identifier">nil?</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  master_nodes = nodes.select { |node| node.is_shadow? }.compact
+  <span class="ruby-identifier">master_nodes</span> = <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_shadow?</span> }.<span class="ruby-identifier">compact</span>
 
   <span class="ruby-comment"># need exactly one master</span>
-  if master_nodes.length == 0
-    return invalid(<span class="ruby-string">&quot;No master was specified&quot;</span>)
-  elsif master_nodes.length &gt; 1
-    return invalid(<span class="ruby-string">&quot;Only one master is allowed&quot;</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">master_nodes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;No master was specified&quot;</span>)
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">master_nodes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;Only one master is allowed&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  master_node = master_nodes.first
+  <span class="ruby-identifier">master_node</span> = <span class="ruby-identifier">master_nodes</span>.<span class="ruby-identifier">first</span>
 
-  login_node = nodes.select { |node| node.is_login? }.compact
+  <span class="ruby-identifier">login_node</span> = <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">select</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_login?</span> }.<span class="ruby-identifier">compact</span>
   <span class="ruby-comment"># If a login node was not specified, make the master into the login node</span>
-  if login_node.empty?
-    master_node.add_role :login
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">login_node</span>.<span class="ruby-identifier">empty?</span>
+    <span class="ruby-identifier">master_node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:login</span>
+  <span class="ruby-keyword">end</span>
 
-  appengine_count = 0
-  nodes.each do |node|
-    if node.is_appengine?
-      appengine_count += 1
-    end
-  end
+  <span class="ruby-identifier">appengine_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_appengine?</span>
+      <span class="ruby-identifier">appengine_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if appengine_count &lt; 1
-    return invalid(<span class="ruby-string">&quot;Not enough appengine nodes were provided.&quot;</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">appengine_count</span> <span class="ruby-operator">&lt;</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;Not enough appengine nodes were provided.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  memcache_count = 0
-  nodes.each do |node|
-    if node.is_memcache?
-      memcache_count += 1
-    end
-  end
+  <span class="ruby-identifier">memcache_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_memcache?</span>
+      <span class="ruby-identifier">memcache_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># if no memcache nodes were specified, make all appengine nodes</span>
   <span class="ruby-comment"># into memcache nodes</span>
-  if memcache_count &lt; 1
-    nodes.each { |node|
-      node.add_role :memcache if node.is_appengine?
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">memcache_count</span> <span class="ruby-operator">&lt;</span> <span class="ruby-value">1</span>
+    <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:memcache</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_appengine?</span>
     }
-  end
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
+  <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-ivar">@infrastructure</span>)
     <span class="ruby-comment"># If min and max aren't specified, they default to the number of nodes in the system</span>
-    <span class="ruby-ivar">@min_images</span> ||= nodes.length
-    <span class="ruby-ivar">@max_images</span> ||= nodes.length
+    <span class="ruby-ivar">@min_images</span> <span class="ruby-operator">||=</span> <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">length</span>
+    <span class="ruby-ivar">@max_images</span> <span class="ruby-operator">||=</span> <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">length</span>
 
     <span class="ruby-comment"># TODO: look into if that first guard is really necessary with the preceding lines</span>
 
-    if <span class="ruby-ivar">@min_images</span> &amp;&amp; nodes.length &lt; <span class="ruby-ivar">@min_images</span>
-      return invalid(&quot;Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum&quot;)
-    end
+    <span class="ruby-keyword">if</span> <span class="ruby-ivar">@min_images</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&lt;</span> <span class="ruby-ivar">@min_images</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-node">&quot;Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum&quot;</span>)
+    <span class="ruby-keyword">end</span>
  
-    if <span class="ruby-ivar">@max_images</span> &amp;&amp; nodes.length &gt; <span class="ruby-ivar">@max_images</span>
-      return invalid(&quot;Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum&quot;)
-    end
-  end
+    <span class="ruby-keyword">if</span> <span class="ruby-ivar">@max_images</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">&gt;</span> <span class="ruby-ivar">@max_images</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-node">&quot;Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum&quot;</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  zookeeper_count = 0
-  nodes.each do |node|
-    if node.is_zookeeper?
-      zookeeper_count += 1
-    end
-  end
-  master_node.add_role :zookeeper if zookeeper_count.zero?
+  <span class="ruby-identifier">zookeeper_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_zookeeper?</span>
+      <span class="ruby-identifier">zookeeper_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-identifier">master_node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:zookeeper</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">zookeeper_count</span>.<span class="ruby-identifier">zero?</span>
 
   <span class="ruby-comment"># If no rabbitmq nodes are specified, make the shadow the rabbitmq_master</span>
-  rabbitmq_count = 0
-  nodes.each do |node|
-    if node.is_rabbitmq?
-      rabbitmq_count += 1
-    end
-  end
-  if rabbitmq_count.zero?
-    master_node.add_role :rabbitmq
-    master_node.add_role :rabbitmq_master
-  end
+  <span class="ruby-identifier">rabbitmq_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_rabbitmq?</span>
+      <span class="ruby-identifier">rabbitmq_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">rabbitmq_count</span>.<span class="ruby-identifier">zero?</span>
+    <span class="ruby-identifier">master_node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:rabbitmq</span>
+    <span class="ruby-identifier">master_node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:rabbitmq_master</span>
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># Any node that runs appengine needs rabbitmq to dispatch task requests to</span>
   <span class="ruby-comment"># It's safe to add the slave role since we ensure above that somebody</span>
   <span class="ruby-comment"># already has the master role</span>
-  nodes.each do |node|
-    if node.is_appengine? and !node.is_rabbitmq?
-      node.add_role :rabbitmq_slave
-    end
-  end
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_appengine?</span> <span class="ruby-keyword">and</span> <span class="ruby-operator">!</span><span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_rabbitmq?</span>
+      <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:rabbitmq_slave</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  database_count = 0
-  nodes.each do |node|
-    if node.is_database?
-      database_count += 1
-    end
-  end
+  <span class="ruby-identifier">database_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_database?</span>
+      <span class="ruby-identifier">database_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@skip_replication</span>
-    <span class="ruby-ivar">@nodes</span> = nodes
-    return valid
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@skip_replication</span>
+    <span class="ruby-ivar">@nodes</span> = <span class="ruby-identifier">nodes</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">valid</span>
+  <span class="ruby-keyword">end</span>
 
-  rep = valid_database_replication? nodes
-  return rep unless rep[:result]
+  <span class="ruby-identifier">rep</span> = <span class="ruby-identifier">valid_database_replication?</span> <span class="ruby-identifier">nodes</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">rep</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">rep</span>[<span class="ruby-value">:result</span>]
 
   <span class="ruby-comment"># Wait until it is validated to assign it</span>
-  <span class="ruby-ivar">@nodes</span> = nodes
+  <span class="ruby-ivar">@nodes</span> = <span class="ruby-identifier">nodes</span>
 
-  return valid
-end</pre>
-          </div>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">valid</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- valid_advanced_format-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- valid_advanced_format-3F-method -->
 
     
-      <div id="valid_database_replication-3F-method" class="method-detail ">
-        <a name="method-i-valid_database_replication-3F"></a>
-
+      <div id="method-i-valid_database_replication-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">valid_database_replication?</span><span
@@ -1136,77 +1005,73 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="valid_database_replication-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 391</span>
-def valid_database_replication? nodes
-  database_node_count = 0
-  nodes.each do |node|
-    if node.is_database? or node.is_db_master?
-      database_node_count += 1
-    end
-  end
+          <div class="method-source-code" id="valid_database_replication-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 391</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">valid_database_replication?</span> <span class="ruby-identifier">nodes</span>
+  <span class="ruby-identifier">database_node_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_database?</span> <span class="ruby-keyword">or</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_db_master?</span>
+      <span class="ruby-identifier">database_node_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if database_node_count.zero?
-    return invalid(<span class="ruby-string">&quot;At least one database node must be provided.&quot;</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">database_node_count</span>.<span class="ruby-identifier">zero?</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;At least one database node must be provided.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@replication</span>.nil?
-    if database_node_count &gt; 3
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@replication</span>.<span class="ruby-identifier">nil?</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">database_node_count</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">3</span>
       <span class="ruby-comment"># If there are a lot of database nodes, we default to 3x replication</span>
-      <span class="ruby-ivar">@replication</span> = 3
-    else
+      <span class="ruby-ivar">@replication</span> = <span class="ruby-value">3</span>
+    <span class="ruby-keyword">else</span>
       <span class="ruby-comment"># If there are only a few nodes, replicate to each one of the nodes</span>
-      <span class="ruby-ivar">@replication</span> = database_node_count
-    end
-  end
+      <span class="ruby-ivar">@replication</span> = <span class="ruby-identifier">database_node_count</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@replication</span> &gt; database_node_count
-    return invalid(<span class="ruby-string">&quot;The provided replication factor is too high. The replication factor (-n flag) cannot be greater than the number of database nodes.&quot;</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@replication</span> <span class="ruby-operator">&gt;</span> <span class="ruby-identifier">database_node_count</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;The provided replication factor is too high. The replication factor (-n flag) cannot be greater than the number of database nodes.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># Perform all the database specific checks here</span>
-  if <span class="ruby-ivar">@database_type</span> == :mysql &amp;&amp; database_node_count % <span class="ruby-ivar">@replication</span> != 0
-    return invalid(&quot;MySQL requires that the amount of replication be divisible by the number of nodes (e.g. with 6 nodes, 2 or 3 times replication). You specified #{database_node_count} database nodes which is not divisible by #{@replication} times replication.&quot;)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@database_type</span> <span class="ruby-operator">==</span> <span class="ruby-value">:mysql</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">database_node_count</span> <span class="ruby-operator">%</span> <span class="ruby-ivar">@replication</span> <span class="ruby-operator">!=</span> <span class="ruby-value">0</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-node">&quot;MySQL requires that the amount of replication be divisible by the number of nodes (e.g. with 6 nodes, 2 or 3 times replication). You specified #{database_node_count} database nodes which is not divisible by #{@replication} times replication.&quot;</span>)
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@database_type</span> == :voldemort
-    <span class="ruby-ivar">@read_factor</span> ||= <span class="ruby-ivar">@replication</span>
-    <span class="ruby-ivar">@write_factor</span> ||= <span class="ruby-ivar">@replication</span>
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@database_type</span> <span class="ruby-operator">==</span> <span class="ruby-value">:voldemort</span>
+    <span class="ruby-ivar">@read_factor</span> <span class="ruby-operator">||=</span> <span class="ruby-ivar">@replication</span>
+    <span class="ruby-ivar">@write_factor</span> <span class="ruby-operator">||=</span> <span class="ruby-ivar">@replication</span>
 
-    if <span class="ruby-ivar">@read_factor</span> &gt; <span class="ruby-ivar">@replication</span>
-      return invalid(<span class="ruby-string">&quot;The provided read factor is too high. The read factor (-r flag) cannot be greater than the replication factor.&quot;</span>)
-    elsif <span class="ruby-ivar">@write_factor</span> &gt; <span class="ruby-ivar">@replication</span>
-      return invalid(<span class="ruby-string">&quot;The provided write factor is too high. The write factor (-w flag) cannot be greater than the replication factor.&quot;</span>)
-    end
-  end
+    <span class="ruby-keyword">if</span> <span class="ruby-ivar">@read_factor</span> <span class="ruby-operator">&gt;</span> <span class="ruby-ivar">@replication</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;The provided read factor is too high. The read factor (-r flag) cannot be greater than the replication factor.&quot;</span>)
+    <span class="ruby-keyword">elsif</span> <span class="ruby-ivar">@write_factor</span> <span class="ruby-operator">&gt;</span> <span class="ruby-ivar">@replication</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;The provided write factor is too high. The write factor (-w flag) cannot be greater than the replication factor.&quot;</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@database_type</span> == :simpledb
-    if <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_ACCESS_KEY'</span>].nil?
-      return invalid(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_ACCESS_KEY be set to your AWS access key.&quot;</span>)
-    end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@database_type</span> <span class="ruby-operator">==</span> <span class="ruby-value">:simpledb</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_ACCESS_KEY'</span>].<span class="ruby-identifier">nil?</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_ACCESS_KEY be set to your AWS access key.&quot;</span>)
+    <span class="ruby-keyword">end</span>
 
-    if <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_SECRET_KEY'</span>].nil?
-      return invalid(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_SECRET_KEY be set to your AWS secret key.&quot;</span>)
-    end
-  end
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">ENV</span>[<span class="ruby-string">'SIMPLEDB_SECRET_KEY'</span>].<span class="ruby-identifier">nil?</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-string">&quot;SimpleDB deployments require that the environment variable SIMPLEDB_SECRET_KEY be set to your AWS secret key.&quot;</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
   
-  valid
-end</pre>
-          </div>
+  <span class="ruby-identifier">valid</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- valid_database_replication-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- valid_database_replication-3F-method -->
 
     
-      <div id="valid_simple_format-3F-method" class="method-detail ">
-        <a name="method-i-valid_simple_format-3F"></a>
-
+      <div id="method-i-valid_simple_format-3F" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">valid_simple_format?</span><span
@@ -1221,127 +1086,123 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="valid_simple_format-3F-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 122</span>
-def valid_simple_format?
+          <div class="method-source-code" id="valid_simple_format-3F-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 122</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">valid_simple_format?</span>
   <span class="ruby-comment"># We already computed the nodes, its valid</span>
   <span class="ruby-comment"># cgb: an optimization to ensure we don't keep calling this</span>
   <span class="ruby-comment"># when it always returns the same thing anyways</span>
-  return valid if !<span class="ruby-ivar">@nodes</span>.empty?
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">valid</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">empty?</span>
 
-  if <span class="ruby-ivar">@input_yaml</span>.nil?
-    if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>) and <span class="ruby-ivar">@infrastructure</span> != <span class="ruby-string">&quot;hybrid&quot;</span>
-      if <span class="ruby-ivar">@min_images</span>.nil?
-        return invalid(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MIN_IMAGES</span>)
-      end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">nil?</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-ivar">@infrastructure</span>) <span class="ruby-keyword">and</span> <span class="ruby-ivar">@infrastructure</span> <span class="ruby-operator">!=</span> <span class="ruby-string">&quot;hybrid&quot;</span>
+      <span class="ruby-keyword">if</span> <span class="ruby-ivar">@min_images</span>.<span class="ruby-identifier">nil?</span>
+        <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MIN_IMAGES</span>)
+      <span class="ruby-keyword">end</span>
 
-      if <span class="ruby-ivar">@max_images</span>.nil?
-        return invalid(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MAX_IMAGES</span>)
-      end
+      <span class="ruby-keyword">if</span> <span class="ruby-ivar">@max_images</span>.<span class="ruby-identifier">nil?</span>
+        <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">NO_INPUT_YAML_REQUIRES_MAX_IMAGES</span>)
+      <span class="ruby-keyword">end</span>
 
       <span class="ruby-comment"># No yaml was created so we will create a generic one and then allow it to be validated</span>
-      <span class="ruby-ivar">@input_yaml</span> = generate_cloud_layout
-    else
-      return invalid(<span class="ruby-constant">INPUT_YAML_REQUIRED</span>)
-    end
-  end
+      <span class="ruby-ivar">@input_yaml</span> = <span class="ruby-identifier">generate_cloud_layout</span>
+    <span class="ruby-keyword">else</span>
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">INPUT_YAML_REQUIRED</span>)
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  nodes = []
-  <span class="ruby-ivar">@input_yaml</span>.each_pair do |role, ips|
-    next if ips.nil?
+  <span class="ruby-identifier">nodes</span> = []
+  <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">each_pair</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">role</span>, <span class="ruby-identifier">ips</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">next</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">nil?</span>
 
-    ips.each do |ip|
-      id, cloud = parse_ip(ip)
-      node = <span class="ruby-constant">SimpleNode</span>.new id, cloud, [role]
+    <span class="ruby-identifier">ips</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">ip</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span> = <span class="ruby-identifier">parse_ip</span>(<span class="ruby-identifier">ip</span>)
+      <span class="ruby-identifier">node</span> = <span class="ruby-constant">SimpleNode</span>.<span class="ruby-identifier">new</span> <span class="ruby-identifier">id</span>, <span class="ruby-identifier">cloud</span>, [<span class="ruby-identifier">role</span>]
 
       <span class="ruby-comment"># In simple deployments the db master and rabbitmq master is always on</span>
       <span class="ruby-comment"># the shadow node, and db slave / rabbitmq slave is always on the other</span>
       <span class="ruby-comment"># nodes</span>
-      is_master = node.is_shadow?
-      node.add_db_role <span class="ruby-ivar">@database_type</span>, is_master
-      node.add_rabbitmq_role is_master
+      <span class="ruby-identifier">is_master</span> = <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_shadow?</span>
+      <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_db_role</span> <span class="ruby-ivar">@database_type</span>, <span class="ruby-identifier">is_master</span>
+      <span class="ruby-identifier">node</span>.<span class="ruby-identifier">add_rabbitmq_role</span> <span class="ruby-identifier">is_master</span>
 
-      return invalid(node.errors.join(<span class="ruby-string">&quot;,&quot;</span>)) if !node.valid?
+      <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">errors</span>.<span class="ruby-identifier">join</span>(<span class="ruby-string">&quot;,&quot;</span>)) <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-identifier">node</span>.<span class="ruby-identifier">valid?</span>
 
-      if <span class="ruby-constant">VALID_CLOUD_TYPES</span>.include?(<span class="ruby-ivar">@infrastructure</span>)
-        error_message = &quot;Invalid cloud node ID: #{node.id} \n&quot; +
-          <span class="ruby-string">&quot;Cloud node IDs must be in the format 'node-{IDNUMBER}'&quot;</span> +
+      <span class="ruby-keyword">if</span> <span class="ruby-constant">VALID_CLOUD_TYPES</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-ivar">@infrastructure</span>)
+        <span class="ruby-identifier">error_message</span> = <span class="ruby-node">&quot;Invalid cloud node ID: #{node.id} \n&quot;</span> <span class="ruby-operator">+</span>
+          <span class="ruby-string">&quot;Cloud node IDs must be in the format 'node-{IDNUMBER}'&quot;</span> <span class="ruby-operator">+</span>
           <span class="ruby-string">&quot;\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments&quot;</span>
-        return invalid(error_message) if <span class="ruby-constant">NODE_ID_REGEX</span>.match(node.id.to_s).nil?
-      else
+        <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">error_message</span>) <span class="ruby-keyword">if</span> <span class="ruby-constant">NODE_ID_REGEX</span>.<span class="ruby-identifier">match</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">id</span>.<span class="ruby-identifier">to_s</span>).<span class="ruby-identifier">nil?</span>
+      <span class="ruby-keyword">else</span>
         <span class="ruby-comment"># Xen/KVM should be using the ip address as the node id</span>
-        error_message = &quot;Invalid virtualized node ID: #{node.id} \n&quot; + 
+        <span class="ruby-identifier">error_message</span> = <span class="ruby-node">&quot;Invalid virtualized node ID: #{node.id} \n&quot;</span> <span class="ruby-operator">+</span> 
           <span class="ruby-string">&quot;Virtualized node IDs must be a valid IP address&quot;</span>
-        return invalid(error_message) if <span class="ruby-constant">IP_REGEX</span>.match(node.id.to_s).nil?
-      end
+        <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-identifier">error_message</span>) <span class="ruby-keyword">if</span> <span class="ruby-constant">IP_REGEX</span>.<span class="ruby-identifier">match</span>(<span class="ruby-identifier">node</span>.<span class="ruby-identifier">id</span>.<span class="ruby-identifier">to_s</span>).<span class="ruby-identifier">nil?</span>
+      <span class="ruby-keyword">end</span>
 
-      nodes &lt;&lt; node
-    end
-  end
+      <span class="ruby-identifier">nodes</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">node</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># make sure that the user hasn't erroneously specified the same ip</span>
   <span class="ruby-comment"># address more than once</span>
-  all_ips = <span class="ruby-ivar">@input_yaml</span>.values.flatten
-  duplicate_ips = all_ips.length - all_ips.uniq.length
+  <span class="ruby-identifier">all_ips</span> = <span class="ruby-ivar">@input_yaml</span>.<span class="ruby-identifier">values</span>.<span class="ruby-identifier">flatten</span>
+  <span class="ruby-identifier">duplicate_ips</span> = <span class="ruby-identifier">all_ips</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">-</span> <span class="ruby-identifier">all_ips</span>.<span class="ruby-identifier">uniq</span>.<span class="ruby-identifier">length</span>
 
-  unless duplicate_ips.zero?
-    return invalid(<span class="ruby-constant">DUPLICATE_IPS</span>)
-  end
+  <span class="ruby-keyword">unless</span> <span class="ruby-identifier">duplicate_ips</span>.<span class="ruby-identifier">zero?</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">DUPLICATE_IPS</span>)
+  <span class="ruby-keyword">end</span>
 
-  if nodes.length == 1
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">length</span> <span class="ruby-operator">==</span> <span class="ruby-value">1</span>
     <span class="ruby-comment"># Singleton node should be master and app engine</span>
-    nodes.first.add_role :appengine
-    nodes.first.add_role :memcache
-  end
+    <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">first</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:appengine</span>
+    <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">first</span>.<span class="ruby-identifier">add_role</span> <span class="ruby-value">:memcache</span>
+  <span class="ruby-keyword">end</span>
 
   <span class="ruby-comment"># controller -&gt; shadow</span>
-  controller_count = 0
-  nodes.each do |node|
-    if node.is_shadow?
-      controller_count += 1
-    end
-  end
+  <span class="ruby-identifier">controller_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_shadow?</span>
+      <span class="ruby-identifier">controller_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if controller_count == 0
-    return invalid(<span class="ruby-constant">NO_CONTROLLER</span>)
-  elsif controller_count &gt; 1
-    return invalid(<span class="ruby-constant">ONLY_ONE_CONTROLLER</span>)
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-identifier">controller_count</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">NO_CONTROLLER</span>)
+  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">controller_count</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">invalid</span>(<span class="ruby-constant">ONLY_ONE_CONTROLLER</span>)
+  <span class="ruby-keyword">end</span>
 
-  database_count = 0
-  nodes.each do |node|
-    if node.is_database?
-      database_count += 1
-    end
-  end
+  <span class="ruby-identifier">database_count</span> = <span class="ruby-value">0</span>
+  <span class="ruby-identifier">nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">node</span><span class="ruby-operator">|</span>
+    <span class="ruby-keyword">if</span> <span class="ruby-identifier">node</span>.<span class="ruby-identifier">is_database?</span>
+      <span class="ruby-identifier">database_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword">end</span>
+  <span class="ruby-keyword">end</span>
 
-  if <span class="ruby-ivar">@skip_replication</span>
-    <span class="ruby-ivar">@nodes</span> = nodes
-    return valid
-  end
+  <span class="ruby-keyword">if</span> <span class="ruby-ivar">@skip_replication</span>
+    <span class="ruby-ivar">@nodes</span> = <span class="ruby-identifier">nodes</span>
+    <span class="ruby-keyword">return</span> <span class="ruby-identifier">valid</span>
+  <span class="ruby-keyword">end</span>
 
-  rep = valid_database_replication? nodes
-  return rep unless rep[:result]
+  <span class="ruby-identifier">rep</span> = <span class="ruby-identifier">valid_database_replication?</span> <span class="ruby-identifier">nodes</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-identifier">rep</span> <span class="ruby-keyword">unless</span> <span class="ruby-identifier">rep</span>[<span class="ruby-value">:result</span>]
 
   <span class="ruby-comment"># Wait until it is validated to assign it</span>
-  <span class="ruby-ivar">@nodes</span> = nodes
-  valid
-end</pre>
-          </div>
+  <span class="ruby-ivar">@nodes</span> = <span class="ruby-identifier">nodes</span>
+  <span class="ruby-identifier">valid</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- valid_simple_format-3F-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- valid_simple_format-3F-method -->
 
     
-      <div id="write_factor-method" class="method-detail ">
-        <a name="method-i-write_factor"></a>
-
+      <div id="method-i-write_factor" class="method-detail ">
         
         <div class="method-heading">
           <span class="method-name">write_factor</span><span
@@ -1356,36 +1217,81 @@ end</pre>
           
 
           
-          <div class="method-source-code"
-            id="write_factor-source">
-<pre>
-<span class="ruby-comment"># File lib/node_layout.rb, line 474</span>
-def write_factor
-  return nil if !valid? || <span class="ruby-ivar">@database_type</span> != :voldemort
+          <div class="method-source-code" id="write_factor-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 474</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">write_factor</span>
+  <span class="ruby-keyword">return</span> <span class="ruby-keyword">nil</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-identifier">valid?</span> <span class="ruby-operator">||</span> <span class="ruby-ivar">@database_type</span> <span class="ruby-operator">!=</span> <span class="ruby-value">:voldemort</span>
 
   <span class="ruby-ivar">@write_factor</span>
-end</pre>
-          </div>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- write_factor-source -->
           
         </div>
 
         
 
         
-      </div>
+      </div><!-- write_factor-method -->
 
     
-    </div>
+    </section><!-- public-instance-method-details -->
   
+     <section id="public-class-5Buntitled-5D-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
 
-  </div>
+    
+      <div id="method-c-new" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">new</span><span
+            class="method-args">(input_yaml, options, skip_replication=false)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
 
-  <div id="validator-badges">
-    <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
-    <p><small>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish
-      Rdoc Generator</a> 2</small>.</p>
-  </div>
+        <div class="method-description">
+          
+          <p>Required options are: database_type</p>
+          
 
-</body>
-</html>
+          
+          <div class="method-source-code" id="new-source">
+            <pre><span class="ruby-comment"># File lib/node_layout.rb, line 30</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">input_yaml</span>, <span class="ruby-identifier">options</span>, <span class="ruby-identifier">skip_replication</span>=<span class="ruby-keyword">false</span>)
+  <span class="ruby-ivar">@input_yaml</span> = (<span class="ruby-identifier">input_yaml</span>.<span class="ruby-identifier">kind_of?</span>(<span class="ruby-constant">String</span>) <span class="ruby-operator">?</span> <span class="ruby-constant">YAML</span>.<span class="ruby-identifier">load</span>(<span class="ruby-identifier">input_yaml</span>) <span class="ruby-operator">:</span> <span class="ruby-identifier">input_yaml</span>)
+
+  <span class="ruby-ivar">@infrastructure</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:infrastructure</span>]
+  <span class="ruby-ivar">@database_type</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:database</span>]
+  <span class="ruby-ivar">@database_type</span> = <span class="ruby-ivar">@database_type</span>.<span class="ruby-identifier">to_sym</span> <span class="ruby-keyword">if</span> <span class="ruby-operator">!</span><span class="ruby-ivar">@database_type</span>.<span class="ruby-identifier">nil?</span>
+  <span class="ruby-ivar">@min_images</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:min_images</span>]
+  <span class="ruby-ivar">@max_images</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:max_images</span>]
+  <span class="ruby-ivar">@replication</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:replication</span>]
+  <span class="ruby-ivar">@read_factor</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:read_factor</span>]
+  <span class="ruby-ivar">@write_factor</span> = <span class="ruby-identifier">options</span>[<span class="ruby-value">:write_factor</span>]
+  
+  <span class="ruby-ivar">@nodes</span> = []
+  <span class="ruby-ivar">@skip_replication</span> = <span class="ruby-identifier">skip_replication</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- new-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- new-method -->
+
+    
+    </section><!-- public-class-method-details -->
+  
+  </section><!-- 5Buntitled-5D -->
+
+</div><!-- documentation -->
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
 

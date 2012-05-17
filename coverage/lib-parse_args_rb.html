@@ -9,7 +9,7 @@
     <script type="text/javascript" src="rcov.js"></script>
   </head>
   <body>
-    <h1>Tools C0 Coverage Information - RCov</h1>
+    <h1>Appscale Tools C0 Coverage Information - RCov</h1>
     <h2>lib/parse_args.rb</h2>
 
     
@@ -28,17 +28,17 @@
         <tbody>
           <tr>
             <td class="left_align"><a href="lib-parse_args_rb.html">lib/parse_args.rb</a></td>
-            <td class='right_align'><tt>411</tt></td>
-            <td class='right_align'><tt>323</tt></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.59%</tt></div>
+            <td class='right_align'><tt>415</tt></td>
+            <td class='right_align'><tt>325</tt></td>
+            <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.55%</tt></div>
           <div class="percent_graph">
             <div class="covered" style="width:79px"></div>
             <div class="uncovered" style="width:21px"></div>
           </div></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.54%</tt></div>
+            <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.38%</tt></div>
           <div class="percent_graph">
-            <div class="covered" style="width:76px"></div>
-            <div class="uncovered" style="width:24px"></div>
+            <div class="covered" style="width:75px"></div>
+            <div class="uncovered" style="width:25px"></div>
           </div></td>
           </tr>
         </tbody>
@@ -752,446 +752,446 @@
         
           
           
+          <tr class="inferred">
+            <td><pre><a name="line117">117</a>     # If the user tells us exactly how many application servers they want</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line118">118</a>     # per application, then don't use the autoscaling support.</pre></td>
+          </tr>
+        
+          
+          
           <tr class="marked">
-            <td><pre><a name="line117">117</a>     if arg_hash['appengine']</pre></td>
+            <td><pre><a name="line119">119</a>     if arg_hash['appengine']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line118">118</a>       val_hash['appengine'] = Integer(arg_hash['appengine'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line119">119</a>     else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line120">120</a>       val_hash['appengine'] = 3</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line121">121</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line122">122</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line123">123</a>     if arg_hash['separate']</pre></td>
+            <td><pre><a name="line120">120</a>       val_hash['appengine'] = Integer(arg_hash['appengine'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line124">124</a>       val_hash['separate'] = true</pre></td>
+            <td><pre><a name="line121">121</a>       val_hash['autoscale'] = false</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line125">125</a>     else</pre></td>
+            <td><pre><a name="line122">122</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line126">126</a>       val_hash['separate'] = false</pre></td>
+            <td><pre><a name="line123">123</a>       val_hash['appengine'] = 1</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line124">124</a>       val_hash['autoscale'] = true</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line127">127</a>     end</pre></td>
+            <td><pre><a name="line125">125</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line128">128</a> </pre></td>
+            <td><pre><a name="line126">126</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line129">129</a>     val_hash['confirm'] = !arg_hash['confirm'].nil?</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line130">130</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line131">131</a>     self.get_backup_and_restore_params(arg_hash, val_hash)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line132">132</a>     self.get_developer_flags(arg_hash, val_hash)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line133">133</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line134">134</a>     return val_hash</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line135">135</a>   end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line136">136</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line137">137</a>   private</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line138">138</a>   </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line139">139</a>   def self.parse_argv(command_line, all_flags, usage)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line140">140</a>     if command_line.class != Array</pre></td>
+            <td><pre><a name="line127">127</a>     if arg_hash['separate']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line141">141</a>       raise BadCommandLineArgException.new(&quot;argv was not an Array, but was a #{command_line.class}&quot;)</pre></td>
+            <td><pre><a name="line128">128</a>       val_hash['separate'] = true</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line129">129</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line130">130</a>       val_hash['separate'] = false</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line131">131</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line132">132</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line133">133</a>     val_hash['confirm'] = !arg_hash['confirm'].nil?</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line134">134</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line135">135</a>     self.get_backup_and_restore_params(arg_hash, val_hash)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line136">136</a>     self.get_developer_flags(arg_hash, val_hash)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line137">137</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line138">138</a>     return val_hash</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line139">139</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line140">140</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line141">141</a>   private</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line142">142</a>   </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line143">143</a>   def self.parse_argv(command_line, all_flags, usage)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line144">144</a>     if command_line.class != Array</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line142">142</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line143">143</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line144">144</a>     arg_hash = {}</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line145">145</a>   </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line146">146</a>     arg_found = nil</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line147">147</a>     command_line.each { |arg|</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line148">148</a>       if arg[0].chr == &quot;-&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line149">149</a>         arg = arg[1, arg.length]</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line150">150</a>         arg = arg[1, arg.length] if arg[0].chr == &quot;-&quot; # to handle --arg</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line151">151</a>         arg_found = arg</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line152">152</a>         if !all_flags.include?(arg)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line153">153</a>           raise BadCommandLineArgException.new(&quot;The flag #{arg} cannot be used here.&quot;)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line154">154</a>         end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line155">155</a>       </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line156">156</a>         arg_hash[arg] = &quot;NO ARG&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line157">157</a>       elsif !arg_found.nil?</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line158">158</a>         arg_hash[arg_found] = arg</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line159">159</a>         arg_found = nil</pre></td>
+            <td><pre><a name="line145">145</a>       raise BadCommandLineArgException.new(&quot;argv was not an Array, but was a #{command_line.class}&quot;)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line160">160</a>       else</pre></td>
+            <td><pre><a name="line146">146</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line147">147</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line148">148</a>     arg_hash = {}</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line149">149</a>   </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line150">150</a>     arg_found = nil</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line151">151</a>     command_line.each { |arg|</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line152">152</a>       if arg[0].chr == &quot;-&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line153">153</a>         arg = arg[1, arg.length]</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line154">154</a>         arg = arg[1, arg.length] if arg[0].chr == &quot;-&quot; # to handle --arg</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line155">155</a>         arg_found = arg</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line156">156</a>         if !all_flags.include?(arg)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line157">157</a>           raise BadCommandLineArgException.new(&quot;The flag #{arg} cannot be used here.&quot;)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line158">158</a>         end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line159">159</a>       </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line160">160</a>         arg_hash[arg] = &quot;NO ARG&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line161">161</a>       elsif !arg_found.nil?</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line162">162</a>         arg_hash[arg_found] = arg</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line163">163</a>         arg_found = nil</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line161">161</a>         raise BadCommandLineArgException.new(&quot;The parameter #{arg} was specified without a corresponding flag.&quot;)</pre></td>
+            <td><pre><a name="line164">164</a>       else</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line162">162</a>       end</pre></td>
+            <td><pre><a name="line165">165</a>         raise BadCommandLineArgException.new(&quot;The parameter #{arg} was specified without a corresponding flag.&quot;)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line163">163</a>     }</pre></td>
+            <td><pre><a name="line166">166</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line167">167</a>     }</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line164">164</a>   </pre></td>
+            <td><pre><a name="line168">168</a>   </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line165">165</a>     return arg_hash</pre></td>
+            <td><pre><a name="line169">169</a>     return arg_hash</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line166">166</a>   end</pre></td>
+            <td><pre><a name="line170">170</a>   end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line167">167</a> </pre></td>
+            <td><pre><a name="line171">171</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line168">168</a>   def self.get_min_and_max_images_and_ips(arg_hash, val_hash)</pre></td>
+            <td><pre><a name="line172">172</a>   def self.get_min_and_max_images_and_ips(arg_hash, val_hash)</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line169">169</a>     if arg_hash['min']</pre></td>
+            <td><pre><a name="line173">173</a>     if arg_hash['min']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line170">170</a>       if arg_hash['min'] !~ POS_NUM_REGEX</pre></td>
+            <td><pre><a name="line174">174</a>       if arg_hash['min'] !~ POS_NUM_REGEX</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line171">171</a>         raise BadCommandLineArgException.new(MIN_FLAG_NOT_A_NUM_MSG)</pre></td>
+            <td><pre><a name="line175">175</a>         raise BadCommandLineArgException.new(MIN_FLAG_NOT_A_NUM_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line172">172</a>       end</pre></td>
+            <td><pre><a name="line176">176</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line173">173</a> </pre></td>
+            <td><pre><a name="line177">177</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line174">174</a>       min_images = Integer(arg_hash['min'])</pre></td>
+            <td><pre><a name="line178">178</a>       min_images = Integer(arg_hash['min'])</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line175">175</a>     end</pre></td>
+            <td><pre><a name="line179">179</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line176">176</a> </pre></td>
+            <td><pre><a name="line180">180</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line177">177</a>     if arg_hash['max']</pre></td>
+            <td><pre><a name="line181">181</a>     if arg_hash['max']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line178">178</a>       if arg_hash['max'] !~ POS_NUM_REGEX</pre></td>
+            <td><pre><a name="line182">182</a>       if arg_hash['max'] !~ POS_NUM_REGEX</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line179">179</a>         raise BadCommandLineArgException.new(MAX_FLAG_NOT_A_NUM_MSG)</pre></td>
+            <td><pre><a name="line183">183</a>         raise BadCommandLineArgException.new(MAX_FLAG_NOT_A_NUM_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line180">180</a>       end</pre></td>
+            <td><pre><a name="line184">184</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line181">181</a> </pre></td>
+            <td><pre><a name="line185">185</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line182">182</a>       max_images = Integer(arg_hash['max'])</pre></td>
+            <td><pre><a name="line186">186</a>       max_images = Integer(arg_hash['max'])</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line183">183</a>   </pre></td>
+            <td><pre><a name="line187">187</a>   </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line184">184</a>       if !arg_hash['min']</pre></td>
+            <td><pre><a name="line188">188</a>       if !arg_hash['min']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line185">185</a>         min_images = max_images</pre></td>
+            <td><pre><a name="line189">189</a>         min_images = max_images</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line186">186</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line187">187</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line188">188</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line189">189</a>     if min_images and max_images and min_images &gt; max_images</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line190">190</a>       raise BadCommandLineArgException.new(MAX_SMALLER_THAN_MIN_MSG)</pre></td>
+            <td><pre><a name="line190">190</a>       end</pre></td>
           </tr>
         
           
@@ -1209,247 +1209,247 @@
           
           
           <tr class="marked">
-            <td><pre><a name="line193">193</a>     val_hash['min_images'] = min_images</pre></td>
+            <td><pre><a name="line193">193</a>     if min_images and max_images and min_images &gt; max_images</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line194">194</a>     val_hash['max_images'] = max_images</pre></td>
+            <td><pre><a name="line194">194</a>       raise BadCommandLineArgException.new(MAX_SMALLER_THAN_MIN_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line195">195</a> </pre></td>
+            <td><pre><a name="line195">195</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line196">196</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line196">196</a>     if arg_hash['ips']</pre></td>
+            <td><pre><a name="line197">197</a>     val_hash['min_images'] = min_images</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line198">198</a>     val_hash['max_images'] = max_images</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line199">199</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line200">200</a>     if arg_hash['ips']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line197">197</a>       # users shouldn't be allowed to specify ips and min/max</pre></td>
+            <td><pre><a name="line201">201</a>       # users shouldn't be allowed to specify ips and min/max</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line198">198</a>       if arg_hash['min'] or arg_hash['max']</pre></td>
+            <td><pre><a name="line202">202</a>       if arg_hash['min'] or arg_hash['max']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line199">199</a>         raise BadCommandLineArgException.new(NO_MIN_OR_MAX_WITH_IPS)</pre></td>
+            <td><pre><a name="line203">203</a>         raise BadCommandLineArgException.new(NO_MIN_OR_MAX_WITH_IPS)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line200">200</a>       end</pre></td>
+            <td><pre><a name="line204">204</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line201">201</a> </pre></td>
+            <td><pre><a name="line205">205</a> </pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line202">202</a>       begin</pre></td>
+            <td><pre><a name="line206">206</a>       begin</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line203">203</a>         val_hash['ips'] = YAML.load_file(arg_hash['ips'])</pre></td>
+            <td><pre><a name="line207">207</a>         val_hash['ips'] = YAML.load_file(arg_hash['ips'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line204">204</a>       rescue Errno::ENOENT</pre></td>
+            <td><pre><a name="line208">208</a>       rescue Errno::ENOENT</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line205">205</a>         abort(CONFIG_FILE_NOT_FOUND)</pre></td>
+            <td><pre><a name="line209">209</a>         abort(CONFIG_FILE_NOT_FOUND)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line206">206</a>       end</pre></td>
+            <td><pre><a name="line210">210</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line207">207</a>     else</pre></td>
+            <td><pre><a name="line211">211</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line208">208</a>       val_hash['ips'] = nil</pre></td>
+            <td><pre><a name="line212">212</a>       val_hash['ips'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line209">209</a>     end</pre></td>
+            <td><pre><a name="line213">213</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line210">210</a>   end</pre></td>
+            <td><pre><a name="line214">214</a>   end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line211">211</a> </pre></td>
+            <td><pre><a name="line215">215</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line212">212</a>   def self.get_table_args(arg_hash, val_hash)</pre></td>
+            <td><pre><a name="line216">216</a>   def self.get_table_args(arg_hash, val_hash)</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line213">213</a>     if arg_hash['table']</pre></td>
+            <td><pre><a name="line217">217</a>     if arg_hash['table']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line214">214</a>       if !VALID_TABLE_TYPES.include?(arg_hash['table'])</pre></td>
+            <td><pre><a name="line218">218</a>       if !VALID_TABLE_TYPES.include?(arg_hash['table'])</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line215">215</a>         raise BadCommandLineArgException.new(TABLE_FLAG_NOT_IN_SET_MSG)</pre></td>
+            <td><pre><a name="line219">219</a>         raise BadCommandLineArgException.new(TABLE_FLAG_NOT_IN_SET_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line216">216</a>       end</pre></td>
+            <td><pre><a name="line220">220</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line217">217</a>       val_hash['table'] = arg_hash['table']</pre></td>
+            <td><pre><a name="line221">221</a>       val_hash['table'] = arg_hash['table']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line218">218</a>     else</pre></td>
+            <td><pre><a name="line222">222</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line219">219</a>       val_hash['table'] = DEFAULT_DATASTORE</pre></td>
+            <td><pre><a name="line223">223</a>       val_hash['table'] = DEFAULT_DATASTORE</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line220">220</a>     end</pre></td>
+            <td><pre><a name="line224">224</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line221">221</a> </pre></td>
+            <td><pre><a name="line225">225</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line222">222</a>     if arg_hash['n']</pre></td>
+            <td><pre><a name="line226">226</a>     if arg_hash['n']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line223">223</a>       if arg_hash['n'] !~ POS_NUM_REGEX</pre></td>
+            <td><pre><a name="line227">227</a>       if arg_hash['n'] !~ POS_NUM_REGEX</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line224">224</a>         raise BadCommandLineArgException.new(&quot;n must be a positive integer&quot;)</pre></td>
+            <td><pre><a name="line228">228</a>         raise BadCommandLineArgException.new(&quot;n must be a positive integer&quot;)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line225">225</a>       end</pre></td>
+            <td><pre><a name="line229">229</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line226">226</a>   </pre></td>
+            <td><pre><a name="line230">230</a>   </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line227">227</a>       val_hash['replication'] = Integer(arg_hash['n'])</pre></td>
+            <td><pre><a name="line231">231</a>       val_hash['replication'] = Integer(arg_hash['n'])</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line228">228</a>     else</pre></td>
+            <td><pre><a name="line232">232</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line229">229</a>       val_hash['replication'] = nil</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line230">230</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line231">231</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line232">232</a>     if val_hash['table'] != 'voldemort' and (arg_hash['r'] or arg_hash['w'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line233">233</a>       raise BadCommandLineArgException.new(RW_REQUIRES_VOLDEMORT_MSG)</pre></td>
+            <td><pre><a name="line233">233</a>       val_hash['replication'] = nil</pre></td>
           </tr>
         
           
@@ -1467,1063 +1467,1087 @@
           
           
           <tr class="marked">
-            <td><pre><a name="line236">236</a>     if arg_hash['r']</pre></td>
+            <td><pre><a name="line236">236</a>     if val_hash['table'] != 'voldemort' and (arg_hash['r'] or arg_hash['w'])</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line237">237</a>       if arg_hash['r'] !~ POS_NUM_REGEX</pre></td>
+            <td><pre><a name="line237">237</a>       raise BadCommandLineArgException.new(RW_REQUIRES_VOLDEMORT_MSG)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line238">238</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line239">239</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line238">238</a>         raise BadCommandLineArgException.new(&quot;r must be a positive integer&quot;)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line239">239</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line240">240</a> </pre></td>
+            <td><pre><a name="line240">240</a>     if arg_hash['r']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line241">241</a>       val_hash['voldemort_r'] = Integer(arg_hash['r'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line242">242</a>     else</pre></td>
+            <td><pre><a name="line241">241</a>       if arg_hash['r'] !~ POS_NUM_REGEX</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line243">243</a>       val_hash['voldemort_r'] = nil</pre></td>
+            <td><pre><a name="line242">242</a>         raise BadCommandLineArgException.new(&quot;r must be a positive integer&quot;)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line244">244</a>     end</pre></td>
+            <td><pre><a name="line243">243</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line245">245</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line246">246</a>     if arg_hash['w']</pre></td>
+            <td><pre><a name="line244">244</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line247">247</a>       if arg_hash['w'] !~ POS_NUM_REGEX</pre></td>
+            <td><pre><a name="line245">245</a>       val_hash['voldemort_r'] = Integer(arg_hash['r'])</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line246">246</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line248">248</a>         raise BadCommandLineArgException.new(&quot;w must be a positive integer&quot;)</pre></td>
+            <td><pre><a name="line247">247</a>       val_hash['voldemort_r'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line249">249</a>       end</pre></td>
+            <td><pre><a name="line248">248</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line250">250</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line251">251</a>       val_hash['voldemort_w'] = Integer(arg_hash['w'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line252">252</a>     else</pre></td>
+            <td><pre><a name="line249">249</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line253">253</a>       val_hash['voldemort_w'] = nil</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line254">254</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line255">255</a>   end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line256">256</a> </pre></td>
+            <td><pre><a name="line250">250</a>     if arg_hash['w']</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line257">257</a>   def self.get_cloud_args(arg_hash, val_hash)</pre></td>
+            <td><pre><a name="line251">251</a>       if arg_hash['w'] !~ POS_NUM_REGEX</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line258">258</a>     if arg_hash['infrastructure'] </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line259">259</a>       infra = arg_hash['infrastructure']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line260">260</a>       if !VALID_CLOUD_TYPES.include?(infra)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line261">261</a>         raise BadCommandLineArgException.new(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line262">262</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line263">263</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line264">264</a>       if infra == &quot;iaas&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line265">265</a>         val_hash['infrastructure'] = &quot;euca&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line266">266</a>       else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line267">267</a>         val_hash['infrastructure'] = infra</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line268">268</a>       end</pre></td>
+            <td><pre><a name="line252">252</a>         raise BadCommandLineArgException.new(&quot;w must be a positive integer&quot;)</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line269">269</a>     else</pre></td>
+            <td><pre><a name="line253">253</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line254">254</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line270">270</a>       val_hash['infrastructure'] = nil</pre></td>
+            <td><pre><a name="line255">255</a>       val_hash['voldemort_w'] = Integer(arg_hash['w'])</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line271">271</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line272">272</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line273">273</a>     #Override if --iaas is set</pre></td>
+            <td><pre><a name="line256">256</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line274">274</a>     if arg_hash['iaas']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line275">275</a>       if arg_hash['iaas'] == &quot;hybrid&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line276">276</a>         val_hash['infrastructure'] = &quot;hybrid&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line277">277</a>       else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line278">278</a>         val_hash['infrastructure'] = &quot;euca&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line279">279</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line280">280</a>     end</pre></td>
+            <td><pre><a name="line257">257</a>       val_hash['voldemort_w'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line281">281</a> </pre></td>
+            <td><pre><a name="line258">258</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line259">259</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line260">260</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line282">282</a>     if arg_hash['machine']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line283">283</a>       val_hash['machine'] = arg_hash['machine']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line284">284</a>       if val_hash['machine'] == &quot;NO ARG&quot;</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line285">285</a>         raise BadCommandLineArgException.new(&quot;You failed to provide an argument for the #{flag} flag. Please do so and try again.&quot;)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line286">286</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line287">287</a>     else</pre></td>
+            <td><pre><a name="line261">261</a>   def self.get_cloud_args(arg_hash, val_hash)</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line288">288</a>       val_hash['machine'] = ENV['APPSCALE_MACHINE']</pre></td>
+            <td><pre><a name="line262">262</a>     if arg_hash['infrastructure'] </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line263">263</a>       infra = arg_hash['infrastructure']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line264">264</a>       if !VALID_CLOUD_TYPES.include?(infra)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line265">265</a>         raise BadCommandLineArgException.new(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line266">266</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line267">267</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line268">268</a>       if infra == &quot;iaas&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line269">269</a>         val_hash['infrastructure'] = &quot;euca&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line270">270</a>       else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line271">271</a>         val_hash['infrastructure'] = infra</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line272">272</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line289">289</a>     end </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line290">290</a> </pre></td>
+            <td><pre><a name="line273">273</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line291">291</a>     possible_instance_types = [&quot;m1.large&quot;, &quot;m1.xlarge&quot;, &quot;c1.xlarge&quot;]</pre></td>
+            <td><pre><a name="line274">274</a>       val_hash['infrastructure'] = nil</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line275">275</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line276">276</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line277">277</a>     #Override if --iaas is set</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line292">292</a>     if arg_hash['instance_type']</pre></td>
+            <td><pre><a name="line278">278</a>     if arg_hash['iaas']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line293">293</a>       if !possible_instance_types.include?(arg_hash['instance_type'])</pre></td>
+            <td><pre><a name="line279">279</a>       if arg_hash['iaas'] == &quot;hybrid&quot;</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line294">294</a>         raise BadCommandLineArgException.new(INSTANCE_FLAG_NOT_IN_SET_MSG)</pre></td>
+            <td><pre><a name="line280">280</a>         val_hash['infrastructure'] = &quot;hybrid&quot;</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line295">295</a>       end</pre></td>
+            <td><pre><a name="line281">281</a>       else</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line296">296</a>       val_hash['instance_type'] = arg_hash['instance_type']</pre></td>
+            <td><pre><a name="line282">282</a>         val_hash['infrastructure'] = &quot;euca&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line283">283</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line284">284</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line297">297</a>     else</pre></td>
+            <td><pre><a name="line285">285</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line298">298</a>       val_hash['instance_type'] = &quot;m1.large&quot;</pre></td>
+            <td><pre><a name="line286">286</a>     if arg_hash['machine']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line287">287</a>       val_hash['machine'] = arg_hash['machine']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line288">288</a>       if val_hash['machine'] == &quot;NO ARG&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line289">289</a>         raise BadCommandLineArgException.new(&quot;You failed to provide an argument for the #{flag} flag. Please do so and try again.&quot;)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line290">290</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line299">299</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line300">300</a> </pre></td>
+            <td><pre><a name="line291">291</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line301">301</a>     if arg_hash['v'] or arg_hash['verbose']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line302">302</a>       val_hash['verbose'] = true</pre></td>
+            <td><pre><a name="line292">292</a>       val_hash['machine'] = ENV['APPSCALE_MACHINE']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line303">303</a>     else</pre></td>
+            <td><pre><a name="line293">293</a>     end </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line294">294</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line304">304</a>       val_hash['verbose'] = false</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line305">305</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line306">306</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line307">307</a>     # The group flag is used to indicate the name of the security group that should</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line308">308</a>     # be used in EC2 and Eucalyptus deployments. If used in Xen and KVM deployments,</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line309">309</a>     # this flag has no effect. The security group should not exist prior to running</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line310">310</a>     # AppScale - if it does exist, the tools will abort accordingly.</pre></td>
+            <td><pre><a name="line295">295</a>     possible_instance_types = [&quot;m1.large&quot;, &quot;m1.xlarge&quot;, &quot;c1.xlarge&quot;]</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line311">311</a>     if arg_hash['group']</pre></td>
+            <td><pre><a name="line296">296</a>     if arg_hash['instance_type']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line312">312</a>       val_hash['group'] = arg_hash['group']</pre></td>
+            <td><pre><a name="line297">297</a>       if !possible_instance_types.include?(arg_hash['instance_type'])</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line298">298</a>         raise BadCommandLineArgException.new(INSTANCE_FLAG_NOT_IN_SET_MSG)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line299">299</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line300">300</a>       val_hash['instance_type'] = arg_hash['instance_type']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line313">313</a>     else</pre></td>
+            <td><pre><a name="line301">301</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line314">314</a>       val_hash['group'] = &quot;appscale&quot;</pre></td>
+            <td><pre><a name="line302">302</a>       val_hash['instance_type'] = &quot;m1.large&quot;</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line315">315</a>     end</pre></td>
+            <td><pre><a name="line303">303</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line316">316</a>   end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line317">317</a> </pre></td>
+            <td><pre><a name="line304">304</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line318">318</a>   def self.get_backup_and_restore_params(arg_hash, val_hash)</pre></td>
+            <td><pre><a name="line305">305</a>     if arg_hash['v'] or arg_hash['verbose']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line306">306</a>       val_hash['verbose'] = true</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line307">307</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line319">319</a>     if arg_hash['backup_to_tar']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line320">320</a>       if File.exists?(arg_hash['backup_to_tar'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line321">321</a>         raise BadCommandLineArgException.new(BACKUP_TAR_EXISTS_MSG)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line322">322</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line323">323</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line324">324</a>       val_hash['backup_tar_location'] = arg_hash['backup_to_tar']</pre></td>
+            <td><pre><a name="line308">308</a>       val_hash['verbose'] = false</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line325">325</a>     else</pre></td>
+            <td><pre><a name="line309">309</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line310">310</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line311">311</a>     # The group flag is used to indicate the name of the security group that should</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line312">312</a>     # be used in EC2 and Eucalyptus deployments. If used in Xen and KVM deployments,</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line313">313</a>     # this flag has no effect. The security group should not exist prior to running</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line314">314</a>     # AppScale - if it does exist, the tools will abort accordingly.</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line326">326</a>       val_hash['backup_tar_location'] = nil</pre></td>
+            <td><pre><a name="line315">315</a>     if arg_hash['group']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line316">316</a>       val_hash['group'] = arg_hash['group']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line327">327</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line328">328</a> </pre></td>
+            <td><pre><a name="line317">317</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line329">329</a>     if arg_hash['backup_to_ebs']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line330">330</a>       val_hash['backup_ebs_location'] = arg_hash['backup_to_ebs']</pre></td>
+            <td><pre><a name="line318">318</a>       val_hash['group'] = &quot;appscale&quot;</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line331">331</a>     else</pre></td>
+            <td><pre><a name="line319">319</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line320">320</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line321">321</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line332">332</a>       val_hash['backup_ebs_location'] = nil</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line333">333</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line334">334</a> </pre></td>
+            <td><pre><a name="line322">322</a>   def self.get_backup_and_restore_params(arg_hash, val_hash)</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line335">335</a>     if arg_hash['backup_neptune_info']</pre></td>
+            <td><pre><a name="line323">323</a>     if arg_hash['backup_to_tar']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line336">336</a>       if File.exists?(File.expand_path(arg_hash['backup_neptune_info']))</pre></td>
+            <td><pre><a name="line324">324</a>       if File.exists?(arg_hash['backup_to_tar'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line337">337</a>         raise BadCommandLineArgException.new(BACKUP_NEPTUNE_INFO_EXISTS_MSG)</pre></td>
+            <td><pre><a name="line325">325</a>         raise BadCommandLineArgException.new(BACKUP_TAR_EXISTS_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line338">338</a>       end</pre></td>
+            <td><pre><a name="line326">326</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line339">339</a> </pre></td>
+            <td><pre><a name="line327">327</a> </pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line340">340</a>       val_hash['backup_neptune_info'] = File.expand_path(arg_hash['backup_neptune_info'])</pre></td>
+            <td><pre><a name="line328">328</a>       val_hash['backup_tar_location'] = arg_hash['backup_to_tar']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line341">341</a>     else</pre></td>
+            <td><pre><a name="line329">329</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line342">342</a>       val_hash['backup_neptune_info'] = nil</pre></td>
+            <td><pre><a name="line330">330</a>       val_hash['backup_tar_location'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line343">343</a>     end</pre></td>
+            <td><pre><a name="line331">331</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line344">344</a> </pre></td>
+            <td><pre><a name="line332">332</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line345">345</a>     if arg_hash['restore_from_tar']</pre></td>
+            <td><pre><a name="line333">333</a>     if arg_hash['backup_to_ebs']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line346">346</a>       unless File.exists?(arg_hash['restore_from_tar'])</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line347">347</a>         raise BadCommandLineArgException.new(RESTORE_TAR_NOT_EXISTS_MSG)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line348">348</a>       end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line349">349</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="uncovered">
-            <td><pre><a name="line350">350</a>       val_hash['restore_from_tar'] = arg_hash['restore_from_tar']</pre></td>
+            <td><pre><a name="line334">334</a>       val_hash['backup_ebs_location'] = arg_hash['backup_to_ebs']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line351">351</a>     else</pre></td>
+            <td><pre><a name="line335">335</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line352">352</a>       val_hash['restore_from_tar'] = nil</pre></td>
+            <td><pre><a name="line336">336</a>       val_hash['backup_ebs_location'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line353">353</a>     end</pre></td>
+            <td><pre><a name="line337">337</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line354">354</a> </pre></td>
+            <td><pre><a name="line338">338</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line355">355</a>     if arg_hash['restore_neptune_info']</pre></td>
+            <td><pre><a name="line339">339</a>     if arg_hash['backup_neptune_info']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line356">356</a>       unless File.exists?(arg_hash['restore_neptune_info'])</pre></td>
+            <td><pre><a name="line340">340</a>       if File.exists?(File.expand_path(arg_hash['backup_neptune_info']))</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line357">357</a>         raise BadCommandLineArgException.new(RESTORE_NEPTUNE_INFO_NOT_EXISTS_MSG)</pre></td>
+            <td><pre><a name="line341">341</a>         raise BadCommandLineArgException.new(BACKUP_NEPTUNE_INFO_EXISTS_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line358">358</a>       end</pre></td>
+            <td><pre><a name="line342">342</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line359">359</a> </pre></td>
+            <td><pre><a name="line343">343</a> </pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line360">360</a>       val_hash['restore_neptune_info'] = arg_hash['restore_neptune_info']</pre></td>
+            <td><pre><a name="line344">344</a>       val_hash['backup_neptune_info'] = File.expand_path(arg_hash['backup_neptune_info'])</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line361">361</a>     else</pre></td>
+            <td><pre><a name="line345">345</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line362">362</a>       val_hash['restore_neptune_info'] = nil</pre></td>
+            <td><pre><a name="line346">346</a>       val_hash['backup_neptune_info'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line363">363</a>     end</pre></td>
+            <td><pre><a name="line347">347</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line364">364</a> </pre></td>
+            <td><pre><a name="line348">348</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line365">365</a>     if val_hash['file_location'] &amp;&amp; (val_hash['restore_from_tar'] || val_hash['restore_from_ebs'])</pre></td>
+            <td><pre><a name="line349">349</a>     if arg_hash['restore_from_tar']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line366">366</a>       bad_restore_params = &quot;You cannot restore an AppScale instance &quot; + </pre></td>
+            <td><pre><a name="line350">350</a>       unless File.exists?(arg_hash['restore_from_tar'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line367">367</a>         &quot;and upload a new application. Please remove one and try again.&quot;</pre></td>
+            <td><pre><a name="line351">351</a>         raise BadCommandLineArgException.new(RESTORE_TAR_NOT_EXISTS_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line368">368</a>       raise BadCommandLineArgException.new(bad_restore_params)</pre></td>
+            <td><pre><a name="line352">352</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line369">369</a>     end</pre></td>
+            <td><pre><a name="line353">353</a> </pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line370">370</a>   end</pre></td>
+            <td><pre><a name="line354">354</a>       val_hash['restore_from_tar'] = arg_hash['restore_from_tar']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line371">371</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line372">372</a>   # These flags are considered to be 'advanced use' flags, handling things that</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line373">373</a>   # may not be necessary in standard AppScale deployments. This includes the</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line374">374</a>   # functionality to rsync over an AppScale directory (scp), use 'expect' to</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line375">375</a>   # automatically inject the user's SSH password (auto), and so on.</pre></td>
+            <td><pre><a name="line355">355</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line376">376</a>   def self.get_developer_flags(arg_hash, val_hash)</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line377">377</a>     if arg_hash['auto']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line378">378</a>       val_hash['auto'] = true</pre></td>
+            <td><pre><a name="line356">356</a>       val_hash['restore_from_tar'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line379">379</a>     else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line380">380</a>       val_hash['auto'] = false</pre></td>
+            <td><pre><a name="line357">357</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line381">381</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line382">382</a> </pre></td>
+            <td><pre><a name="line358">358</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line383">383</a>     if arg_hash['force']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line384">384</a>       val_hash['force'] = true</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line385">385</a>     else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line386">386</a>       val_hash['force'] = false</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line387">387</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line388">388</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line389">389</a>     if arg_hash['scp']</pre></td>
+            <td><pre><a name="line359">359</a>     if arg_hash['restore_neptune_info']</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line390">390</a>       if arg_hash['scp'] == 'NO ARG'</pre></td>
+            <td><pre><a name="line360">360</a>       unless File.exists?(arg_hash['restore_neptune_info'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line391">391</a>         val_hash['scp'] = &quot;~/appscale&quot;</pre></td>
+            <td><pre><a name="line361">361</a>         raise BadCommandLineArgException.new(RESTORE_NEPTUNE_INFO_NOT_EXISTS_MSG)</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line392">392</a>       else</pre></td>
+            <td><pre><a name="line362">362</a>       end</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line393">393</a>         val_hash['scp'] = arg_hash['scp']</pre></td>
+            <td><pre><a name="line363">363</a> </pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line394">394</a>       end</pre></td>
+            <td><pre><a name="line364">364</a>       val_hash['restore_neptune_info'] = arg_hash['restore_neptune_info']</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line395">395</a>     else</pre></td>
+            <td><pre><a name="line365">365</a>     else</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line396">396</a>       val_hash['scp'] = false</pre></td>
+            <td><pre><a name="line366">366</a>       val_hash['restore_neptune_info'] = nil</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line397">397</a>     end</pre></td>
+            <td><pre><a name="line367">367</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line398">398</a> </pre></td>
+            <td><pre><a name="line368">368</a> </pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line399">399</a>     if arg_hash['test']</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line400">400</a>       val_hash['test'] = true</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line401">401</a>     else</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line402">402</a>       val_hash['test'] = false</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line403">403</a>     end</pre></td>
-          </tr>
-        
-          
-          
-          <tr class="inferred">
-            <td><pre><a name="line404">404</a> </pre></td>
-          </tr>
-        
-          
-          
-          <tr class="marked">
-            <td><pre><a name="line405">405</a>     if arg_hash['email']</pre></td>
+            <td><pre><a name="line369">369</a>     if val_hash['file_location'] &amp;&amp; (val_hash['restore_from_tar'] || val_hash['restore_from_ebs'])</pre></td>
           </tr>
         
           
           
           <tr class="uncovered">
-            <td><pre><a name="line406">406</a>       val_hash['email'] = arg_hash['email']</pre></td>
+            <td><pre><a name="line370">370</a>       bad_restore_params = &quot;You cannot restore an AppScale instance &quot; + </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line371">371</a>         &quot;and upload a new application. Please remove one and try again.&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line372">372</a>       raise BadCommandLineArgException.new(bad_restore_params)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line373">373</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line374">374</a>   end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line407">407</a>     else</pre></td>
+            <td><pre><a name="line375">375</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line376">376</a>   # These flags are considered to be 'advanced use' flags, handling things that</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line377">377</a>   # may not be necessary in standard AppScale deployments. This includes the</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line378">378</a>   # functionality to rsync over an AppScale directory (scp), use 'expect' to</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line379">379</a>   # automatically inject the user's SSH password (auto), and so on.</pre></td>
           </tr>
         
           
           
           <tr class="marked">
-            <td><pre><a name="line408">408</a>       val_hash['email'] = false</pre></td>
+            <td><pre><a name="line380">380</a>   def self.get_developer_flags(arg_hash, val_hash)</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line381">381</a>     if arg_hash['auto']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line382">382</a>       val_hash['auto'] = true</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line409">409</a>     end</pre></td>
+            <td><pre><a name="line383">383</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line384">384</a>       val_hash['auto'] = false</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line410">410</a>   end</pre></td>
+            <td><pre><a name="line385">385</a>     end</pre></td>
           </tr>
         
           
           
           <tr class="inferred">
-            <td><pre><a name="line411">411</a> end</pre></td>
+            <td><pre><a name="line386">386</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line387">387</a>     if arg_hash['force']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line388">388</a>       val_hash['force'] = true</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line389">389</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line390">390</a>       val_hash['force'] = false</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line391">391</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line392">392</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line393">393</a>     if arg_hash['scp']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line394">394</a>       if arg_hash['scp'] == 'NO ARG'</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line395">395</a>         val_hash['scp'] = &quot;~/appscale&quot;</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line396">396</a>       else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line397">397</a>         val_hash['scp'] = arg_hash['scp']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line398">398</a>       end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line399">399</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line400">400</a>       val_hash['scp'] = false</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line401">401</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line402">402</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line403">403</a>     if arg_hash['test']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line404">404</a>       val_hash['test'] = true</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line405">405</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line406">406</a>       val_hash['test'] = false</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line407">407</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line408">408</a> </pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line409">409</a>     if arg_hash['email']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="uncovered">
+            <td><pre><a name="line410">410</a>       val_hash['email'] = arg_hash['email']</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line411">411</a>     else</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="marked">
+            <td><pre><a name="line412">412</a>       val_hash['email'] = false</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line413">413</a>     end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line414">414</a>   end</pre></td>
+          </tr>
+        
+          
+          
+          <tr class="inferred">
+            <td><pre><a name="line415">415</a> end</pre></td>
           </tr>
         
       </tbody>
     </table>
 
-    <p>Generated on Tue Mar 20 00:09:54 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 0.9.8</a></p>
+    <p>Generated on Wed May 16 23:29:49 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 1.0.0</a></p>
 
   </body>
 </html>
