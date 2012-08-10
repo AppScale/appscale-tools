@@ -65,19 +65,17 @@ installec2ools()
 {
 # EC2
   hash ec2-describe-instances > /dev/null 2>&1
-  if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
-    API_VERSION="1.4.3.0"
-    AMI_VERSION="1.3-66634"
+if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
     mkdir -p ${APPSCALE_HOME}/downloads
     cd ${APPSCALE_HOME}/downloads
-    
-    curl -o ec2-api-tools.zip http://appscale.cs.ucsb.edu/appscale_files/ec2-api-tools.zip || exit 1
-    curl -o ec2-ami-tools.zip http://appscale.cs.ucsb.edu/appscale_files/ec2-ami-tools.zip || exit 1
 
-    unzip ec2-api-tools.zip || exit 1
-    unzip ec2-ami-tools.zip || exit 1
-    rm -rf ec2-api-tools.zip
-    rm -rf ec2-ami-tools.zip
+    curl -o ec2-api-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip || exit 1
+    curl -o ec2-ami-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip || exit 1
+
+    unzip ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip || exit 1
+    unzip ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip || exit 1
+    rm -rf ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip
+    rm -rf ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip
 
     mkdir -p ${DESTDIR}/usr/local/bin
     mkdir -p  ${DESTDIR}/usr/local/ec2-api-tools
@@ -86,11 +84,11 @@ installec2ools()
     rm -fr ${DESTDIR}/usr/local/ec2-ami-tools/*
     rm -fr ${DESTDIR}/usr/local/ec2-api-tools/*
 
-    mv -f ec2-ami-tools-${AMI_VERSION}/* ${DESTDIR}/usr/local/ec2-ami-tools || exit 1
-    mv -f ec2-api-tools-${API_VERSION}/* ${DESTDIR}/usr/local/ec2-api-tools || exit 1
+    mv -f ${APPSCALE_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools || exit 1
+    mv -f ${APPSCALE_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools || exit 1
 
-    rm -fr  ec2-ami-tools-${AMI_VERSION}/ || exit 1
-    rm -fr  ec2-api-tools-${API_VERSION}/ || exit 1
+    rm -fr  ${APPSCALE_HOME}/downloads/ec2-ami-tools*/ || exit 1
+    rm -fr  ${APPSCALE_HOME}/downloads/ec2-api-tools*/ || exit 1    
 
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/ec2.sh <<EOF
