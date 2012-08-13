@@ -11,7 +11,7 @@ Architecture: any
 Depends:
 # tools
  openssh-client,
- ruby1.8, libopenssl-ruby, curl,
+ ruby1.8, libopenssl-ruby, curl, unzip
 # euca2ools
  euca2ools, cloud-utils
 # Unknown
