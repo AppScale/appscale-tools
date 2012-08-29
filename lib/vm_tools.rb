@@ -381,6 +381,17 @@ module VMTools
       "min_images" => "#{node_layout.min_images}",
       "max_images" => "#{node_layout.max_images}"
     }
+
+    EC2_ENVIRONMENT_VARIABLES.each { |var|
+      cloud_creds["CLOUD1_#{var}"] = ENV[var]
+    }
+
+    if cloud_creds["infrastructure"] == "euca"
+      ["EC2_URL", "S3_URL"].each { |var|
+        cloud_creds["CLOUD1_#{var}"] = ENV[var]
+      }
+    end
+
     cloud_creds.merge!(VMTools.get_creds_from_env)
     return cloud_creds
   end

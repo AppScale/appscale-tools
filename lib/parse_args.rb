@@ -292,7 +292,7 @@ module ParseArgs
       val_hash['machine'] = ENV['APPSCALE_MACHINE']
     end 
 
-    possible_instance_types = ["m1.large", "m1.xlarge", "c1.xlarge"]
+    possible_instance_types = ["m1.small", "m1.large", "m1.xlarge", "c1.xlarge"]
     if arg_hash['instance_type']
       if !possible_instance_types.include?(arg_hash['instance_type'])
         raise BadCommandLineArgException.new(INSTANCE_FLAG_NOT_IN_SET_MSG)
