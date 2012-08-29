@@ -1,3 +1,0 @@
-Example app using the App Engine Blobstore API to upload, manage, serve and delete blobs.
-
-I use a wrapper around the standard blob to be able to associate a user and upload date with each blob. More fields could easily be added.
