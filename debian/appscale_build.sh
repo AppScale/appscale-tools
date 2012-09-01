@@ -14,6 +14,7 @@ echo "Ubuntu ${DIST}"
 # install runtime dependency
 # for distro
 PACKAGES=`find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +`
+apt-get update
 apt-get install -y ${PACKAGES}
 if [ $? -ne 0 ]; then
     echo "Fail to install depending packages for runtime."
