@@ -1,3 +1,0 @@
-This is a static file.  It is served with a MIME content type of
-text/plain because its filename ends with ".txt" and no alternative is
-specified in the configuration.
