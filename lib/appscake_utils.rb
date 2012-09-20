@@ -4,23 +4,15 @@ require 'net/ssh'
 
 $mutex = Mutex.new
 
-def report_error(msg, format=true)
-  if format
-    [ false, "<h1>IP Configuration Error</h1><p>#{msg}</p>" ]
-  else
-    [ false, "<h1>IP Configuration Error</h1>#{msg}" ]
-  end
-end
-
 def validate_credentials(user,pass1,pass2)
   if user.nil? or user.length == 0
-    return report_error("Administrator username not provided")
+    return [ false, "Administrator username not provided" ]
   elsif pass1.nil? or pass2.nil? or pass1.length == 0 or pass2.length == 0
-    return report_error("Administrator password not provided")
+    return [ false, "Administrator password not provided" ]
   elsif pass1 != pass2
-    return report_error("Password entries do not match")
+    return [ false, "Password entries do not match" ]
   elsif pass1.length < 6
-    return report_error("Password must contain at least 6 characters")
+    return [ false, "Password must contain at least 6 characters" ]
   else
     return [ true, '' ]
   end
@@ -28,9 +20,9 @@ end
 
 def validate_ssh_credentials(keyname, root_password, ips_yaml)
   if keyname.nil? or keyname.length == 0
-    return report_error("AppScale key name not provided")
+    return [ false, "AppScale key name not provided" ]
   elsif root_password.nil? or root_password == 0
-    return report_error("Root password for AppScale machines not provided")
+    return [ false, "Root password for AppScale machines not provided" ]
   else
     # Randomly pick a server and try to connect to it via SSH using the
     # provided credentials. This will guard againt invalid root passwords
@@ -51,15 +43,15 @@ def validate_ssh_credentials(keyname, root_password, ips_yaml)
         ssh.exec('ls')
       end
     rescue Timeout::Error
-      return report_error("Connection timed out for #{ips[0]}")
+      return [ false, "Connection timed out for #{ips[0]}" ]
     rescue Errno::EHOSTUNREACH
-      return report_error("Host unreachable error for #{ips[0]}")
+      return [ false, "Host unreachable error for #{ips[0]}" ]
     rescue Errno::ECONNREFUSED
-      return report_error("Connection refused for #{ips[0]}")
+      return [ false, "Connection refused for #{ips[0]}" ]
     rescue Net::SSH::AuthenticationFailed
-      return report_error("Authentication failed for #{ips[0]} - Please ensure that the specified root password is correct")
+      return [ false, "Authentication failed for #{ips[0]} - Please ensure that the specified root password is correct" ]
     rescue Exception=>e
-      return report_error("Unexpected runtime error connecting to #{ips[0]}")
+      return [ false, "Unexpected runtime error connecting to #{ips[0]}" ]
     end
 
     return [ true, '' ]
@@ -68,7 +60,7 @@ end
 
 def validate_yaml(yaml_str)
   if yaml_str.nil? or yaml_str.length == 0
-    return report_error("ips.yaml configuration not provided")
+    return [ false, "ips.yaml configuration not provided" ]
   end
 
   yaml = YAML.load(yaml_str)
@@ -84,7 +76,7 @@ def validate_yaml(yaml_str)
   yaml.each do |symbol,value|
     role = symbol.to_s
     if !critical_roles.include?role and !aggregate_roles.has_key?role and !optional_roles.include?role
-      return report_error("Unknown AppScale server role: #{role}")
+      return [ false, "Unknown AppScale server role: #{role}" ]
     else
       critical_roles.delete_if { |r| r == role or (aggregate_roles.has_key?role and aggregate_roles[role].include?r) }
       success_result += "<p>#{role}</p><ul>"
@@ -100,12 +92,11 @@ def validate_yaml(yaml_str)
   end
 
   if critical_roles.length > 0
-    result = '<p>Following required roles are not configured:</p><ul>'
+    result = "Following required roles are not configured: "
     critical_roles.each do |role|
-      result += "<li>#{role}</li>"
-    end
-    result += '</ul>'
-    return report_error(result, false)
+      result += "#{role}, "
+    end   
+    return [ false, result[0..-3] ]
   end
 
   [ true, success_result ]

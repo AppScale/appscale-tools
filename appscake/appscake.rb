@@ -20,23 +20,31 @@ end
 
 post '/virtual_advanced.do' do
   if locked?
-    return "AppsCake is currently busy deploying a cloud. Please try again later."
+    @title = "Server Busy"
+    @error = "AppsCake is currently busy deploying a cloud. Please try again later."
+    return erb :error
   end
 
   status,yaml_result = validate_yaml(params[:ips])
   if !status
-    return yaml_result
+    @title = "IP Configuration Error"
+    @error = yaml_result
+    return erb :error    
   end
   yaml = YAML.load(params[:ips])
 
   status,acc_result = validate_credentials(params[:user], params[:pass], params[:pass2])
   if !status
-    return acc_result
+    @title = "AppScale Administrator Account Configuration Error"
+    @error = acc_result
+    return erb :error
   end
 
   status,ssh_result = validate_ssh_credentials(params[:keyname], params[:root_password], yaml)
   if !status
-    return ssh_result
+    @title = "AppScale SSH Configuration Error"
+    @error = ssh_result
+    #return erb :error
   end
 
   add_key_options = {
@@ -79,30 +87,31 @@ post '/virtual_advanced.do' do
               puts "AppScale key '#{params[:keyname]}' found on the disk. Reusing..."
             else
               puts "AppScale key '#{params[:keyname]}' not found on the disk. Generating..."
-              #add_key(add_key_options)
-              AppScaleTools.add_keypair(add_key_options)
+              add_key(add_key_options)
+              #AppScaleTools.add_keypair(add_key_options)
             end
-            #deploy(run_instances_options)
-            AppScaleTools.run_instances(run_instances_options)
+            deploy(run_instances_options)
+            #AppScaleTools.run_instances(run_instances_options)
           end
         ensure
           # If the fork was successful, the subprocess should release the lock
           unlock
         end
       end
-      final_result = "<p>Your AppScale cloud is being deployed...</p>"
-      final_result += "<p>Your deployment timestamp: #{timestamp}"
-      final_result += "<p>Your deployment process ID: #{pid}"
-      final_result += "<p>You can check the progress of the deployment at <a href=\"logs/deploy-#{timestamp}.log\">deploy-#{timestamp}.log</a></p>"
-      final_result += yaml_result
-      return final_result
-    rescue
+      @timestamp = timestamp
+      @pid = pid
+      return erb :success
+    rescue Exception => e
       # If something went wrong with the fork, release the lock immediately and return
       unlock
-      return "<p>Runtime error while executing appscale tools</p>"
+      @title = "Unexpected Runtime Error"
+      @error = "Runtime error while executing appscale tools: #{e.message}"
+      return erb :error
     end
   else
-    return "<p>System is currently busy deploying another cloud. Please try again later.</p>"
+    @title = "Server Busy"
+    @error = "AppsCake is currently busy deploying a cloud. Please try again later."
+    return erb :error
   end
 end
 
