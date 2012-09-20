@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <title>AppsCake - The AppScale Bootstrapper</title>
+  </head>
+  <body>
+    <h1>Welcome to AppsCake</h1>
+    <script>
+      function showForm(selector) {
+        var table = document.getElementById('config.table');
+        for (var i = 0, row; row = table.rows[i]; i++) {
+          row.setAttribute('style','display:none');
+        }
+        var selected = document.getElementById(selector.value);
+        selected.setAttribute('style', '');
+      }
+    </script>
+    <p>Select your deployment environment: </p>
+    <select onchange="showForm(this)">
+      <option value="virtual">Virtualized Cluster (Xen/KVM)</option>
+      <option value="iaas">IaaS (EC2)</option>
+    </select>
+    <p>&nbsp;</p>
+    <table id="config.table">
+      <tr id="virtual">
+	<td>
+	  <h3>AppScale Deployment for Virtualized Cluster (Xen/KVM)</h3>
+	  <form method="POST" action="virtual_advanced.do">
+	    <table border="1">
+	      <tr>
+		<td>Enter your server configuration (ips.yaml):</td>
+		<td><textarea name="ips" rows="10" cols="50"></textarea></td>
+	      </tr>
+	      <tr>
+		<td align="right">Administrator E-mail:</td>
+		<td><input name="user" type="text"/></td>
+	      </tr>
+	      <tr>
+		<td align="right">Administrator Password:</td>
+		<td><input name="pass" type="password"/></td>
+	      </tr>
+	      <tr>
+		<td align="right">Confirm Password:</td>
+		<td><input name="pass2" type="password"/></td>
+	      </tr>
+	      <tr>
+		<td align="right">Key Name:</td>
+		<td><input name="keyname" type="text" value="appscale"/></td>
+	      </tr>
+	      <tr>
+		<td align="right">Root Password:</td>
+		<td><input name="root_password" type="password"/></td>
+	      </tr>
+	      <% if Dir.glob('./repository/*').length > 0 %>
+	      	<tr>
+		  <td align="right">Target application:</td>
+		  <td>
+		    <select name="target_app">
+		      <option value="_none_">None</option>
+		      <% for item in Dir.glob('./repository/*') %>		      	
+		        <% if File.directory?(item) %>
+		          <option value="<%=File.basename(item)%>"><%=File.basename(item)%></option>
+			<% end %>
+		      <% end %>
+		    </select>
+		  </td>
+	      	</tr>
+	      <% end %>
+	      <tr>
+		<td></td>
+		<td><input type="submit" name="submit" value="Launch"/></td>
+	      </tr>	      
+	    </table>
+	  </form>
+	</td>
+      </tr>
+      <tr id="iaas" style="display:none">
+	<td>
+	  <h3>AppScale Deployment for IaaS (EC2)</h3>
+	  <p>Work in progress!</p>
+	</td>
+    </table>    
+  </body>
+</html>

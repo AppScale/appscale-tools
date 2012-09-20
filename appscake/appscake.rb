@@ -15,7 +15,7 @@ require 'appscale_tools'
 puts "AppsCake - Makes deploying AppScale a 'piece of cake'!"
 
 get '/' do
-  redirect to('/index.html')
+  erb :index
 end
 
 post '/virtual_advanced.do' do
@@ -46,11 +46,18 @@ post '/virtual_advanced.do' do
     'root_password' => params[:root_password]
   }
 
+  app_namme = nil
+  file_location = nil
+  if params[:target_app] != '_none_'
+    app_name = params[:target_app]
+    file_location = File.join(File.dirname(__FILE__), "repository", params[:target_app])
+  end
+
   run_instances_options = { 
     'ips' => yaml, 
     'keyname' => params[:keyname],
-    'file_location' => nil,
-    'appname' => nil,
+    'file_location' => file_location,
+    'appname' => app_name,
     'appengine' => 1,
     'autoscale' => true,
     'separate' => false,
