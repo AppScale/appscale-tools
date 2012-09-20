@@ -105,3 +105,4 @@ post '/virtual_advanced.do' do
     return "<p>System is currently busy deploying another cloud. Please try again later.</p>"
   end
 end
+
