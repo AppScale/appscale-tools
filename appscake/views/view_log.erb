@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>AppsCake - Cloud Deployment Log</title>
+  </head>
+  <body>
+    <h1>Cloud Deployment Log - <%= @timestamp %></h1>
+    <%     
+       file_name = "./logs/deploy-" + @timestamp + ".log"
+       if File.exists?(file_name)
+         file = File.new(file_name, "r")
+	 content = ""
+	 while (line = file.gets)
+	   content += line
+	 end
+	 file.close
+       else
+         content = "Unable to locate deployment log with timestamp: " + @timestamp
+       end       
+    %>
+    <textarea rows="30" cols="100" readonly><%= content %></textarea>
+  </body>
+</html>

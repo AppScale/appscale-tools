@@ -4,6 +4,12 @@ require 'net/ssh'
 
 $mutex = Mutex.new
 
+def report_error(title, msg)
+  @title = title
+  @error = msg
+  return erb :error
+end
+
 def validate_credentials(user,pass1,pass2)
   if user.nil? or user.length == 0
     return [ false, "Administrator username not provided" ]
@@ -53,7 +59,6 @@ def validate_ssh_credentials(keyname, root_password, ips_yaml)
     rescue Exception=>e
       return [ false, "Unexpected runtime error connecting to #{ips[0]}" ]
     end
-
     return [ true, '' ]
   end
 end
@@ -147,8 +152,8 @@ def stfu(timestamp)
     begin
       orig_stderr = $stderr.clone
       orig_stdout = $stdout.clone
-      $stderr.reopen File.new("public/logs/deploy-#{timestamp}.log", "w")
-      $stdout.reopen File.new("public/logs/deploy-#{timestamp}.log", "w")
+      $stderr.reopen File.new("./logs/deploy-#{timestamp}.log", "w")
+      $stdout.reopen File.new("./logs/deploy-#{timestamp}.log", "w")
       retval = yield
     rescue Exception => e
       $stdout.reopen orig_stdout
