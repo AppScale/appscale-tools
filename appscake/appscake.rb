@@ -1,3 +1,9 @@
+#!/usr/bin/ruby
+# Author: Hiranya Jayathilaka (hiranya@cs.ucsb.edu)
+# AppsCake web interface for deploying and launching AppScale clouds
+# AppsCake = Makes deploying AppScale a 'piece of cake'
+
+require 'rubygems'
 require 'sinatra'
 require 'yaml'
 require 'open3'
@@ -5,6 +11,8 @@ require 'open3'
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'appscake_utils'
 require 'appscale_tools'
+
+puts "AppsCake - Makes deploying AppScale a 'piece of cake'!"
 
 get '/' do
   redirect to('/index.html')
