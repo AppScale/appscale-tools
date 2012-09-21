@@ -112,3 +112,4 @@ get '/view_logs' do
   @timestamp = timestamp
   erb :view_log
 end
+

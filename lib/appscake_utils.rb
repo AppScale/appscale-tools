@@ -156,6 +156,7 @@ def stfu(timestamp)
       $stdout.reopen File.new("./logs/deploy-#{timestamp}.log", "w")
       retval = yield
     rescue Exception => e
+      puts "[__ERROR__] Runtime error in deployment process: #{e.message}"
       $stdout.reopen orig_stdout
       $stderr.reopen orig_stderr
       raise e

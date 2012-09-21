@@ -15,8 +15,61 @@
 	 file.close
        else
          content = "Unable to locate deployment log with timestamp: " + @timestamp
-       end       
+       end
+
+       step1 = content.include?("Generating public/private rsa key pair.") ? "Done" : "Pending"
+       step2 = content.include?("Executing ssh-copy-id") ? "Done" : "Pending"
+       if step1 == "Pending" and step2 == "Done"
+         step1 = "Skipped"
+       end
+       step3 = content.include?("Head node successfully created") ? "Done" : "Pending"
+       step4 = content.include?("AppController just started") ? "Done" : "Pending"
+       step5 = content.include?("Your user account has been created successfully.") ? "Done" : "Pending"
+       step6 = content.include?("Please wait for your app to start up") ? "Done" : "Pending"
+       step7 = content.include?("The status of your AppScale instance is at the following URL") ? "Done" : "Pending"
+       if step7 == "Done" and step6 == "Pending"
+         step6 = "Skipped"
+       end
     %>
-    <textarea rows="30" cols="100" readonly><%= content %></textarea>
+    <table>
+      <tr>
+	<td>
+	  <textarea rows="30" cols="100" readonly><%= content %></textarea>
+	</td>
+	<td>
+	  <p>Deployment steps:</p>
+	  <table>
+	    <tr>
+	      <td>Generate cryptographic keys</td>
+	      <td><%=step1%></td>
+	    </tr>
+	    <tr>
+	      <td>Distribute keys among the nodes</td>
+	      <td><%=step2%></td>
+	    </tr>
+	    <tr>
+	      <td>Start the head node</td>
+	      <td><%=step3%></td>
+	    </tr>
+	    <tr>
+	      <td>Start AppController</td>
+	      <td><%=step4%></td>
+	    </tr>
+	    <tr>
+	      <td>Create AppScale administrator account</td>
+	      <td><%=step5%></td>
+	    </tr>
+	    <tr>
+	      <td>Deploy target application</td>
+	      <td><%=step6%></td>
+	    </tr>
+	    <tr>
+	      <td>Finalize deployment</td>
+	      <td><%=step7%></td>
+	    </tr>
+	  </table>
+	</td>
+      </tr>
+    </table>
   </body>
 </html>
