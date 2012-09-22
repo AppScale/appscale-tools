@@ -185,8 +185,13 @@ module AppScaleTools
     pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
 
     if auto
-      print "\nEnter SSH password of root: "
-      password = CommonFunctions.get_line_from_stdin_no_echo()
+      if options["root_password"].nil?
+        print "\nEnter SSH password of root: "
+        password = CommonFunctions.get_line_from_stdin_no_echo()
+      else
+        puts "Using the provided root password to login to AppScale machines"
+        password = options["root_password"]
+      end
 
       # Location of expect script that interacts with ssh-copy-id
       expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
@@ -298,7 +303,12 @@ module AppScaleTools
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
     CommonFunctions.verbose("Run instances: UserAppServer is at #{userappserver_ip}", options['verbose'])
     uac = UserAppClient.new(userappserver_ip, secret_key)
-    user, pass = CommonFunctions.get_credentials(options['test'])
+    if options["admin_user"].nil? and options["admin_pass"].nil?
+      user, pass = CommonFunctions.get_credentials(options['test'])
+    else
+      puts "Using the provided admin username and password"
+      user, pass = options["admin_user"], options["admin_pass"]
+    end
     CommonFunctions.create_user(user, options['test'], head_node_ip,
       secret_key, uac, pass)
 
