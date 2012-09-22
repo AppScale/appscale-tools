@@ -1,3 +1,0 @@
-queue:
-- name: default
-  rate: 1/s
