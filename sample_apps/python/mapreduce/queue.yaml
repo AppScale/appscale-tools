@@ -1,3 +1,0 @@
-queue:
-- name: mapreduce
-  rate: 1/s
