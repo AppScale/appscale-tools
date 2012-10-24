@@ -27,7 +27,7 @@ echo "Requirements met. Installing tools"
 # copy tools files
 TARGETDIR=/usr/local/appscale-tools
 mkdir -p $TARGETDIR
-cp -rv bin lib sample_apps templates $TARGETDIR || exit 1
+cp -rv bin lib templates $TARGETDIR || exit 1
 cp -v CHANGELOG LICENSE README $TARGETDIR || exit 1
 
 # CentOS specific 
