@@ -8,7 +8,7 @@ require 'rake/testtask'
 # I'm just not sure how to do this right now.
 spec = Gem::Specification.new do |s|
   s.name = 'appscale-tools'
-  s.version = '1.6.0'
+  s.version = '1.6.3'
 
   s.summary = "A toolkit for running the AppScale cloud platform"  
   s.description = <<-EOF

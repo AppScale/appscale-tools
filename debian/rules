@@ -51,7 +51,7 @@ install: build
 	# Add here commands to install the package into debian/appscale.
 #	$(MAKE) DESTDIR=$(CURDIR)/debian/appscale install
 	mkdir -p $(DESTDIR)/usr/local/appscale-tools
-	cp -r bin lib sample_apps templates $(DESTDIR)/usr/local/appscale-tools
+	cp -r bin lib templates $(DESTDIR)/usr/local/appscale-tools
 	cp CHANGELOG LICENSE README $(DESTDIR)/usr/local/appscale-tools
 	bash $(CURDIR)/debian/appscale_install_$(DIST).sh tools $(DESTDIR)
 
