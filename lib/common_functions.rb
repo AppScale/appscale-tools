@@ -50,7 +50,7 @@ CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key",
   "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY"]
 
 
-VER_NUM = "1.5"
+VER_NUM = "1.6.3"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
