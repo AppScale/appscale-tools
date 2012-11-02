@@ -919,14 +919,14 @@ module CommonFunctions
     FileUtils.mkdir_p("/tmp/#{temp_dir}")
 
     CommonFunctions.move_app(temp_dir, filename, app_file, fullpath)
-    app_yaml_loc = app_file
+    app_config_loc = app_file
     if !File.exists?("/tmp/#{temp_dir}/#{app_file}")
       FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
       return nil, nil, nil
     end
 
     if app_file == PYTHON_CONFIG
-      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
       language = "python"
       if File.directory?(fullpath)
         temp_dir2 = CommonFunctions.get_random_alphanumeric
@@ -938,7 +938,8 @@ module CommonFunctions
         file = fullpath
       end
     elsif app_file == JAVA_CONFIG
-      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_config_loc)
+      CommonFunctions.ensure_app_has_threadsafe(app_config_loc)
       language = "java"
       # don't remove user's jar files, they may have their own jars in it
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
@@ -987,6 +988,29 @@ module CommonFunctions
     app_name = web_xml_contents.scan(/<application>([\w\d-]+)<\/application>/).flatten.to_s
     app_name = nil if app_name == ""
     return app_name
+  end
+
+
+  # Checks the named file to validate its <threadsafe> parameter,
+  # which should be set to either true or false.
+  # Args:
+  # -  xml_loc: A String that points to the location on the local
+  #    filesystem where the appengine-web.xml file for the user's
+  #    Java Google App Engine app can be located.
+  # Raises:
+  # -  AppEngineConfigException: If the given XML file did not
+  #    have a <threadsafe> tag, or it was not a boolean value.
+  # Returns:
+  # -  Nothing, if there was a <threadsafe> tag with a boolean value.
+  def self.ensure_app_has_threadsafe(xml_loc)
+    web_xml_contents = self.read_file(xml_loc)
+    threadsafe = web_xml_contents.scan(/<threadsafe>([\w]+)<\/threadsafe>/).flatten.to_s
+    if threadsafe == "true" or threadsafe == "false"
+      return
+    else
+      raise AppEngineConfigException.new("Your application did not " +
+        "have a <threadsafe> tag, with a value of either true or false.")
+    end
   end
 
 
