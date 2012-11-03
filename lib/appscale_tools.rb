@@ -246,17 +246,39 @@ module AppScaleTools
   # Copies all of the logs from an AppScale deployment to this
   # machine, so that they can be easily examined or e-mailed to
   # support.
+  # Args:
+  # - options: A Hash that optionally contains the keyname associated
+  #   with the AppScale instance to gather logs for, and the location
+  #   that the gathered logs should be placed in.
+  # Raises:
+  # - AppScaleException, if the location to store the logs from the
+  #   AppScale deployment already exists, or if AppScale wasn't running
+  #   with the keyname the user gave us.
+  # Returns:
+  # - A Hash indicating whether or not the logs were successfully
+  #   copied to the specified location.
   def self.gather_logs(options)
     keyname = options['keyname'] || "appscale"
     location = options['location'] || "/tmp/#{keyname}-logs/"
     location = File.expand_path(location)
 
+    # First, make sure that the place we want to store logs doesn't
+    # already exist.
     if File.exists?(location)
       raise AppScaleException.new("The location that you specified " +
         "to copy logs to, #{location}, already exists. Please " +
         "specify a location that does not exist and try again.")
     else
       FileUtils.mkdir_p(location)
+    end
+
+    # Next, make sure that AppScale is actually running with the
+    # keyname the user gave us.
+    appscale_locations_file = File.expand_path("~/.appscale/locations-" +
+      "#{keyname}.yaml")
+    if !File.exists?(appscale_locations_file)
+      raise AppScaleException.new("AppScale is not currently running " +
+        "with the keyname #{keyname}.")
     end
   end
 
