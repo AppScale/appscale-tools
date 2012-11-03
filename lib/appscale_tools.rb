@@ -64,6 +64,18 @@ module AppScaleTools
   APP_REMOVAL_CANCELLED = "Application removal cancelled."
 
 
+  # The flags that are acceptable to use with appscale-gather-logs.
+  # This command is fairly straightforward, and only accepts the
+  # keyname flag (outside of the normal help flags).
+  GATHER_LOGS_FLAGS = ["help", "h", "usage", "keyname"]
+
+
+  # The usage that is displayed to users if they ask for help with
+  # the appscale-gather-logs command.
+  GATHER_LOGS_USAGE = UsageText.get_usage("appscale-gather-logs",
+    GATHER_LOGS_FLAGS)
+
+
   REMOVE_APP_FLAGS = ["help", "h", "usage", "appname", "version", "keyname", 
     "confirm"]
 
@@ -228,6 +240,24 @@ module AppScaleTools
     }
 
     return {:error => nil, :result => instance_info }
+  end
+
+
+  # Copies all of the logs from an AppScale deployment to this
+  # machine, so that they can be easily examined or e-mailed to
+  # support.
+  def self.gather_logs(options)
+    keyname = options['keyname'] || "appscale"
+    location = options['location'] || "/tmp/#{keyname}-logs/"
+    location = File.expand_path(location)
+
+    if File.exists?(location)
+      raise AppScaleException.new("The location that you specified " +
+        "to copy logs to, #{location}, already exists. Please " +
+        "specify a location that does not exist and try again.")
+    else
+      FileUtils.mkdir_p(location)
+    end
   end
 
 
