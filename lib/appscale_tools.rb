@@ -301,6 +301,8 @@ module AppScaleTools
 
     userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
     CommonFunctions.verbose("Run instances: UserAppServer is at #{userappserver_ip}", options['verbose'])
     uac = UserAppClient.new(userappserver_ip, secret_key)
     if options["admin_user"].nil? and options["admin_pass"].nil?

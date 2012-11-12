@@ -809,6 +809,21 @@ module CommonFunctions
   end
 
 
+  # Copies over the JSON metadata file that maps roles to who hosts them to the
+  # given IP address.
+  # Args:
+  # - keyname: The keyname of the AppScale deployment to copy over data for.
+  # - ip: The IP address that the JSON metadata file should be copied to.
+  # - ssh_key: The location on the local filesystem where an SSH key can be found
+  #   that enables passwordless SSH access to the specified IP address.
+  def self.copy_nodes_json(keyname, ip, ssh_key)
+    locations_json = File.expand_path("~/.appscale/locations-#{keyname}.json")
+    remote_locations_json_file = "/root/.appscale/locations-#{keyname}.json"
+    CommonFunctions.scp_file(locations_json, remote_locations_json_file, ip, 
+      ssh_key)
+  end
+
+
   def self.write_and_copy_node_file(options, node_layout, head_node_result)
     keyname = options['keyname']
     head_node_ip = head_node_result[:head_node_ip]
