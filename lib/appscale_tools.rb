@@ -280,6 +280,26 @@ module AppScaleTools
       raise AppScaleException.new("AppScale is not currently running " +
         "with the keyname #{keyname}.")
     end
+
+    # Get the IP address of the head node from the locations file
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+
+    # Log into the head node and get a list of all the IPs in this
+    # AppScale deployment
+    # Don't use the get_all_public_ips function from CommonFunctions,
+    # because AppScale may not have started correctly and thus that
+    # function may not be reliable.
+    ips_and_ret_val = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{head_node_ip} 'cat /etc/hosts'; echo $?").chomp
+    return_val = ips_and_ret_val[-1]
+
+    if return_value != "0"
+      raise AppScaleException.new("Couldn't get a list of all IPs from " +
+        "the shadow node in AppScale.")
+    end
+
+    # /etc/hosts should have a list of IPs for 
+
+    # Get the logs from each node, and store them in our local directory
   end
 
 

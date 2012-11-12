@@ -46,10 +46,38 @@ class TestAppScaleGatherLogs < Test::Unit::TestCase
       and_return()
 
     appscale_locations_file = File.expand_path("~/.appscale/locations-#{keyname}.yaml")
-    flexmock(File).should_receive(:exists?).with(appscale_locations_file).and_return(false)
+    flexmock(File).should_receive(:exists?).
+      with(appscale_locations_file).and_return(false)
 
     assert_raises(AppScaleException) {
       AppScaleTools.gather_logs(options)
     }
+  end
+
+  def test_gather_logs_when_appscale_is_running_one_node_no_hosts
+    # If we run gather_logs and AppScale is running with the
+    # keyname that the user gave us, then it should succeed.
+    # If there's no info on the nodes in /etc/hosts, then only
+    # grab the information about the first node in the system
+    # (as it's the one that crashed and the only one we have
+    # information about).
+    location = "/baz/boo"
+    keyname = "bookey"
+    options = {
+      "location" => location,
+      "keyname" => keyname
+    }
+
+    # mock out filesystem accesses
+    flexmock(File).should_receive(:exists?).with(location).
+      and_return(false)
+    flexmock(FileUtils).should_receive(:mkdir_p).with(location).
+      and_return()
+
+    appscale_locations_file = File.expand_path("~/.appscale/locations-#{keyname}.yaml")
+    flexmock(File).should_receive(:exists?).
+      with(appscale_locations_file).and_return(true)
+
+ 
   end
 end
