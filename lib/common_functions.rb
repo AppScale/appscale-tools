@@ -112,7 +112,9 @@ module CommonFunctions
   # firewall rules. It should be changed accordingly.
   def self.rsync_files(dest_ip, ssh_key, local)
     local = File.expand_path(local)
+    lib = "#{local}/lib"
     controller = "#{local}/AppController"
+    appmanager = "#{local}/AppManager"
     server = "#{local}/AppServer"
     loadbalancer = "#{local}/AppLoadBalancer"
     monitoring = "#{local}/AppMonitoring"
@@ -128,6 +130,8 @@ module CommonFunctions
     end
 
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
