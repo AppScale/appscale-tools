@@ -271,6 +271,15 @@ module AppScaleTools
   end
 
 
+  # Deploys AppScale over virtual machines located in Amazon EC2, Eucalyptus,
+  # or Xen/KVM. To do so, this function spawns an initial virtual machine
+  # and then delegates the rest of the responsibilities of starting AppScale
+  # to that machine.
+  # Args:
+  #   options: A Hash that contains parameters that can be used to customize
+  #     the given AppScale deployment.
+  # Returns:
+  #   Nothing.
   def self.run_instances(options)
     infrastructure = options['infrastructure']
     instance_type = options['instance_type']
