@@ -383,12 +383,12 @@ module VMTools
     }
 
     EC2_ENVIRONMENT_VARIABLES.each { |var|
-      cloud_creds["CLOUD1_#{var}"] = ENV[var]
+      cloud_creds["CLOUD_#{var}"] = ENV[var]
     }
 
     if cloud_creds["infrastructure"] == "euca"
       ["EC2_URL", "S3_URL"].each { |var|
-        cloud_creds["CLOUD1_#{var}"] = ENV[var]
+        cloud_creds["CLOUD_#{var}"] = ENV[var]
       }
     end
 
@@ -426,7 +426,7 @@ module VMTools
 
     cloud_num = 1
     loop {
-      cloud_type = ENV["CLOUD#{cloud_num}_TYPE"] 
+      cloud_type = ENV["CLOUD_TYPE"] 
       break if cloud_type.nil?
 
       if cloud_num == 1 and set_head_node_creds
