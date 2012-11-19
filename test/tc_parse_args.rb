@@ -157,4 +157,32 @@ class TestParseArgs < Test::Unit::TestCase
       assert_equal(true, actual[param])
     }
   end
+
+  def test_infrastructure_flags
+    # Specifying infastructure as EC2 or Eucalyptus is acceptable.
+    args_1 = ['--infrastructure', 'ec2']
+    all_flags_1 = ['infrastructure']
+    actual_1 = ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
+    assert_equal('ec2', actual_1['infrastructure'])
+
+    args_2 = ['--infrastructure', 'euca']
+    all_flags_2 = ['infrastructure']
+    actual_2 = ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
+    assert_equal('euca', actual_2['infrastructure'])
+
+    # Specifying something else as the infrastructure is not acceptable.
+    args_3 = ['--infrastructure', 'boocloud']
+    all_flags_3 = ['infrastructure']
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
+    }
+
+    # Specifying infrastructure via --iaas is not acceptable.
+    args_4 = ['--iaas']
+    all_flags_4 = AppScaleTools::RUN_INSTANCES_FLAGS
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
+    }
+  end
+
 end
