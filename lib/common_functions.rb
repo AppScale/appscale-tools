@@ -574,7 +574,7 @@ module CommonFunctions
   def self.scp_file(local_file_loc, remote_file_loc, target_ip, public_key_loc)
     cmd = ""
     local_file_loc = File.expand_path(local_file_loc)
-    retval_file = File.expand_path("~/.appscale/retval-#{rand()}")
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
  
     if public_key_loc.class == Array
       public_key_loc.each { |key|
@@ -588,9 +588,22 @@ module CommonFunctions
     end
 
     cmd << "; echo $? > #{retval_file}"
-
     FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
 
+
+  def self.scp_remote_to_local(remote_source, local_dest, ip, ssh_key)
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
+    cmd = "scp -r -i #{ssh_key} #{SSH_OPTIONS} 2>&1 " +
+      "root@#{ip}:#{remote_source} #{local_dest}; echo $? " +
+      "> #{retval_file}"
+    FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
+
+
+  def self.scp(cmd, retval_file)
     begin
       Timeout::timeout(INFINITY) { CommonFunctions.shell("#{cmd}") }
     rescue Timeout::Error

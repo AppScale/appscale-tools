@@ -67,7 +67,7 @@ module AppScaleTools
   # The flags that are acceptable to use with appscale-gather-logs.
   # This command is fairly straightforward, and only accepts the
   # keyname flag (outside of the normal help flags).
-  GATHER_LOGS_FLAGS = ["help", "h", "usage", "keyname"]
+  GATHER_LOGS_FLAGS = ["help", "h", "usage", "keyname", "location"]
 
 
   # The usage that is displayed to users if they ask for help with
@@ -247,15 +247,15 @@ module AppScaleTools
   # machine, so that they can be easily examined or e-mailed to
   # support.
   # Args:
-  # - options: A Hash that optionally contains the keyname associated
+  #   options: A Hash that optionally contains the keyname associated
   #   with the AppScale instance to gather logs for, and the location
   #   that the gathered logs should be placed in.
   # Raises:
-  # - AppScaleException, if the location to store the logs from the
+  #   AppScaleException, if the location to store the logs from the
   #   AppScale deployment already exists, or if AppScale wasn't running
   #   with the keyname the user gave us.
   # Returns:
-  # - A Hash indicating whether or not the logs were successfully
+  #   A Hash indicating whether or not the logs were successfully
   #   copied to the specified location.
   def self.gather_logs(options)
     keyname = options['keyname'] || "appscale"
@@ -284,22 +284,29 @@ module AppScaleTools
     # Get the IP address of the head node from the locations file
     head_node_ip = CommonFunctions.get_head_node_ip(keyname)
 
-    # Log into the head node and get a list of all the IPs in this
+    # Query the head node for a list of all the IPs in this
     # AppScale deployment
-    # Don't use the get_all_public_ips function from CommonFunctions,
-    # because AppScale may not have started correctly and thus that
-    # function may not be reliable.
-    ips_and_ret_val = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{head_node_ip} 'cat /etc/hosts'; echo $?").chomp
-    return_val = ips_and_ret_val[-1]
+    secret = CommonFunctions.get_secret_key(keyname)
 
-    if return_value != "0"
-      raise AppScaleException.new("Couldn't get a list of all IPs from " +
-        "the shadow node in AppScale.")
+    begin
+      acc = AppControllerClient.new(head_node_ip, secret)
+      all_ips = acc.get_all_public_ips()
+    rescue AppScaleException
+      all_ips = [head_node_ip]
     end
 
-    # /etc/hosts should have a list of IPs for 
-
     # Get the logs from each node, and store them in our local directory
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+    ip_dirs = []
+    all_ips.each { |ip|
+      ip_dir = "#{location}/#{ip}"
+      FileUtils.mkdir_p(ip_dir)
+      CommonFunctions.scp_remote_to_local("/var/log/appscale", ip_dir,
+        ip, ssh_key)
+      ip_dirs << ip_dir
+    }
+
+    return {:result => :success, :log_dirs => ip_dirs}
   end
 
 

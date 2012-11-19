@@ -130,6 +130,10 @@ module ParseArgs
       val_hash['separate'] = false
     end
 
+    if arg_hash['location']
+      val_hash['location'] = arg_hash['location']
+    end
+
     val_hash['confirm'] = !arg_hash['confirm'].nil?
 
     self.get_backup_and_restore_params(arg_hash, val_hash)

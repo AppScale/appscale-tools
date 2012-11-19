@@ -48,11 +48,8 @@ class AppControllerClient
       }
     rescue Errno::ECONNREFUSED
       if refused_count > max
-        if want_output
-          abort("Connection with #{@ip} was refused. Is the AppController running?")
-        else
-          raise Exception
-        end
+        raise AppScaleException.new("Connection with #{@ip} was " +
+          "refused. Is the AppController running?")
       else
         refused_count += 1
         Kernel.sleep(1)
@@ -64,11 +61,10 @@ class AppControllerClient
       if retry_on_except
         retry
       else
-        if want_output
-          abort("We saw an unexpected error of the type #{except.class} with the following message:\n#{except}.")
-        else
-          raise except
-        end
+        trace = except.backtrace.join("\n")
+        raise AppScaleException.new("We saw an unexpected error of " +
+          "the type #{except.class} with the following message:" +
+          "\n#{except}, and trace #{trace}")
       end
     end
   end
