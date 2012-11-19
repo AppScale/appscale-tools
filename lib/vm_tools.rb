@@ -383,12 +383,12 @@ module VMTools
     }
 
     EC2_ENVIRONMENT_VARIABLES.each { |var|
-      cloud_creds["CLOUD1_#{var}"] = ENV[var]
+      cloud_creds["CLOUD_#{var}"] = ENV[var]
     }
 
     if cloud_creds["infrastructure"] == "euca"
       ["EC2_URL", "S3_URL"].each { |var|
-        cloud_creds["CLOUD1_#{var}"] = ENV[var]
+        cloud_creds["CLOUD_#{var}"] = ENV[var]
       }
     end
 
