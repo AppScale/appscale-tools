@@ -264,23 +264,9 @@ module ParseArgs
       if !VALID_CLOUD_TYPES.include?(infra)
         raise BadCommandLineArgException.new(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG)
       end
-
-      if infra == "iaas"
-        val_hash['infrastructure'] = "euca"
-      else
-        val_hash['infrastructure'] = infra
-      end
+      val_hash['infrastructure'] = infra
     else
       val_hash['infrastructure'] = nil
-    end
-
-    #Override if --iaas is set
-    if arg_hash['iaas']
-      if arg_hash['iaas'] == "hybrid"
-        val_hash['infrastructure'] = "hybrid"
-      else
-        val_hash['infrastructure'] = "euca"
-      end
     end
 
     if arg_hash['machine']
