@@ -50,7 +50,7 @@ CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key",
   "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY"]
 
 
-VER_NUM = "1.6.3"
+VER_NUM = "1.6.4"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -122,7 +122,9 @@ module CommonFunctions
   # firewall rules. It should be changed accordingly.
   def self.rsync_files(dest_ip, ssh_key, local)
     local = File.expand_path(local)
+    lib = "#{local}/lib"
     controller = "#{local}/AppController"
+    appmanager = "#{local}/AppManager"
     server = "#{local}/AppServer"
     loadbalancer = "#{local}/AppLoadBalancer"
     monitoring = "#{local}/AppMonitoring"
@@ -138,6 +140,8 @@ module CommonFunctions
     end
 
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
@@ -944,14 +948,14 @@ module CommonFunctions
     FileUtils.mkdir_p("/tmp/#{temp_dir}")
 
     CommonFunctions.move_app(temp_dir, filename, app_file, fullpath)
-    app_yaml_loc = app_file
+    app_config_loc = app_file
     if !File.exists?("/tmp/#{temp_dir}/#{app_file}")
       FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
       return nil, nil, nil
     end
 
     if app_file == PYTHON_CONFIG
-      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
       language = "python"
       if File.directory?(fullpath)
         temp_dir2 = CommonFunctions.get_random_alphanumeric
@@ -963,7 +967,8 @@ module CommonFunctions
         file = fullpath
       end
     elsif app_file == JAVA_CONFIG
-      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_config_loc)
+      CommonFunctions.ensure_app_has_threadsafe(temp_dir, app_config_loc)
       language = "java"
       # don't remove user's jar files, they may have their own jars in it
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
@@ -1012,6 +1017,30 @@ module CommonFunctions
     app_name = web_xml_contents.scan(/<application>([\w\d-]+)<\/application>/).flatten.to_s
     app_name = nil if app_name == ""
     return app_name
+  end
+
+
+  # Checks the named file to validate its <threadsafe> parameter,
+  # which should be set to either true or false.
+  # Args:
+  #   xml_loc: A String that points to the location on the local
+  #     filesystem where the appengine-web.xml file for the user's
+  #     Java Google App Engine app can be located.
+  # Raises:
+  #   AppEngineConfigException: If the given XML file did not
+  #     have a <threadsafe> tag, or it was not a boolean value.
+  # Returns:
+  #   Nothing, if there was a <threadsafe> tag with a boolean value.
+  def self.ensure_app_has_threadsafe(temp_dir, xml_loc)
+    xml_loc = "/tmp/" + temp_dir + "/" + xml_loc
+    web_xml_contents = self.read_file(xml_loc)
+    threadsafe = web_xml_contents.scan(/<threadsafe>([\w]+)<\/threadsafe>/).flatten.to_s
+    if threadsafe == "true" or threadsafe == "false"
+      return
+    else
+      raise AppEngineConfigException.new("Your application did not " +
+        "have a <threadsafe> tag, with a value of either true or false.")
+    end
   end
 
 

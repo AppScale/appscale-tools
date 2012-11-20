@@ -225,7 +225,7 @@ module VMTools
     #adding check first so that we don't do any of this if the infrastructure setting is wrong
     if !VALID_CLOUD_TYPES.include?(infrastructure)
       raise BadConfigurationException.new("Infrastructure must be " +
-        "iaas, ec2, or euca, but instead was #{infrastructure}")
+        "ec2, or euca, but instead was #{infrastructure}")
     end
 
     if infrastructure == "ec2"
