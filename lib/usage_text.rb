@@ -65,10 +65,6 @@ module UsageText
     "--instance_type: The instance type to use if using Eucalyptus. Defaults to m1.large if not provided. Supported values are m1.large, m1.xlarge, and c1.xlarge."
   end
 
-  def self.iaas
-    "--iaas INFRASTRUCTURE: Same as --infrastructure, but if no value is provided, defaults to euca."
-  end
-
   def self.infrastructure
     "--infrastructure INFRASTRUCTURE: The cloud infrastructure that AppScale should utilize. Acceptable values are: #{VALID_CLOUD_TYPES.join(', ')}."
   end
