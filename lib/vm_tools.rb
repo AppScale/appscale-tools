@@ -131,30 +131,42 @@ module VMTools
     end
   end
 
-  def self.verify_ids(disk, infrastructure)
-    ec2_images = CommonFunctions.shell("#{infrastructure}-describe-images 2>&1")
 
-    if disk !~ /[a|e]mi/
-      raise InfrastructureException.new("The disk image you specified was " +
-        "not in the proper format. Please correct this and try again.")
+  # Queries the given cloud infrastructure to make sure that the machine
+  # image the user wants to use actually exists.
+  # Args:
+  #   machine: The machine image (ami for Amazon EC2 and emi for
+  #     Eucalyptus) that we should ensure exists.
+  #   infrastructure: The cloud infrastructure that the given image
+  #     should exist in.
+  # Raises:
+  #   InfrastructureException: If the machine image does not exist
+  #     in the specified cloud infrastructure.
+  def self.validate_machine_image(machine, infrastructure)
+    if machine !~ /[a|e]mi/
+      raise InfrastructureException.new("The machine image you " +
+        "specified was not in the proper format. Please correct this " +
+        "and try again.")
     end
 
-    # if the tools are not configured properly an error message will show up
-    # be sure to catch it and die if so
+    ec2_images = CommonFunctions.shell("#{infrastructure}-describe-images #{machine} 2>&1")
+    # if the tools are not configured properly an error message will 
+    # show up be sure to catch it and die if so
     if ec2_images =~ /\AServer:/
       raise InfrastructureException.new("Problem with " +
         "#{infrastructure}-tools: " + ec2_images)
     end
 
-    id = "disk"
-    id_value = eval(id)
-    if ec2_images !~ /IMAGE\t#{id_value}/
-      raise InfrastructureException.new("The #{id} image you specified, " +
-        "#{id_value}, was not found when querying " +
-        "#{infrastructure}-describe-images. Please specify a #{id} image in " +
-        "the database and try again.")
+    if ec2_images =~ /IMAGE\t#{machine}/
+      return
+    else
+      raise InfrastructureException.new("The machine image you " +
+        "specified, #{machine}, was not found when querying " +
+        "#{infrastructure}-describe-images. Please specify a machine " +
+        "image that does exist and try again.")
     end
   end
+
   
   def self.get_ips(ips, verbose)
     if ips.length % 2 != 0
