@@ -1205,6 +1205,7 @@ module CommonFunctions
 
     if infrastructure && infrastructure != "hybrid"
       VMTools.verify_credentials_are_set_correctly(infrastructure)
+      VMTools.validate_machine_image(machine, infrastructure)
     end
 
     # If the user hasn't given us an ips.yaml file, then they're running in a cloud
