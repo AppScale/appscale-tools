@@ -127,6 +127,15 @@ class NodeLayout
     end
   end
 
+  
+  # Counts the number of roles that are hosted within the current
+  # deployment strategy. In particular, we're interested in counting
+  # one of the roles that make up a standard 'three-tier' web
+  # deployment strategy per node, so that we can tell if the deployment
+  # is officially supported or not.
+  # Returns:
+  #   A Hash that maps each of the main three-tier deployment roles to
+  #     how many nodes host that role.
   def count_roles
     num_roles = {
       :login => 0,
