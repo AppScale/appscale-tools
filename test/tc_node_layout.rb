@@ -12,6 +12,11 @@ class TestNodeLayout < Test::Unit::TestCase
     @ip_1 = '192.168.1.1'
     @ip_2 = '192.168.1.2'
     @ip_3 = '192.168.1.3'
+    @ip_4 = '192.168.1.4'
+    @ip_5 = '192.168.1.5'
+    @ip_6 = '192.168.1.6'
+    @ip_7 = '192.168.1.7'
+    @ip_8 = '192.168.1.8'
   end
 
   def test_simple_layout_yaml_only
@@ -89,5 +94,88 @@ class TestNodeLayout < Test::Unit::TestCase
     input_yaml_1 = {:master => @ip_1, :database => @ip_1, :appengine => @ip_1, :open => @ip_2}
     layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
     assert_equal(true, layout_1.valid?)
+  end
+
+  def test_dont_warn_users_on_supported_deployment_strategies
+    # all simple deployment strategies are supported
+    input_yaml_1 = {:controller => @ip_1}
+    layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
+    assert_equal(true, layout_1.supported?)
+
+    input_yaml_2 = {:controller => @ip_1, :servers => [@ip_2]}
+    layout_2 = NodeLayout.new(input_yaml_2, @blank_options)
+    assert_equal(true, layout_2.supported?)
+
+    input_yaml_3 = {:controller => @ip_1, :servers => [@ip_2, @ip_3]}
+    layout_3 = NodeLayout.new(input_yaml_3, @blank_options)
+    assert_equal(true, layout_3.supported?)
+
+    # in advanced deployments, four nodes are ok with the following
+    # layout: (1) load balancer, (2) appserver, (3) database,
+    # (4) zookeeper
+    advanced_yaml_1 = {
+      :master => @ip_1,
+      :appengine => @ip_2,
+      :database => @ip_3,
+      :zookeeper => @ip_4
+    }
+    advanced_layout_1 = NodeLayout.new(advanced_yaml_1, @blank_options)
+    assert_equal(true, advanced_layout_1.valid?)
+    assert_equal(true, advanced_layout_1.supported?)
+
+    # in advanced deployments, eight nodes are ok with the following
+    # layout: (1) load balancer, (2) appserver, (3) appserver,
+    # (4) database, (5) database, (6) zookeeper, (7) zookeeper,
+    # (8) zookeeper
+    advanced_yaml_2 = {
+      :master => @ip_1,
+      :appengine => [@ip_2, @ip_3],
+      :database => [@ip_4, @ip_5],
+      :zookeeper => [@ip_6, @ip_7, @ip_8]
+    }
+    advanced_layout_2 = NodeLayout.new(advanced_yaml_2, @blank_options)
+    assert_equal(true, advanced_layout_2.valid?)
+    assert_equal(true, advanced_layout_2.supported?)
+  end
+
+  def test_warn_users_on_unsupported_deployment_strategies
+    # don't test simple deployments - those are all supported
+    # instead, test out some variations of the supported advanced
+    # strategies, as those should not be supported
+    advanced_yaml_1 = {
+      :master => @ip_1,
+      :appengine => @ip_1,
+      :database => @ip_2,
+      :zookeeper => @ip_2
+    }
+    advanced_layout_1 = NodeLayout.new(advanced_yaml_1, @blank_options)
+    assert_equal(true, advanced_layout_1.valid?)
+    assert_equal(false, advanced_layout_1.supported?)
+
+    # four node deployments that don't match the only supported
+    # deployment are not supported
+    advanced_yaml_2 = {
+      :master => @ip_1,
+      :appengine => @ip_2,
+      :database => @ip_3,
+      :zookeeper => @ip_3,
+      :open => @ip_4
+    }
+    advanced_layout_2 = NodeLayout.new(advanced_yaml_2, @blank_options)
+    assert_equal(true, advanced_layout_2.valid?)
+    assert_equal(false, advanced_layout_2.supported?)
+
+    # eight node deployments that don't match the only supported
+    # deployment are not supported
+    advanced_yaml_3 = {
+      :master => @ip_1,
+      :appengine => [@ip_2, @ip_3],
+      :database => [@ip_4, @ip_5],
+      :zookeeper => [@ip_6, @ip_7],
+      :open => @ip_8
+    }
+    advanced_layout_3 = NodeLayout.new(advanced_yaml_3, @blank_options)
+    assert_equal(true, advanced_layout_3.valid?)
+    assert_equal(false, advanced_layout_3.supported?)
   end
 end
