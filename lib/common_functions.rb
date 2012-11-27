@@ -1259,6 +1259,13 @@ module CommonFunctions
         "file: \n#{node_layout.errors}")
     end
 
+    if !node_layout.supported?
+      Kernel.puts("Warning: The deployment strategy specified in your " +
+        "YAML file is not officially tested in AppScale. Proceeding " +
+        "momentarily.")
+      Kernel.sleep(1)
+    end
+
     return node_layout
   end
 

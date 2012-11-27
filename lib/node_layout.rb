@@ -75,6 +75,102 @@ class NodeLayout
     end
   end
 
+  # supported? is a method that checks to see if AppScale has normally
+  # been tested and successfully run over this deployment strategy.
+  # All simple deployments are supported, but only two specific types
+  # of advanced deployments are supported.
+  # Returns:
+  #   true if AppScale has been run with this deployment strategy,
+  #     false otherwise.
+  def supported?
+    if is_simple_format?
+      return true
+    elsif is_advanced_format?
+      return is_supported_advanced_format?
+    else
+      return false
+    end
+  end
+
+  # is_supported_advanced_format? checks to see if AppScale has been
+  # tested and successfully run over this advanced deployment strategy.
+  # Specifically, we only support two advanced deployment strategies,
+  # one with a minimal number of nodes (each with one service), and
+  # one that doubles the number of nodes of the minimal strategy
+  # (except for ZooKeeper, which we triple since it requires a consensus
+  # to function).
+  def is_supported_advanced_format?
+    if @nodes.length == 4
+      # in a four node deployment, we are looking for one node to
+      # be a load balancer, one to be an appserver, one to be a
+      # database, and one to be zookeeper
+      num_roles = count_roles
+      if num_roles[:login] == 1 and num_roles[:appengine] == 1 and
+        num_roles[:database] == 1 and num_roles[:zookeeper] == 1
+        return true
+      else
+        return false
+      end
+    elsif @nodes.length == 8
+      # in an eight node deployment, we are looking for one node to
+      # be a load balancer, two to be appservers, two to be databases,
+      # and three to be zookeepers
+      num_roles = count_roles
+      if num_roles[:login] == 1 and num_roles[:appengine] == 2 and
+        num_roles[:database] == 2 and num_roles[:zookeeper] == 3
+        return true
+      else
+        return false
+      end
+    else
+      return false
+    end
+  end
+
+  
+  # Counts the number of roles that are hosted within the current
+  # deployment strategy. In particular, we're interested in counting
+  # one of the roles that make up a standard 'three-tier' web
+  # deployment strategy per node, so that we can tell if the deployment
+  # is officially supported or not.
+  # Returns:
+  #   A Hash that maps each of the main three-tier deployment roles to
+  #     how many nodes host that role.
+  def count_roles
+    num_roles = {
+      :login => 0,
+      :appengine => 0,
+      :database => 0,
+      :zookeeper => 0
+    }
+
+    @nodes.each { |node|
+      roles = node.roles
+      found_three_tier_role = false
+      roles.each { |role|
+        break if found_three_tier_role
+        case role.to_sym
+        when :login then 
+          num_roles[:login] += 1
+          found_three_tier_role = true
+        when :appengine then 
+          num_roles[:appengine] += 1
+          found_three_tier_role = true
+        when :db_master then 
+          num_roles[:database] += 1
+          found_three_tier_role = true
+        when :db_slave then 
+          num_roles[:database] += 1
+          found_three_tier_role = true
+        when :zookeeper then 
+          num_roles[:zookeeper] += 1
+          found_three_tier_role = true
+        end
+      }
+    }
+    return num_roles
+  end
+
   def is_simple_format?
     if @input_yaml.nil?
       if VALID_CLOUD_TYPES.include?(@infrastructure) and @infrastructure != "hybrid"
@@ -566,7 +662,6 @@ class Node
   def add_db_role db_type, is_master
     if is_master
       add_role :db_master
-      add_role :zookeeper
     else
       add_role :db_slave
     end
@@ -645,7 +740,6 @@ class AdvancedNode < Node
       @roles.delete(:master)
       @roles << :shadow
       @roles << :load_balancer
-      @roles << :zookeeper
     end
 
     if @roles.include?(:login)
