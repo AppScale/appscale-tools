@@ -49,7 +49,7 @@ class NodeLayout
     elsif is_advanced_format?
       valid_advanced_format?[:result]
     else
-      false
+      return false
     end
   end
 
@@ -84,11 +84,11 @@ class NodeLayout
   #     false otherwise.
   def supported?
     if is_simple_format?
-      true
+      return true
     elsif is_advanced_format?
-      is_supported_advanced_format?
+      return is_supported_advanced_format?
     else
-      false
+      return false
     end
   end
 
@@ -123,7 +123,7 @@ class NodeLayout
         return false
       end
     else
-      false
+      return false
     end
   end
 
@@ -187,7 +187,7 @@ class NodeLayout
       return false if !SIMPLE_FORMAT_KEYS.include?(key)
     end
 
-   true
+   return true
   end
 
   def is_advanced_format?
@@ -197,7 +197,7 @@ class NodeLayout
       return false if !ADVANCED_FORMAT_KEYS.include?(key)
     end
 
-    true
+    return true
   end
 
   def parse_ip(ip)
