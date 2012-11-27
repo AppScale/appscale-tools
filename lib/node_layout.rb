@@ -137,13 +137,25 @@ class NodeLayout
 
     @nodes.each { |node|
       roles = node.roles
+      found_three_tier_role = false
       roles.each { |role|
+        break if found_three_tier_role
         case role.to_sym
-        when :login then num_roles[:login] += 1
-        when :appengine then num_roles[:appengine] += 1
-        when :db_master then num_roles[:database] += 1
-        when :db_slave then num_roles[:database] += 1
-        when :zookeeper then num_roles[:zookeeper] += 1
+        when :login then 
+          num_roles[:login] += 1
+          found_three_tier_role = true
+        when :appengine then 
+          num_roles[:appengine] += 1
+          found_three_tier_role = true
+        when :db_master then 
+          num_roles[:database] += 1
+          found_three_tier_role = true
+        when :db_slave then 
+          num_roles[:database] += 1
+          found_three_tier_role = true
+        when :zookeeper then 
+          num_roles[:zookeeper] += 1
+          found_three_tier_role = true
         end
       }
     }

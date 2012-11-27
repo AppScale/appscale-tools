@@ -139,6 +139,43 @@ class TestNodeLayout < Test::Unit::TestCase
   end
 
   def test_warn_users_on_unsupported_deployment_strategies
+    # don't test simple deployments - those are all supported
+    # instead, test out some variations of the supported advanced
+    # strategies, as those should not be supported
+    advanced_yaml_1 = {
+      :master => @ip_1,
+      :appengine => @ip_1,
+      :database => @ip_2,
+      :zookeeper => @ip_2
+    }
+    advanced_layout_1 = NodeLayout.new(advanced_yaml_1, @blank_options)
+    assert_equal(true, advanced_layout_1.valid?)
+    assert_equal(false, advanced_layout_1.supported?)
 
+    # four node deployments that don't match the only supported
+    # deployment are not supported
+    advanced_yaml_2 = {
+      :master => @ip_1,
+      :appengine => @ip_2,
+      :database => @ip_3,
+      :zookeeper => @ip_3,
+      :open => @ip_4
+    }
+    advanced_layout_2 = NodeLayout.new(advanced_yaml_2, @blank_options)
+    assert_equal(true, advanced_layout_2.valid?)
+    assert_equal(false, advanced_layout_2.supported?)
+
+    # eight node deployments that don't match the only supported
+    # deployment are not supported
+    advanced_yaml_3 = {
+      :master => @ip_1,
+      :appengine => [@ip_2, @ip_3],
+      :database => [@ip_4, @ip_5],
+      :zookeeper => [@ip_6, @ip_7],
+      :open => @ip_8
+    }
+    advanced_layout_3 = NodeLayout.new(advanced_yaml_3, @blank_options)
+    assert_equal(true, advanced_layout_3.valid?)
+    assert_equal(false, advanced_layout_3.supported?)
   end
 end
