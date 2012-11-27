@@ -185,4 +185,21 @@ class TestParseArgs < Test::Unit::TestCase
     }
   end
 
+  def test_instance_types
+    # Specifying m1.large as the instance type is acceptable.
+    args_1 = ['--instance_type', 'm1.large']
+    all_flags_1 = ['instance_type']
+    assert_nothing_raised(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
+    }
+
+    # Specifying blarg1.humongous as the instance type is not
+    # acceptable.
+    args_2 = ['--instance_type', 'blarg1.humongous']
+    all_flags_2 = ['instance_type']
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
+    }
+  end
+
 end
