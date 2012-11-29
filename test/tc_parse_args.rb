@@ -82,11 +82,11 @@ class TestParseArgs < Test::Unit::TestCase
     }
 
     # Specifying a table that is accepted should return that in the result
-    args_2 = ['--table', 'voldemort']
+    args_2 = ['--table', 'cassandra']
     all_flags_2 = ['table']
     expected_2 = Hash[*args_2]
     actual_2 = ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    assert_equal('voldemort', actual_2['table'])
+    assert_equal('cassandra', actual_2['table'])
 
     # Failing to specify a table should default to a predefined table
     args_3 = []
@@ -136,15 +136,20 @@ class TestParseArgs < Test::Unit::TestCase
     assert_equal(2, actual_9['replication'])
 
     # Specifying a positive integer for r or w with Voldemort should be ok
-    args_10 = ['--table', 'voldemort', '-r', '3']
-    all_flags_10 = ['table', 'r', 'w']
-    actual_10 = ParseArgs.get_vals_from_args(args_10, all_flags_10, @usage)
-    assert_equal(3, actual_10['voldemort_r'])
+    # These tests are disabled right now since Voldemort is no longer a
+    # supported datastore.
+    # TODO(cgb): Remove these if we decide we're not going to support
+    # Voldemort in the future, or remove this TODO if we do support
+    # Voldemort again.
+    #args_10 = ['--table', 'voldemort', '-r', '3']
+    #all_flags_10 = ['table', 'r', 'w']
+    #actual_10 = ParseArgs.get_vals_from_args(args_10, all_flags_10, @usage)
+    #assert_equal(3, actual_10['voldemort_r'])
 
-    args_11 = ['--table', 'voldemort', '-w', '3']
-    all_flags_11 = ['table', 'r', 'w']
-    actual_11 = ParseArgs.get_vals_from_args(args_11, all_flags_11, @usage)
-    assert_equal(3, actual_11['voldemort_w'])
+    #args_11 = ['--table', 'voldemort', '-w', '3']
+    #all_flags_11 = ['table', 'r', 'w']
+    #actual_11 = ParseArgs.get_vals_from_args(args_11, all_flags_11, @usage)
+    #assert_equal(3, actual_11['voldemort_w'])
   end
 
   def test_developer_flags
