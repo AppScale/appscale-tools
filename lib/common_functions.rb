@@ -66,8 +66,7 @@ SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
 # infrastructures that we can run over.
-VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra", "voldemort"] +
-  ["mongodb", "memcachedb", "scalaris", "simpledb", "redisdb"]
+VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra"]
 VALID_CLOUD_TYPES = ["ec2", "euca", "hybrid"]
 
 
