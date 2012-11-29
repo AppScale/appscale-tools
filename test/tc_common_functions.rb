@@ -108,14 +108,14 @@ class TestCommonFunctions < Test::Unit::TestCase
       'ec2_access_key' => 'ABCDEFG',
       'ec2_secret_key' => 'HIJKLMN',
       'CLOUD1_EC2_ACCESS_KEY' => 'OPQRSTU',
-      'CLOUD1_EC2_ACCESS_KEY' => 'VWXYZAB'
+      'CLOUD1_EC2_SECRET_KEY' => 'VWXYZAB'
     }
 
     expected = {
       'ec2_access_key' => '***DEFG',
       'ec2_secret_key' => '***KLMN',
       'CLOUD1_EC2_ACCESS_KEY' => '***RSTU',
-      'CLOUD1_EC2_ACCESS_KEY' => '***YZAB'
+      'CLOUD1_EC2_SECRET_KEY' => '***YZAB'
     }
 
     actual = CommonFunctions.obscure_creds(creds)
