@@ -47,7 +47,8 @@ IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 
 CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key", 
   "aws_access_key_id", "aws_secret_access_key", 
-  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY"]
+  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY",
+  "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
 
 
 VER_NUM = "1.6.4"
@@ -531,6 +532,7 @@ module CommonFunctions
       "root@#{head_node_ip}", options['verbose'])
  
     CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
+    CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
     CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
       true_key)
  
@@ -1096,6 +1098,24 @@ module CommonFunctions
     return if self.does_image_have_location?(ip, "/etc/appscale", key)
     raise AppScaleException.new("The image at #{ip} is not an AppScale image." +
       " Please install AppScale on it and try again.")
+  end
+
+
+  # Checks to see if the virtual machine at the given IP address has
+  # the same version of AppScale installed as these tools.
+  # Args:
+  #   ip: The IP address of the VM to check the version on.
+  #   key: The SSH key that can be used to log into the machine at the
+  #     given IP address.
+  # Raises:
+  #   AppScaleException: If the virtual machine at the given IP address
+  #     does not have the same version of AppScale installed as these
+  #     tools.
+  def self.ensure_version_is_supported(ip, key)
+    return if self.does_image_have_location?(ip, "/etc/appscale/#{VER_NUM}", key)
+    raise AppScaleException.new("The image at #{ip} does not support " +
+      "this version of AppScale (#{VER_NUM}). Please install AppScale" +
+      " #{VER_NUM} on it and try again.")
   end
 
 
