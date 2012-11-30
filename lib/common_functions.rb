@@ -251,7 +251,9 @@ module CommonFunctions
 
   def self.get_credentials(testing)
     if testing
-      return DEFAULT_USERNAME, DEFAULT_PASSWORD
+      user = ENV['APPSCALE_USERNAME'] || DEFAULT_USERNAME
+      pass = ENV['APPSCALE_PASSWORD'] || DEFAULT_PASSWORD
+      return user, pass
     else
       return CommonFunctions.get_email, CommonFunctions.get_password
     end

@@ -102,4 +102,24 @@ class TestCommonFunctions < Test::Unit::TestCase
       CommonFunctions.ensure_app_has_threadsafe(dir, web_xml_false_threadsafe)
     }
   end
+
+
+  def test_get_credentials_from_options
+    # if the user gives us the --test flag, then we should search
+    # the environment for a username / password. let's say it's there:
+    ENV['APPSCALE_USERNAME'] = 'b@b.b'
+    ENV['APPSCALE_PASSWORD'] = 'bbbbbb'
+    user, pass = CommonFunctions.get_credentials(testing=true)
+    assert_equal('b@b.b', user)
+    assert_equal('bbbbbb', pass)
+
+    # now assume the environment variables aren't there - in this case
+    # we should fall back to the default
+    ENV['APPSCALE_USERNAME'] = nil
+    ENV['APPSCALE_PASSWORD'] = nil
+    user, pass = CommonFunctions.get_credentials(testing=true)
+    assert_equal(DEFAULT_USERNAME, user)
+    assert_equal(DEFAULT_PASSWORD, pass)
+  end
+
 end
