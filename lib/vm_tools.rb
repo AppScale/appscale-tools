@@ -217,9 +217,11 @@ module VMTools
       end
     }
     
-    puts "Reported Public IPs: [#{reported_public.join(', ')}]" if verbose
-    puts "Reported Private IPs: [#{reported_private.join(', ')}]" if verbose
-    
+    if verbose
+      Kernel.puts("Reported Public IPs: [#{reported_public.join(', ')}]")
+      Kernel.puts("Reported Private IPs: [#{reported_private.join(', ')}]")
+    end
+
     public_ips = []
     reported_public.each_index { |index|
       if reported_public[index] != "0.0.0.0"
@@ -234,7 +236,8 @@ module VMTools
   
   def self.spawn_vms(num_of_vms_to_spawn, job, image_id, instance_type, keyname,
     infrastructure, group, verbose)
-    #adding check first so that we don't do any of this if the infrastructure setting is wrong
+    # adding check first so that we don't do any of this if the 
+    # infrastructure setting is wrong
     if !VALID_CLOUD_TYPES.include?(infrastructure)
       raise BadConfigurationException.new("Infrastructure must be " +
         "ec2, or euca, but instead was #{infrastructure}")
@@ -248,42 +251,45 @@ module VMTools
     	make_group = check_group.empty?
     end
     if make_group
-       puts "Creating security group #{group}" if verbose
+       Kernel.puts("Creating security group #{group}") if verbose
        create_sec_group = CommonFunctions.shell("#{infrastructure}-add-group #{group} -d #{group} 2>&1")
-       puts create_sec_group if verbose
+       Kernel.puts(create_sec_group) if verbose
     else # security group exists
       raise InfrastructureException.new("Security group #{group} exists, " +
         "delete this group via #{infrastructure}-delete-group #{group}, " +
         "prior to starting an AppScale cloud")
     end
-    puts "Security group #{group} in place" if verbose
+    Kernel.puts("Security group #{group} in place") if verbose
     VMTools.open_ports_in_cloud(infrastructure, group, verbose)
-    puts "Ports set for security group #{group}" if verbose
+    Kernel.puts("Ports set for security group #{group}") if verbose
     
     describe_instances = CommonFunctions.shell("#{infrastructure}-describe-instances 2>&1")
-    puts describe_instances if verbose
+    Kernel.puts(describe_instances) if verbose
     all_ip_addrs = describe_instances.scan(/\s+(#{IP_OR_FQDN})\s+(#{IP_OR_FQDN})\s+running\s+#{keyname}\s/).flatten
     ips_up_already = VMTools.get_public_ips(all_ip_addrs, verbose)
     vms_up_already = ips_up_already.length  
   
     command_to_run = "#{infrastructure}-run-instances -k #{keyname} -n #{num_of_vms_to_spawn} --instance-type #{instance_type} --group #{group} #{image_id}" 
     
-    puts command_to_run if verbose
+    Kernel.puts(command_to_run) if verbose
     run_instances = ""
     loop {
       run_instances = CommonFunctions.shell("#{command_to_run} 2>&1")
-      puts "run_instances: [#{run_instances}]" if verbose
+      Kernel.puts("run_instances: [#{run_instances}]") if verbose
       if run_instances =~ /Please try again later./
-        puts "Error with run_instances: #{run_instances}. Will try again in a moment."
+        Kernel.puts("Error with run_instances: #{run_instances}. Will " +
+          "try again in a moment.")
       elsif run_instances =~ /try --addressing private/
-        puts "Need to retry with addressing private. Will try again in a moment."
+        Kernel.puts("Need to retry with addressing private. Will try " +
+          "again in a moment.")
         command_to_run << " --addressing private"
-      elsif run_instances =~ /PROBLEM/
-        raise InfrastructureException.new("Saw the following error message " +
-          "from iaas tools. Please resolve the issue and try again:\n" +
-          "#{run_instances}")
+      elsif run_instances =~ /(PROBLEM)|(RunInstancesType: Failed)/
+        raise InfrastructureException.new("Saw the following error " +
+          "message from iaas tools. Please resolve the issue and try " +
+          "again:\n#{run_instances}")
       else
-        puts "Run instances message sent successfully. Waiting for the image to start up."
+        Kernel.puts("Run instances message sent successfully. Waiting " +
+          "for the image to start up.")
         break
       end
     }
@@ -293,8 +299,9 @@ module VMTools
     end_time = Time.now + MAX_VM_CREATION_TIME
     while (now = Time.now) < end_time
       describe_instances = CommonFunctions.shell("#{infrastructure}-describe-instances 2>&1")
-      puts "[#{Time.now}] #{end_time - now} seconds left until timeout..."
-      puts describe_instances if verbose
+      Kernel.puts("[#{Time.now}] #{end_time - now} seconds left until " +
+        "timeout...")
+      Kernel.puts(describe_instances) if verbose
       
       if describe_instances =~ /terminated\s#{keyname}\s/
         raise InfrastructureException.new("An instance was unexpectedly " +
@@ -315,7 +322,8 @@ module VMTools
     end
        
     if public_ips.length != instance_ids.length
-      puts "Public IPs: #{public_ips.join(', ')}, Instance ids: #{instance_ids.join(', ')}"
+      Kernel.puts("Public IPs: #{public_ips.join(', ')}, Instance ids: " +
+        "#{instance_ids.join(', ')}")
       raise InfrastructureException.new("Public IPs size didn't match " +
         "instance names size")
     end
