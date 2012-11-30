@@ -252,7 +252,9 @@ module CommonFunctions
 
   def self.get_credentials(testing)
     if testing
-      return DEFAULT_USERNAME, DEFAULT_PASSWORD
+      user = ENV['APPSCALE_USERNAME'] || DEFAULT_USERNAME
+      pass = ENV['APPSCALE_PASSWORD'] || DEFAULT_PASSWORD
+      return user, pass
     else
       return CommonFunctions.get_email, CommonFunctions.get_password
     end
@@ -1429,7 +1431,7 @@ module CommonFunctions
     Kernel.sleep(1)
 
     begin
-      Timeout::timeout(60) {
+      Timeout::timeout(60, AppScaleException) {
         GodInterface.start(:controller, start, stop, 
           AppScaleTools::DJINN_SERVER_PORT,
           {'APPSCALE_HOME' => remote_home}, ip, ssh_key)
@@ -1440,7 +1442,7 @@ module CommonFunctions
         CommonFunctions.sleep_until_port_is_open(ip, 
           AppScaleTools::DJINN_SERVER_PORT, AppScaleTools::USE_SSL)
       }
-    rescue Timeout::Error
+    rescue AppScaleException
       retry
     end
   end
