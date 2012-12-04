@@ -240,6 +240,9 @@ module AppScaleTools
 
     begin
       ips_yaml = YAML.load_file(ips_location)
+      if !ips_yaml
+        raise BadConfigurationException.new(MALFORMED_YAML)
+      end
     rescue ArgumentError
       raise BadConfigurationException.new(MALFORMED_YAML)
     end

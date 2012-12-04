@@ -24,6 +24,16 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
       AppScaleTools.add_nodes({'ips' => nonexistent_file})
     }
 
+    # Also consider if the YAML file given is just an empty file
+    empty_file = '/boo/emptyfile'
+    flexmock(File).should_receive(:exists?).with(empty_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(empty_file).
+      and_return(false)
+    assert_raises(BadConfigurationException) {
+      AppScaleTools.add_nodes({'ips' => empty_file})
+    }
+
     # Now, consider the case where it exists, but isn't YAML
     not_yaml_file = '/boo/barfile'
     flexmock(File).should_receive(:exists?).with(not_yaml_file).
