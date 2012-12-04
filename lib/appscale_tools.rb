@@ -262,8 +262,7 @@ module AppScaleTools
     keyname = options['keyname'] || "appscale"
     ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
 
-    infrastructure = CommonFunctions.get_infrastructure(keyname,
-      required=true)
+    infrastructure = CommonFunctions.get_infrastructure(keyname)
     if infrastructure == "xen"
       new_ips = ips_yaml.values.flatten
       new_ips.each { |ip|
@@ -271,6 +270,23 @@ module AppScaleTools
         CommonFunctions.find_real_ssh_key([ssh_key], ip)
       }
     end
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+    secret = CommonFunctions.get_secret_key(keyname)
+    acc = AppControllerClient.new(head_node_ip, secret)
+
+    # Convert the keys in ips.yaml from Symbols to Strings, which
+    # are acceptable to pass via SOAP.
+    converted_ips_yaml = {}
+    ips_yaml.each { |k, v|
+      converted_ips_yaml[k.to_s] = v
+    }
+
+    # Return whatever the result of the SOAP request to the AppController
+    # is.
+    acc.start_roles_on_nodes(converted_ips_yaml)
   end
 
 

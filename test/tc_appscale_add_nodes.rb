@@ -94,5 +94,51 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
         "keyname" => "blarg"
       })
     }
+  end  
+  
+  def test_add_two_nodes_on_ec2
+    # Adding a single AppServer is acceptable, but if the user hasn't
+    # run appscale-add-keypair to sync up the keys, then that should
+    # cause add-nodes to throw up and die
+    yaml_file = '/boo/ips.yaml'
+    yaml_contents = { :appengine => ['node-1', 'node-2'] }
+
+    flexmock(File).should_receive(:exists?).with(yaml_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(yaml_file).
+      and_return(yaml_contents)
+
+    # mock out the locations.yaml file so that we think we're on ec2
+    locations_yaml_file = File.expand_path("~/.appscale/locations-blarg.yaml")
+    locations_yaml_contents = {
+      :infrastructure => 'ec2',
+      :secret => 'boosecret'
+    }
+    flexmock(File).should_receive(:exists?).with(locations_yaml_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(locations_yaml_file).
+      and_return(locations_yaml_contents)
+
+    locations_json_file = File.expand_path("~/.appscale/locations-blarg.json")
+    locations_json_contents = JSON.dump([{'public_ip' => '1.2.3.4', 'jobs' => 'shadow'}])
+    flexmock(File).should_receive(:exists?).with(locations_json_file).
+      and_return(true)
+    flexmock(File).should_receive(:open).with(locations_json_file, Proc).
+      and_return(locations_json_contents)
+
+    # finally, mock out the AppController and assume the request to
+    # add nodes succeeded
+    flexmock(AppControllerClient).new_instances { |i|
+      i.should_receive(:start_roles_on_nodes).
+        with({'appengine' => ['node-1', 'node-2']}).
+        and_return({'success' => true, 'reason' => ''})
+    }
+
+    expected = {'success' => true, 'reason' => ''}
+    actual = AppScaleTools.add_nodes({
+      "ips" => yaml_file,
+      "keyname" => "blarg"
+    })
+    assert_equal(expected, actual)
   end
 end
