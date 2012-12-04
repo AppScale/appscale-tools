@@ -44,4 +44,20 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
       AppScaleTools.add_nodes({'ips' => not_yaml_file})
     }
   end
+
+  def test_add_single_master_node
+    # Adding a 'master' node is not acceptable - there can only be one
+    # running in an AppScale deployment, and AppScale starts with one.
+    yaml_file = '/boo/ips.yaml'
+    yaml_contents = { :master => '1.2.3.4' }
+
+    flexmock(File).should_receive(:exists?).with(yaml_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(yaml_file).
+      and_return(yaml_contents)
+    assert_raises(BadConfigurationException) {
+      AppScaleTools.add_nodes({'ips' => yaml_file})
+    }
+  end
+
 end

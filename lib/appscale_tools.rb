@@ -247,9 +247,14 @@ module AppScaleTools
       raise BadConfigurationException.new(MALFORMED_YAML)
     end
 
+    if ips_yaml.keys.include?(:master)
+      raise BadConfigurationException.new("Cannot add a master node to " +
+        "an already running AppScale deployment.")
+    end
+
     # Skip checking for -n (replication) because we don't allow the user
     # to specify it here (only allowed in run-instances).
-    new_layout = NodeLayout.new(ips_yaml, options,
+    additional_nodes_layout = NodeLayout.new(ips_yaml, options,
       skip_replication=true)
   end
 
