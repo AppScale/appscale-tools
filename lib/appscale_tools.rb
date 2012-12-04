@@ -228,8 +228,14 @@ module AppScaleTools
   # (of the same format used in run-instances).
   def self.add_nodes(options)
     ips = options['ips']
-    if ips.nil?
+    if ips.nil? or ips.empty?
       raise BadConfigurationException.new(NO_IPS_GIVEN)
+    end
+
+    ips_location = File.expand_path(ips)
+    if !File.exists?(ips_location)
+      raise BadConfigurationException.new("We could not find the YAML " +
+        "file specified at #{ips_location}")
     end
   end
 
