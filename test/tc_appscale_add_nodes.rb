@@ -10,6 +10,9 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
   def setup
   end
 
-  def test_nothing
+  def test_add_nodes_with_no_ips_file
+    assert_raises(BadConfigurationException) {
+      AppScaleTools.add_nodes({})
+    }
   end
 end

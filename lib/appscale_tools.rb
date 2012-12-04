@@ -38,6 +38,14 @@ module AppScaleTools
     ADD_KEYPAIR_FLAGS)
 
 
+  # A message that add-nodes can raise if the user does not indicate
+  # which machines should be used to start new roles in their AppScale
+  # deployment.
+  NO_IPS_GIVEN = "Please specify a YAML file that indicates what nodes " +
+    "should be used to start new roles in the currently running " +
+    "AppScale deployment."
+
+
   IP_REGEX = /\d+\.\d+\.\d+\.\d+/
 
 
@@ -212,6 +220,17 @@ module AppScaleTools
       " #{path}. You can now use this key to log into any of the " +
       "machines you specified without providing a password via the" +
       " following command:\n\tssh root@#{head_node_ip} -i #{path}"
+  end
+
+  
+  # Works in conjunction with an already running AppScale deployment to
+  # add additional nodes. The nodes must be specified via a YAML file
+  # (of the same format used in run-instances).
+  def self.add_nodes(options)
+    ips = options['ips']
+    if ips.nil?
+      raise BadConfigurationException.new(NO_IPS_GIVEN)
+    end
   end
 
 
