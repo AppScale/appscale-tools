@@ -8,6 +8,9 @@ require 'flexmock/test_unit'
 
 class TestAppScaleAddNodes < Test::Unit::TestCase
   def setup
+    # make user explicitly state which shell calls they want to mock
+    flexmock(CommonFunctions).should_receive(:shell).with("").
+      and_return()
   end
 
   def test_add_nodes_with_bad_ips_file
@@ -60,4 +63,36 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     }
   end
 
+  def test_add_single_node_but_ssh_keys_not_setup_on_xen
+    # Adding a single AppServer is acceptable, but if the user hasn't
+    # run appscale-add-keypair to sync up the keys, then that should
+    # cause add-nodes to throw up and die
+    yaml_file = '/boo/ips.yaml'
+    yaml_contents = { :appengine => '1.2.3.4' }
+
+    flexmock(File).should_receive(:exists?).with(yaml_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(yaml_file).
+      and_return(yaml_contents)
+
+    # mock out the locations.yaml file so that we think we're on xen
+    locations_yaml_file = File.expand_path("~/.appscale/locations-blarg.yaml")
+    locations_yaml_contents = { :infrastructure => 'xen' }
+    flexmock(File).should_receive(:exists?).with(locations_yaml_file).
+      and_return(true)
+    flexmock(YAML).should_receive(:load_file).with(locations_yaml_file).
+      and_return(locations_yaml_contents)
+
+    # mock out the ssh call so that it fails, indicating that the ssh
+    # key given can't be used to log into that box
+    flexmock(CommonFunctions).should_receive(:shell).with(/\Assh/).
+      and_return("1\n")
+
+    assert_raises(AppScaleException) {
+      AppScaleTools.add_nodes({
+        "ips" => yaml_file,
+        "keyname" => "blarg"
+      })
+    }
+  end
 end

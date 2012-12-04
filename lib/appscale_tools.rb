@@ -256,6 +256,21 @@ module AppScaleTools
     # to specify it here (only allowed in run-instances).
     additional_nodes_layout = NodeLayout.new(ips_yaml, options,
       skip_replication=true)
+
+    # In non-cloud scenarios, we need to make sure that the user has
+    # set up SSH keys with the new nodes to add.
+    keyname = options['keyname'] || "appscale"
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+
+    infrastructure = CommonFunctions.get_infrastructure(keyname,
+      required=true)
+    if infrastructure == "xen"
+      new_ips = ips_yaml.values.flatten
+      new_ips.each { |ip|
+        # throws an AppScaleException if the SSH key doesn't work
+        CommonFunctions.find_real_ssh_key([ssh_key], ip)
+      }
+    end
   end
 
 
