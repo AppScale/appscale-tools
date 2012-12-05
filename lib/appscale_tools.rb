@@ -226,7 +226,7 @@ module AppScaleTools
   # Works in conjunction with an already running AppScale deployment to
   # add additional nodes. The nodes must be specified via a YAML file
   # (of the same format used in run-instances).
-  def self.add_nodes(options)
+  def self.add_instances(options)
     ips = options['ips']
     if ips.nil? or ips.empty?
       raise BadConfigurationException.new(NO_IPS_GIVEN)

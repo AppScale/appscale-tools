@@ -13,10 +13,10 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
       and_return()
   end
 
-  def test_add_nodes_with_bad_ips_file
+  def test_add_instances_with_bad_ips_file
     # First, test the case where the user didn't give us an ips.yaml
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_nodes({})
+      AppScaleTools.add_instances({})
     }
 
     # Next, test the case where it points somewhere that doesn't exist
@@ -24,7 +24,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(File).should_receive(:exists?).with(nonexistent_file).
       and_return(false)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_nodes({'ips' => nonexistent_file})
+      AppScaleTools.add_instances({'ips' => nonexistent_file})
     }
 
     # Also consider if the YAML file given is just an empty file
@@ -34,7 +34,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(YAML).should_receive(:load_file).with(empty_file).
       and_return(false)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_nodes({'ips' => empty_file})
+      AppScaleTools.add_instances({'ips' => empty_file})
     }
 
     # Now, consider the case where it exists, but isn't YAML
@@ -44,7 +44,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(YAML).should_receive(:load_file).with(not_yaml_file).
       and_raise(ArgumentError)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_nodes({'ips' => not_yaml_file})
+      AppScaleTools.add_instances({'ips' => not_yaml_file})
     }
   end
 
@@ -59,7 +59,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(YAML).should_receive(:load_file).with(yaml_file).
       and_return(yaml_contents)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_nodes({'ips' => yaml_file})
+      AppScaleTools.add_instances({'ips' => yaml_file})
     }
   end
 
@@ -89,7 +89,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
       and_return("1\n")
 
     assert_raises(AppScaleException) {
-      AppScaleTools.add_nodes({
+      AppScaleTools.add_instances({
         "ips" => yaml_file,
         "keyname" => "blarg"
       })
@@ -135,7 +135,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     }
 
     expected = {'success' => true, 'reason' => ''}
-    actual = AppScaleTools.add_nodes({
+    actual = AppScaleTools.add_instances({
       "ips" => yaml_file,
       "keyname" => "blarg"
     })
