@@ -48,7 +48,36 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
     } 
   end
 
-  def test_adding_keys_to_existing_deployment
+  def test_adding_one_key_to_existing_deployment
+    # suppose that we have all the right ssh commands installed
+    commonfunctions = flexmock(CommonFunctions)
+    commonfunctions.should_receive(:shell).with("which ssh-keygen").and_return("/usr/bin/ssh-keygen")
+    commonfunctions.should_receive(:shell).with("which ssh-copy-id").and_return("/usr/bin/ssh-copy-id")
+
+    # and suppose that ssh-copy-id execs ok
+    key = File.expand_path("~/.appscale/appscale")
+    commonfunctions.should_receive(:shell).
+      with(/ssh-copy-id -i #{key} root@1.2.3.4/).and_return()
+
+    # next, assume that we are able to copy over the ssh keys fine
+    commonfunctions.should_receive(:shell).
+      with(/scp -i #{key} #{key} root@1.2.3.4:.ssh\/id_[d|r]sa/).
+      and_return()
+
+    # and the same for the public key
+    pub_key = "#{key}.key"
+    commonfunctions.should_receive(:shell).
+      with(/scp -i #{key} #{pub_key} root@1.2.3.4:.ssh\/id_rsa.pub/).
+      and_return()
+
+    one_node = {:appengine => '1.2.3.4'}
+    options = {"ips" => one_node, "add_to_existing" => true}
+    expected = {'success' => true}
+    actual = AppScaleTools.add_keypair(options)
+    assert_equal(expected, actual)
+  end
+
+  def test_adding_two_keys_to_existing_deployment
     # suppose that we have all the right ssh commands installed
     commonfunctions = flexmock(CommonFunctions)
     commonfunctions.should_receive(:shell).with("which ssh-keygen").and_return("/usr/bin/ssh-keygen")

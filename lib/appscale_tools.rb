@@ -218,7 +218,8 @@ module AppScaleTools
       ips_yaml.each { |role, ip|
         ips << ip
       }
-      ips.flatten!.uniq!
+      ips.flatten!
+      ips.uniq!
     end
 
     ips.each { |ip|
