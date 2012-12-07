@@ -206,9 +206,6 @@ module AppScaleTools
         puts "Using the provided root password to login to AppScale machines"
         password = options["root_password"]
       end
-
-      # Location of expect script that interacts with ssh-copy-id
-      expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
     end
 
     if node_layout.valid?
@@ -223,7 +220,7 @@ module AppScaleTools
     end
 
     ips.each { |ip|
-      CommonFunctions.ssh_copy_id(ip, path, auto, expect_script, password)
+      CommonFunctions.ssh_copy_id(ip, path, auto, password)
       CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
     }
  

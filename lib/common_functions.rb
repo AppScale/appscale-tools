@@ -88,6 +88,10 @@ LOCAL_APPSCALE_FILE_DIR = File.expand_path("~/.appscale")
 REMOTE_APPSCALE_FILE_DIR = "/etc/appscale/"
 
 
+# Location of expect script that interacts with ssh-copy-id
+EXPECT_SCRIPT = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
+
+
 module CommonFunctions
 
 
@@ -1197,13 +1201,13 @@ module CommonFunctions
   end
 
 
-  def self.ssh_copy_id(ip, path, auto, expect_script, password)
+  def self.ssh_copy_id(ip, path, auto, password)
     Kernel.puts "\n\n"
     Kernel.puts "Executing ssh-copy-id for host : " + ip
     Kernel.puts "------------------------------"
 
     if auto
-      Kernel.puts CommonFunctions.shell("#{expect_script} root@#{ip} #{path} #{password}")
+      Kernel.puts CommonFunctions.shell("#{EXPECT_SCRIPT} root@#{ip} #{path} #{password}")
     else
       Kernel.puts CommonFunctions.shell("ssh-copy-id -i #{path} root@#{ip}")
     end
