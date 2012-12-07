@@ -131,10 +131,10 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(AppControllerClient).new_instances { |i|
       i.should_receive(:start_roles_on_nodes).
         with({'appengine' => ['node-1', 'node-2']}).
-        and_return({'success' => true, 'reason' => ''})
+        and_return("OK")
     }
 
-    expected = {'success' => true, 'reason' => ''}
+    expected = "OK"
     actual = AppScaleTools.add_instances({
       "ips" => yaml_file,
       "keyname" => "blarg"

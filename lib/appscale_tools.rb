@@ -31,7 +31,7 @@ module AppScaleTools
 
 
   ADD_KEYPAIR_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", 
-    "auto"]
+    "auto", "add_to_existing"]
 
 
   ADD_KEYPAIR_USAGE = UsageText.get_usage("appscale-add-keypair", 
@@ -171,7 +171,7 @@ module AppScaleTools
 
 
   def self.add_keypair(options)
-    keyname = options['keyname']
+    keyname = options['keyname'] || "appscale"
     ips_yaml = options['ips']
     auto = options['auto']
 
@@ -190,7 +190,13 @@ module AppScaleTools
     CommonFunctions.make_appscale_directory()
 
     path = File.expand_path("~/.appscale/#{keyname}")
-    pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+
+    if options['add_to_existing']
+      pub_key = File.expand_path("~/.appscale/#{keyname}.key")
+      backup_key = File.expand_path("~/.appscale/#{keyname}.pub")
+    else
+      pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+    end
 
     if auto
       if options["root_password"].nil?
@@ -205,21 +211,26 @@ module AppScaleTools
       expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
     end
 
-    ips = node_layout.nodes.collect { |node| node.id }
-    copy_success = true
+    if node_layout.valid?
+      ips = node_layout.nodes.collect { |node| node.id }
+    else
+      ips = []
+      ips_yaml.each { |role, ip|
+        ips << ip
+      }
+      ips.flatten!.uniq!
+    end
 
     ips.each { |ip|
       CommonFunctions.ssh_copy_id(ip, path, auto, expect_script, password)
+      CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
     }
-
-    head_node_ip = node_layout.head_node.id
-    CommonFunctions.scp_ssh_key_to_ip(head_node_ip, path, pub_key)
  
     FileUtils.cp(path, backup_key)
-    puts "A new ssh key has been generated for you and placed at" +
+    Kernel.puts "A new ssh key has been generated for you and placed at" +
       " #{path}. You can now use this key to log into any of the " +
-      "machines you specified without providing a password via the" +
-      " following command:\n\tssh root@#{head_node_ip} -i #{path}"
+      "machines you specified without providing a password."
+    return {'success' => true}
   end
 
   
