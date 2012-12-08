@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# Programmer: Chris Bunch
+
+$VERBOSE = nil # to supress excessive SSL cert warnings
+
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'appscale_tools'
+
+
+if __FILE__ == $0
+  options = ParseArgs.get_vals_from_args(ARGV, 
+    AppScaleTools::ADD_INSTANCES_FLAGS, AppScaleTools::ADD_INSTANCES_USAGE)
+  AppScaleTools.add_instances(options)
+end

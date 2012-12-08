@@ -30,6 +30,13 @@ require 'vm_tools'
 module AppScaleTools
 
 
+  ADD_INSTANCES_FLAGS = ["ips", "keyname"]
+
+
+  ADD_INSTANCES_USAGE = UsageText.get_usage("appscale-add-instances",
+    ADD_INSTANCES_FLAGS)
+
+
   ADD_KEYPAIR_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", 
     "auto", "add_to_existing"]
 
@@ -236,24 +243,9 @@ module AppScaleTools
   # add additional nodes. The nodes must be specified via a YAML file
   # (of the same format used in run-instances).
   def self.add_instances(options)
-    ips = options['ips']
-    if ips.nil? or ips.empty?
+    ips_yaml = options['ips']
+    if ips_yaml.nil? or ips_yaml.empty?
       raise BadConfigurationException.new(NO_IPS_GIVEN)
-    end
-
-    ips_location = File.expand_path(ips)
-    if !File.exists?(ips_location)
-      raise BadConfigurationException.new("We could not find the YAML " +
-        "file specified at #{ips_location}")
-    end
-
-    begin
-      ips_yaml = YAML.load_file(ips_location)
-      if !ips_yaml
-        raise BadConfigurationException.new(MALFORMED_YAML)
-      end
-    rescue ArgumentError
-      raise BadConfigurationException.new(MALFORMED_YAML)
     end
 
     if ips_yaml.keys.include?(:master)

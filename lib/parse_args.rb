@@ -85,6 +85,12 @@ module ParseArgs
 
     self.get_min_and_max_images_and_ips(arg_hash, val_hash)
 
+    if arg_hash['add_to_existing']
+      val_hash['add_to_existing'] = true
+    else
+      val_hash['add_to_existing'] = false
+    end
+
     if arg_hash['file']
       true_location = File.expand_path(arg_hash['file'])
       if !File.exists?(true_location)

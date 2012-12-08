@@ -24,7 +24,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(File).should_receive(:exists?).with(nonexistent_file).
       and_return(false)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_instances({'ips' => nonexistent_file})
+      AppScaleTools.add_instances({'ips' => nil})
     }
 
     # Also consider if the YAML file given is just an empty file
@@ -34,17 +34,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(YAML).should_receive(:load_file).with(empty_file).
       and_return(false)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_instances({'ips' => empty_file})
-    }
-
-    # Now, consider the case where it exists, but isn't YAML
-    not_yaml_file = '/boo/barfile'
-    flexmock(File).should_receive(:exists?).with(not_yaml_file).
-      and_return(true)
-    flexmock(YAML).should_receive(:load_file).with(not_yaml_file).
-      and_raise(ArgumentError)
-    assert_raises(BadConfigurationException) {
-      AppScaleTools.add_instances({'ips' => not_yaml_file})
+      AppScaleTools.add_instances({'ips' => ''})
     }
   end
 
@@ -59,7 +49,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
     flexmock(YAML).should_receive(:load_file).with(yaml_file).
       and_return(yaml_contents)
     assert_raises(BadConfigurationException) {
-      AppScaleTools.add_instances({'ips' => yaml_file})
+      AppScaleTools.add_instances({'ips' => yaml_contents})
     }
   end
 
@@ -90,7 +80,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
 
     assert_raises(AppScaleException) {
       AppScaleTools.add_instances({
-        "ips" => yaml_file,
+        "ips" => yaml_contents,
         "keyname" => "blarg"
       })
     }
@@ -136,7 +126,7 @@ class TestAppScaleAddNodes < Test::Unit::TestCase
 
     expected = "OK"
     actual = AppScaleTools.add_instances({
-      "ips" => yaml_file,
+      "ips" => yaml_contents,
       "keyname" => "blarg"
     })
     assert_equal(expected, actual)
