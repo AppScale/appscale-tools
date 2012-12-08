@@ -192,8 +192,8 @@ module AppScaleTools
     path = File.expand_path("~/.appscale/#{keyname}")
 
     if options['add_to_existing']
-      pub_key = File.expand_path("~/.appscale/#{keyname}.key")
-      backup_key = File.expand_path("~/.appscale/#{keyname}.pub")
+      pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
+      backup_key = File.expand_path("~/.appscale/#{keyname}.key")
     else
       pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
     end

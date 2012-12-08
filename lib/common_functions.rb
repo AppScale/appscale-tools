@@ -143,16 +143,16 @@ module CommonFunctions
         "AppScale data.")
     end
 
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
-    #self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
+    #self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
   end
 
 
@@ -1191,7 +1191,7 @@ module CommonFunctions
     backup_key = File.expand_path("~/.appscale/#{keyname}.key")
     pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
 
-    #FileUtils.rm_f([path, backup_key, pub_key])
+    FileUtils.rm_f([path, backup_key, pub_key])
     unless File.exists?(path) and File.exists?(pub_key)
       FileUtils.rm_f([path, backup_key, pub_key])
       Kernel.puts CommonFunctions.shell("ssh-keygen -t rsa -N '' -f #{path}")
