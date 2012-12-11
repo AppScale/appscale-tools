@@ -15,6 +15,12 @@ class TestAppScaleConfig < Test::Unit::TestCase
 
 
   def test_get_directive
+    # calling any of the acceptable directives should be fine, and
+    # should return the correct directive
+    AppScale::DIRECTIVES.each { |directive|
+      self.assert_equal(directive, AppScale.get_directive([directive]))
+    }
+
     # calling any non-acceptable directive should throw an exception
     self.assert_raises(AppScaleException) {
       AppScale.get_directive(["boo"])
