@@ -62,7 +62,7 @@ JAVA_CONFIG = "war/WEB-INF/appengine-web.xml"
 # When we try to ssh to other machines, we don't want to be asked for a password
 # (since we always should have the right SSH key present), and we don't want to
 # be asked to confirm the host's fingerprint, so set the options for that here.
-SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
+SSH_OPTIONS = "-o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
@@ -582,7 +582,7 @@ module CommonFunctions
   def self.find_real_ssh_key(ssh_keys, host)
     ssh_keys.each { |key|
       key = File.expand_path(key)
-      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp
+      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp[-1].chr
       if return_value == "0"
         return key
       end
