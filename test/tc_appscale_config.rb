@@ -11,6 +11,15 @@ class TestAppScaleConfig < Test::Unit::TestCase
 
   end
 
+
+  def test_get_directive
+    # calling any non-acceptable directive should throw an exception
+    self.assert_raises(AppScaleException) {
+      AppScale.get_directive(["boo"])
+    }
+  end
+
+
   def test_appscale_init
     # calling 'appscale init' in a directory should write an
     # AppScaleFile in that directory with a template file in it
