@@ -30,48 +30,48 @@ class TestAppScaleConfig < Test::Unit::TestCase
 
   def test_appscale_init
     # calling 'appscale init' in a directory should write an
-    # AppScaleFile in that directory with a template file in it
+    # AppScalefile in that directory with a template file in it
   end
 
 
   def test_appscale_up_with_no_appscale_file
-    # calling 'appscale up' in a directory with no AppScaleFile
+    # calling 'appscale up' in a directory with no AppScalefile
     # in it should throw up and die
   end
 
 
   def test_appscale_up_with_xen_appscale_file
-    # calling 'appscale up' in a directory with an AppScaleFile
+    # calling 'appscale up' in a directory with an AppScalefile
     # in it should call add_keypair, then run_instances
   end
 
 
   def test_appscale_up_with_cloud_appscale_file
-    # calling 'appscale up' in a directory with an AppScaleFile
+    # calling 'appscale up' in a directory with an AppScalefile
     # in it should call run_instances
   end
 
 
   def test_appscale_deploy_no_appscale_file
     # calling 'appscale deploy <app>' in a directory with no
-    # AppScaleFile should throw up and die
+    # AppScalefile should throw up and die
   end
 
 
   def test_appscale_deploy_with_appscale_file
     # calling 'appscale deploy <app>' in a directory with an
-    # AppScaleFile should call upload_app
+    # AppScalefile should call upload_app
   end
 
 
   def test_appscale_destroy_no_appscale_file
-    # calling 'appscale destroy' in a directory with no AppScaleFile
+    # calling 'appscale destroy' in a directory with no AppScalefile
     # should throw up and die
   end
 
 
   def test_appscale_destroy_with_appscale_file
-    # calling 'appscale destroy' in a directory with an AppScaleFile
+    # calling 'appscale destroy' in a directory with an AppScalefile
     # should call terminate_instances
   end
 
