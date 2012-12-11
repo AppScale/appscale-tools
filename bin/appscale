@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+# Programmer: Chris Bunch
+
+$VERBOSE = nil # to supress excessive SSL cert warnings
+
+
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'appscale'
+
+
+if __FILE__ == $0
+  case AppScale.get_directive(ARGV)
+  when "init"
+    AppScale.initialize()
+  when "up"
+    AppScale.up()
+  when "deploy"
+    AppScale.deploy(ARGV)
+  when "destroy"
+    AppScale.destroy()
+  end
+end
