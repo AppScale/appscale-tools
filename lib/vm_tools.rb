@@ -283,6 +283,8 @@ module VMTools
         Kernel.puts("Need to retry with addressing private. Will try " +
           "again in a moment.")
         command_to_run << " --addressing private"
+      elsif run_instances =~ /(PROBLEM)|(RunInstancesType: Failed to allocate network tag)/
+        raise InfrastructureException.new("No network tags are currently free in your Eucalyptus deployment. Please delete some security groups and try again.")
       elsif run_instances =~ /(PROBLEM)|(RunInstancesType: Failed)/
         raise InfrastructureException.new("Saw the following error " +
           "message from iaas tools. Please resolve the issue and try " +
