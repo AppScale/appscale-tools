@@ -1379,12 +1379,12 @@ module CommonFunctions
       cloud_num = 1
 
       loop {
-        cloud_type = ENV["CLOUD#{cloud_num}_TYPE"]
+        cloud_type = ENV["CLOUD_TYPE"]
         break if cloud_type.nil?
 
         Kernel.puts "Copying over credentials for cloud #{cloud_num}"
-        cert = ENV["CLOUD#{cloud_num}_EC2_CERT"]
-        private_key = ENV["CLOUD#{cloud_num}_EC2_PRIVATE_KEY"]
+        cert = ENV["CLOUD_EC2_CERT"]
+        private_key = ENV["CLOUD_EC2_PRIVATE_KEY"]
         CommonFunctions.copy_cloud_keys(cloud_num, ip, ssh_key,
           options['verbose'], cert, private_key)
         cloud_num += 1
