@@ -59,8 +59,9 @@ end
 # responds to 'rake test'
 task :test do |test|
   sh "ruby test/ts_all.rb"
-  sh "python test/test_suite.py"
+  sh "PYTHONPATH='lib' python test/test_suite.py"
 end
+
 
 # 'rake' should run all tests
 task :default => [:test]
