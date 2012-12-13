@@ -78,3 +78,41 @@ class TestAppScale(unittest.TestCase):
     os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(True).once()
 
     self.assertRaises(AppScalefileException, appscale.init)
+
+
+  def testUpWithNoAppScalefile(self):
+    # calling 'appscale up' if there is no AppScalefile present
+    # should throw up and die
+    pass
+
+
+  def testUpWithInvalidEC2AppScalefile(self):
+    # calling 'appscale up' if there is an AppScalefile present
+    # should validate the file. here, we assume the file is
+    # intended for use on EC2 and is invalid, so we should throw
+    # up and die
+    pass
+
+
+  def testUpWithValidEC2AppScalefile(self):
+    # calling 'appscale up' if there is an AppScalefile present
+    # should validate the file. here, we assume the file is
+    # intended for use on EC2 and is valid, so we should call
+    # appscale-run-instances with the given config params
+    pass
+
+
+  def testUpWithInvalidXenAppScalefile(self):
+    # calling 'appscale up' if there is an AppScalefile present
+    # should validate the file. here, we assume the file is
+    # intended for use on Xen and is invalid, so we should throw
+    # up and die
+    pass
+
+
+  def testUpWithValidXenAppScalefile(self):
+    # calling 'appscale up' if there is an AppScalefile present
+    # should validate the file. here, we assume the file is
+    # intended for use on Xen and is valid, so we should call
+    # appscale-run-instances with those params
+    pass
