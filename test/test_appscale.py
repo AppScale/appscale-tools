@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import os
 import unittest
 
 
@@ -12,6 +13,7 @@ from flexmock import flexmock
 
 # AppScale import, the library that we're testing here
 from appscale import AppScale
+from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
 
@@ -44,10 +46,20 @@ class TestAppScale(unittest.TestCase):
     self.assertRaises(UsageException, appscale.help)
 
 
-  def testInit(self):
+  def testInitWithNoAppScalefile(self):
     # calling 'appscale init' if there's no AppScalefile in the local
     # directory should write a new config file there
+    pass
 
+
+  def testInitWithAppScalefile(self):
     # calling 'appscale init' if there is an AppScalefile in the local
     # directory should throw up and die
-    pass
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    flexmock(os.path)
+    os.path.should_receive('exists').with_args('/boo/AppScalefile').and_return(True).once()
+
+    appscale = AppScale(["init"])
+    self.assertRaises(AppScalefileException, appscale.init)

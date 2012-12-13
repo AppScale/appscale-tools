@@ -2,7 +2,12 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+# First party Python libraries
+import os
+
+
 # Custom exceptions that can be thrown by Python AppScale code
+from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
 
@@ -16,6 +21,11 @@ class AppScale():
   # their AppScale deployments.
   ALLOWED_DIRECTIVES = ["init", "up", "status", "deploy", "destroy",
     "help"]
+
+
+  # The name of the configuration file that is used for storing
+  # AppScale deployment information.
+  APPSCALEFILE = "AppScalefile"
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -62,5 +72,17 @@ class AppScale():
 
   # Writes an AppScalefile in the local directory, that contains
   # common configuration parameters.
+  # Raises:
+  #   AppScalefileException: If there already is an AppScalefile in the
+  #     local directory.
   def init(self):
-    pass
+    # first, make sure there isn't already an AppScalefile in this
+    # directory
+    cwd = os.getcwd()
+    appscalefile_location = cwd + os.sep + self.APPSCALEFILE
+    if os.path.exists(appscalefile_location):
+       raise AppScalefileException("There is already an AppScalefile" +
+         " in this directory. Please remove it and run 'appscale init'" +
+         " again to generate a new AppScalefile.")
+
+    # next, write the template AppScalefile there
