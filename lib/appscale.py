@@ -6,6 +6,8 @@
 from custom_exceptions import BadConfigurationException
 
 
+# AppScale provides a configuration-file-based alternative to the
+# command-line interface that the AppScale Tools require.
 class AppScale():
 
 
