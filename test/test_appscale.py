@@ -30,27 +30,16 @@ class TestAppScale(unittest.TestCase):
     pass
 
 
-  def testGetDirective(self):
-    # calling get_directive with a supported directive should be fine
-    AppScale(["help"])
-
-    # calling it with an unsupported directive should not be fine
-    self.assertRaises(BadConfigurationException, AppScale, ["boo"])
-
-    # calling it with no directive should not be fine
-    self.assertRaises(BadConfigurationException, AppScale, [])
-
-
   def testReportHelp(self):
     # calling 'appscale help' should report usage information
-    appscale = AppScale(["help"])
+    appscale = AppScale()
     self.assertRaises(UsageException, appscale.help)
 
 
   def testInitWithNoAppScalefile(self):
     # calling 'appscale init' if there's no AppScalefile in the local
     # directory should write a new config file there
-    appscale = AppScale(["init"])
+    appscale = AppScale()
 
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
@@ -69,7 +58,7 @@ class TestAppScale(unittest.TestCase):
   def testInitWithAppScalefile(self):
     # calling 'appscale init' if there is an AppScalefile in the local
     # directory should throw up and die
-    appscale = AppScale(["init"])
+    appscale = AppScale()
 
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
@@ -83,7 +72,7 @@ class TestAppScale(unittest.TestCase):
   def testUpWithNoAppScalefile(self):
     # calling 'appscale up' if there is no AppScalefile present
     # should throw up and die
-    appscale = AppScale(["up"])
+    appscale = AppScale()
 
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
@@ -93,7 +82,6 @@ class TestAppScale(unittest.TestCase):
     appscale.APPSCALEFILE).and_return(False).once()
 
     self.assertRaises(AppScalefileException, appscale.up)
-
 
 
   def testUpWithInvalidEC2AppScalefile(self):

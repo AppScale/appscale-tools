@@ -18,12 +18,6 @@ from custom_exceptions import UsageException
 class AppScale():
 
 
-  # A list of the directives that users can specify to interact with
-  # their AppScale deployments.
-  ALLOWED_DIRECTIVES = ["init", "up", "status", "deploy", "destroy",
-    "help"]
-
-
   # The name of the configuration file that is used for storing
   # AppScale deployment information.
   APPSCALEFILE = "AppScalefile"
@@ -46,29 +40,8 @@ class AppScale():
 """
 
 
-  def __init__(self, args):
-    self.directive = self.get_directive(args)
-
-
-  # Parses the arguments given to determine what command should be
-  # executed.
-  # Args:
-  #   args: A list of strs that correspond to the arguments passed to
-  #     the 'appscale' command.
-  # Returns:
-  #   A str corresponding to the directive that should be executed.
-  # Raises:
-  #   BadConfigurationException: If no directive was given, or if an
-  #     invalid directive was given.
-  def get_directive(self, args):
-    if not args:
-      raise BadConfigurationException
-
-    directive = args[0]
-    if directive in self.ALLOWED_DIRECTIVES:
-      return directive
-    else:
-      raise BadConfigurationException(self.USAGE)
+  def __init__(self):
+    pass
 
 
   # Constructs a string that corresponds to the location of the
