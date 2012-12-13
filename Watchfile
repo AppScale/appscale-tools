@@ -1,0 +1,3 @@
+watch('(.*).(rb|py)') { |md| 
+  system "rake test"
+}
