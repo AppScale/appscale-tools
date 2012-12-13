@@ -13,6 +13,7 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 from appscale import AppScale
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import UsageException
 
 
 class TestAppScale(unittest.TestCase):
@@ -40,4 +41,4 @@ class TestAppScale(unittest.TestCase):
   def testReportHelp(self):
     # calling 'appscale help' should report usage information
     appscale = AppScale(["help"])
-    self.assertRaises(Exception, appscale.help)
+    self.assertRaises(UsageException, appscale.help)

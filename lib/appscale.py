@@ -4,6 +4,7 @@
 
 # Custom exceptions that can be thrown by Python AppScale code
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import UsageException
 
 
 # AppScale provides a configuration-file-based alternative to the
@@ -17,6 +18,8 @@ class AppScale():
     "help"]
 
 
+  # The usage that should be displayed to users if they call 'appscale'
+  # with a bad directive or ask for help.
   USAGE = """
   init: Writes a new configuration file for starting AppScale.
   up: Starts a new AppScale instance.
@@ -49,9 +52,9 @@ class AppScale():
     if directive in self.ALLOWED_DIRECTIVES:
       return directive
     else:
-      raise BadConfigurationException()
+      raise BadConfigurationException(self.USAGE)
 
 
   # Aborts and prints out the directives allowed for this module.
   def help(self):
-    raise Exception(self.USAGE)
+    raise UsageException(self.USAGE)
