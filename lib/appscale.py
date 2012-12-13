@@ -93,3 +93,11 @@ class AppScale():
 
     # next, copy the template AppScalefile there
     shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
+
+
+  def up(self):
+    appscalefile_location = os.getcwd() + os.sep + self.APPSCALEFILE
+    if not os.path.exists(appscalefile_location):
+      raise AppScalefileException("No AppScalefile found in this " +
+        "directory. Please run 'appscale init' to generate one and try " +
+        "again.")

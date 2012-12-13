@@ -83,7 +83,17 @@ class TestAppScale(unittest.TestCase):
   def testUpWithNoAppScalefile(self):
     # calling 'appscale up' if there is no AppScalefile present
     # should throw up and die
-    pass
+    appscale = AppScale(["up"])
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    flexmock(os.path)
+    os.path.should_receive('exists').with_args('/boo/' +
+    appscale.APPSCALEFILE).and_return(False).once()
+
+    self.assertRaises(AppScalefileException, appscale.up)
+
 
 
   def testUpWithInvalidEC2AppScalefile(self):
