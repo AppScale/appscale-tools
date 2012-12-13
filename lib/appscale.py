@@ -95,6 +95,11 @@ class AppScale():
     shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
 
 
+  # Starts an AppScale deployment with the configuration options from
+  # the AppScalefile in the current directory.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     directory.
   def up(self):
     appscalefile_location = os.getcwd() + os.sep + self.APPSCALEFILE
     if not os.path.exists(appscalefile_location):
