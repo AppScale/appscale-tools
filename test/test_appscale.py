@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import os
+import shutil
 import unittest
 
 
@@ -49,17 +50,31 @@ class TestAppScale(unittest.TestCase):
   def testInitWithNoAppScalefile(self):
     # calling 'appscale init' if there's no AppScalefile in the local
     # directory should write a new config file there
-    pass
+    appscale = AppScale(["init"])
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    flexmock(os.path)
+    os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(False).once()
+
+    # mock out the actual writing of the template file
+    flexmock(shutil)
+    shutil.should_receive('copy').with_args(appscale.TEMPLATE_APPSCALEFILE,
+    '/boo/' + appscale.APPSCALEFILE).and_return().once()
+
+    appscale.init()
 
 
   def testInitWithAppScalefile(self):
     # calling 'appscale init' if there is an AppScalefile in the local
     # directory should throw up and die
+    appscale = AppScale(["init"])
+
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
 
     flexmock(os.path)
-    os.path.should_receive('exists').with_args('/boo/AppScalefile').and_return(True).once()
+    os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(True).once()
 
-    appscale = AppScale(["init"])
     self.assertRaises(AppScalefileException, appscale.init)

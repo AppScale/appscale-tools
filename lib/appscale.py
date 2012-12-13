@@ -4,6 +4,7 @@
 
 # First party Python libraries
 import os
+import shutil
 
 
 # Custom exceptions that can be thrown by Python AppScale code
@@ -26,6 +27,11 @@ class AppScale():
   # The name of the configuration file that is used for storing
   # AppScale deployment information.
   APPSCALEFILE = "AppScalefile"
+
+
+  # The location of the template AppScalefile that should be used when
+  # users execute 'appscale init'.
+  TEMPLATE_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile"
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -85,4 +91,5 @@ class AppScale():
          " in this directory. Please remove it and run 'appscale init'" +
          " again to generate a new AppScalefile.")
 
-    # next, write the template AppScalefile there
+    # next, copy the template AppScalefile there
+    shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
