@@ -9,6 +9,12 @@ from custom_exceptions import BadConfigurationException
 class AppScale():
 
 
+  # A list of the directives that users can specify to interact with
+  # their AppScale deployments.
+  ALLOWED_DIRECTIVES = ["init", "up", "status", "deploy", "destroy",
+    "help"]
+
+
   def __init__(self, args):
     self.directive = self.get_directive(args)
 
@@ -26,3 +32,9 @@ class AppScale():
   def get_directive(self, args):
     if not args:
       raise BadConfigurationException
+
+    directive = args[0]
+    if directive in self.ALLOWED_DIRECTIVES:
+      return directive
+    else:
+      raise BadConfigurationException()
