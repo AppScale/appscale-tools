@@ -6,8 +6,13 @@
 import unittest
 
 
+# Third party testing libraries
+from flexmock import flexmock
+
+
 # AppScale import, the library that we're testing here
-import appscale
+from appscale import AppScale
+from custom_exceptions import BadConfigurationException
 
 
 class TestAppScale(unittest.TestCase):
@@ -21,5 +26,10 @@ class TestAppScale(unittest.TestCase):
     pass
 
 
-  def testDoNothingForNow(self):
-    pass
+  def testGetDirective(self):
+    # calling get_directive with a supported directive should be fine
+
+    # calling it with an unsupported directive should not be fine
+
+    # calling it with no directive should not be fine
+    self.assertRaises(BadConfigurationException, AppScale, [])
