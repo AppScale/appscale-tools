@@ -6,6 +6,7 @@
 import json
 import os
 import shutil
+import subprocess
 import sys
 import unittest
 
@@ -117,6 +118,10 @@ class TestAppScale(unittest.TestCase):
       .with_args('/boo/' + appscale.APPSCALEFILE)
       .and_return(flexmock(read=lambda: json_dumped_contents)))
 
+    # finally, mock out the actual appscale-run-instances call
+    # TODO(cgb): find a better way to do this
+    flexmock(subprocess)
+    subprocess.should_receive('call').and_return().once()
     appscale.up()
 
 

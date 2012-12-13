@@ -6,6 +6,7 @@
 import json
 import os
 import shutil
+import subprocess
 
 
 # Custom exceptions that can be thrown by Python AppScale code
@@ -94,8 +95,15 @@ class AppScale():
         "again.")
 
     # Construct a run-instances command from the file's contents
+    command = ["appscale-run-instances"]
     contents_as_json = json.loads(contents)
+    for key, value in contents_as_json.items():
+      if value is True:
+        command.append(str("--%s" % key))
+      else:
+        command.append(str("--%s" % key))
+        command.append(str("%s" % value))
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-run-instances will do that for us.
-    pass
+    subprocess.call(command)
