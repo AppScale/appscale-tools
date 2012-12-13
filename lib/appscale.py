@@ -71,6 +71,14 @@ class AppScale():
       raise BadConfigurationException(self.USAGE)
 
 
+  # Constructs a string that corresponds to the location of the
+  # AppScalefile for this deployment.
+  # Returns:
+  #   The location where the user's AppScalefile can be found.
+  def get_appscalefile_location(self):
+    return os.getcwd() + os.sep + self.APPSCALEFILE
+
+
   # Aborts and prints out the directives allowed for this module.
   def help(self):
     raise UsageException(self.USAGE)
@@ -84,8 +92,7 @@ class AppScale():
   def init(self):
     # first, make sure there isn't already an AppScalefile in this
     # directory
-    cwd = os.getcwd()
-    appscalefile_location = cwd + os.sep + self.APPSCALEFILE
+    appscalefile_location = self.get_appscalefile_location()
     if os.path.exists(appscalefile_location):
        raise AppScalefileException("There is already an AppScalefile" +
          " in this directory. Please remove it and run 'appscale init'" +
@@ -101,7 +108,7 @@ class AppScale():
   #   AppScalefileException: If there is no AppScalefile in the current
   #     directory.
   def up(self):
-    appscalefile_location = os.getcwd() + os.sep + self.APPSCALEFILE
+    appscalefile_location = self.get_appscalefile_location()
     if not os.path.exists(appscalefile_location):
       raise AppScalefileException("No AppScalefile found in this " +
         "directory. Please run 'appscale init' to generate one and try " +
