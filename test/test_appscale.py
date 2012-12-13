@@ -35,3 +35,9 @@ class TestAppScale(unittest.TestCase):
 
     # calling it with no directive should not be fine
     self.assertRaises(BadConfigurationException, AppScale, [])
+
+
+  def testReportHelp(self):
+    # calling 'appscale help' should report usage information
+    appscale = AppScale(["help"])
+    self.assertRaises(Exception, appscale.help)

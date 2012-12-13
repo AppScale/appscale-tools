@@ -17,6 +17,16 @@ class AppScale():
     "help"]
 
 
+  USAGE = """
+  init: Writes a new configuration file for starting AppScale.
+  up: Starts a new AppScale instance.
+  status: Reports on the state of a currently running AppScale deployment.
+  deploy: Deploys a Google App Engine app to AppScale.
+  destroy: Terminates the currently running AppScale deployment.
+  help: Displays this message.
+"""
+
+
   def __init__(self, args):
     self.directive = self.get_directive(args)
 
@@ -40,3 +50,8 @@ class AppScale():
       return directive
     else:
       raise BadConfigurationException()
+
+
+  # Aborts and prints out the directives allowed for this module.
+  def help(self):
+    raise Exception(self.USAGE)
