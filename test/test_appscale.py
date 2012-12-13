@@ -28,6 +28,7 @@ class TestAppScale(unittest.TestCase):
 
   def testGetDirective(self):
     # calling get_directive with a supported directive should be fine
+    AppScale(["help"])
 
     # calling it with an unsupported directive should not be fine
     self.assertRaises(BadConfigurationException, AppScale, ["boo"])
