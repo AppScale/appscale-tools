@@ -42,3 +42,12 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale help' should report usage information
     appscale = AppScale(["help"])
     self.assertRaises(UsageException, appscale.help)
+
+
+  def testInit(self):
+    # calling 'appscale init' if there's no AppScalefile in the local
+    # directory should write a new config file there
+
+    # calling 'appscale init' if there is an AppScalefile in the local
+    # directory should throw up and die
+    pass

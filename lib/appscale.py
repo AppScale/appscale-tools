@@ -58,3 +58,9 @@ class AppScale():
   # Aborts and prints out the directives allowed for this module.
   def help(self):
     raise UsageException(self.USAGE)
+
+
+  # Writes an AppScalefile in the local directory, that contains
+  # common configuration parameters.
+  def init(self):
+    pass
