@@ -3,6 +3,7 @@
 
 
 # First party Python libraries
+import json
 import os
 import shutil
 
@@ -81,8 +82,20 @@ class AppScale():
   #   AppScalefileException: If there is no AppScalefile in the current
   #     directory.
   def up(self):
-    appscalefile_location = self.get_appscalefile_location()
-    if not os.path.exists(appscalefile_location):
+    # Don't check for existence and then open it later - this lack of
+    # atomicity is potentially a TOCTOU vulnerability.
+    contents = ""
+    try:
+      with open(self.get_appscalefile_location()) as f:
+        contents = f.read()
+    except IOError as e:
       raise AppScalefileException("No AppScalefile found in this " +
         "directory. Please run 'appscale init' to generate one and try " +
         "again.")
+
+    # Construct a run-instances command from the file's contents
+    contents_as_json = json.loads(contents)
+
+    # Finally, exec the command. Don't worry about validating it -
+    # appscale-run-instances will do that for us.
+    pass

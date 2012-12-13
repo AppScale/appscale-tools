@@ -3,8 +3,10 @@
 
 
 # General-purpose Python library imports
+import json
 import os
 import shutil
+import sys
 import unittest
 
 
@@ -77,27 +79,45 @@ class TestAppScale(unittest.TestCase):
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
 
-    flexmock(os.path)
-    os.path.should_receive('exists').with_args('/boo/' +
-    appscale.APPSCALEFILE).and_return(False).once()
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_raise(IOError))
 
     self.assertRaises(AppScalefileException, appscale.up)
 
 
-  def testUpWithInvalidEC2AppScalefile(self):
+  def testUpWithEC2AppScalefile(self):
     # calling 'appscale up' if there is an AppScalefile present
-    # should validate the file. here, we assume the file is
-    # intended for use on EC2 and is invalid, so we should throw
-    # up and die
-    pass
+    # should call appscale-run-instances with the given config
+    # params. here, we assume that the file is intended for use
+    # on EC2
+    appscale = AppScale()
 
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
 
-  def testUpWithValidEC2AppScalefile(self):
-    # calling 'appscale up' if there is an AppScalefile present
-    # should validate the file. here, we assume the file is
-    # intended for use on EC2 and is valid, so we should call
-    # appscale-run-instances with the given config params
-    pass
+    # Mock out the actual file reading itself, and slip in a JSON-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    json_dumped_contents = json.dumps(contents)
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_return(flexmock(read=lambda: json_dumped_contents)))
+
+    appscale.up()
 
 
   def testUpWithInvalidXenAppScalefile(self):
