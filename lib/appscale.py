@@ -38,6 +38,10 @@ class AppScale():
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """
+
+Usage: appscale command [<args>]
+
+Available commands:
   init: Writes a new configuration file for starting AppScale.
   up: Starts a new AppScale instance.
   status: Reports on the state of a currently running AppScale deployment.
