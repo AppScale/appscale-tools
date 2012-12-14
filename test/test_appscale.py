@@ -170,7 +170,6 @@ class TestAppScale(unittest.TestCase):
       .and_return(flexmock(read=lambda: yaml_dumped_contents)))
 
     # finally, mock out the actual appscale-run-instances call
-    # TODO(cgb): find a better way to do this
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(["appscale-describe-instances", "--keyname", "bookey"]).and_return().once()
     appscale.status()
@@ -223,7 +222,6 @@ class TestAppScale(unittest.TestCase):
       .and_return(flexmock(read=lambda: yaml_dumped_contents)))
 
     # finally, mock out the actual appscale-run-instances call
-    # TODO(cgb): find a better way to do this
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(["appscale-upload-app", "--keyname", "bookey", "--file", "/bar/app"]).and_return().once()
     app = '/bar/app'
