@@ -63,6 +63,25 @@ Available commands:
     return os.getcwd() + os.sep + self.APPSCALEFILE
 
 
+  # Checks the local directory for an AppScalefile and reads its
+  # contents.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the
+  #     local directory.
+  # Returns:
+  #   The contents of the AppScalefile in the current working directory.
+  def read_appscalefile(self):
+    # Don't check for existence and then open it later - this lack of
+    # atomicity is potentially a TOCTOU vulnerability.
+    try:
+      with open(self.get_appscalefile_location()) as f:
+        return f.read()
+    except IOError as e:
+      raise AppScalefileException("No AppScalefile found in this " +
+        "directory. Please run 'appscale init' to generate one and try " +
+        "again.")
+
+
   # Aborts and prints out the directives allowed for this module.
   def help(self):
     raise UsageException(self.USAGE)
@@ -107,16 +126,7 @@ Available commands:
   #   AppScalefileException: If there is no AppScalefile in the current
   #     directory.
   def up(self):
-    # Don't check for existence and then open it later - this lack of
-    # atomicity is potentially a TOCTOU vulnerability.
-    contents = ""
-    try:
-      with open(self.get_appscalefile_location()) as f:
-        contents = f.read()
-    except IOError as e:
-      raise AppScalefileException("No AppScalefile found in this " +
-        "directory. Please run 'appscale init' to generate one and try " +
-        "again.")
+    contents = self.read_appscalefile()
 
     # Construct a run-instances command from the file's contents
     command = ["appscale-run-instances"]
@@ -131,3 +141,13 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-run-instances will do that for us.
     subprocess.call(command)
+
+
+  # 'status' is a more accessible way to query the state of the
+  # AppScale deployment than 'appscale-describe-instances', and calls
+  # it with the parameters in the user's AppScalefile.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     directory.
+  def status(self):
+    self.read_appscalefile()
