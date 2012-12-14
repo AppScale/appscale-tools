@@ -190,3 +190,25 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     subprocess.call(command)
+
+
+  # 'destroy' provides a nicer experience for users than the
+  # appscale-terminate-instances command, by using the configuration
+  # options present in the AppScalefile found in the current working
+  # directory.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     working directory.
+  def destroy(self):
+    contents = self.read_appscalefile()
+
+    # Construct an upload-app command from the file's contents
+    command = ["appscale-terminate-instances"]
+    contents_as_yaml = yaml.safe_load(contents)
+    if contents_as_yaml['keyname']:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    # Finally, exec the command. Don't worry about validating it -
+    # appscale-terminate-app will do that for us.
+    subprocess.call(command)

@@ -30,6 +30,6 @@ elif command == "deploy":
   # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
   appscale.deploy(sys.argv[2])
 elif command == "destroy":
-  pass
+  appscale.destroy()
 else:
   appscale.help()
