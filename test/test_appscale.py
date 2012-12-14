@@ -145,4 +145,32 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale status' with an AppScalefile in the local
     # directory should collect any parameters needed for the
     # 'appscale-describe-instances' command and then exec it
-    pass
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+
+    # finally, mock out the actual appscale-run-instances call
+    # TODO(cgb): find a better way to do this
+    flexmock(subprocess)
+    subprocess.should_receive('call').and_return().once()
+    appscale.status()
