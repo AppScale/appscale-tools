@@ -1,0 +1,33 @@
+---
+# The underlying cloud infrastructure to deploy AppScale over.
+# Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
+# or leave it unset if using a virtualized cluster (e.g., Xen, KVM,
+# or VirtualBox)
+:infrastructure : 'ec2'
+
+# The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
+# installed on it. Leave this unset if using a virtualized cluster.
+:machine : 'ami-ABCDEFG'
+
+# The AWS keyname that should be used for all machines in this AppScale
+# deployment. This should refer to a keyname that does not already exist
+# in your AWS account. Leave this unset if using a virtualized cluster.
+:keyname : 'bookey'
+
+# The AWS security group name that should be used for all machines in this
+# AppScale deployment. This should refer to a keyname that does not already
+# exist in your AWS account. Leave this unset if using a virtualized cluster.
+:group : 'boogroup'
+
+# Whether or not increased output should be presented to standard output.
+# We recommend setting this to True in all cases, as it produces much
+# more useful logging information.
+:verbose : True
+
+# The minimum number of machines that should be used for your AppScale
+# deployment. Leave this unset if using a virtualized cluster.
+:min : 1
+
+# The maximum number of machines that should be used for your AppScale
+# deployment. Leave this unset if using a virtualized cluster.
+:max : 1
