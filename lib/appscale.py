@@ -176,13 +176,15 @@ Available commands:
   def deploy(self, app):
     contents = self.read_appscalefile()
 
-    # Construct a run-instances command from the file's contents
+    # Construct an upload-app command from the file's contents
     command = ["appscale-upload-app"]
     contents_as_yaml = yaml.safe_load(contents)
     if contents_as_yaml['keyname']:
-      command.append(str("--keyname %s") % contents_as_yaml['keyname'])
+      command.append("--keyname")
+      command.append(str(contents_as_yaml['keyname']))
 
-    command.append(" --file %s" % app)
+    command.append("--file")
+    command.append(str(app))
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
