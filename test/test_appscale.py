@@ -122,19 +122,3 @@ class TestAppScale(unittest.TestCase):
     flexmock(subprocess)
     subprocess.should_receive('call').and_return().once()
     appscale.up()
-
-
-  def testUpWithInvalidXenAppScalefile(self):
-    # calling 'appscale up' if there is an AppScalefile present
-    # should validate the file. here, we assume the file is
-    # intended for use on Xen and is invalid, so we should throw
-    # up and die
-    pass
-
-
-  def testUpWithValidXenAppScalefile(self):
-    # calling 'appscale up' if there is an AppScalefile present
-    # should validate the file. here, we assume the file is
-    # intended for use on Xen and is valid, so we should call
-    # appscale-run-instances with those params
-    pass
