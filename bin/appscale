@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+
+# First-party Python libraries
+import os
+import sys
+
+
+# AppScale import, the library that we're wrapping this executable
+# around
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale import AppScale
+from custom_exceptions import UsageException
+
+
+print str(sys.argv)
+
+appscale = AppScale()
+if len(sys.argv) < 2:
+  raise UsageException(appscale.USAGE)
