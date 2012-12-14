@@ -3,12 +3,12 @@
 
 
 # General-purpose Python library imports
-import json
 import os
 import shutil
 import subprocess
 import sys
 import unittest
+import yaml
 
 
 # Third party testing libraries
@@ -99,7 +99,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(os)
     os.should_receive('getcwd').and_return('/boo').once()
 
-    # Mock out the actual file reading itself, and slip in a JSON-dumped
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
     contents = {
       'infrastructure' : 'ec2',
@@ -110,13 +110,13 @@ class TestAppScale(unittest.TestCase):
       'min' : 1,
       'max' : 1
     }
-    json_dumped_contents = json.dumps(contents)
+    yaml_dumped_contents = yaml.dump(contents)
 
     mock = flexmock(sys.modules['__builtin__'])
     mock.should_call('open')  # set the fall-through
     (mock.should_receive('open')
       .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: json_dumped_contents)))
+      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
 
     # finally, mock out the actual appscale-run-instances call
     # TODO(cgb): find a better way to do this

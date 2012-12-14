@@ -3,10 +3,10 @@
 
 
 # First party Python libraries
-import json
 import os
 import shutil
 import subprocess
+import yaml
 
 
 # Custom exceptions that can be thrown by Python AppScale code
@@ -96,8 +96,8 @@ class AppScale():
 
     # Construct a run-instances command from the file's contents
     command = ["appscale-run-instances"]
-    contents_as_json = json.loads(contents)
-    for key, value in contents_as_json.items():
+    contents_as_yaml = yaml.safe_load(contents)
+    for key, value in contents_as_yaml.items():
       if value is True:
         command.append(str("--%s" % key))
       else:
