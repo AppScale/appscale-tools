@@ -27,7 +27,7 @@ elif command == "up":
 elif command == "status":
   appscale.status()
 elif command == "deploy":
-  pass
+  appscale.deploy(sys.argv[2])
 elif command == "destroy":
   pass
 else:

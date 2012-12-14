@@ -174,3 +174,57 @@ class TestAppScale(unittest.TestCase):
     flexmock(subprocess)
     subprocess.should_receive('call').and_return().once()
     appscale.status()
+
+
+  def testDeployWithNoAppScalefile(self):
+    # calling 'appscale deploy' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_raise(IOError))
+
+    app = "/bar/app"
+    self.assertRaises(AppScalefileException, appscale.deploy, app)
+
+
+  def testDeployWithCloudAppScalefile(self):
+    # calling 'appscale deploy app' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-upload-app' command and then exec it
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+
+    # finally, mock out the actual appscale-run-instances call
+    # TODO(cgb): find a better way to do this
+    flexmock(subprocess)
+    subprocess.should_receive('call').and_return().once()
+    app = '/bar/app'
+    appscale.deploy(app)

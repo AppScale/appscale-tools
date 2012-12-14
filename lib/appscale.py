@@ -161,3 +161,29 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-describe-instances will do that for us.
     subprocess.call(command)
+
+
+  # 'deploy' is a more accessible way to tell an AppScale deployment to
+  # run a Google App Engine application than 'appscale-upload-app'. It
+  # calls that command with the configuration options found in the
+  # AppScalefile in the current working directory.
+  # Args:
+  #   app: The path (absolute or relative) to the Google App Engine
+  #     application that should be uploaded.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     working directory.
+  def deploy(self, app):
+    contents = self.read_appscalefile()
+
+    # Construct a run-instances command from the file's contents
+    command = ["appscale-upload-app"]
+    contents_as_yaml = yaml.safe_load(contents)
+    if contents_as_yaml['keyname']:
+      command.append(str("--keyname %s") % contents_as_yaml['keyname'])
+
+    command.append(" --file %s" % app)
+
+    # Finally, exec the command. Don't worry about validating it -
+    # appscale-upload-app will do that for us.
+    subprocess.call(command)
