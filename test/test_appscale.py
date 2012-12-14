@@ -172,7 +172,7 @@ class TestAppScale(unittest.TestCase):
     # finally, mock out the actual appscale-run-instances call
     # TODO(cgb): find a better way to do this
     flexmock(subprocess)
-    subprocess.should_receive('call').and_return().once()
+    subprocess.should_receive('call').with_args(["appscale-describe-instances", "--keyname", "bookey"]).and_return().once()
     appscale.status()
 
 

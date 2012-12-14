@@ -152,11 +152,12 @@ Available commands:
   def status(self):
     contents = self.read_appscalefile()
 
-    # Construct a run-instances command from the file's contents
+    # Construct a describe-instances command from the file's contents
     command = ["appscale-describe-instances"]
     contents_as_yaml = yaml.safe_load(contents)
     if contents_as_yaml['keyname']:
-      command.append(str("--keyname %s") % contents_as_yaml['keyname'])
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-describe-instances will do that for us.
