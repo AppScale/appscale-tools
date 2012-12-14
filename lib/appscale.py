@@ -26,8 +26,13 @@ class AppScale():
 
 
   # The location of the template AppScalefile that should be used when
-  # users execute 'appscale init'.
-  TEMPLATE_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile"
+  # users execute 'appscale init cloud'.
+  TEMPLATE_CLOUD_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile-cloud"
+
+
+  # The location of the template AppScalefile that should be used when
+  # users execute 'appscale init cluster'.
+  TEMPLATE_CLUSTER_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile-cluster"
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -61,10 +66,14 @@ class AppScale():
 
   # Writes an AppScalefile in the local directory, that contains
   # common configuration parameters.
+  # Args:
+  #   environment: A str that indicates whether the AppScalefile to
+  #     write should be tailed to a 'cloud' environment or a 'cluster'
+  #     environment.
   # Raises:
   #   AppScalefileException: If there already is an AppScalefile in the
   #     local directory.
-  def init(self):
+  def init(self, environment):
     # first, make sure there isn't already an AppScalefile in this
     # directory
     appscalefile_location = self.get_appscalefile_location()
@@ -73,8 +82,19 @@ class AppScale():
          " in this directory. Please remove it and run 'appscale init'" +
          " again to generate a new AppScalefile.")
 
-    # next, copy the template AppScalefile there
-    shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
+    # next, see if we're making a cloud template file or a cluster
+    # template file
+    if environment == 'cloud':
+      template_file = self.TEMPLATE_CLOUD_APPSCALEFILE
+    elif environment == 'cluster':
+      template_file = self.TEMPLATE_CLUSTER_APPSCALEFILE
+    else:
+      raise BadConfigurationException("The environment you specified " +
+        "was invalid. Valid environments are 'cloud' and " +
+        "'cluster'.")
+
+    # finally, copy the template AppScalefile there
+    shutil.copy(template_file, appscalefile_location)
 
 
   # Starts an AppScale deployment with the configuration options from

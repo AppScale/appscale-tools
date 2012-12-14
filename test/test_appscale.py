@@ -40,8 +40,8 @@ class TestAppScale(unittest.TestCase):
 
 
   def testInitWithNoAppScalefile(self):
-    # calling 'appscale init' if there's no AppScalefile in the local
-    # directory should write a new config file there
+    # calling 'appscale init cloud' if there's no AppScalefile in the local
+    # directory should write a new cloud config file there
     appscale = AppScale()
 
     flexmock(os)
@@ -52,14 +52,13 @@ class TestAppScale(unittest.TestCase):
 
     # mock out the actual writing of the template file
     flexmock(shutil)
-    shutil.should_receive('copy').with_args(appscale.TEMPLATE_APPSCALEFILE,
-    '/boo/' + appscale.APPSCALEFILE).and_return().once()
+    shutil.should_receive('copy').with_args(appscale.TEMPLATE_CLOUD_APPSCALEFILE, '/boo/' + appscale.APPSCALEFILE).and_return().once()
 
-    appscale.init()
+    appscale.init('cloud')
 
 
   def testInitWithAppScalefile(self):
-    # calling 'appscale init' if there is an AppScalefile in the local
+    # calling 'appscale init cloud' if there is an AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
 
@@ -69,7 +68,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(os.path)
     os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(True).once()
 
-    self.assertRaises(AppScalefileException, appscale.init)
+    self.assertRaises(AppScalefileException, appscale.init, 'cloud')
 
 
   def testUpWithNoAppScalefile(self):
