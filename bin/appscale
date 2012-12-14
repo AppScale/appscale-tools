@@ -27,6 +27,7 @@ elif command == "up":
 elif command == "status":
   appscale.status()
 elif command == "deploy":
+  # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
   appscale.deploy(sys.argv[2])
 elif command == "destroy":
   pass
