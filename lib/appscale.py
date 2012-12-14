@@ -182,10 +182,10 @@ Available commands:
     contents_as_yaml = yaml.safe_load(contents)
     if contents_as_yaml['keyname']:
       command.append("--keyname")
-      command.append(str(contents_as_yaml['keyname']))
+      command.append(contents_as_yaml['keyname'])
 
     command.append("--file")
-    command.append(str(app))
+    command.append(app)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
