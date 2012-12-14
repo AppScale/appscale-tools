@@ -88,7 +88,7 @@ class TestAppScale(unittest.TestCase):
     self.assertRaises(AppScalefileException, appscale.up)
 
 
-  def testUpWithEC2AppScalefile(self):
+  def testUpWithCloudAppScalefile(self):
     # calling 'appscale up' if there is an AppScalefile present
     # should call appscale-run-instances with the given config
     # params. here, we assume that the file is intended for use
@@ -122,3 +122,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(subprocess)
     subprocess.should_receive('call').and_return().once()
     appscale.up()
+
+
+  def testStatusWithCloudAppScalefile(self):
+    pass
