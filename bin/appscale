@@ -14,8 +14,20 @@ from appscale import AppScale
 from custom_exceptions import UsageException
 
 
-print str(sys.argv)
-
 appscale = AppScale()
 if len(sys.argv) < 2:
-  raise UsageException(appscale.USAGE)
+  appscale.help()
+
+command = sys.argv[1]
+if command == "init":
+  pass
+elif command == "up":
+  pass
+elif command == "status":
+  pass
+elif command == "deploy":
+  pass
+elif command == "destroy":
+  pass
+else:
+  appscale.help()
