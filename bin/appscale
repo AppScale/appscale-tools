@@ -20,9 +20,10 @@ if len(sys.argv) < 2:
 
 command = sys.argv[1]
 if command == "init":
-  pass
+  # TODO(cgb): Make sure argv[2] exists and is 'cloud' or 'cluster'
+  appscale.init(sys.argv[2])
 elif command == "up":
-  pass
+  appscale.up()
 elif command == "status":
   pass
 elif command == "deploy":
