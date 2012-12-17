@@ -785,6 +785,10 @@ module CommonFunctions
     CommonFunctions.get_from_yaml(keyname, :infrastructure)
   end
 
+  def self.get_group(keyname, required=true)
+    CommonFunctions.get_from_yaml(keyname, :group)
+  end
+
 
   def self.make_appscale_directory()
     # AppScale generates private keys for each cloud that machines are 
@@ -824,7 +828,7 @@ module CommonFunctions
     CommonFunctions.write_node_file(head_node_ip,
       head_node_result[:instance_id], options['table'],
       head_node_result[:secret_key], db_master_ip, all_ips,
-      options['infrastructure'], locations_yaml)
+      options['infrastructure'], options['group'], locations_yaml)
     remote_locations_file = "/root/.appscale/locations-#{keyname}.yaml"
     CommonFunctions.scp_file(locations_yaml, remote_locations_file,
       head_node_ip, head_node_result[:true_key])
@@ -832,13 +836,13 @@ module CommonFunctions
 
 
   def self.write_node_file(head_node_ip, instance_id, table, secret, db_master,
-    ips, infrastructure, locations_yaml)
+    ips, infrastructure, group, locations_yaml)
 
     infrastructure ||= "xen"
     tree = { :load_balancer => head_node_ip, :instance_id => instance_id , 
              :table => table, :shadow => head_node_ip, 
              :secret => secret , :db_master => db_master,
-             :ips => ips , :infrastructure => infrastructure }
+             :ips => ips , :infrastructure => infrastructure, :group => group }
     loc_path = File.expand_path(locations_yaml)
     File.open(loc_path, "w") {|file| YAML.dump(tree, file)}
   end
@@ -1403,7 +1407,7 @@ module CommonFunctions
   end
 
 
-  def self.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+  def self.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
     Kernel.puts "About to terminate instances spawned via #{infrastructure} " +
       "with keyname '#{keyname}'..."
     Kernel.sleep(2)
@@ -1412,8 +1416,17 @@ module CommonFunctions
     if acc.is_live?
       acc.kill()
       # TODO(cgb): read the group from the locations.yaml file and delete that
-      cmd = "#{infrastructure}-delete-group appscale"
-      Kernel.puts CommonFunctions.shell("#{cmd}")
+      cmd = "#{infrastructure}-delete-group #{group}"
+      while true
+        delete_group_output = CommonFunctions.shell("#{cmd}")
+        if delete_group_output.gsub(/\s+/, '') == "GROUP#{group}"
+          Kernel.puts delete_group_output
+          break
+        else
+          Kernel.puts "Waiting for instances to shutdown"
+          Kernel.sleep(5)
+        end
+      end
       Kernel.puts "Terminated AppScale in cloud deployment."
     else
       VMTools.terminate_infrastructure_machines(infrastructure, keyname)
