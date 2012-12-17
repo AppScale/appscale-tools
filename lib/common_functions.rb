@@ -1474,7 +1474,6 @@ module CommonFunctions
     acc = AppControllerClient.new(shadow_ip, secret)
     if acc.is_live?
       acc.kill()
-      # TODO(cgb): read the group from the locations.yaml file and delete that
       cmd = "#{infrastructure}-delete-group #{group}"
       while true
         delete_group_output = CommonFunctions.shell("#{cmd}")
