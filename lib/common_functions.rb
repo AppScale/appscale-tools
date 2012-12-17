@@ -838,6 +838,11 @@ module CommonFunctions
     remote_locations_json_file = "#{REMOTE_APPSCALE_FILE_DIR}/locations-#{keyname}.json"
     CommonFunctions.scp_file(locations_json, remote_locations_json_file, ip, 
       ssh_key)
+
+    # Since the tools on the remote machine look in /root/.appscale for the JSON file,
+    # also put a copy of this file there.
+    remote_homedir_json_file = "/root/.appscale/locations-#{keyname}.json"
+    CommonFunctions.scp_file(locations_json, remote_homedir_json_file, ip, ssh_key)
   end
 
 
