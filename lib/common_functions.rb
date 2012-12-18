@@ -985,6 +985,11 @@ module CommonFunctions
       language = "java"
       # don't remove user's jar files, they may have their own jars in it
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
+      sdk_file = File.join(fullpath, "war/WEB-INF/lib/appengine-api-1.0-sdk-#{JAVA_AE_VERSION}.jar")
+      if !File.exists?(sdk_file)
+        raise AppEngineConfigException.new("Unsupported Java appengine version. Please " +
+                                               "recompile and repackage your app with Java appengine #{JAVA_AE_VERSION}.")
+      end
       FileUtils.mkdir_p("/tmp/#{temp_dir}/war/WEB-INF/lib")
       temp_dir2 = CommonFunctions.get_random_alphanumeric
       FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
@@ -1487,7 +1492,7 @@ module CommonFunctions
       end
       Kernel.puts "Terminated AppScale in cloud deployment."
     else
-      VMTools.terminate_infrastructure_machines(infrastructure, keyname)
+      VMTools.terminate_infrastructure_machines(infrastructure, keyname, group)
     end
   end
 
