@@ -65,7 +65,7 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
       and_return()
 
     # and the same for the public key
-    pub_key = "#{key}.key"
+    pub_key = "#{key}.pub"
     commonfunctions.should_receive(:shell).
       with(/scp -i #{key} #{pub_key} root@1.2.3.4:.ssh\/id_rsa.pub/).
       and_return()
@@ -94,7 +94,7 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
       and_return()
 
     # and the same for the public key
-    pub_key = "#{key}.key"
+    pub_key = "#{key}.pub"
     commonfunctions.should_receive(:shell).
       with(/scp -i #{key} #{pub_key} root@1.2.3.[4|5]:.ssh\/id_rsa.pub/).
       and_return()
