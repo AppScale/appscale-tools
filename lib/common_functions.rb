@@ -52,6 +52,7 @@ CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key",
 
 
 VER_NUM = "1.6.4"
+JAVA_AE_VERSION = "1.7.3"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -1474,11 +1475,10 @@ module CommonFunctions
     acc = AppControllerClient.new(shadow_ip, secret)
     if acc.is_live?
       acc.kill()
-      cmd = "#{infrastructure}-delete-group #{group}"
+      cmd = "#{infrastructure}-delete-group #{group} > /dev/null; echo $?"
       while true
         delete_group_output = CommonFunctions.shell("#{cmd}")
-        if delete_group_output.gsub(/\s+/, '') == "GROUP#{group}"
-          Kernel.puts delete_group_output
+        if delete_group_output.strip == "0"
           break
         else
           Kernel.puts "Waiting for instances to shutdown"
