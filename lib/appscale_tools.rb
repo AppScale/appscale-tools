@@ -242,6 +242,13 @@ module AppScaleTools
   # Works in conjunction with an already running AppScale deployment to
   # add additional nodes. The nodes must be specified via a YAML file
   # (of the same format used in run-instances).
+  # Args:
+  #   options: A Hash with the following keys:
+  #     ips: A Hash that maps roles to start on new nodes to the IPs
+  #       that they should be started on. For cloud deployments, IPs
+  #       need not be used - any unique identifier will suffice.
+  #     keyname (optional): The name of the key that is associated with
+  #       machines in this AppScale deployment.
   def self.add_instances(options)
     ips_yaml = options['ips']
     if ips_yaml.nil? or ips_yaml.empty?

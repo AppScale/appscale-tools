@@ -183,8 +183,8 @@ class AppControllerClient
   # deployment, with the specified roles.
   # Args:
   #   ips_hash: A Hash that maps roles to the IP addresses that should
-  #     run them. In cloud deployments, 'node-X' may be used in place
-  #     in place of the IP address (where X is an integer).
+  #     run them. In cloud deployments, any unique identifier may be
+  #     used in place of the IP address.
   # Returns:
   #   The result of executing start_roles_on_nodes on the remote
   #     AppController.
