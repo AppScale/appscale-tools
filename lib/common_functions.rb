@@ -47,10 +47,11 @@ IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 
 CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key", 
   "aws_access_key_id", "aws_secret_access_key", 
-  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY"]
+  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY",
+  "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
 
 
-VER_NUM = "1.6.4"
+VER_NUM = "1.6.5"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -66,8 +67,7 @@ SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
 # infrastructures that we can run over.
-VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra", "voldemort"] +
-  ["mongodb", "memcachedb", "scalaris", "simpledb", "redisdb"]
+VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra"]
 VALID_CLOUD_TYPES = ["ec2", "euca", "hybrid"]
 
 
@@ -252,7 +252,9 @@ module CommonFunctions
 
   def self.get_credentials(testing)
     if testing
-      return DEFAULT_USERNAME, DEFAULT_PASSWORD
+      user = ENV['APPSCALE_USERNAME'] || DEFAULT_USERNAME
+      pass = ENV['APPSCALE_PASSWORD'] || DEFAULT_PASSWORD
+      return user, pass
     else
       return CommonFunctions.get_email, CommonFunctions.get_password
     end
@@ -530,6 +532,7 @@ module CommonFunctions
       "root@#{head_node_ip}", options['verbose'])
  
     CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
+    CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
     CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
       true_key)
  
@@ -835,6 +838,11 @@ module CommonFunctions
     remote_locations_json_file = "#{REMOTE_APPSCALE_FILE_DIR}/locations-#{keyname}.json"
     CommonFunctions.scp_file(locations_json, remote_locations_json_file, ip, 
       ssh_key)
+
+    # Since the tools on the remote machine look in /root/.appscale for the JSON file,
+    # also put a copy of this file there.
+    remote_homedir_json_file = "/root/.appscale/locations-#{keyname}.json"
+    CommonFunctions.scp_file(locations_json, remote_homedir_json_file, ip, ssh_key)
   end
 
 
@@ -1098,6 +1106,24 @@ module CommonFunctions
   end
 
 
+  # Checks to see if the virtual machine at the given IP address has
+  # the same version of AppScale installed as these tools.
+  # Args:
+  #   ip: The IP address of the VM to check the version on.
+  #   key: The SSH key that can be used to log into the machine at the
+  #     given IP address.
+  # Raises:
+  #   AppScaleException: If the virtual machine at the given IP address
+  #     does not have the same version of AppScale installed as these
+  #     tools.
+  def self.ensure_version_is_supported(ip, key)
+    return if self.does_image_have_location?(ip, "/etc/appscale/#{VER_NUM}", key)
+    raise AppScaleException.new("The image at #{ip} does not support " +
+      "this version of AppScale (#{VER_NUM}). Please install AppScale" +
+      " #{VER_NUM} on it and try again.")
+  end
+
+
   def self.ensure_db_is_supported(ip, db, key)
     return if self.does_image_have_location?(ip, "/etc/appscale/#{VER_NUM}/#{db}", key)
     raise AppScaleException.new("The image at #{ip} does not have support for #{db}." +
@@ -1205,6 +1231,7 @@ module CommonFunctions
 
     if infrastructure && infrastructure != "hybrid"
       VMTools.verify_credentials_are_set_correctly(infrastructure)
+      VMTools.validate_machine_image(machine, infrastructure)
     end
 
     # If the user hasn't given us an ips.yaml file, then they're running in a cloud
@@ -1256,6 +1283,13 @@ module CommonFunctions
     if !node_layout.valid?
       raise BadConfigurationException.new("There were errors with the yaml " +
         "file: \n#{node_layout.errors}")
+    end
+
+    if !node_layout.supported?
+      Kernel.puts("Warning: The deployment strategy specified in your " +
+        "YAML file is not officially tested in AppScale. Proceeding " +
+        "momentarily.")
+      Kernel.sleep(1)
     end
 
     return node_layout
@@ -1350,12 +1384,12 @@ module CommonFunctions
       cloud_num = 1
 
       loop {
-        cloud_type = ENV["CLOUD#{cloud_num}_TYPE"]
+        cloud_type = ENV["CLOUD_TYPE"]
         break if cloud_type.nil?
 
         Kernel.puts "Copying over credentials for cloud #{cloud_num}"
-        cert = ENV["CLOUD#{cloud_num}_EC2_CERT"]
-        private_key = ENV["CLOUD#{cloud_num}_EC2_PRIVATE_KEY"]
+        cert = ENV["CLOUD_EC2_CERT"]
+        private_key = ENV["CLOUD_EC2_PRIVATE_KEY"]
         CommonFunctions.copy_cloud_keys(cloud_num, ip, ssh_key,
           options['verbose'], cert, private_key)
         cloud_num += 1
@@ -1402,7 +1436,7 @@ module CommonFunctions
     Kernel.sleep(1)
 
     begin
-      Timeout::timeout(60) {
+      Timeout::timeout(60, AppScaleException) {
         GodInterface.start(:controller, start, stop, 
           AppScaleTools::DJINN_SERVER_PORT,
           {'APPSCALE_HOME' => remote_home}, ip, ssh_key)
@@ -1413,7 +1447,7 @@ module CommonFunctions
         CommonFunctions.sleep_until_port_is_open(ip, 
           AppScaleTools::DJINN_SERVER_PORT, AppScaleTools::USE_SSL)
       }
-    rescue Timeout::Error
+    rescue AppScaleException
       retry
     end
   end
