@@ -232,11 +232,11 @@ module AppScaleTools
 
 
   def self.remove_app(options)
-    CommonFunctions.update_locations_file(options['keyname'])
     if options['appname'].nil?
       raise BadConfigurationException.new(NO_APPNAME_GIVEN)
     end
 
+    CommonFunctions.update_locations_file(options['keyname'])
     result = CommonFunctions.confirm_app_removal(options['confirm'],
       options['appname'])
     if result == "NO"
