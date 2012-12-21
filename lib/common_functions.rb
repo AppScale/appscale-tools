@@ -47,10 +47,11 @@ IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 
 CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key", 
   "aws_access_key_id", "aws_secret_access_key", 
-  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY"]
+  "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY",
+  "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
 
 
-VER_NUM = "1.6.3"
+VER_NUM = "1.6.5"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -66,8 +67,7 @@ SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
 # infrastructures that we can run over.
-VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra", "voldemort"] +
-  ["mongodb", "memcachedb", "scalaris", "simpledb", "redisdb"]
+VALID_TABLE_TYPES = ["hbase", "hypertable", "mysql", "cassandra"]
 VALID_CLOUD_TYPES = ["ec2", "euca", "hybrid"]
 
 
@@ -76,6 +76,16 @@ VALID_CLOUD_TYPES = ["ec2", "euca", "hybrid"]
 # in newer versions of Ruby 1.8.7 and Ruby 1.9. Instead, just use a large 
 # number, which will work on both.
 INFINITY = 1000000
+
+
+# The location on the local filesystem where the AppScale Tools can read
+# and write AppScale-specific data to.
+LOCAL_APPSCALE_FILE_DIR = File.expand_path("~/.appscale")
+
+
+# The location on AppScale VMs where the AppScale Tools can read and
+# write AppScale-specific data to.
+REMOTE_APPSCALE_FILE_DIR = "/etc/appscale/"
 
 
 module CommonFunctions
@@ -112,7 +122,9 @@ module CommonFunctions
   # firewall rules. It should be changed accordingly.
   def self.rsync_files(dest_ip, ssh_key, local)
     local = File.expand_path(local)
+    lib = "#{local}/lib"
     controller = "#{local}/AppController"
+    appmanager = "#{local}/AppManager"
     server = "#{local}/AppServer"
     loadbalancer = "#{local}/AppLoadBalancer"
     monitoring = "#{local}/AppMonitoring"
@@ -128,6 +140,8 @@ module CommonFunctions
     end
 
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
     self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
@@ -238,7 +252,9 @@ module CommonFunctions
 
   def self.get_credentials(testing)
     if testing
-      return DEFAULT_USERNAME, DEFAULT_PASSWORD
+      user = ENV['APPSCALE_USERNAME'] || DEFAULT_USERNAME
+      pass = ENV['APPSCALE_PASSWORD'] || DEFAULT_PASSWORD
+      return user, pass
     else
       return CommonFunctions.get_email, CommonFunctions.get_password
     end
@@ -516,6 +532,7 @@ module CommonFunctions
       "root@#{head_node_ip}", options['verbose'])
  
     CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
+    CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
     CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
       true_key)
  
@@ -809,6 +826,26 @@ module CommonFunctions
   end
 
 
+  # Copies over the JSON metadata file that maps roles to who hosts them to the
+  # given IP address.
+  # Args:
+  #   keyname: The keyname of the AppScale deployment to copy over data for.
+  #   ip: The IP address that the JSON metadata file should be copied to.
+  #   ssh_key: The location on the local filesystem where an SSH key can be found
+  #   that enables passwordless SSH access to the specified IP address.
+  def self.copy_nodes_json(keyname, ip, ssh_key)
+    locations_json = "#{LOCAL_APPSCALE_FILE_DIR}/locations-#{keyname}.json"
+    remote_locations_json_file = "#{REMOTE_APPSCALE_FILE_DIR}/locations-#{keyname}.json"
+    CommonFunctions.scp_file(locations_json, remote_locations_json_file, ip, 
+      ssh_key)
+
+    # Since the tools on the remote machine look in /root/.appscale for the JSON file,
+    # also put a copy of this file there.
+    remote_homedir_json_file = "/root/.appscale/locations-#{keyname}.json"
+    CommonFunctions.scp_file(locations_json, remote_homedir_json_file, ip, ssh_key)
+  end
+
+
   def self.write_and_copy_node_file(options, node_layout, head_node_result)
     keyname = options['keyname']
     head_node_ip = head_node_result[:head_node_ip]
@@ -919,14 +956,14 @@ module CommonFunctions
     FileUtils.mkdir_p("/tmp/#{temp_dir}")
 
     CommonFunctions.move_app(temp_dir, filename, app_file, fullpath)
-    app_yaml_loc = app_file
+    app_config_loc = app_file
     if !File.exists?("/tmp/#{temp_dir}/#{app_file}")
       FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
       return nil, nil, nil
     end
 
     if app_file == PYTHON_CONFIG
-      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
       language = "python"
       if File.directory?(fullpath)
         temp_dir2 = CommonFunctions.get_random_alphanumeric
@@ -938,7 +975,8 @@ module CommonFunctions
         file = fullpath
       end
     elsif app_file == JAVA_CONFIG
-      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_yaml_loc)
+      app_name = CommonFunctions.get_app_name_via_xml(temp_dir, app_config_loc)
+      CommonFunctions.ensure_app_has_threadsafe(temp_dir, app_config_loc)
       language = "java"
       # don't remove user's jar files, they may have their own jars in it
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
@@ -987,6 +1025,30 @@ module CommonFunctions
     app_name = web_xml_contents.scan(/<application>([\w\d-]+)<\/application>/).flatten.to_s
     app_name = nil if app_name == ""
     return app_name
+  end
+
+
+  # Checks the named file to validate its <threadsafe> parameter,
+  # which should be set to either true or false.
+  # Args:
+  #   xml_loc: A String that points to the location on the local
+  #     filesystem where the appengine-web.xml file for the user's
+  #     Java Google App Engine app can be located.
+  # Raises:
+  #   AppEngineConfigException: If the given XML file did not
+  #     have a <threadsafe> tag, or it was not a boolean value.
+  # Returns:
+  #   Nothing, if there was a <threadsafe> tag with a boolean value.
+  def self.ensure_app_has_threadsafe(temp_dir, xml_loc)
+    xml_loc = "/tmp/" + temp_dir + "/" + xml_loc
+    web_xml_contents = self.read_file(xml_loc)
+    threadsafe = web_xml_contents.scan(/<threadsafe>([\w]+)<\/threadsafe>/).flatten.to_s
+    if threadsafe == "true" or threadsafe == "false"
+      return
+    else
+      raise AppEngineConfigException.new("Your application did not " +
+        "have a <threadsafe> tag, with a value of either true or false.")
+    end
   end
 
 
@@ -1041,6 +1103,24 @@ module CommonFunctions
     return if self.does_image_have_location?(ip, "/etc/appscale", key)
     raise AppScaleException.new("The image at #{ip} is not an AppScale image." +
       " Please install AppScale on it and try again.")
+  end
+
+
+  # Checks to see if the virtual machine at the given IP address has
+  # the same version of AppScale installed as these tools.
+  # Args:
+  #   ip: The IP address of the VM to check the version on.
+  #   key: The SSH key that can be used to log into the machine at the
+  #     given IP address.
+  # Raises:
+  #   AppScaleException: If the virtual machine at the given IP address
+  #     does not have the same version of AppScale installed as these
+  #     tools.
+  def self.ensure_version_is_supported(ip, key)
+    return if self.does_image_have_location?(ip, "/etc/appscale/#{VER_NUM}", key)
+    raise AppScaleException.new("The image at #{ip} does not support " +
+      "this version of AppScale (#{VER_NUM}). Please install AppScale" +
+      " #{VER_NUM} on it and try again.")
   end
 
 
@@ -1151,6 +1231,7 @@ module CommonFunctions
 
     if infrastructure && infrastructure != "hybrid"
       VMTools.verify_credentials_are_set_correctly(infrastructure)
+      VMTools.validate_machine_image(machine, infrastructure)
     end
 
     # If the user hasn't given us an ips.yaml file, then they're running in a cloud
@@ -1202,6 +1283,13 @@ module CommonFunctions
     if !node_layout.valid?
       raise BadConfigurationException.new("There were errors with the yaml " +
         "file: \n#{node_layout.errors}")
+    end
+
+    if !node_layout.supported?
+      Kernel.puts("Warning: The deployment strategy specified in your " +
+        "YAML file is not officially tested in AppScale. Proceeding " +
+        "momentarily.")
+      Kernel.sleep(1)
     end
 
     return node_layout
@@ -1296,12 +1384,12 @@ module CommonFunctions
       cloud_num = 1
 
       loop {
-        cloud_type = ENV["CLOUD#{cloud_num}_TYPE"]
+        cloud_type = ENV["CLOUD_TYPE"]
         break if cloud_type.nil?
 
         Kernel.puts "Copying over credentials for cloud #{cloud_num}"
-        cert = ENV["CLOUD#{cloud_num}_EC2_CERT"]
-        private_key = ENV["CLOUD#{cloud_num}_EC2_PRIVATE_KEY"]
+        cert = ENV["CLOUD_EC2_CERT"]
+        private_key = ENV["CLOUD_EC2_PRIVATE_KEY"]
         CommonFunctions.copy_cloud_keys(cloud_num, ip, ssh_key,
           options['verbose'], cert, private_key)
         cloud_num += 1
@@ -1348,7 +1436,7 @@ module CommonFunctions
     Kernel.sleep(1)
 
     begin
-      Timeout::timeout(60) {
+      Timeout::timeout(60, AppScaleException) {
         GodInterface.start(:controller, start, stop, 
           AppScaleTools::DJINN_SERVER_PORT,
           {'APPSCALE_HOME' => remote_home}, ip, ssh_key)
@@ -1359,7 +1447,7 @@ module CommonFunctions
         CommonFunctions.sleep_until_port_is_open(ip, 
           AppScaleTools::DJINN_SERVER_PORT, AppScaleTools::USE_SSL)
       }
-    rescue Timeout::Error
+    rescue AppScaleException
       retry
     end
   end

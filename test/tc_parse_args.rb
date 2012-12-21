@@ -82,11 +82,11 @@ class TestParseArgs < Test::Unit::TestCase
     }
 
     # Specifying a table that is accepted should return that in the result
-    args_2 = ['--table', 'voldemort']
+    args_2 = ['--table', 'cassandra']
     all_flags_2 = ['table']
     expected_2 = Hash[*args_2]
     actual_2 = ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    assert_equal('voldemort', actual_2['table'])
+    assert_equal('cassandra', actual_2['table'])
 
     # Failing to specify a table should default to a predefined table
     args_3 = []
@@ -136,15 +136,20 @@ class TestParseArgs < Test::Unit::TestCase
     assert_equal(2, actual_9['replication'])
 
     # Specifying a positive integer for r or w with Voldemort should be ok
-    args_10 = ['--table', 'voldemort', '-r', '3']
-    all_flags_10 = ['table', 'r', 'w']
-    actual_10 = ParseArgs.get_vals_from_args(args_10, all_flags_10, @usage)
-    assert_equal(3, actual_10['voldemort_r'])
+    # These tests are disabled right now since Voldemort is no longer a
+    # supported datastore.
+    # TODO(cgb): Remove these if we decide we're not going to support
+    # Voldemort in the future, or remove this TODO if we do support
+    # Voldemort again.
+    #args_10 = ['--table', 'voldemort', '-r', '3']
+    #all_flags_10 = ['table', 'r', 'w']
+    #actual_10 = ParseArgs.get_vals_from_args(args_10, all_flags_10, @usage)
+    #assert_equal(3, actual_10['voldemort_r'])
 
-    args_11 = ['--table', 'voldemort', '-w', '3']
-    all_flags_11 = ['table', 'r', 'w']
-    actual_11 = ParseArgs.get_vals_from_args(args_11, all_flags_11, @usage)
-    assert_equal(3, actual_11['voldemort_w'])
+    #args_11 = ['--table', 'voldemort', '-w', '3']
+    #all_flags_11 = ['table', 'r', 'w']
+    #actual_11 = ParseArgs.get_vals_from_args(args_11, all_flags_11, @usage)
+    #assert_equal(3, actual_11['voldemort_w'])
   end
 
   def test_developer_flags
@@ -157,4 +162,49 @@ class TestParseArgs < Test::Unit::TestCase
       assert_equal(true, actual[param])
     }
   end
+
+  def test_infrastructure_flags
+    # Specifying infastructure as EC2 or Eucalyptus is acceptable.
+    args_1 = ['--infrastructure', 'ec2']
+    all_flags_1 = ['infrastructure']
+    actual_1 = ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
+    assert_equal('ec2', actual_1['infrastructure'])
+
+    args_2 = ['--infrastructure', 'euca']
+    all_flags_2 = ['infrastructure']
+    actual_2 = ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
+    assert_equal('euca', actual_2['infrastructure'])
+
+    # Specifying something else as the infrastructure is not acceptable.
+    args_3 = ['--infrastructure', 'boocloud']
+    all_flags_3 = ['infrastructure']
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
+    }
+
+    # Specifying infrastructure via --iaas is not acceptable.
+    args_4 = ['--iaas']
+    all_flags_4 = AppScaleTools::RUN_INSTANCES_FLAGS
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
+    }
+  end
+
+  def test_instance_types
+    # Specifying m1.large as the instance type is acceptable.
+    args_1 = ['--instance_type', 'm1.large']
+    all_flags_1 = ['instance_type']
+    assert_nothing_raised(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
+    }
+
+    # Specifying blarg1.humongous as the instance type is not
+    # acceptable.
+    args_2 = ['--instance_type', 'blarg1.humongous']
+    all_flags_2 = ['instance_type']
+    assert_raises(BadCommandLineArgException) {
+      ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
+    }
+  end
+
 end
