@@ -20,8 +20,7 @@ if len(sys.argv) < 2:
 
 command = sys.argv[1]
 if command == "init":
-  allowed_types = ["cloud", "cluster"]
-  if len(sys.argv) < 3 or sys.argv[2] not in allowed_types:
+  if len(sys.argv) < 3:
     raise BadConfigurationException("Usage: appscale init <cloud or cluster>")
   appscale.init(sys.argv[2])
 elif command == "up":
