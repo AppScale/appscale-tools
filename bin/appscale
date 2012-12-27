@@ -11,7 +11,7 @@ import sys
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale import AppScale
-from custom_exceptions import UsageException
+from custom_exceptions import BadConfigurationException
 
 
 appscale = AppScale()
@@ -20,7 +20,9 @@ if len(sys.argv) < 2:
 
 command = sys.argv[1]
 if command == "init":
-  # TODO(cgb): Make sure argv[2] exists and is 'cloud' or 'cluster'
+  allowed_types = ["cloud", "cluster"]
+  if len(sys.argv) < 3 or sys.argv[2] not in allowed_types:
+    raise BadConfigurationException("Usage: appscale init <cloud or cluster>")
   appscale.init(sys.argv[2])
 elif command == "up":
   appscale.up()
