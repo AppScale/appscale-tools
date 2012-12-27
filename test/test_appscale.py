@@ -17,6 +17,8 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
 from appscale import AppScale
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
