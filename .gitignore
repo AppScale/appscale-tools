@@ -2,3 +2,4 @@
 *.swp
 *.py[c|o]
 ips
+.idea
