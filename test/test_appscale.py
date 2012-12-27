@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import base64
 import os
 import shutil
 import subprocess
@@ -86,6 +87,44 @@ class TestAppScale(unittest.TestCase):
       .and_raise(IOError))
 
     self.assertRaises(AppScalefileException, appscale.up)
+
+
+  def testUpWithClusterAppScalefile(self):
+    # calling 'appscale up' if there is an AppScalefile present
+    # should call appscale-run-instances with the given config
+    # params. here, we assume that the file is intended for use
+    # on a virtualized cluster
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'ips_layout': [{'master': 'ip1'}, {'appengine': 'ip1'},
+                     {'database': 'ip2'}, {'zookeeper': 'ip2'}]
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+     .with_args('/boo/' + appscale.APPSCALEFILE)
+     .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+
+    # finally, mock out the actual appscale tools calls. since we're running
+    # via a cluster, this means we call add-keypair to set up SSH keys, then
+    # run-instances to start appscale
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["appscale-add-keypair",
+                                                 "--ips_layout",
+                                                 base64_ips_layout]).and_return().once()
+    subprocess.should_receive('call').with_args(["appscale-run-instances",
+                                                 "--ips_layout",
+                                                 base64_ips_layout]).and_return().once()
+    appscale.up()
 
 
   def testUpWithCloudAppScalefile(self):

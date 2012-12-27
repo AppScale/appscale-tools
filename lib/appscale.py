@@ -3,6 +3,7 @@
 
 
 # First party Python libraries
+import base64
 import os
 import shutil
 import subprocess
@@ -128,15 +129,33 @@ Available commands:
   def up(self):
     contents = self.read_appscalefile()
 
+    # If running in a cluster environment, we first need to set up SSH keys
+    contents_as_yaml = yaml.safe_load(contents)
+    if "ips_layout" in contents_as_yaml:
+      ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
+
+    if not "infrastructure" in contents_as_yaml:
+      add_keypair_command = ["appscale-add-keypair"]
+      if "keyname" in contents_as_yaml:
+        add_keypair_command.append("--keyname")
+        add_keypair_command.append(str(contents_as_yaml["keyname"]))
+
+      add_keypair_command.append("--ips_layout")
+      add_keypair_command.append(ips_layout)
+      subprocess.call(add_keypair_command)
+
     # Construct a run-instances command from the file's contents
     command = ["appscale-run-instances"]
-    contents_as_yaml = yaml.safe_load(contents)
     for key, value in contents_as_yaml.items():
       if value is True:
         command.append(str("--%s" % key))
       else:
-        command.append(str("--%s" % key))
-        command.append(str("%s" % value))
+        if key == "ips_layout":
+          command.append("--ips_layout")
+          command.append(ips_layout)
+        else:
+          command.append(str("--%s" % key))
+          command.append(str("%s" % value))
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-run-instances will do that for us.
