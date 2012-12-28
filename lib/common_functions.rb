@@ -19,7 +19,7 @@ require 'user_app_client'
 require 'rubygems'
 require 'json'
 
-
+ALLOWED_RUNTIMES = ["python", "python27", "java", "go"]
 NO_SSH_KEY_FOUND = "No SSH key was found that could be used to log in to " +
   "your machine."
 MALFORMED_YAML = "The yaml file you provided was malformed. Please correct " +
@@ -51,8 +51,7 @@ CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key",
   "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
 
 
-VER_NUM = "1.6.4"
-JAVA_AE_VERSION = "1.7.3"
+VER_NUM = "1.6.5"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -182,7 +181,7 @@ module CommonFunctions
     }
 
     if new_role_info.nil?
-      abort("Couldn't contact any AppControllers - is AppScale running?")
+      abort("Couldn't contact any AppControllers - is AppScale running? Make sure you are using the correct keyname. Tried with keyname #{keyname}.")
     end
 
     CommonFunctions.write_nodes_json(new_role_info, keyname)
@@ -218,7 +217,7 @@ module CommonFunctions
         "'#{not_allowed}' - this is a reserved name.")
     end
 
-    if app_name =~ /[^[a-z]-]/
+    if app_name =~ /^[a-z]-/
       raise AppEngineConfigException.new("App name can only contain " +
         "numeric and lowercase alphabetical characters.")
     end
@@ -969,7 +968,7 @@ module CommonFunctions
 
     if app_file == PYTHON_CONFIG
       app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
-      language = "python"
+      language = CommonFunctions.get_language_via_yaml(temp_dir, app_config_loc)
       if File.directory?(fullpath)
         temp_dir2 = CommonFunctions.get_random_alphanumeric
         FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
@@ -1012,6 +1011,34 @@ module CommonFunctions
     FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
     CommonFunctions.warn_on_large_app_size(file)
     return app_name, file, language 
+  end
+
+
+  # Parses the given app.yaml file to determine which runtime should be
+  # used to execute this Google App Engine application.
+  # Args:
+  #   temp_dir: The directory that we untar'ed the user's application to.
+  #   app_yaml_loc: The location of the app.yaml file, relative to temp_dir.
+  # Raises:
+  #   AppScaleException: If the user's app.yaml file is malformed, or if no
+  #     runtime was given.
+  # Returns:
+  #   A String corresponding to the runtime that should be used.
+  def self.get_language_via_yaml(temp_dir, app_yaml_loc)
+    app_yaml_loc = "/tmp/" + temp_dir + "/" + app_yaml_loc
+    
+    begin
+      tree = YAML.load_file(app_yaml_loc.chomp)
+      runtime = String(tree["runtime"])
+      if !ALLOWED_RUNTIMES.include?(runtime)
+        raise AppScaleException.new("The runtime you specified, #{runtime}" +
+          ", was not an acceptable value. Acceptable values are: " +
+          "#{ALLOWED_RUNTIMES.join(', ')}")
+      end
+      return runtime
+    rescue ArgumentError
+      raise AppScaleException.new(MALFORMED_YAML)
+    end
   end
 
 
@@ -1257,7 +1284,8 @@ module CommonFunctions
       error_msg = "An AppScale instance is already running with the given" +
         " keyname, #{keyname}. Please terminate that instance first with the" +
         " following command:\n\nappscale-terminate-instances --keyname " +
-        "#{keyname} <--ips path-to-ips.yaml if using non-cloud deployment>"
+        "#{keyname} <--ips path-to-ips.yaml if using non-cloud deployment>" +
+        "or use the --force flag to override this behavior."
       raise BadConfigurationException.new(error_msg)
     end
   end
