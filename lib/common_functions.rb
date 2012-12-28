@@ -19,7 +19,7 @@ require 'user_app_client'
 require 'rubygems'
 require 'json'
 
-ALLOWED_RUNTIMES = ["python", "python27", "java"]
+ALLOWED_RUNTIMES = ["python", "python27", "java", "go"]
 NO_SSH_KEY_FOUND = "No SSH key was found that could be used to log in to " +
   "your machine."
 MALFORMED_YAML = "The yaml file you provided was malformed. Please correct " +
@@ -181,7 +181,7 @@ module CommonFunctions
     }
 
     if new_role_info.nil?
-      abort("Couldn't contact any AppControllers - is AppScale running?")
+      abort("Couldn't contact any AppControllers - is AppScale running? Make sure you are using the correct keyname. Tried with keyname #{keyname}.")
     end
 
     CommonFunctions.write_nodes_json(new_role_info, keyname)
@@ -1020,13 +1020,13 @@ module CommonFunctions
     
     begin
       tree = YAML.load_file(app_yaml_loc.chomp)
-      language = String(tree["runtime"])
-      if !ALLOWED_RUNTIMES.include?(language)
+      runtime = String(tree["runtime"])
+      if !ALLOWED_RUNTIMES.include?(runtime)
         raise AppScaleException.new("The runtime you specified, #{runtime}" +
           ", was not an acceptable value. Acceptable values are: " +
           "#{ALLOWED_RUNTIMES.join(', ')}")
       end
-      return language
+      return runtime
     rescue ArgumentError
       raise AppScaleException.new(MALFORMED_YAML)
     end
