@@ -31,7 +31,7 @@ module AppScaleTools
 
 
   ADD_KEYPAIR_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", 
-    "auto"]
+    "auto", "ips_layout"]
 
 
   ADD_KEYPAIR_USAGE = UsageText.get_usage("appscale-add-keypair", 

@@ -1,6 +1,10 @@
 #!/usr/bin/ruby
 # Programmer: Chris Bunch
 
+
+require 'base64'
+
+
 $:.unshift File.join(File.dirname(__FILE__))
 require 'common_functions'
 require 'custom_exceptions'
@@ -211,6 +215,10 @@ module ParseArgs
       end
     else
       val_hash['ips'] = nil
+    end
+
+    if arg_hash['ips_layout']
+      val_hash['ips'] = Base64.decode64(arg_hash['ips_layout'])
     end
   end
 
