@@ -142,6 +142,8 @@ Available commands:
 
       add_keypair_command.append("--ips_layout")
       add_keypair_command.append(ips_layout)
+      # TODO(cgb): Check the return value of running add-keypair. If
+      # it fails, abort execution here.
       subprocess.call(add_keypair_command)
 
     # Construct a run-instances command from the file's contents
