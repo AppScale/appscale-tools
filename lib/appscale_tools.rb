@@ -96,7 +96,7 @@ module AppScaleTools
   RUN_INSTANCES_FLAGS = ["help", "h", "min", "max", "file", "table", "ips",
     "v", "verbose", "machine", "instance_type", "usage", "version", "keyname",
     "infrastructure", "n", "r", "w", "scp", "test", "appengine",
-    "force", "restore_from_tar", "restore_neptune_info", "group"]
+    "force", "restore_from_tar", "restore_neptune_info", "group", "ips_layout"]
 
 
   RUN_INSTANCES_USAGE = UsageText.get_usage("appscale-run-instances", 

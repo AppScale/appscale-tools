@@ -218,7 +218,11 @@ module ParseArgs
     end
 
     if arg_hash['ips_layout']
-      val_hash['ips'] = Base64.decode64(arg_hash['ips_layout'])
+      ips = YAML.load(Base64.decode64(arg_hash['ips_layout']))
+      val_hash['ips'] = {}
+      ips.each { |k, v|
+        val_hash['ips'][k.to_sym] = v
+      }
     end
   end
 
