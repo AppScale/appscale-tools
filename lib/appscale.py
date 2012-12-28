@@ -10,6 +10,10 @@ import subprocess
 import yaml
 
 
+# Third party Python libraries
+import paramiko
+
+
 # Custom exceptions that can be thrown by Python AppScale code
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -34,6 +38,9 @@ class AppScale():
   # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cluster'.
   TEMPLATE_CLUSTER_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile-cluster"
+
+
+  APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -135,18 +142,19 @@ Available commands:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
 
     if not "infrastructure" in contents_as_yaml:
-      # TODO(cgb): Only run add-keypair if there is no ssh key present,
+      # Only run add-keypair if there is no ssh key present,
       # or if it doesn't log into all the machines specified.
-      add_keypair_command = ["appscale-add-keypair"]
-      if "keyname" in contents_as_yaml:
-        add_keypair_command.append("--keyname")
-        add_keypair_command.append(str(contents_as_yaml["keyname"]))
+      if not self.valid_ssh_key(contents_as_yaml):
+        add_keypair_command = ["appscale-add-keypair"]
+        if "keyname" in contents_as_yaml:
+          add_keypair_command.append("--keyname")
+          add_keypair_command.append(str(contents_as_yaml["keyname"]))
 
-      add_keypair_command.append("--ips_layout")
-      add_keypair_command.append(ips_layout)
-      # TODO(cgb): Check the return value of running add-keypair. If
-      # it fails, abort execution here.
-      subprocess.call(add_keypair_command)
+        add_keypair_command.append("--ips_layout")
+        add_keypair_command.append(ips_layout)
+        # TODO(cgb): Check the return value of running add-keypair. If
+        # it fails, abort execution here.
+        subprocess.call(add_keypair_command)
 
     # Construct a run-instances command from the file's contents
     command = ["appscale-run-instances"]
@@ -164,6 +172,52 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-run-instances will do that for us.
     subprocess.call(command)
+
+
+  def valid_ssh_key(self, config):
+    if "keyname" in config:
+      keyname = config["keyname"]
+    else:
+      keyname = "appscale"
+
+    ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
+    if not os.path.exists(ssh_key_location):
+      return False
+
+    all_ips = []
+    for role, ip_or_ips in config["ips_layout"].items():
+      if isinstance(ip_or_ips, str):
+        if not ip_or_ips in all_ips:
+          all_ips.append(ip_or_ips)
+      elif isinstance(ip_or_ips, list):
+        for ip in ip_or_ips:
+          if not ip in all_ips:
+            all_ips.append(ip)
+
+    for ip in all_ips:
+      if not self.can_ssh_to_ip(ip, ssh_key_location):
+        return False
+
+    return True
+
+
+  def can_ssh_to_ip(self, ip, ssh_key_location):
+    f = open(ssh_key_location)
+    key_contents = f.read()
+    f.close()
+    raise Exception(key_contents)
+    key = paramiko.RSAKey(data=base64.decodestring(key_contents))
+    client = paramiko.SSHClient()
+    client.get_host_keys().add(ip, 'ssh-rsa', key)
+    client.connect(ip)
+    stdin, stdout, stderr = client.exec_command('ls')
+    if stderr:
+      success = False
+    else:
+      success = True
+
+    client.close()
+    return success
 
 
   # 'status' is a more accessible way to query the state of the

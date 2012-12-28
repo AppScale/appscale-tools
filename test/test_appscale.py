@@ -104,8 +104,8 @@ class TestAppScale(unittest.TestCase):
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
     contents = {
-      'ips_layout': [{'master': 'ip1'}, {'appengine': 'ip1'},
-                     {'database': 'ip2'}, {'zookeeper': 'ip2'}]
+      'ips_layout': {'master': 'ip1', 'appengine': 'ip1',
+                     'database': 'ip2', 'zookeeper': 'ip2'}
     }
     yaml_dumped_contents = yaml.dump(contents)
     base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
