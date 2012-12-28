@@ -135,6 +135,8 @@ Available commands:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
 
     if not "infrastructure" in contents_as_yaml:
+      # TODO(cgb): Only run add-keypair if there is no ssh key present,
+      # or if it doesn't log into all the machines specified.
       add_keypair_command = ["appscale-add-keypair"]
       if "keyname" in contents_as_yaml:
         add_keypair_command.append("--keyname")
