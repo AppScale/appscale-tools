@@ -2,32 +2,32 @@
 # The deployment strategy (roles -> machines) that should be used in this
 # AppScale deployment.
 # The following is a sample layout for running everything on one machine:
- ips_layout:
- - master : 192.168.1.2
- - appengine: 192.168.1.2
- - database: 192.168.1.2
- - zookeeper: 192.168.1.2
+ips_layout:
+  master : 192.168.1.2
+  appengine: 192.168.1.2
+  database: 192.168.1.2
+  zookeeper: 192.168.1.2
 
 # Alternatively, the following is a layout that separates everything onto
 # four machines:
 # ips_layout:
-# - master : 192.168.1.2
-# - appengine: 192.168.1.3
-# - database: 192.168.1.4
-# - zookeeper: 192.168.1.5
+#  master : 192.168.1.2
+#  appengine: 192.168.1.3
+#  database: 192.168.1.4
+#  zookeeper: 192.168.1.5
 
 # The previous two layouts only have one instance of each role running, so if
 # that machine fails, there is no backup to take its place. This layout uses
 # eight machines to provide failure resiliency:
 # ips_layout:
-# - master : 192.168.1.2
-# - appengine:
+#  master : 192.168.1.2
+#  appengine:
 #   - 192.168.1.3
 #   - 192.168.1.4
-# - database:
+#  database:
 #   - 192.168.1.5
 #   - 192.168.1.6
-# - zookeeper:  # zookeeper uses paxos, so it needs a majority up (hence 3)
+#  zookeeper:  # zookeeper uses paxos, so it needs a majority up (hence 3)
 #   - 192.168.1.7
 #   - 192.168.1.8
 #   - 192.168.1.9
