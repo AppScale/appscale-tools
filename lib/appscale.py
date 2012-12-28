@@ -174,6 +174,16 @@ Available commands:
     subprocess.call(command)
 
 
+  # Determines whether or not we should call appscale-add-keypair,
+  # by collecting all the IP addresses in the given IPs layout and
+  # attempting to SSH to each of them with the specified keyname.
+  # Args:
+  #   config: A dictionary that includes the IPs layout (which itself
+  #     is a dict mapping role names to IPs) and, optionally, the keyname
+  #     to use.
+  # Returns:
+  #   A bool indicating whether or not the specified keyname can be
+  #   used to log into each IP address without a password.
   def valid_ssh_key(self, config):
     if "keyname" in config:
       keyname = config["keyname"]
@@ -201,22 +211,32 @@ Available commands:
     return True
 
 
+  # Attempts to SSH into the machine located at the given IP address
+  # with the given SSH key.
+  # Args:
+  #   ip: The IP address to attempt to SSH into.
+  #   ssh_key_location: The location on the local filesystem where the
+  #     SSH key to use is located.
+  # Returns:
+  #   A bool that indicates whether or not the given SSH key can log in
+  #   without a password to the given machine.
   def can_ssh_to_ip(self, ip, ssh_key_location):
-    f = open(ssh_key_location)
-    key_contents = f.read()
-    f.close()
-    raise Exception(key_contents)
-    key = paramiko.RSAKey(data=base64.decodestring(key_contents))
-    client = paramiko.SSHClient()
-    client.get_host_keys().add(ip, 'ssh-rsa', key)
-    client.connect(ip)
-    stdin, stdout, stderr = client.exec_command('ls')
-    if stderr:
-      success = False
-    else:
-      success = True
+    try:
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      sock.connect((ip, 22))
+    except Exception:
+      return False
 
-    client.close()
+    t = paramiko.Transport(sock)
+    try:
+      t.start_client()
+    except paramiko.SSHException:
+      return False
+
+    key = paramiko.RSAKey.from_private_key_file(ssh_key_location)
+    t.auth_publickey('root', key)
+    success = t.is_authenticated()
+    t.close()
     return success
 
 

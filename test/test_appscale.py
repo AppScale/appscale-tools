@@ -105,7 +105,8 @@ class TestAppScale(unittest.TestCase):
     # file
     contents = {
       'ips_layout': {'master': 'ip1', 'appengine': 'ip1',
-                     'database': 'ip2', 'zookeeper': 'ip2'}
+                     'database': 'ip2', 'zookeeper': 'ip2'},
+      'keyname': 'boobazblarg'
     }
     yaml_dumped_contents = yaml.dump(contents)
     base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
@@ -116,16 +117,30 @@ class TestAppScale(unittest.TestCase):
      .with_args('/boo/' + appscale.APPSCALEFILE)
      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
 
+    # for this test, let's say that we don't have an SSH key already
+    # set up for ip1 and ip2
+    # TODO(cgb): Add in tests where we have a key for ip1 but not ip2,
+    # and the case where we have a key but it doesn't work
+    flexmock(os.path)
+    key_path = os.path.expanduser('~/.appscale/boobazblarg.key')
+    os.path.should_receive('exists').with_args(key_path).and_return(False).once()
+
+
     # finally, mock out the actual appscale tools calls. since we're running
     # via a cluster, this means we call add-keypair to set up SSH keys, then
     # run-instances to start appscale
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(["appscale-add-keypair",
+                                                 "--keyname",
+                                                 "boobazblarg",
                                                  "--ips_layout",
                                                  base64_ips_layout]).and_return().once()
     subprocess.should_receive('call').with_args(["appscale-run-instances",
                                                  "--ips_layout",
-                                                 base64_ips_layout]).and_return().once()
+                                                 base64_ips_layout,
+                                                 "--keyname",
+                                                 "boobazblarg",
+                                                 ]).and_return().once()
     appscale.up()
 
 
