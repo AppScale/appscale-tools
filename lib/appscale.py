@@ -303,7 +303,7 @@ Available commands:
     # Construct an upload-app command from the file's contents
     command = ["appscale-terminate-instances"]
     contents_as_yaml = yaml.safe_load(contents)
-    if contents_as_yaml['keyname']:
+    if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
