@@ -253,6 +253,16 @@ module AppScaleTools
   #       need not be used - any unique identifier will suffice.
   #     keyname (optional): The name of the key that is associated with
   #       machines in this AppScale deployment.
+  # Raises:
+  #   BadConfigurationException: If the user failed to specify a Hash
+  #     indicating what roles should be added, or if the user tries to
+  #     add an additional 'master' role.
+  # Returns:
+  #   The result of the SOAP message dispatched to the AppController
+  #   asking it to add the additional nodes. For successful invocations,
+  #   this is a Hash that maps the IP addresses of the new nodes to the
+  #   roles started on those machines. For unsuccessful invocations, this
+  #   is a String that indicates why the call failed.
   def self.add_instances(options)
     ips_yaml = options['ips']
     if ips_yaml.nil? or ips_yaml.empty?
@@ -298,7 +308,7 @@ module AppScaleTools
 
     # Return whatever the result of the SOAP request to the AppController
     # is.
-    acc.start_roles_on_nodes(converted_ips_yaml)
+    return acc.start_roles_on_nodes(converted_ips_yaml)
   end
 
 
