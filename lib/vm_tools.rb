@@ -283,6 +283,8 @@ module VMTools
         Kernel.puts("Need to retry with addressing private. Will try " +
           "again in a moment.")
         command_to_run << " --addressing private"
+      elsif run_instances =~ /(PROBLEM)|(RunInstancesType: Failed to allocate network tag)/
+        raise InfrastructureException.new("No network tags are currently free in your Eucalyptus deployment. Please delete some security groups and try again.")
       elsif run_instances =~ /(PROBLEM)|(RunInstancesType: Failed)/
         raise InfrastructureException.new("Saw the following error " +
           "message from iaas tools. Please resolve the issue and try " +
@@ -403,12 +405,12 @@ module VMTools
     }
 
     EC2_ENVIRONMENT_VARIABLES.each { |var|
-      cloud_creds["CLOUD1_#{var}"] = ENV[var]
+      cloud_creds["CLOUD_#{var}"] = ENV[var]
     }
 
     if cloud_creds["infrastructure"] == "euca"
       ["EC2_URL", "S3_URL"].each { |var|
-        cloud_creds["CLOUD1_#{var}"] = ENV[var]
+        cloud_creds["CLOUD_#{var}"] = ENV[var]
       }
     end
 
@@ -549,7 +551,7 @@ module VMTools
     }
   end
 
-  def self.terminate_infrastructure_machines(infrastructure, keyname)
+  def self.terminate_infrastructure_machines(infrastructure, keyname, group)
     # TODO: if we know all the other ips in the system, contact one
     # of them instead
 
@@ -560,10 +562,10 @@ module VMTools
     # for now, just kill them the hard way
     desc = "#{infrastructure}-describe-instances"
     term = "#{infrastructure}-terminate-instances"
-    cmd = "#{desc} | grep #{keyname} | awk '{print $2}' | xargs #{term}"
+    cmd = "#{desc} | grep #{keyname} | grep -v RESERVATION | awk '{print $2}' | xargs #{term}"
     puts "Unable to contact shadow node, shutting down via tools..."
     puts `#{cmd}`
-    cmd = "#{infrastructure}-delete-group appscale"
+    cmd = "#{infrastructure}-delete-group #{group}"
     puts `#{cmd}`
   end
 end

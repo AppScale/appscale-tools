@@ -466,7 +466,8 @@ module AppScaleTools
 
     infrastructure = CommonFunctions.get_infrastructure(keyname, required=true)
     if VALID_CLOUD_TYPES.include?(infrastructure)
-      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+      group = CommonFunctions.get_group(keyname, required=true)
+      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
     else
       CommonFunctions.terminate_via_vmm(keyname, options['verbose'])
     end
