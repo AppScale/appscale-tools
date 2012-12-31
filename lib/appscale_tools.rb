@@ -30,9 +30,13 @@ require 'vm_tools'
 module AppScaleTools
 
 
+  # The list of flags that can be used with the 'appscale-add-instances'
+  # command.
   ADD_INSTANCES_FLAGS = ["ips", "keyname"]
 
 
+  # The usage text that we display to users if they incorrectly invoke
+  # 'appscale-add-instances'.
   ADD_INSTANCES_USAGE = UsageText.get_usage("appscale-add-instances",
     ADD_INSTANCES_FLAGS)
 
