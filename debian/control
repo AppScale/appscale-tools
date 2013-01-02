@@ -1,5 +1,5 @@
-Source: appscale
-Section: unknown
+Source: appscale-tools
+Section: utils
 Priority: optional
 Maintainer: AppScale Developer <appscale_developer@googlegroups.com>
 Build-Depends: debhelper (>= 7)
@@ -8,15 +8,7 @@ Homepage: http://appscale.cs.ucsb.edu/
 
 Package: appscale-tools
 Architecture: any
-Depends:
-# tools
- openssh-client,
- ruby1.8, libopenssl-ruby, curl,
-# euca2ools
- python2.6, python-setuptools, python-m2crypto,
-# Unknown
- make
-Conflicts: python-boto
+Depends: openssh-client, ruby1.8, libopenssl-ruby, curl, unzip, euca2ools, cloud-utils
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of

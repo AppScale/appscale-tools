@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+"""
+Command to remove images
+"""
+
+from clint.command import Command, run_command
+
+from appscaletools.image import get_images
+
+class RemoveImagesCommand(Command):
+    """
+    Remove EC2 images using the given regex filter.
+
+    Calling this command with the regex 'appscale_cluster.*-jenkins-' would
+    remove images named:
+
+    appscale_cluster-1355341616-jenkins-addd44a
+    appscale_cluster-1355349782-jenkins-2358264
+
+    but would leave images named:
+
+    appscale_cluster-1355342892-berto-6b23c32
+    """
+
+    def _fill_parser(self):
+        # pylint: disable=W0212
+        super(RemoveImagesCommand, self)._fill_parser()
+        # pylint: enable=W0212
+
+        parser = self.parser
+
+        parser.add_argument('-y', '--remove-images', action='store_true',
+                help='actually remove images, by default just show what would be removed')
+
+        parser.add_argument('regex', help='filter for images to return')
+
+    def run(self):
+        self.logger.info('regex: {0}'.format(self.arguments.regex))
+        if not self.arguments.remove_images:
+            self.logger.info('This is a dry-run, add -y arg to really remove')
+
+        for image in get_images(regex=self.arguments.regex):
+            self.logger.info('Remove {0} {1}'.format(image.id, image.name))
+
+            if self.arguments.remove_images:
+                image.deregister()
+
+
+run_command(__name__, RemoveImagesCommand)

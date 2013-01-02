@@ -42,18 +42,15 @@ clean:
 
 	dh_clean 
 
-#DESTDIR = $(CURDIR)/debian/appscale-tools
+DESTDIR = $(CURDIR)/debian/appscale-tools
 install: build
 	dh_testdir
 	dh_testroot
 	dh_prep  
 	dh_installdirs
+
 	# Add here commands to install the package into debian/appscale.
-#	$(MAKE) DESTDIR=$(CURDIR)/debian/appscale install
-	mkdir -p $(DESTDIR)/usr/local/appscale-tools
-	cp -r bin lib templates $(DESTDIR)/usr/local/appscale-tools
-	cp LICENSE README $(DESTDIR)/usr/local/appscale-tools
-	bash $(CURDIR)/debian/appscale_install_$(DIST).sh tools $(DESTDIR)
+	DESTDIR=$(DESTDIR) $(MAKE) install
 
 # Build architecture-independent files here.
 binary-indep: install

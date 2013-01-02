@@ -6,6 +6,11 @@
 #
 # Written by Yoshi <nomura@pobox.com>
 
+appscale_tools=$(dirname $0)/../etc/profile.d/appscale_tools.sh
+if [ -e ${appsacle_tools} ]; then
+    source ${appscale_tools}
+fi
+
 if [ -z "$APPSCALE_HOME_RUNTIME" ]; then
     export APPSCALE_HOME_RUNTIME=/root/appscale
 fi
@@ -160,19 +165,9 @@ installappscaletools()
 
     # add to path
     mkdir -p ${DESTDIR}/etc/profile.d
-    cat > ${DESTDIR}/etc/profile.d/appscale-tools.sh <<EOF
-export TOOLS_PATH=/usr/local/appscale-tools
-export PATH=\${PATH}:\${TOOLS_PATH}/bin
-EOF
 }
 
 postinstallappscaletools()
 {
     :;
-}
-
-keygen()
-{
-    # create ssh private key if it is not exists.
-    test -e /root/.ssh/id_rsa || ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -N ""
 }

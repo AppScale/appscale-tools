@@ -1,13 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
-# include appscale_install_functions.sh here
-
-DESTDIR=
-#. /etc/profile.d/appscale.sh
+source /etc/profile.d/appscale_tools.sh
 
 case "$1" in
     configure)
-	postinstallappscaletools
 	keygen
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

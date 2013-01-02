@@ -1,0 +1,376 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+# tell pylint to ignore the filename containing a dash.  This is intentional to
+# maintain convention with ec2-tools, euca-tools, appscale-tools, etc.
+# pylint: disable=C0103
+"""
+Script for automating the process of creating an AppScale image on EC2
+"""
+
+import os
+import sh
+import string
+import sys
+import time
+
+from clint.command import Command, run_command
+from clint.textui import colored
+from sh import ssh
+
+from appscaletools.ec2 import EC2_DESCRIBE_INSTANCES, EC2_DESCRIBE_INSTANCES_RE, EC2_RUNNING_STATE, \
+    EC2_RUN_INSTANCES_RE, EC2_STOPPED_STATE
+
+
+DEFAULT_APPSCALE_BRANCH = 'testing'
+DEFAULT_APPSCALE_TOOLS_BRANCH = 'testing'
+
+AMI = 'ami-c7b202ae' # official Ubuntu EBS-backed AMI to be imaged
+DEFAULT_INSTANCE_TYPE = 'm1.small'
+
+# ec2-run-instances ami-1db20274 -t m1.small --region us-east-1 --key ${EC2_KEYPAIR_US_EAST_1}
+EC2_RUN_INSTANCES = sh.Command('ec2-run-instances')
+
+SSH_KEY_NAME = 'EC2_MY_SSH_KEY'
+SSH_KEY = os.environ.get('EC2_MY_SSH_KEY')
+
+SSH_ARGS = ('-o', 'UserKnownHostsFile /dev/null', '-o', 'StrictHostKeyChecking no', '-i', SSH_KEY, '-l', 'ubuntu')
+
+BOOTSTRAP_RELATIVE_PATH = os.path.join('bootstrap', 'appscale-install')
+SYSTEM_BOOTSTRAP_PATH = os.path.join(sys.prefix, 'share', BOOTSTRAP_RELATIVE_PATH)
+
+# confirm we are in the AppScale Tools repo.
+def in_appscale_tools_repo():
+    """
+    Check if command is running from an AppScale Tools repo.
+    """
+
+    in_repo = False
+    try:
+        for line in sh.git('remote', '-v', _iter=True):
+            if 'appscale-tools.git' in line:
+                in_repo = True
+                break
+    except sh.ErrorReturnCode_128:
+        pass
+
+    return in_repo
+
+def get_bootstrap_path():
+    """
+    Return the bootstrap script's path.
+
+    When appscale-bootstrap is run from a repository, return the path in the
+    repo.  Otherwise, return the one installed on the system.
+    """
+    if in_appscale_tools_repo():
+        path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', BOOTSTRAP_RELATIVE_PATH))
+    else:
+        path = SYSTEM_BOOTSTRAP_PATH
+
+    return path
+
+def ssh_key_name():
+    """
+    Return the name of the SSH key.
+
+    If there is an 'id_' prefix, it will be removed.
+    """
+    return os.path.basename(SSH_KEY).replace('id_', '')
+
+
+class Bootstrap(Command):
+    """
+    Bootstrap AppScale on an EC2 environment.
+
+    To install AppScale on an EC2 instance, simply run this command like so:
+
+    appscale-bootstrap
+
+    In the case where there is an error that can be continued from, rerun the
+    command specifying the instance that was created in the first run:
+
+    appscale-bootstrap <instance_id>
+    """
+
+    def __init__(self, doc=None):
+        self.ec2_hostname = None
+
+        super(Bootstrap, self).__init__(doc=doc)
+
+        self.instance_id = None
+        self.image_id = None
+
+        # use the ssh property instead of this directly.
+        self._ssh = None
+
+        self.appscale_branch = None
+        self.appscale_revision = None
+
+    def exiting_on_error(self, exception, status):
+        """
+        Notify user it's on them to blow away the created instance.
+        """
+        # pylint: disable=W0613
+        if self.instance_id:
+            self.logger.error((
+                'Please make sure to terminate instance "{0}" in order to '
+                'avoid unexpected AWS charges').format(self.instance_id)
+            )
+        # pylint: enable=W0613
+
+    def _fill_parser(self):
+        # pylint: disable=W0212
+        super(Bootstrap, self)._fill_parser()
+        # pylint: enable=W0212
+
+        self.parser.add_argument('--ami', default=AMI,
+                                 help='The EC2 AMI to use; default: {0}'.format(AMI))
+
+        self.parser.add_argument('-t', '--instance-type', default=DEFAULT_INSTANCE_TYPE,
+                                 help='The EC2 instance type; default: {0}'.format(DEFAULT_INSTANCE_TYPE))
+
+        self.parser.add_argument(
+                '--appscale-branch',
+                default=DEFAULT_APPSCALE_BRANCH,
+                help=('Default AppScale branch to image; '
+                      'default: {0}').format(DEFAULT_APPSCALE_BRANCH)
+        )
+
+        self.parser.add_argument(
+                '--appscale-tools-branch',
+                default=DEFAULT_APPSCALE_TOOLS_BRANCH,
+                help=('Default AppScale Tools branch to image; '
+                      'default: {0}').format(DEFAULT_APPSCALE_TOOLS_BRANCH)
+        )
+
+        self.parser.add_argument('instance_id', nargs='?', help='The ID of a running instance to provision')
+
+    def _check_ssh_key(self):
+        """
+        Ensure an SSH key is specified in the environment.
+
+        This is the SSH key that is injected into the VM in order to be able to
+        SSH into it.
+        """
+        if SSH_KEY is None:
+            message = (
+                "{0} Please set the {1} environment "
+                "variable with the SSH key EC2 should use."
+            ).format(colored.red('Error:'), colored.yellow(SSH_KEY_NAME))
+
+            raise self.CommandError(message)
+
+    def create_image(self):
+        """
+        Create an image out of the instance that was just created
+        """
+
+        image_name = 'appscale_cluster-{now}-{owner}-{rev}'.format(
+                now=int(time.time()),
+                owner=ssh_key_name(),
+                rev=self.appscale_revision
+        )
+
+        self.logger.info('creating image with name: {0}'.format(image_name))
+
+        ec2_create_image = sh.Command('ec2-create-image')
+
+        image_id = None
+        for line in ec2_create_image(self.instance_id, '-n', image_name, _iter=True):
+            line = line.strip()
+
+            if line.startswith('IMAGE'):
+                image_id = line.split()[1] #e.g. ami-359a1a5c
+
+        if image_id is None:
+            raise self.CommandError('Unable to get image id from ec2-create-image')
+
+        self.image_id = image_id
+        self.logger.info('image_id: {0}'.format(self.image_id))
+
+    def install_appscale(self):
+        """
+        SSH into the VM and install AppScale
+        """
+
+        bootstrap_path = get_bootstrap_path()
+
+        bootstrap = os.path.join('/tmp', os.path.basename(bootstrap_path))
+        appscale_branch = self.arguments.appscale_branch
+        appscale_tools_branch = self.arguments.appscale_tools_branch
+        remote_command = ('cat > {0} && sudo bash {1} {2} {3}').format(
+                bootstrap, bootstrap, appscale_branch, appscale_tools_branch)
+
+        self.logger.debug('Catting bootstrap from {0}'.format(bootstrap_path))
+        self.logger.debug('Remote command: {0}'.format(remote_command))
+
+        # attempt to get an SSH connection up to 5 times because we might try
+        # to connect to the machine while it's still trying to boot.
+        success = False
+        for _ in range(36):
+            try:
+                for line in self.ssh(sh.cat(bootstrap_path), remote_command, _iter=True):
+                    # rip out non-printable characters that were blowing up the
+                    # build while some ruby / rubygems / gem was being
+                    # installed.
+                    log_line = ''.join(s for s in line.strip() if s in string.printable)
+
+                    # snag the branch and revision being built
+                    if log_line.startswith("appscale branch: "):
+                        self.appscale_branch = log_line.split()[2]
+
+                    if log_line.startswith("appscale revision: "):
+                        self.appscale_revision = log_line.split()[2]
+
+                    self.logger.info(log_line)
+
+                success = True
+                break
+            except sh.ErrorReturnCode_255, exc:
+                self.logger.error('Error (SSH failure?): Trying again in 5 seconds.'.format(exc.__class__))
+                time.sleep(5.0)
+
+        if not success:
+            raise self.CommandError('Unable to bootstrap instance!')
+
+    def run(self):
+        start = time.time()
+
+        self.logger.info('Bootstrapping EC2 instance')
+
+        self._check_ssh_key()
+
+        self.instance_id = self.start_instance()
+        self.logger.info('instance id: {0}'.format(self.instance_id))
+
+        self.install_appscale()
+
+        self.stop_instance()
+
+        self.create_image()
+
+        self.terminate_instance()
+
+        now = time.time()
+        elapsed = now - start
+
+        self.logger.info('Done.  Elapsed time: {0}s'.format(elapsed))
+        self.logger.info(
+                'When you are done with the AMI, you run the command: ec2-deregister {0}'.format(self.image_id))
+
+    @property
+    def ssh(self):
+        """
+        Return an SSH command object.
+
+        This will bake needed arguments for connecting to the EC2 instance.
+        """
+        if self._ssh is not None:
+            return self._ssh
+
+        if self.ec2_hostname is None:
+            raise self.CommandError('Cannot run SSH without a hostname')
+
+        self._ssh = ssh.bake(SSH_ARGS + (self.ec2_hostname,))
+        self.logger.debug('SSH command: {0}'.format(str(self._ssh)))
+
+        return self._ssh
+
+    def start_instance(self):
+        """
+        Use ec2-run-instances to create a VM on EC2
+        """
+
+        instance_id = self.arguments.instance_id
+        if instance_id:
+            # call wait_for_instance() in order to get hostname
+            self.wait_for_instance(instance_id=instance_id)
+
+            return instance_id
+
+        for line in EC2_RUN_INSTANCES(
+                self.arguments.ami, '-v', '-n', '1', '-t',
+                self.arguments.instance_type, '-k', ssh_key_name(), _iter=True):
+            matches = EC2_RUN_INSTANCES_RE.match(line)
+            if matches:
+                instance_id = matches.group('instance_id')
+
+        if instance_id is None:
+            raise self.CommandError('Did not find instance id')
+
+        self.wait_for_instance(instance_id=instance_id)
+
+        return instance_id
+
+    def stop_instance(self):
+        """
+        Wrapper around ec2-stop-instances.
+        """
+
+        ec2_stop_instances = sh.Command('ec2-stop-instances')
+        ec2_stop_instances(self.instance_id)
+
+        self.wait_for_instance(desired_state=EC2_STOPPED_STATE)
+
+    def terminate_instance(self):
+        """
+        Wrapper around ec2-terminate-instances
+        """
+
+        self.logger.info('Terminating instance {0}'.format(self.instance_id))
+
+        ec2_terminate_instances = sh.Command('ec2-terminate-instances')
+        for line in ec2_terminate_instances(self.instance_id, _iter=True):
+            self.logger.info(line)
+
+    def wait_for_instance(self, instance_id=None, desired_state=EC2_RUNNING_STATE):
+        """
+        Wait for an instance to go from pending to running.
+
+        This will wait a maximum of 5 minutes and error out
+        """
+
+        running_state = None
+        now = time.time()
+        describe_instances_info = None
+
+        instance_id = instance_id or self.instance_id
+
+        while time.time() < now + 300:
+            t_running_state = None
+
+            for line in EC2_DESCRIBE_INSTANCES(instance_id, _iter=True):
+                matches = EC2_DESCRIBE_INSTANCES_RE.match(line)
+                if matches:
+                    t_running_state = matches.group('running_state')
+                    break
+
+            if t_running_state:
+                running_state = t_running_state
+            else:
+                raise self.CommandError('failed to parse ec2-describe-instances output')
+
+            if running_state == desired_state:
+                describe_instances_info = matches.groupdict()
+                break
+
+            self.logger.debug('instance {0} in {1} state, waiting for {2} state.'.format(
+                instance_id, running_state, desired_state)
+            )
+
+            time.sleep(2.0)
+
+        if running_state != desired_state:
+            message = 'EC2 instance is in running state {0} instead of {1}'.format(running_state, desired_state)
+            raise self.CommandError(message)
+
+        # if the machine's state is running, grab the hostname, otherwise clear it
+        if running_state == EC2_RUNNING_STATE:
+            # set the ec2_hostname from the last regex match
+            self.ec2_hostname = describe_instances_info['ec2_hostname']
+        else:
+            self.ec2_hostname = None
+
+
+run_command(__name__, Bootstrap)

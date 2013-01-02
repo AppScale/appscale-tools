@@ -4,8 +4,8 @@ DIST=`lsb_release -c -s`
 
 cd `dirname $0`/..
 
-if [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
-    echo "${DIST} is not supported."
+if [ ${DIST} != lucid ]; then
+    echo "Sorry, only ${DIST} is supported"
     exit 1
 fi
 
@@ -29,7 +29,7 @@ cp -v LICENSE README $TARGETDIR || exit 1
 
 # install scripts
 
-bash debian/appscale_install_${DIST}.sh all
+bash debian/appscale_install.sh all
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
     exit 1

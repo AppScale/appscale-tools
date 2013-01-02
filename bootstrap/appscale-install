@@ -1,0 +1,37 @@
+#!/bin/bash
+SCRIPT_NAME=$(basename $0)
+
+set -e
+
+# update the system
+apt-get update
+apt-get -y upgrade
+
+# install git
+apt-get install -y git-core
+
+cd /root
+
+# install AppScale
+git clone git://github.com/AppScale/appscale.git
+cd appscale
+
+[ ! -z $1 ] && git reset --hard origin/$1
+
+echo "appscale branch: $(basename $(git symbolic-ref HEAD))"
+echo "appscale revision: $(git rev-parse --short HEAD)"
+
+bash debian/appscale_build.sh
+
+cd /root
+
+# install AppScale Tools
+git clone git://github.com/AppScale/appscale-tools.git
+cd appscale-tools
+
+[ ! -z $2 ] && git reset --hard origin/$2
+
+echo "appscale-tools branch: $(basename $(git symbolic-ref HEAD))"
+echo "appscale-tools revision: $(git rev-parse --short HEAD)"
+
+bash debian/appscale_build.sh

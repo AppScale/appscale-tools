@@ -1,0 +1,10 @@
+argparse
+nose==1.2.1
+sh==1.07
+pylint
+sphinx
+boto
+flexmock
+
+-e git://github.com/baremetal/clint.git@command_object#egg=clint-dev
+-e git://github.com/baremetal/debgit.git@master#egg=debgit
