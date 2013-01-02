@@ -91,6 +91,13 @@ REMOTE_APPSCALE_FILE_DIR = "/etc/appscale/"
 module CommonFunctions
 
 
+  # AppScale requires Java App Engine applications uploaded by users to
+  # be of the same version as what we support on our virtual machine
+  # images. To avoid contacting the VMs themselves to see what version
+  # they support, this constant is instead used.
+  JAVA_AE_VERSION = "1.7.3"
+
+
   # A convenience function that can be used to write a string to a file.
   def self.write_file(location, contents)
     File.open(location, "w+") { |file| file.write(contents) }
@@ -986,8 +993,9 @@ module CommonFunctions
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
       sdk_file = File.join(fullpath, "war/WEB-INF/lib/appengine-api-1.0-sdk-#{JAVA_AE_VERSION}.jar")
       if !File.exists?(sdk_file)
-        raise AppEngineConfigException.new("Unsupported Java appengine version. Please " +
-                                               "recompile and repackage your app with Java appengine #{JAVA_AE_VERSION}.")
+        raise AppEngineConfigException.new("Unsupported Java App Engine version. Please " +
+                                           "recompile and repackage your app with Java " +
+                                           "App Engine #{JAVA_AE_VERSION}.")
       end
       FileUtils.mkdir_p("/tmp/#{temp_dir}/war/WEB-INF/lib")
       temp_dir2 = CommonFunctions.get_random_alphanumeric
