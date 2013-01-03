@@ -13,6 +13,7 @@ case "$1" in
 	# scratch install of appscale including post script.
 	installappscaletools
 	postinstallappscaletools
+    installsetuptools
     installec2ools
 	keygen
 	;;

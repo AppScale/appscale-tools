@@ -13,9 +13,11 @@ echo "Ubuntu ${DIST}"
 
 # install runtime dependency
 # for distro
+EUCA_TOOLS_VERSION="2.1"
 PACKAGES=`find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +`
+add-apt-repository "deb http://downloads.eucalyptus.com/software/euca2ools/${EUCA_TOOLS_VERSION}/ubuntu/ ${DIST} main"
 apt-get update
-apt-get install -y ${PACKAGES}
+apt-get install -y --force-yes ${PACKAGES}
 if [ $? -ne 0 ]; then
     echo "Fail to install depending packages for runtime."
     exit 1
