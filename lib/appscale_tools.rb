@@ -107,7 +107,7 @@ module AppScaleTools
 
   RUN_INSTANCES_FLAGS = ["help", "h", "min", "max", "file", "table", "ips",
     "v", "verbose", "machine", "instance_type", "usage", "version", "keyname",
-    "iaas", "infrastructure", "n", "r", "w", "scp", "test", "appengine",
+    "infrastructure", "n", "r", "w", "scp", "test", "appengine",
     "force", "restore_from_tar", "restore_neptune_info", "group"]
 
 
@@ -311,11 +311,11 @@ module AppScaleTools
 
 
   def self.remove_app(options)
-    CommonFunctions.update_locations_file(options['keyname'])
     if options['appname'].nil?
       raise BadConfigurationException.new(NO_APPNAME_GIVEN)
     end
 
+    CommonFunctions.update_locations_file(options['keyname'])
     result = CommonFunctions.confirm_app_removal(options['confirm'],
       options['appname'])
     if result == "NO"
@@ -350,6 +350,15 @@ module AppScaleTools
   end
 
 
+  # Deploys AppScale over virtual machines located in Amazon EC2, Eucalyptus,
+  # or Xen/KVM. To do so, this function spawns an initial virtual machine
+  # and then delegates the rest of the responsibilities of starting AppScale
+  # to that machine.
+  # Args:
+  #   options: A Hash that contains parameters that can be used to customize
+  #     the given AppScale deployment.
+  # Returns:
+  #   Nothing.
   def self.run_instances(options)
     infrastructure = options['infrastructure']
     instance_type = options['instance_type']
@@ -380,6 +389,8 @@ module AppScaleTools
 
     userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
     CommonFunctions.verbose("Run instances: UserAppServer is at #{userappserver_ip}", options['verbose'])
     uac = UserAppClient.new(userappserver_ip, secret_key)
     if options["admin_user"].nil? and options["admin_pass"].nil?
@@ -437,7 +448,8 @@ module AppScaleTools
 
     infrastructure = CommonFunctions.get_infrastructure(keyname, required=true)
     if VALID_CLOUD_TYPES.include?(infrastructure)
-      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+      group = CommonFunctions.get_group(keyname, required=true)
+      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
     else
       CommonFunctions.terminate_via_vmm(keyname, options['verbose'])
     end
