@@ -1659,7 +1659,7 @@ module CommonFunctions
       "failed because of a #{exception.class} error, with backtrace " +
       "#{exception.backtrace}. Is it ok if we gather the logs from " +
       "your AppScale deployment to your local machine, to aid in " +
-      "debugging this problem?"
+      "debugging this problem? (Y/N) "
     if !self.get_yes_or_no_from_stdin(collect_logs_prompt)
       Kernel.puts("Not copying over logs - quitting!")
       return {
@@ -1683,10 +1683,20 @@ module CommonFunctions
 
     # tell them they can send it to the mailing list, or we can anonymize
     # it and send it to us directly
-
-    # return if no
-
-    # put together the anonymized data
+    # don't proceed further if they say 'no'.
+    send_logs_prompt = "We can automatically send your crash report to " +
+      "AppScale Systems to be analyzed and have feedback incorporated " +
+      "into future versions of AppScale. Would you like us to do this? (Y/N)"
+    if !self.get_yes_or_no_from_stdin(send_logs_prompt)
+      Kernel.puts("Not sending over crash report. Your logs have been " +
+        "stored at #{options['location']} if you wish to view them or " +
+        "send them to the AppScale team for debugging purposes.")
+      return {
+        :collected_logs => true,
+        :sent_logs => false,
+        :reason => "aborted by user"
+      }
+    end
 
     # send it
 
