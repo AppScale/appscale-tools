@@ -1618,4 +1618,24 @@ module CommonFunctions
   def self.verbose(msg, verbose)
     Kernel.puts msg if verbose
   end
+
+
+  # This method gathers the logs generated during an AppScale deployment
+  # and sends them for debugging purposes. We query the user if they
+  # want to gather the logs and again if they want to send them, in case
+  # they wish to opt-out of this feature. The intention here is to provide
+  # a method that can be called if any of the tools throw an exception, so
+  # the caller should also indicate what exception was thrown in the first
+  # place.
+  # Args:
+  # - options: A Hash that contains the configuration parameters used to
+  #   deploy AppScale.
+  # - exception: The Exception that caused an AppScaleTools method to
+  #   fail, which may be useful in debugging why the user's deployment
+  #   failed.
+  def self.collect_and_send_logs(options, exception)
+
+  end
+
+
 end

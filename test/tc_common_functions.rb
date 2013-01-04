@@ -148,4 +148,11 @@ class TestCommonFunctions < Test::Unit::TestCase
   end
 
 
+  def test_collect_and_send_logs
+    assert_nothing_raised(Exception) {
+      CommonFunctions.collect_and_send_logs({}, nil)
+    }
+  end
+
+
 end
