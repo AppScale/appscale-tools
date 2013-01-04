@@ -1633,6 +1633,9 @@ module CommonFunctions
   # - exception: The Exception that caused an AppScaleTools method to
   #   fail, which may be useful in debugging why the user's deployment
   #   failed.
+  # Returns:
+  #   A Hash that indicates what actions we took and whether or not they
+  #   were successful.
   def self.collect_and_send_logs(options, exception)
     # first, ask the user if they want us to gather their logs
 
