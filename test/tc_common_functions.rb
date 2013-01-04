@@ -44,6 +44,7 @@ class TestCommonFunctions < Test::Unit::TestCase
     @key = "appscale"
 
     # mock out any writing to stdout
+    flexmock(Kernel).should_receive(:print).and_return()
     flexmock(Kernel).should_receive(:puts).and_return()
   end
 
@@ -155,13 +156,16 @@ class TestCommonFunctions < Test::Unit::TestCase
     # first, try a test where the user does not want to collect logs
 
     flexmock(STDIN).should_receive(:gets).and_return("no\n")
+    exception = flexmock("Exception")
+    exception.should_receive(:class).and_return("BooException")
+    exception.should_receive(:backtrace).and_return("the stack trace")
 
     expected = {
       :collected_logs => false,
       :sent_logs => false,
       :reason => "aborted by user"
     }
-    actual = CommonFunctions.collect_and_send_logs({}, nil)
+    actual = CommonFunctions.collect_and_send_logs({}, exception)
     assert_equal(expected, actual)
   end
 
