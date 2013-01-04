@@ -42,6 +42,9 @@ class TestCommonFunctions < Test::Unit::TestCase
 
     @role_info = [node1, node2]
     @key = "appscale"
+
+    # mock out any writing to stdout
+    flexmock(Kernel).should_receive(:puts).and_return()
   end
 
 
@@ -148,10 +151,18 @@ class TestCommonFunctions < Test::Unit::TestCase
   end
 
 
-  def test_collect_and_send_logs
-    assert_nothing_raised(Exception) {
-      CommonFunctions.collect_and_send_logs({}, nil)
+  def test_collect_and_send_logs_where_user_says_no
+    # first, try a test where the user does not want to collect logs
+
+    flexmock(STDIN).should_receive(:gets).and_return("no\n")
+
+    expected = {
+      :collected_logs => false,
+      :sent_logs => false,
+      :reason => "aborted by user"
     }
+    actual = CommonFunctions.collect_and_send_logs({}, nil)
+    assert_equal(expected, actual)
   end
 
 

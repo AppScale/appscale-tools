@@ -1654,8 +1654,16 @@ module CommonFunctions
   #   were successful.
   def self.collect_and_send_logs(options, exception)
     # first, ask the user if they want us to gather their logs
-
-    # return if no
+    # don't proceed further if they say 'no'.
+    collect_logs_prompt = ""
+    if !self.get_yes_or_no_from_stdin(collect_logs_prompt)
+      Kernel.puts("")
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "aborted by user"
+      }
+    end
 
     # gather the logs
 
