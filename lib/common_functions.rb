@@ -1198,7 +1198,11 @@ module CommonFunctions
     STDOUT.flush
 
     prompt = "Are you sure you want to remove this application (Y/N)? "
-    return self.get_yes_or_no_from_stdin(prompt)
+    if self.get_yes_or_no_from_stdin(prompt)
+      return "YES"
+    else
+      return "NO"
+    end
   end
 
 
@@ -1207,16 +1211,16 @@ module CommonFunctions
   # Args:
   # - prompt: A String that is used to prompt the user for a yes or no answer.
   # Returns:
-  #  "YES" or "NO", depending on the user's response to the prompt.
+  #  A boolean that indicates whether or not the user replied "yes".
   def self.get_yes_or_no_from_stdin(prompt)
     loop {
       Kernel.print(prompt)
       result = STDIN.gets.chomp.upcase
       if result == "Y" or result == "YES" 
-        return "YES"
+        return true
       end
       if result == "N" or result == "NO"
-        return "NO"
+        return false
       end
       Kernel.puts "Please type in 'yes' or 'no'."
     }
