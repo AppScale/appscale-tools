@@ -1634,7 +1634,22 @@ module CommonFunctions
   #   fail, which may be useful in debugging why the user's deployment
   #   failed.
   def self.collect_and_send_logs(options, exception)
+    # first, ask the user if they want us to gather their logs
 
+    # return if no
+
+    # gather the logs
+
+    # tell them they can send it to the mailing list, or we can anonymize
+    # it and send it to us directly
+
+    # return if no
+
+    # put together the anonymized data
+
+    # send it
+
+    # return
   end
 
 
