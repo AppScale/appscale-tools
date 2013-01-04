@@ -132,8 +132,8 @@ class AppControllerClient
     make_call(30, RETRY_ON_FAIL) { @conn.update(app_names, @secret) }
   end
  
-  def get_all_public_ips()
-    make_call(30, RETRY_ON_FAIL) { @conn.get_all_public_ips(@secret) }
+  def get_all_public_ips(retry_on_fail=RETRY_ON_FAIL)
+    make_call(30, retry_on_fail) { @conn.get_all_public_ips(@secret) }
   end
 
   def kill()

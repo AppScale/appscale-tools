@@ -259,8 +259,7 @@ module AppScaleTools
   #   copied to the specified location.
   def self.gather_logs(options)
     keyname = options['keyname'] || "appscale"
-    location = options['location'] || "/tmp/#{keyname}-logs/"
-    location = File.expand_path(location)
+    location = File.expand_path(options['location'] || "/tmp/#{keyname}-logs/")
 
     # First, make sure that the place we want to store logs doesn't
     # already exist.
@@ -290,7 +289,7 @@ module AppScaleTools
 
     begin
       acc = AppControllerClient.new(head_node_ip, secret)
-      all_ips = acc.get_all_public_ips()
+      all_ips = acc.get_all_public_ips(ABORT_ON_FAIL)
     rescue AppScaleException
       all_ips = [head_node_ip]
     end

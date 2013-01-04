@@ -1669,7 +1669,17 @@ module CommonFunctions
       }
     end
 
-    # gather the logs
+    # gather the logs, putting them in a unique location
+    options['location'] = "/tmp/appscale-logs-#{Time.now().to_i}"
+    begin
+      AppScaleTools.gather_logs(options)
+    rescue AppScaleException
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "unable to collect logs"
+      }
+    end
 
     # tell them they can send it to the mailing list, or we can anonymize
     # it and send it to us directly
