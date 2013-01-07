@@ -1655,7 +1655,7 @@ module CommonFunctions
   def self.collect_and_send_logs(options, exception)
     # first, ask the user if they want us to gather their logs
     # don't proceed further if they say 'no'.
-    collect_logs_prompt = "We noticed that your AppScale deployment " +
+    collect_logs_prompt = "\nWe noticed that your AppScale deployment " +
       "failed because of a #{exception.class} error, with backtrace " +
       "#{exception.backtrace}. Is it ok if we gather the logs from " +
       "your AppScale deployment to your local machine, to aid in " +
@@ -1681,26 +1681,43 @@ module CommonFunctions
       }
     end
 
-    # tell them they can send it to the mailing list, or we can anonymize
-    # it and send it to us directly
-    # don't proceed further if they say 'no'.
-    send_logs_prompt = "We can automatically send your crash report to " +
-      "AppScale Systems to be analyzed and have feedback incorporated " +
-      "into future versions of AppScale. Would you like us to do this? (Y/N)"
-    if !self.get_yes_or_no_from_stdin(send_logs_prompt)
-      Kernel.puts("Not sending over crash report. Your logs have been " +
-        "stored at #{options['location']} if you wish to view them or " +
-        "send them to the AppScale team for debugging purposes.")
-      return {
-        :collected_logs => true,
-        :sent_logs => false,
-        :reason => "aborted by user"
-      }
-    end
+    # tell them they can send it to the mailing list
+    Kernel.puts "Your logs have been collected and stored at " +
+      "#{options['location']}. Please visit " +
+      "https://groups.google.com/forum/?fromgroups#!forum/appscale_community" +
+      " and send us your logs so that we can debug your AppScale" +
+      " deployment."
+    return {
+      :collected_logs => true,
+      :sent_logs => false,
+      :reason => ""
+    }
 
-    # send it
+    # TODO(cgb): Once we set up a web app at logs.appscale.com, we can
+    # send the user's logs to it automatically. Of course, ask the user
+    # first if they want to do this, and  don't proceed further if they
+    # say 'no'.
+    #send_logs_prompt = "We can automatically send your crash report to " +
+    #  "AppScale Systems to be analyzed and have feedback incorporated " +
+    #  "into future versions of AppScale. Would you like us to do this? (Y/N)"
+    #if !self.get_yes_or_no_from_stdin(send_logs_prompt)
+    #  Kernel.puts("Not sending over crash report. Your logs have been " +
+    #    "stored at #{options['location']} if you wish to view them or " +
+    #    "send them to the AppScale team for debugging purposes.")
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => false,
+    #    :reason => "aborted by user"
+    #  }
+    #end
 
-    # return
+    # TODO(cgb): send the log files, one at a time
+
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => true,
+    #    :reason => ""
+    #  }
   end
 
 

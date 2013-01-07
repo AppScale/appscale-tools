@@ -247,11 +247,12 @@ class TestCommonFunctions < Test::Unit::TestCase
     assert_equal(expected, actual)
   end
 
-  def test_collect_and_send_logs_where_user_says_yes_but_no_sending
+
+  def test_collect_and_send_logs_where_user_says_yes_to_both
     # try a test where the user does want to collect logs, and
     # the AppController has not failed
 
-    flexmock(STDIN).should_receive(:gets).and_return("yes\n", "no\n")
+    flexmock(STDIN).should_receive(:gets).and_return("yes\n", "yes\n")
     exception = flexmock("Exception")
     exception.should_receive(:class).and_return("BooException")
     exception.should_receive(:backtrace).and_return("the stack trace")
@@ -293,7 +294,7 @@ class TestCommonFunctions < Test::Unit::TestCase
     flexmock(FileUtils).should_receive(:mkdir_p).with("#{logs_location}/ip1").
       and_return(true)
 
-    # finally, assume the node is alive, so we can copy logs off of it
+    # assume the node is alive, so we can copy logs off of it
     flexmock(CommonFunctions).should_receive(:shell).with(/\Ascp/).and_return()
     flexmock(Kernel).should_receive(:rand).and_return("random")
     scp_return_val_path = File.expand_path("~/.appscale/retval-random")
@@ -309,7 +310,7 @@ class TestCommonFunctions < Test::Unit::TestCase
     expected = {
       :collected_logs => true,
       :sent_logs => false,
-      :reason => "aborted by user"
+      :reason => ""
     }
     actual = CommonFunctions.collect_and_send_logs(options, exception)
     assert_equal(expected, actual)
