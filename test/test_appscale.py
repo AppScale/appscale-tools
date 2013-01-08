@@ -284,6 +284,40 @@ class TestAppScale(unittest.TestCase):
     appscale.deploy(app)
 
 
+  def testDeployWithCloudAppScalefileAndTestFlag(self):
+    # same as before, but with the 'test' flag in our AppScalefile
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1,
+      'test' : True
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+
+    # finally, mock out the actual appscale-run-instances call
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["appscale-upload-app", "--keyname", "bookey", "--test", "--file", "/bar/app"]).and_return().once()
+    app = '/bar/app'
+    appscale.deploy(app)
+
+
   def testDestroyWithNoAppScalefile(self):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die
