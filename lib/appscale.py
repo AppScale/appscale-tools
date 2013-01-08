@@ -258,7 +258,7 @@ Available commands:
     # Construct a describe-instances command from the file's contents
     command = ["appscale-describe-instances"]
     contents_as_yaml = yaml.safe_load(contents)
-    if contents_as_yaml['keyname']:
+    if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
@@ -283,7 +283,7 @@ Available commands:
     # Construct an upload-app command from the file's contents
     command = ["appscale-upload-app"]
     contents_as_yaml = yaml.safe_load(contents)
-    if contents_as_yaml['keyname']:
+    if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
