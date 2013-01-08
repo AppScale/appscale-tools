@@ -235,7 +235,12 @@ Available commands:
       return False
 
     key = paramiko.RSAKey.from_private_key_file(ssh_key_location)
-    t.auth_publickey('root', key)
+
+    try:
+      t.auth_publickey('root', key)
+    except paramiko.AuthenticationException:
+      return False
+
     success = t.is_authenticated()
     t.close()
     return success
