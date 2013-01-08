@@ -19,12 +19,12 @@ table: 'cassandra'
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
 # in your AWS account.
-keyname : 'bookey'
+keyname : 'appscalekey'
 
 # The AWS security group name that should be used for all machines in this
 # AppScale deployment. This should refer to a keyname that does not already
 # exist in your AWS account.
-group : 'boogroup'
+group : 'appscalegroup'
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True in all cases, as it produces much
