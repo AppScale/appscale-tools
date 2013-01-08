@@ -77,6 +77,10 @@ module UsageText
     "--keyname KEYNAME: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name."
   end
 
+  def self.location
+    "--location LOCATION: The location where logs should be copied to on the local filesystem."
+  end
+
   def self.machine
     "--machine IMAGE_ID: The machine image to use in Amazon EC2 or Eucalyptus. Supercedes the contents of the environment variable APPSCALE_MACHINE, which is otherwise used if this flag is not present."
   end

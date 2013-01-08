@@ -598,7 +598,7 @@ module CommonFunctions
   def self.scp_file(local_file_loc, remote_file_loc, target_ip, public_key_loc)
     cmd = ""
     local_file_loc = File.expand_path(local_file_loc)
-    retval_file = File.expand_path("~/.appscale/retval-#{rand()}")
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
  
     if public_key_loc.class == Array
       public_key_loc.each { |key|
@@ -612,9 +612,22 @@ module CommonFunctions
     end
 
     cmd << "; echo $? > #{retval_file}"
-
     FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
 
+
+  def self.scp_remote_to_local(remote_source, local_dest, ip, ssh_key)
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
+    cmd = "scp -r -i #{ssh_key} #{SSH_OPTIONS} 2>&1 " +
+      "root@#{ip}:#{remote_source} #{local_dest}; echo $? " +
+      "> #{retval_file}"
+    FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
+
+
+  def self.scp(cmd, retval_file)
     begin
       Timeout::timeout(INFINITY) { CommonFunctions.shell("#{cmd}") }
     rescue Timeout::Error
@@ -1181,19 +1194,35 @@ module CommonFunctions
       return "YES"
     end
 
-    Kernel.print "We are about to attempt to remove your application, #{app_name}." +
-      "\nAre you sure you want to remove this application (Y/N)? "
+    Kernel.puts "We are about to attempt to remove your application, #{app_name}."
     STDOUT.flush
-    
+
+    prompt = "Are you sure you want to remove this application (Y/N)? "
+    if self.get_yes_or_no_from_stdin(prompt)
+      return "YES"
+    else
+      return "NO"
+    end
+  end
+
+
+  # Prompts the user for a yes or no response, and if yes or no is not given,
+  # prompts again until a yes or no is given.
+  # Args:
+  # - prompt: A String that is used to prompt the user for a yes or no answer.
+  # Returns:
+  #  A boolean that indicates whether or not the user replied "yes".
+  def self.get_yes_or_no_from_stdin(prompt)
     loop {
+      Kernel.print(prompt)
       result = STDIN.gets.chomp.upcase
       if result == "Y" or result == "YES" 
-        return "YES"
+        return true
       end
       if result == "N" or result == "NO"
-        return "NO"
+        return false
       end
-      Kernel.print "Please type in 'yes' or 'no'.\nAre you sure you want to remove this application (Y/N)? "
+      Kernel.puts "Please type in 'yes' or 'no'."
     }
   end
 
@@ -1605,4 +1634,91 @@ module CommonFunctions
   def self.verbose(msg, verbose)
     Kernel.puts msg if verbose
   end
+
+
+  # This method gathers the logs generated during an AppScale deployment
+  # and sends them for debugging purposes. We query the user if they
+  # want to gather the logs and again if they want to send them, in case
+  # they wish to opt-out of this feature. The intention here is to provide
+  # a method that can be called if any of the tools throw an exception, so
+  # the caller should also indicate what exception was thrown in the first
+  # place.
+  # Args:
+  # - options: A Hash that contains the configuration parameters used to
+  #   deploy AppScale.
+  # - exception: The Exception that caused an AppScaleTools method to
+  #   fail, which may be useful in debugging why the user's deployment
+  #   failed.
+  # Returns:
+  #   A Hash that indicates what actions we took and whether or not they
+  #   were successful.
+  def self.collect_and_send_logs(options, exception)
+    # first, ask the user if they want us to gather their logs
+    # don't proceed further if they say 'no'.
+    collect_logs_prompt = "\nWe noticed that your AppScale deployment " +
+      "failed because of a #{exception.class} error, with backtrace " +
+      "#{exception.backtrace}. Is it ok if we gather the logs from " +
+      "your AppScale deployment to your local machine, to aid in " +
+      "debugging this problem? (Y/N) "
+    if !self.get_yes_or_no_from_stdin(collect_logs_prompt)
+      Kernel.puts("Not copying over logs - quitting!")
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "aborted by user"
+      }
+    end
+
+    # gather the logs, putting them in a unique location
+    options['location'] = "/tmp/appscale-logs-#{Time.now().to_i}"
+    begin
+      AppScaleTools.gather_logs(options)
+    rescue AppScaleException
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "unable to collect logs"
+      }
+    end
+
+    # tell them they can send it to the mailing list
+    Kernel.puts "Your logs have been collected and stored at " +
+      "#{options['location']}. Please visit " +
+      "https://groups.google.com/forum/?fromgroups#!forum/appscale_community" +
+      " and send us your logs so that we can debug your AppScale" +
+      " deployment."
+    return {
+      :collected_logs => true,
+      :sent_logs => false,
+      :reason => ""
+    }
+
+    # TODO(cgb): Once we set up a web app at logs.appscale.com, we can
+    # send the user's logs to it automatically. Of course, ask the user
+    # first if they want to do this, and  don't proceed further if they
+    # say 'no'.
+    #send_logs_prompt = "We can automatically send your crash report to " +
+    #  "AppScale Systems to be analyzed and have feedback incorporated " +
+    #  "into future versions of AppScale. Would you like us to do this? (Y/N)"
+    #if !self.get_yes_or_no_from_stdin(send_logs_prompt)
+    #  Kernel.puts("Not sending over crash report. Your logs have been " +
+    #    "stored at #{options['location']} if you wish to view them or " +
+    #    "send them to the AppScale team for debugging purposes.")
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => false,
+    #    :reason => "aborted by user"
+    #  }
+    #end
+
+    # TODO(cgb): send the log files, one at a time
+
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => true,
+    #    :reason => ""
+    #  }
+  end
+
+
 end
