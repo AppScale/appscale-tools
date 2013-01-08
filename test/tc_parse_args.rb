@@ -152,6 +152,15 @@ class TestParseArgs < Test::Unit::TestCase
     #assert_equal(3, actual_11['voldemort_w'])
   end
 
+  def test_gather_logs_flags
+    # Specifying auto, force, or test should have that carried over
+    # to in the resulting hash
+    args = ["--location", "/boo/baz"]
+    all_flags = ['location']
+    actual = ParseArgs.get_vals_from_args(args, all_flags, @usage)
+    assert_equal("/boo/baz", actual['location'])
+  end
+
   def test_developer_flags
     # Specifying auto, force, or test should have that carried over
     # to in the resulting hash

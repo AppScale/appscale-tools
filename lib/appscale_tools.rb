@@ -64,6 +64,18 @@ module AppScaleTools
   APP_REMOVAL_CANCELLED = "Application removal cancelled."
 
 
+  # The flags that are acceptable to use with appscale-gather-logs.
+  # This command is fairly straightforward, and only accepts the
+  # keyname flag (outside of the normal help flags).
+  GATHER_LOGS_FLAGS = ["help", "h", "usage", "keyname", "location"]
+
+
+  # The usage that is displayed to users if they ask for help with
+  # the appscale-gather-logs command.
+  GATHER_LOGS_USAGE = UsageText.get_usage("appscale-gather-logs",
+    GATHER_LOGS_FLAGS)
+
+
   REMOVE_APP_FLAGS = ["help", "h", "usage", "appname", "version", "keyname", 
     "confirm"]
 
@@ -228,6 +240,72 @@ module AppScaleTools
     }
 
     return {:error => nil, :result => instance_info }
+  end
+
+
+  # Copies all of the logs from an AppScale deployment to this
+  # machine, so that they can be easily examined or e-mailed to
+  # support.
+  # Args:
+  #   options: A Hash that optionally contains the keyname associated
+  #   with the AppScale instance to gather logs for, and the location
+  #   that the gathered logs should be placed in.
+  # Raises:
+  #   AppScaleException, if the location to store the logs from the
+  #   AppScale deployment already exists, or if AppScale wasn't running
+  #   with the keyname the user gave us.
+  # Returns:
+  #   A Hash indicating whether or not the logs were successfully
+  #   copied to the specified location.
+  def self.gather_logs(options)
+    keyname = options['keyname'] || "appscale"
+    location = File.expand_path(options['location'] || "/tmp/#{keyname}-logs/")
+
+    # First, make sure that the place we want to store logs doesn't
+    # already exist.
+    if File.exists?(location)
+      raise AppScaleException.new("The location that you specified " +
+        "to copy logs to, #{location}, already exists. Please " +
+        "specify a location that does not exist and try again.")
+    else
+      FileUtils.mkdir_p(location)
+    end
+
+    # Next, make sure that AppScale is actually running with the
+    # keyname the user gave us.
+    appscale_locations_file = File.expand_path("~/.appscale/locations-" +
+      "#{keyname}.yaml")
+    if !File.exists?(appscale_locations_file)
+      raise AppScaleException.new("AppScale is not currently running " +
+        "with the keyname #{keyname}.")
+    end
+
+    # Get the IP address of the head node from the locations file
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+
+    # Query the head node for a list of all the IPs in this
+    # AppScale deployment
+    secret = CommonFunctions.get_secret_key(keyname)
+
+    begin
+      acc = AppControllerClient.new(head_node_ip, secret)
+      all_ips = acc.get_all_public_ips(ABORT_ON_FAIL)
+    rescue AppScaleException
+      all_ips = [head_node_ip]
+    end
+
+    # Get the logs from each node, and store them in our local directory
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+    ip_dirs = []
+    all_ips.each { |ip|
+      ip_dir = "#{location}/#{ip}"
+      FileUtils.mkdir_p(ip_dir)
+      CommonFunctions.scp_remote_to_local("/var/log/appscale", ip_dir,
+        ip, ssh_key)
+      ip_dirs << ip_dir
+    }
+
+    return {:result => :success, :log_dirs => ip_dirs}
   end
 
 
