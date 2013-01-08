@@ -7,6 +7,15 @@ infrastructure : 'ec2'
 # installed on it.
 machine : 'ami-ABCDEFG'
 
+# The instance type that should be used for all virtual machines in your
+# AppScale deployment.
+instance_type: 'm1.large'
+
+# The database that your Google App Engine applications will be backed by.
+# Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
+# also supported.
+table: 'cassandra'
+
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
 # in your AWS account.
@@ -29,3 +38,29 @@ min : 1
 # The maximum number of machines that should be used for your AppScale
 # deployment.
 max : 1
+
+# The number of copies (replicas) of each piece of data stored in the
+# specified database. By default, we determine the optimal value based
+# on the number of virtual machines running the 'database' role, by the
+# formula: min(# of database VMs, 3). Setting this value lower increases
+# performance, at the cost of fault-tolerance, and vice-versa.
+# n : 1
+
+# AppScale developers only: The location of an AppScale source tree on
+# the local filesystem, that should be used in place of what is present
+# on the AppScale VMs. Useful to test changes on multiple VMs without
+# needing to manually rsync code or rebundle images.
+# scp : "~/appscale"
+
+# AppScale developers only: Bypasses the usual prompt for a cloud
+# username and password and uses a default set of values. Insecure for
+# a production environment but acceptable for testing.
+# test: True
+
+# The number of AppServers that should be used to host each Google App
+# Engine application running in this deployment. By default, we start
+# with one AppServer and dynamically scale up or down based on
+# (1) the number of requests serviced and (2) the number of enqueued
+# requests, but this setting can be used to turn off this autoscaling
+# and instead use a statically defined number of AppServers.
+# appengine : 3
