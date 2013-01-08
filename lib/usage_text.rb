@@ -73,6 +73,10 @@ module UsageText
     "--ips: The YAML file containing the IPs (and optionally, the service placement) of the machines to use."
   end
 
+  def self.ips_layout
+    "--ips_layout: The Base64 encoded IPs layout (in YAML-dumped form) that indicates how to place services across machines"
+  end
+
   def self.keyname
     "--keyname KEYNAME: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name."
   end

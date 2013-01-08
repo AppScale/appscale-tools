@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+
+# First-party Python libraries
+import os
+import sys
+
+
+# Third-party Python libraries
+from termcolor import cprint
+
+
+# AppScale import, the library that we're wrapping this executable
+# around
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale import AppScale
+from custom_exceptions import AppScalefileException
+from custom_exceptions import BadConfigurationException
+
+
+appscale = AppScale()
+if len(sys.argv) < 2:
+  appscale.help()
+
+command = sys.argv[1]
+if command == "init":
+  if len(sys.argv) < 3:
+    cprint("Usage: appscale init <cloud or cluster>", 'red')
+    print("Specify 'cloud' for EC2 and Eucalyptus deployments, " +
+      "and 'cluster' if running over a virtualized cluster.")
+    exit(1)
+
+  try:
+    appscale.init(sys.argv[2])
+  except (AppScalefileException, BadConfigurationException) as e:
+    cprint(e, 'red')
+    exit(1)
+
+  cprint("AppScalefile successfully created! Be sure to " +
+    "customize it for your particular cloud or cluster.", 'green')
+  exit(0)
+elif command == "up":
+  try:
+    appscale.up()
+  except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
+elif command == "status":
+  try:
+    appscale.status()
+  except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
+elif command == "deploy":
+  try:
+    # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
+    appscale.deploy(sys.argv[2])
+  except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
+elif command == "destroy":
+  try:
+    appscale.destroy()
+  except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
+else:
+  appscale.help()
