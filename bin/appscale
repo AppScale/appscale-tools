@@ -27,6 +27,8 @@ command = sys.argv[1]
 if command == "init":
   if len(sys.argv) < 3:
     cprint("Usage: appscale init <cloud or cluster>", 'red')
+    print("Specify 'cloud' for EC2 and Eucalyptus deployments, " +
+      "and 'cluster' if running over a virtualized cluster.")
     exit(1)
 
   try:
