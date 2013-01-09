@@ -2,19 +2,19 @@
 # The deployment strategy (roles -> machines) that should be used in this
 # AppScale deployment.
 # The following is a sample layout for running everything on one machine:
-ips_layout:
+ips_layout :
   master : 192.168.1.2
-  appengine: 192.168.1.2
-  database: 192.168.1.2
-  zookeeper: 192.168.1.2
+  appengine : 192.168.1.2
+  database : 192.168.1.2
+  zookeeper : 192.168.1.2
 
 # Alternatively, the following is a layout that separates everything onto
 # four machines:
-# ips_layout:
+# ips_layout :
 #  master : 192.168.1.2
-#  appengine: 192.168.1.3
-#  database: 192.168.1.4
-#  zookeeper: 192.168.1.5
+#  appengine : 192.168.1.3
+#  database : 192.168.1.4
+#  zookeeper : 192.168.1.5
 
 # The previous two layouts only have one instance of each role running, so if
 # that machine fails, there is no backup to take its place. This layout uses
@@ -35,7 +35,7 @@ ips_layout:
 # The database that your Google App Engine applications will be backed by.
 # Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
 # also supported.
-table: 'cassandra'
+table : 'cassandra'
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True in all cases, as it produces much
@@ -58,7 +58,7 @@ verbose : True
 # AppScale developers only: Bypasses the usual prompt for a cloud
 # username and password and uses a default set of values. Insecure for
 # a production environment but acceptable for testing.
-# test: True
+# test : True
 
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start
