@@ -1339,7 +1339,7 @@ module CommonFunctions
       deployment = "non-cloud environment"
     end
 
-    Kernel.puts "About to start AppScale over a #{deployment}."
+    Kernel.puts "About to start AppScale #{VER_NUM} over a #{deployment}."
   end
 
   def self.generate_node_layout(options)
