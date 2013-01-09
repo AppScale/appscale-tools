@@ -102,6 +102,12 @@ EOF
  easy_install boto==2.6
 }
 
+installpylibs()
+{
+  easy_install termcolor
+  easy_install paramiko
+}
+
 installeuca2ools()
 {
 # Eucalyptus
