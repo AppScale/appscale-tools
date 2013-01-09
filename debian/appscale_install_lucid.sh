@@ -8,11 +8,13 @@ DIST=lucid
 case "$1" in
     tools)
 	installappscaletools
+        installpylibs
 	;;
     all)
 	# scratch install of appscale including post script.
 	installappscaletools
 	postinstallappscaletools
+        installpylibs
     installsetuptools
     installec2ools
 	keygen
