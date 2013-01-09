@@ -9,12 +9,12 @@ machine : 'ami-ABCDEFG'
 
 # The instance type that should be used for all virtual machines in your
 # AppScale deployment.
-instance_type: 'm1.large'
+instance_type : 'm1.large'
 
 # The database that your Google App Engine applications will be backed by.
 # Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
 # also supported.
-table: 'cassandra'
+table : 'cassandra'
 
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
@@ -55,7 +55,7 @@ max : 1
 # AppScale developers only: Bypasses the usual prompt for a cloud
 # username and password and uses a default set of values. Insecure for
 # a production environment but acceptable for testing.
-# test: True
+# test : True
 
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start
