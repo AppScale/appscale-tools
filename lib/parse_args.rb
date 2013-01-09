@@ -1,6 +1,10 @@
 #!/usr/bin/ruby
 # Programmer: Chris Bunch
 
+
+require 'base64'
+
+
 $:.unshift File.join(File.dirname(__FILE__))
 require 'common_functions'
 require 'custom_exceptions'
@@ -137,6 +141,10 @@ module ParseArgs
       val_hash['separate'] = false
     end
 
+    if arg_hash['location']
+      val_hash['location'] = arg_hash['location']
+    end
+
     val_hash['confirm'] = !arg_hash['confirm'].nil?
 
     self.get_backup_and_restore_params(arg_hash, val_hash)
@@ -217,6 +225,14 @@ module ParseArgs
       end
     else
       val_hash['ips'] = nil
+    end
+
+    if arg_hash['ips_layout']
+      ips = YAML.load(Base64.decode64(arg_hash['ips_layout']))
+      val_hash['ips'] = {}
+      ips.each { |k, v|
+        val_hash['ips'][k.to_sym] = v
+      }
     end
   end
 

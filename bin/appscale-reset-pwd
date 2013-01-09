@@ -9,5 +9,15 @@ require 'appscale_tools'
 if __FILE__ == $0
   options = ParseArgs.get_vals_from_args(ARGV, 
     AppScaleTools::RESET_PASSWORD_FLAGS, AppScaleTools::RESET_PASSWORD_USAGE)
-  AppScaleTools.reset_password(options)
+  begin
+    AppScaleTools.reset_password(options)
+  rescue Exception => e
+    # first, collect all of the logs that could be useful in debugging
+    # why the above Exception was thrown
+    CommonFunctions.collect_and_send_logs(options, e)
+
+    # now throw the original exception, since there's no corrective action
+    # we can take here
+    raise e
+  end
 end

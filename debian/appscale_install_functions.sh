@@ -99,6 +99,7 @@ EOF
     cp /usr/local/ec2-api-tools/bin/* ${DESTDIR}/usr/local/bin 
     cp /usr/local/ec2-ami-tools/bin/* ${DESTDIR}/usr/local/bin 
  fi
+ easy_install boto==2.6
 }
 
 installeuca2ools()

@@ -4,6 +4,7 @@ $:.unshift File.join(File.dirname(__FILE__))
 require 'tc_appscale_add_keypair'
 require 'tc_appscale_add_nodes'
 require 'tc_appscale_describe_instances'
+require 'tc_appscale_gather_logs'
 require 'tc_appscale_remove_app'
 require 'tc_appscale_reset_pwd'
 require 'tc_appscale_run_instances'

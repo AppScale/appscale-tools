@@ -42,6 +42,17 @@ class TestCommonFunctions < Test::Unit::TestCase
 
     @role_info = [node1, node2]
     @key = "appscale"
+
+    # mock out any writing to stdout
+    flexmock(Kernel).should_receive(:print).and_return()
+    flexmock(Kernel).should_receive(:puts).and_return()
+
+    # disallow any writing to the filesystem that we haven't
+    # specifically added mocks for
+    flexmock(FileUtils).should_receive(:mkdir_p).with("").and_return()
+
+    # also, make sleeps return immediately
+    flexmock(Kernel).should_receive(:sleep).and_return()
   end
 
 
@@ -145,6 +156,164 @@ class TestCommonFunctions < Test::Unit::TestCase
       actual['CLOUD1_EC2_ACCESS_KEY'])
     assert_equal(expected['CLOUD1_EC2_SECRET_KEY'],
       actual['CLOUD1_EC2_SECRET_KEY'])
+  end
+
+
+  def test_collect_and_send_logs_where_user_says_no
+    # first, try a test where the user does not want to collect logs
+
+    flexmock(STDIN).should_receive(:gets).and_return("no\n")
+    exception = flexmock("Exception")
+    exception.should_receive(:class).and_return("BooException")
+    exception.should_receive(:backtrace).and_return("the stack trace")
+
+    expected = {
+      :collected_logs => false,
+      :sent_logs => false,
+      :reason => "aborted by user"
+    }
+    actual = CommonFunctions.collect_and_send_logs({}, exception)
+    assert_equal(expected, actual)
+  end
+
+
+  def test_collect_and_send_logs_where_user_says_yes_but_collecting_fails
+    # try a test where the user does want to collect logs, but
+    # the AppController has failed
+
+    flexmock(STDIN).should_receive(:gets).and_return("yes\n")
+    exception = flexmock("Exception")
+    exception.should_receive(:class).and_return("BooException")
+    exception.should_receive(:backtrace).and_return("the stack trace")
+
+    # mock out interacting with the local filesystem
+    flexmock(Time).should_receive(:now).and_return("1234")
+    logs_location = "/tmp/appscale-logs-1234"
+    flexmock(File).should_receive(:exists?).with(logs_location).
+      and_return(false)
+    flexmock(FileUtils).should_receive(:mkdir_p).with(logs_location).
+      and_return(true)
+
+    # assume that appscale was started successfully, so the user has the
+    # locations.yaml and locations.json files
+    locations_file = File.expand_path("~/.appscale/locations-booscale.yaml")
+    flexmock(File).should_receive(:exists?).with(locations_file).and_return(true)
+    locations_contents = YAML.dump({
+      :secret => "boosecret"
+    })
+    flexmock(File).should_receive(:open).with(locations_file, Proc).
+      and_return(locations_contents)
+
+    nodes_json_file = File.expand_path("~/.appscale/locations-booscale.json")
+    nodes_json = JSON.dump([
+      {
+        "public_ip" => "ip1",
+        "jobs" => "shadow"
+      }
+    ])
+    flexmock(File).should_receive(:open).with(nodes_json_file, Proc).
+      and_return(nodes_json)
+
+    # next, assume that the appcontroller has failed on the head node
+    flexmock(AppControllerClient).new_instances{ |instance|
+      instance.should_receive(:get_all_public_ips).and_raise(AppScaleException)
+    }
+
+    # this means that we will only try to copy logs off the head node,
+    # since we don't know where everyone else is located
+    flexmock(FileUtils).should_receive(:mkdir_p).with("#{logs_location}/ip1").
+      and_return(true)
+
+    # finally, assume the node has completely failed, so we can't even
+    # scp logs off of it
+    flexmock(CommonFunctions).should_receive(:shell).with(/\Ascp/).and_return()
+    flexmock(Kernel).should_receive(:rand).and_return("random")
+    scp_return_val_path = File.expand_path("~/.appscale/retval-random")
+    flexmock(File).should_receive(:exists?).with(scp_return_val_path).
+      and_return(true)
+    flexmock(File).should_receive(:open).with(scp_return_val_path, Proc).
+      and_return("1\n")
+
+    options = {
+      'keyname' => 'booscale'
+    }
+
+    expected = {
+      :collected_logs => false,
+      :sent_logs => false,
+      :reason => "unable to collect logs"
+    }
+    actual = CommonFunctions.collect_and_send_logs(options, exception)
+    assert_equal(expected, actual)
+  end
+
+
+  def test_collect_and_send_logs_where_user_says_yes_to_both
+    # try a test where the user does want to collect logs, and
+    # the AppController has not failed
+
+    flexmock(STDIN).should_receive(:gets).and_return("yes\n", "yes\n")
+    exception = flexmock("Exception")
+    exception.should_receive(:class).and_return("BooException")
+    exception.should_receive(:backtrace).and_return("the stack trace")
+
+    # mock out interacting with the local filesystem
+    flexmock(Time).should_receive(:now).and_return("1234")
+    logs_location = "/tmp/appscale-logs-1234"
+    flexmock(File).should_receive(:exists?).with(logs_location).
+      and_return(false)
+    flexmock(FileUtils).should_receive(:mkdir_p).with(logs_location).
+      and_return(true)
+
+    # assume that appscale was started successfully, so the user has the
+    # locations.yaml and locations.json files
+    locations_file = File.expand_path("~/.appscale/locations-booscale.yaml")
+    flexmock(File).should_receive(:exists?).with(locations_file).and_return(true)
+    locations_contents = YAML.dump({
+      :secret => "boosecret"
+    })
+    flexmock(File).should_receive(:open).with(locations_file, Proc).
+      and_return(locations_contents)
+
+    nodes_json_file = File.expand_path("~/.appscale/locations-booscale.json")
+    nodes_json = JSON.dump([
+      {
+        "public_ip" => "ip1",
+        "jobs" => "shadow"
+      }
+    ])
+    flexmock(File).should_receive(:open).with(nodes_json_file, Proc).
+      and_return(nodes_json)
+
+    # next, assume that the appcontroller is running on the head node
+    flexmock(AppControllerClient).new_instances{ |instance|
+      instance.should_receive(:get_all_public_ips).and_return(['ip1'])
+    }
+
+    # this means that we will try to copy logs off ip1
+    flexmock(FileUtils).should_receive(:mkdir_p).with("#{logs_location}/ip1").
+      and_return(true)
+
+    # assume the node is alive, so we can copy logs off of it
+    flexmock(CommonFunctions).should_receive(:shell).with(/\Ascp/).and_return()
+    flexmock(Kernel).should_receive(:rand).and_return("random")
+    scp_return_val_path = File.expand_path("~/.appscale/retval-random")
+    flexmock(File).should_receive(:exists?).with(scp_return_val_path).
+      and_return(true)
+    flexmock(File).should_receive(:open).with(scp_return_val_path, Proc).
+      and_return("0\n")
+
+    options = {
+      'keyname' => 'booscale'
+    }
+
+    expected = {
+      :collected_logs => true,
+      :sent_logs => false,
+      :reason => ""
+    }
+    actual = CommonFunctions.collect_and_send_logs(options, exception)
+    assert_equal(expected, actual)
   end
 
 
