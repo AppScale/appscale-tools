@@ -48,7 +48,7 @@ IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key", 
   "aws_access_key_id", "aws_secret_access_key", 
   "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY",
-  "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
+  "CLOUD_EC2_ACCESS_KEY", "CLOUD_EC2_SECRET_KEY"]
 
 
 VER_NUM = "1.6.5"
