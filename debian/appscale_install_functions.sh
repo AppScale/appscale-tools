@@ -53,7 +53,7 @@ installsetuptools()
      pushd setuptools-0.6c11
      python setup.py install
      popd
-     rm -fr  setuptools-0.6c11*
+     rm -fr setuptools-0.6c11*
    fi
 }
 
@@ -64,9 +64,8 @@ postinstallsetuptools()
 
 installec2ools()
 {
-# EC2
   hash ec2-describe-instances > /dev/null 2>&1
-if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
+  if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
     mkdir -p ${APPSCALE_HOME}/downloads
     cd ${APPSCALE_HOME}/downloads
 
@@ -100,21 +99,19 @@ EOF
     cp /usr/local/ec2-api-tools/bin/* ${DESTDIR}/usr/local/bin 
     cp /usr/local/ec2-ami-tools/bin/* ${DESTDIR}/usr/local/bin 
  fi
- easy_install boto==2.6
 }
 
 installpylibs()
 {
   easy_install termcolor
   easy_install paramiko
+  easy_install boto==2.6
 }
 
 installeuca2ools()
 {
-# Eucalyptus
   hash euca-run-instances > /dev/null 2>&1
   if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/euca-run-instances ]; then
-    easy_install -U boto
     VERSION="1.3.1"
     cd ${APPSCALE_HOME}/downloads
     
