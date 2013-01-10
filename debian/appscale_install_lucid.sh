@@ -14,9 +14,9 @@ case "$1" in
 	# scratch install of appscale including post script.
 	installappscaletools
 	postinstallappscaletools
+        installsetuptools
         installpylibs
-    installsetuptools
-    installec2ools
+        installec2ools
 	keygen
 	;;
 esac

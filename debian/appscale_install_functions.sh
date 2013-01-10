@@ -43,18 +43,22 @@ installsshcopyid()
     chmod +x ./ssh-copy-id
   fi
 }
+
 installsetuptools()
 {
-   mkdir -pv ${APPSCALE_HOME}/downloads
-   cd ${APPSCALE_HOME}/downloads
-   curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz  ||
- ext 1
-   tar zxvf setuptools-0.6c11.tar.gz
-   pushd setuptools-0.6c11
-   python setup.py install  || exit 1
-   popd
-   rm -fr  setuptools-0.6c11*
+   hash easy_install > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+     mkdir -pv ${APPSCALE_HOME}/downloads
+     cd ${APPSCALE_HOME}/downloads
+     curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz
+     tar zxvf setuptools-0.6c11.tar.gz
+     pushd setuptools-0.6c11
+     python setup.py install  || exit 1
+     popd
+     rm -fr  setuptools-0.6c11*
+   fi
 }
+
 postinstallsetuptools()
 {
   :;
