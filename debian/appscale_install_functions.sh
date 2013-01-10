@@ -36,20 +36,25 @@ installexpect()
 installsshcopyid()
 {
   echo "Installing ssh-copy-id if needed."
+  set +e
   hash ssh-copy-id > /dev/null 2>&1
   if [ $? -ne 0 ]; then
+    set -e
     echo "ssh-copy-id not found - installing."
     cd /usr/bin
     curl -o ssh-copy-id http://appscale.cs.ucsb.edu/appscale_files/ssh-copy-id
     chmod +x ./ssh-copy-id
   fi
+  set -e
 }
 
 installsetuptools()
 {
    echo "Installing setuptools if needed."
+   set +e
    hash easy_install > /dev/null 2>&1
    if [ $? -ne 0 ]; then
+     set -e
      echo "setuptools not found - installing."
      mkdir -pv ${APPSCALE_HOME}/downloads
      cd ${APPSCALE_HOME}/downloads
@@ -60,13 +65,16 @@ installsetuptools()
      popd
      rm -fr setuptools-0.6c11*
    fi
+   set -e
 }
 
 installec2ools()
 {
   echo "Installing EC2 tools if needed."
+  set +e
   hash ec2-describe-instances > /dev/null 2>&1
   if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
+    set -e
     echo "EC2 tools not found - installing."
     mkdir -p ${APPSCALE_HOME}/downloads
     cd ${APPSCALE_HOME}/downloads
@@ -101,6 +109,7 @@ EOF
     cp /usr/local/ec2-api-tools/bin/* ${DESTDIR}/usr/local/bin 
     cp /usr/local/ec2-ami-tools/bin/* ${DESTDIR}/usr/local/bin 
  fi
+ set -e
 }
 
 installpylibs()
