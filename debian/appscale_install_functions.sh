@@ -142,6 +142,7 @@ installgem()
 
 installrubylibs()
 {
+  echo "Installing specific Ruby gems."
   GEMDEST=${DESTDIR}/var/lib/gems/1.8
   GEMOPT="--no-rdoc --no-ri --bindir ${DESTDIR}/usr/bin --install-dir ${GEMDEST}"
   gem install json flexmock ${GEMOPT}
