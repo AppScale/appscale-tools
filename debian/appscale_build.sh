@@ -11,15 +11,23 @@ fi
 
 echo "Ubuntu ${DIST}"
 
-# install runtime dependency
-# for distro
+# We install the euca2ools from the Eucalyptus repository. Since that
+# requires the 'add-apt-repository' command, install the package that
+# gives us this command before proceeding.
+apt-get install -y python-software-properties
+if [ $? -ne 0 ]; then
+    echo "Failed to install add-apt-repository."
+    exit
+fi
+
+# Next, install the deb packages specified for this distro.
 EUCA_TOOLS_VERSION="2.1"
 PACKAGES=`find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +`
 add-apt-repository "deb http://downloads.eucalyptus.com/software/euca2ools/${EUCA_TOOLS_VERSION}/ubuntu/ ${DIST} main"
 apt-get update
 apt-get install -y --force-yes ${PACKAGES}
 if [ $? -ne 0 ]; then
-    echo "Fail to install depending packages for runtime."
+    echo "Failed to install deb packages for ${DIST}."
     exit 1
 fi
 
