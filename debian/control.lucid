@@ -16,6 +16,8 @@ Depends:
  euca2ools, cloud-utils
 # Unknown
  make
+# add-apt-repository
+ python-software-properties
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
