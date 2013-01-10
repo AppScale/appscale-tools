@@ -14,6 +14,7 @@ echo "Ubuntu ${DIST}"
 # We install the euca2ools from the Eucalyptus repository. Since that
 # requires the 'add-apt-repository' command, install the package that
 # gives us this command before proceeding.
+apt-get update
 apt-get install -y python-software-properties
 if [ $? -ne 0 ]; then
     echo "Failed to install add-apt-repository."

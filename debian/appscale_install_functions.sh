@@ -14,6 +14,7 @@ fi
 
 installexpect()
 {
+  echo "Installing expect"
   mkdir -pv ${APPSCALE_HOME}/downloads
   cd ${APPSCALE_HOME}/downloads
   curl -o expect5.45.tar.gz http://appscale.cs.ucsb.edu/appscale_files/expect5.45.tar.gz
@@ -34,8 +35,10 @@ installexpect()
 
 installsshcopyid()
 {
+  echo "Installing ssh-copy-id if needed."
   hash ssh-copy-id > /dev/null 2>&1
   if [ $? -ne 0 ]; then
+    echo "ssh-copy-id not found - installing."
     cd /usr/bin
     curl -o ssh-copy-id http://appscale.cs.ucsb.edu/appscale_files/ssh-copy-id
     chmod +x ./ssh-copy-id
@@ -44,8 +47,10 @@ installsshcopyid()
 
 installsetuptools()
 {
+   echo "Installing setuptools if needed."
    hash easy_install > /dev/null 2>&1
    if [ $? -ne 0 ]; then
+     echo "setuptools not found - installing."
      mkdir -pv ${APPSCALE_HOME}/downloads
      cd ${APPSCALE_HOME}/downloads
      curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz
@@ -57,15 +62,12 @@ installsetuptools()
    fi
 }
 
-postinstallsetuptools()
-{
-  :;
-}
-
 installec2ools()
 {
+  echo "Installing EC2 tools if needed."
   hash ec2-describe-instances > /dev/null 2>&1
   if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
+    echo "EC2 tools not found - installing."
     mkdir -p ${APPSCALE_HOME}/downloads
     cd ${APPSCALE_HOME}/downloads
 
@@ -118,13 +120,8 @@ export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF
 }
 
-postinstallappscaletools()
-{
-    :;
-}
-
 keygen()
 {
-    # create ssh private key if it is not exists.
+    # create ssh private key if it does not exist
     test -e /root/.ssh/id_rsa || ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -N ""
 }
