@@ -11,7 +11,6 @@ case "$1" in
         installpylibs
 	;;
     all)
-	# scratch install of appscale including post script.
 	installappscaletools
 	postinstallappscaletools
         installsetuptools

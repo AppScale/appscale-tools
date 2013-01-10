@@ -12,7 +12,6 @@ if [ -z "$APPSCALE_HOME" ]; then
     export APPSCALE_HOME=/root/appscale
 fi
 
-
 installexpect()
 {
   mkdir -pv ${APPSCALE_HOME}/downloads
@@ -32,6 +31,7 @@ installexpect()
   popd 
   rm -fr expect5.45*
 }
+
 installsshcopyid()
 {
   hash ssh-copy-id > /dev/null 2>&1
@@ -106,43 +106,6 @@ installpylibs()
   easy_install termcolor
   easy_install paramiko
   easy_install boto==2.6
-}
-
-installeuca2ools()
-{
-  hash euca-run-instances > /dev/null 2>&1
-  if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/euca-run-instances ]; then
-    VERSION="1.3.1"
-    cd ${APPSCALE_HOME}/downloads
-    
-    # Install deps 
-    curl -o euca2ools-${VERSION}-src-deps.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}-src-deps.tar.gz
-    tar zvxf euca2ools-$VERSION-src-deps.tar.gz
-    cd euca2ools-$VERSION-src-deps
-    tar zxvf boto-1.9b.tar.gz
-    cd boto-1.9b
-    python setup.py install
-    cd ..
-    tar zxvf M2Crypto-0.20.2.tar.gz
-    cd M2Crypto-0.20.2
-    python setup.py install
-    cd ..
-
-    curl -o euca2ools-${VERSION}.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}.tar.gz
-    tar zxvf euca2ools-${VERSION}.tar.gz
-    rm -rf euca2ools-${VERSION}.tar.gz
-    cd euca2ools-${VERSION}
-    make PREFIX=${DESTDIR}/usr/local
-    easy_install euca2ools
-    
-    cd ${APPSCALE_HOME}/downloads
-    rm -fr euca2ools-${VERSION}
-  fi
-}
-
-postinstalleuca2ools()
-{
-    :;
 }
 
 installappscaletools()
