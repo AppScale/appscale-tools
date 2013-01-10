@@ -62,7 +62,6 @@ postinstallsetuptools()
   :;
 }
 
-# only for the jaunty
 installec2ools()
 {
 # EC2
@@ -146,27 +145,11 @@ installeuca2ools()
 
 postinstalleuca2ools()
 {
-#    cd ${APPSCALE_HOME}/euca2ools-1.0-src-deps/boto-1.8d
-#    python setup.py install
-#    cd ${APPSCALE_HOME}/euca2ools-1.0
-#    make
-# just enable eggs
-    #easy_install boto
-    #easy_install euca2ools
     :;
 }
 
 installappscaletools()
 {
-#    mkdir -p ${DESTDIR}/usr/local
-#    cd ${DESTDIR}/usr/local
-# tar ball is old right now.
-#    wget http://kings.cs.ucsb.edu/appscale_files/appscale-tools-1.3.tar.gz
-#    rm appscale-tools-1.3.tar.gz
-# tools is copied by debian/rule file now.
-#    bzr branch lp:appscale/trunk-tools appscale-tools
-#    rm -r appscale-tools/.bzr
-
     # add to path
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/appscale-tools.sh <<EOF
