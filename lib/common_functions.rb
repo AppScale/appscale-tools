@@ -62,7 +62,7 @@ JAVA_CONFIG = "war/WEB-INF/appengine-web.xml"
 # When we try to ssh to other machines, we don't want to be asked for a password
 # (since we always should have the right SSH key present), and we don't want to
 # be asked to confirm the host's fingerprint, so set the options for that here.
-SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
+SSH_OPTIONS = "-o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
@@ -86,6 +86,10 @@ LOCAL_APPSCALE_FILE_DIR = File.expand_path("~/.appscale")
 # The location on AppScale VMs where the AppScale Tools can read and
 # write AppScale-specific data to.
 REMOTE_APPSCALE_FILE_DIR = "/etc/appscale/"
+
+
+# Location of expect script that interacts with ssh-copy-id
+EXPECT_SCRIPT = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
 
 
 module CommonFunctions
@@ -146,16 +150,16 @@ module CommonFunctions
         "AppScale data.")
     end
 
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
-    #self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
+    #self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
   end
 
 
@@ -585,7 +589,7 @@ module CommonFunctions
   def self.find_real_ssh_key(ssh_keys, host)
     ssh_keys.each { |key|
       key = File.expand_path(key)
-      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp
+      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp[-1].chr
       if return_value == "0"
         return key
       end
@@ -1266,7 +1270,7 @@ module CommonFunctions
     backup_key = File.expand_path("~/.appscale/#{keyname}.key")
     pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
 
-    #FileUtils.rm_f([path, backup_key, pub_key])
+    FileUtils.rm_f([path, backup_key, pub_key])
     unless File.exists?(path) and File.exists?(pub_key)
       FileUtils.rm_f([path, backup_key, pub_key])
       Kernel.puts CommonFunctions.shell("ssh-keygen -t rsa -N '' -f #{path}")
@@ -1276,13 +1280,13 @@ module CommonFunctions
   end
 
 
-  def self.ssh_copy_id(ip, path, auto, expect_script, password)
+  def self.ssh_copy_id(ip, path, auto, password)
     Kernel.puts "\n\n"
     Kernel.puts "Executing ssh-copy-id for host : " + ip
     Kernel.puts "------------------------------"
 
     if auto
-      Kernel.puts CommonFunctions.shell("#{expect_script} root@#{ip} #{path} #{password}")
+      Kernel.puts CommonFunctions.shell("#{EXPECT_SCRIPT} root@#{ip} #{path} #{password}")
     else
       Kernel.puts CommonFunctions.shell("ssh-copy-id -i #{path} root@#{ip}")
     end

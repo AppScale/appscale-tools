@@ -17,6 +17,10 @@ module UsageText
     return preamble + flag_text + "\n\n"
   end
 
+  def self.add_to_existing
+    "--add_to_existing: Uses the SSH keys already in use for the named AppScale deployment instead of generating new SSH keys."
+  end
+
   def self.appengine
     "--appengine NUM: The number of application servers that should be spawned up for each Google App Engine app."
   end

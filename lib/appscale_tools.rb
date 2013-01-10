@@ -30,12 +30,31 @@ require 'vm_tools'
 module AppScaleTools
 
 
+  # The list of flags that can be used with the 'appscale-add-instances'
+  # command.
+  ADD_INSTANCES_FLAGS = ["ips", "keyname"]
+
+
+  # The usage text that we display to users if they incorrectly invoke
+  # 'appscale-add-instances'.
+  ADD_INSTANCES_USAGE = UsageText.get_usage("appscale-add-instances",
+    ADD_INSTANCES_FLAGS)
+
+
   ADD_KEYPAIR_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", 
-    "auto", "ips_layout"]
+    "auto", "ips_layout", "add_to_existing"]
 
 
   ADD_KEYPAIR_USAGE = UsageText.get_usage("appscale-add-keypair", 
     ADD_KEYPAIR_FLAGS)
+
+
+  # A message that add-nodes can raise if the user does not indicate
+  # which machines should be used to start new roles in their AppScale
+  # deployment.
+  NO_IPS_GIVEN = "Please specify a YAML file that indicates what nodes " +
+    "should be used to start new roles in the currently running " +
+    "AppScale deployment."
 
 
   IP_REGEX = /\d+\.\d+\.\d+\.\d+/
@@ -175,7 +194,7 @@ module AppScaleTools
 
 
   def self.add_keypair(options)
-    keyname = options['keyname']
+    keyname = options['keyname'] || "appscale"
     ips_yaml = options['ips']
     auto = options['auto']
 
@@ -194,7 +213,13 @@ module AppScaleTools
     CommonFunctions.make_appscale_directory()
 
     path = File.expand_path("~/.appscale/#{keyname}")
-    pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+
+    if options['add_to_existing']
+      pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
+      backup_key = File.expand_path("~/.appscale/#{keyname}.key")
+    else
+      pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+    end
 
     if auto
       if options["root_password"].nil?
@@ -204,26 +229,98 @@ module AppScaleTools
         puts "Using the provided root password to login to AppScale machines"
         password = options["root_password"]
       end
-
-      # Location of expect script that interacts with ssh-copy-id
-      expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
     end
 
-    ips = node_layout.nodes.collect { |node| node.id }
-    copy_success = true
+    if node_layout.valid?
+      ips = node_layout.nodes.collect { |node| node.id }
+    else
+      ips = []
+      ips_yaml.each { |role, ip|
+        ips << ip
+      }
+      ips.flatten!
+      ips.uniq!
+    end
 
     ips.each { |ip|
-      CommonFunctions.ssh_copy_id(ip, path, auto, expect_script, password)
+      CommonFunctions.ssh_copy_id(ip, path, auto, password)
+      CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
     }
-
-    head_node_ip = node_layout.head_node.id
-    CommonFunctions.scp_ssh_key_to_ip(head_node_ip, path, pub_key)
  
     FileUtils.cp(path, backup_key)
-    puts "A new ssh key has been generated for you and placed at" +
+    Kernel.puts "A new ssh key has been generated for you and placed at" +
       " #{path}. You can now use this key to log into any of the " +
-      "machines you specified without providing a password via the" +
-      " following command:\n\tssh root@#{head_node_ip} -i #{path}"
+      "machines you specified without providing a password."
+    return {'success' => true}
+  end
+
+  
+  # Works in conjunction with an already running AppScale deployment to
+  # add additional nodes. The nodes must be specified via a YAML file
+  # (of the same format used in run-instances).
+  # Args:
+  #   options: A Hash with the following keys:
+  #     ips: A Hash that maps roles to start on new nodes to the IPs
+  #       that they should be started on. For cloud deployments, IPs
+  #       need not be used - any unique identifier will suffice.
+  #     keyname (optional): The name of the key that is associated with
+  #       machines in this AppScale deployment.
+  # Raises:
+  #   BadConfigurationException: If the user failed to specify a Hash
+  #     indicating what roles should be added, or if the user tries to
+  #     add an additional 'master' role.
+  # Returns:
+  #   The result of the SOAP message dispatched to the AppController
+  #   asking it to add the additional nodes. For successful invocations,
+  #   this is a Hash that maps the IP addresses of the new nodes to the
+  #   roles started on those machines. For unsuccessful invocations, this
+  #   is a String that indicates why the call failed.
+  def self.add_instances(options)
+    ips_yaml = options['ips']
+    if ips_yaml.nil? or ips_yaml.empty?
+      raise BadConfigurationException.new(NO_IPS_GIVEN)
+    end
+
+    if ips_yaml.keys.include?(:master)
+      raise BadConfigurationException.new("Cannot add a master node to " +
+        "an already running AppScale deployment.")
+    end
+
+    # Skip checking for -n (replication) because we don't allow the user
+    # to specify it here (only allowed in run-instances).
+    additional_nodes_layout = NodeLayout.new(ips_yaml, options,
+      skip_replication=true)
+
+    # In non-cloud scenarios, we need to make sure that the user has
+    # set up SSH keys with the new nodes to add.
+    keyname = options['keyname'] || "appscale"
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+
+    infrastructure = CommonFunctions.get_infrastructure(keyname)
+    if infrastructure == "xen"
+      new_ips = ips_yaml.values.flatten
+      new_ips.each { |ip|
+        # throws an AppScaleException if the SSH key doesn't work
+        CommonFunctions.find_real_ssh_key([ssh_key], ip)
+      }
+    end
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+    secret = CommonFunctions.get_secret_key(keyname)
+    acc = AppControllerClient.new(head_node_ip, secret)
+
+    # Convert the keys in ips.yaml from Symbols to Strings, which
+    # are acceptable to pass via SOAP.
+    converted_ips_yaml = {}
+    ips_yaml.each { |k, v|
+      converted_ips_yaml[k.to_s] = v
+    }
+
+    # Return whatever the result of the SOAP request to the AppController
+    # is.
+    return acc.start_roles_on_nodes(converted_ips_yaml)
   end
 
 
