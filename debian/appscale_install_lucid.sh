@@ -6,6 +6,8 @@ DESTDIR=$2
 DIST=lucid
 
 installappscaletools
+installgem
+installrubylibs
 installsetuptools
 installpylibs
 installec2ools

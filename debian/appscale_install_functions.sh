@@ -119,6 +119,37 @@ installpylibs()
   easy_install boto==2.6
 }
 
+installgem()
+{
+  echo "Installing gem if needed."
+  set +e
+  hash gem > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    set -e
+    echo "gem not found - installing."
+    cd
+    wget http://appscale.cs.ucsb.edu/appscale_files/rubygems-1.3.7.tgz
+    tar zxvf rubygems-1.3.7.tgz
+    cd rubygems-1.3.7
+    ruby setup.rb
+    cd
+    ln -sf /usr/bin/gem1.8 /usr/bin/gem
+    rm -rf rubygems-1.3.7.tgz
+    rm -rf rubygems-1.3.7
+  fi
+  set -e
+}
+
+installrubylibs()
+{
+  GEMDEST=${DESTDIR}/var/lib/gems/1.8
+  GEMOPT="--no-rdoc --no-ri --bindir ${DESTDIR}/usr/bin --install-dir ${GEMDEST}"
+  gem install json flexmock ${GEMOPT}
+
+  # Rake 10.0 depecates rake/rdoctask - upgrade later
+  gem install -v=0.9.2.2 rake ${GEMOPT}
+}
+
 installappscaletools()
 {
     # add to path
