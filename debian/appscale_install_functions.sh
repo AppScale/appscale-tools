@@ -6,9 +6,7 @@
 #
 # Written by Yoshi <nomura@pobox.com>
 
-if [ -z "$APPSCALE_HOME_RUNTIME" ]; then
-    export APPSCALE_HOME_RUNTIME=/root/appscale
-fi
+set -e
 
 if [ -z "$APPSCALE_HOME" ]; then
     export APPSCALE_HOME=/root/appscale
@@ -19,12 +17,12 @@ installexpect()
 {
   mkdir -pv ${APPSCALE_HOME}/downloads
   cd ${APPSCALE_HOME}/downloads
-  curl -o expect5.45.tar.gz http://appscale.cs.ucsb.edu/appscale_files/expect5.45.tar.gz || exit 1
-  tar zxvf expect5.45.tar.gz || exit 1
+  curl -o expect5.45.tar.gz http://appscale.cs.ucsb.edu/appscale_files/expect5.45.tar.gz
+  tar zxvf expect5.45.tar.gz
   pushd expect5.45
-  ./configure || exit 1
-  make || exit 1
-  make install  || exit 1
+  ./configure
+  make
+  make install
   if [ -e ./libexpect5.45.so ]; then
     cp libexpect5.45.so /usr/lib || exit 
   fi
@@ -39,7 +37,7 @@ installsshcopyid()
   hash ssh-copy-id > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     cd /usr/bin
-    curl -o ssh-copy-id http://appscale.cs.ucsb.edu/appscale_files/ssh-copy-id || exit 1
+    curl -o ssh-copy-id http://appscale.cs.ucsb.edu/appscale_files/ssh-copy-id
     chmod +x ./ssh-copy-id
   fi
 }
@@ -53,7 +51,7 @@ installsetuptools()
      curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz
      tar zxvf setuptools-0.6c11.tar.gz
      pushd setuptools-0.6c11
-     python setup.py install  || exit 1
+     python setup.py install
      popd
      rm -fr  setuptools-0.6c11*
    fi
@@ -73,11 +71,11 @@ if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
     mkdir -p ${APPSCALE_HOME}/downloads
     cd ${APPSCALE_HOME}/downloads
 
-    curl -o ec2-api-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip || exit 1
-    curl -o ec2-ami-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip || exit 1
+    curl -o ec2-api-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip
+    curl -o ec2-ami-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip
 
-    unzip ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip || exit 1
-    unzip ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip || exit 1
+    unzip ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip
+    unzip ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip
     rm -rf ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip
     rm -rf ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip
 
@@ -88,11 +86,11 @@ if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
     rm -fr ${DESTDIR}/usr/local/ec2-ami-tools/*
     rm -fr ${DESTDIR}/usr/local/ec2-api-tools/*
 
-    mv -f ${APPSCALE_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools || exit 1
-    mv -f ${APPSCALE_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools || exit 1
+    mv -f ${APPSCALE_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools
+    mv -f ${APPSCALE_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools
 
-    rm -fr  ${APPSCALE_HOME}/downloads/ec2-ami-tools*/ || exit 1
-    rm -fr  ${APPSCALE_HOME}/downloads/ec2-api-tools*/ || exit 1    
+    rm -fr  ${APPSCALE_HOME}/downloads/ec2-ami-tools*/
+    rm -fr  ${APPSCALE_HOME}/downloads/ec2-api-tools*/
 
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/ec2.sh <<EOF
@@ -117,12 +115,12 @@ installeuca2ools()
 # Eucalyptus
   hash euca-run-instances > /dev/null 2>&1
   if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/euca-run-instances ]; then
-    easy_install -U boto || exit 1
+    easy_install -U boto
     VERSION="1.3.1"
     cd ${APPSCALE_HOME}/downloads
     
     # Install deps 
-    curl -o euca2ools-${VERSION}-src-deps.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}-src-deps.tar.gz || exit 1
+    curl -o euca2ools-${VERSION}-src-deps.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}-src-deps.tar.gz
     tar zvxf euca2ools-$VERSION-src-deps.tar.gz
     cd euca2ools-$VERSION-src-deps
     tar zxvf boto-1.9b.tar.gz
@@ -134,12 +132,12 @@ installeuca2ools()
     python setup.py install
     cd ..
 
-    curl -o euca2ools-${VERSION}.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}.tar.gz  || exit 1
-    tar zxvf euca2ools-${VERSION}.tar.gz || exit 1
+    curl -o euca2ools-${VERSION}.tar.gz http://appscale.cs.ucsb.edu/appscale_files/euca2ools-${VERSION}.tar.gz
+    tar zxvf euca2ools-${VERSION}.tar.gz
     rm -rf euca2ools-${VERSION}.tar.gz
     cd euca2ools-${VERSION}
     make PREFIX=${DESTDIR}/usr/local
-    easy_install euca2ools || exit 1
+    easy_install euca2ools
     
     cd ${APPSCALE_HOME}/downloads
     rm -fr euca2ools-${VERSION}
@@ -163,11 +161,11 @@ installappscaletools()
 #    mkdir -p ${DESTDIR}/usr/local
 #    cd ${DESTDIR}/usr/local
 # tar ball is old right now.
-#    wget http://kings.cs.ucsb.edu/appscale_files/appscale-tools-1.3.tar.gz || exit 1
+#    wget http://kings.cs.ucsb.edu/appscale_files/appscale-tools-1.3.tar.gz
 #    rm appscale-tools-1.3.tar.gz
 # tools is copied by debian/rule file now.
-#    bzr branch lp:appscale/trunk-tools appscale-tools || exit 1
-#    rm -r appscale-tools/.bzr || exit 1
+#    bzr branch lp:appscale/trunk-tools appscale-tools
+#    rm -r appscale-tools/.bzr
 
     # add to path
     mkdir -p ${DESTDIR}/etc/profile.d
