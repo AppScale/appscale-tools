@@ -36,6 +36,7 @@ class AppControllerClient
     @conn.add_method("get_all_public_ips", "secret")
     @conn.add_method("kill", "secret")
     @conn.add_method("get_role_info", "secret")
+    @conn.add_method("start_roles_on_nodes", "ips_hash", "secret")
   end
   
   def make_call(time, retry_on_except, want_output=true)
@@ -170,6 +171,22 @@ class AppControllerClient
   def get_role_info()
     make_call(NO_TIMEOUT, ABORT_ON_FAIL) { 
       @conn.get_role_info(@secret) 
+    }
+  end
+
+
+  # Asks the AppController to add additional nodes to its AppScale
+  # deployment, with the specified roles.
+  # Args:
+  #   ips_hash: A Hash that maps roles to the IP addresses that should
+  #     run them. In cloud deployments, any unique identifier may be
+  #     used in place of the IP address.
+  # Returns:
+  #   The result of executing start_roles_on_nodes on the remote
+  #     AppController.
+  def start_roles_on_nodes(ips_hash)
+    make_call(NO_TIMEOUT, ABORT_ON_FAIL) {
+      @conn.start_roles_on_nodes(ips_hash, @secret)
     }
   end
 

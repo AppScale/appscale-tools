@@ -724,7 +724,6 @@ class SimpleNode < Node
       @roles << :appengine
       @roles << :memcache
       @roles << :database
-      @roles << :load_balancer
       @roles << :rabbitmq
     end
 
@@ -743,10 +742,6 @@ class AdvancedNode < Node
     end
 
     if @roles.include?(:login)
-      @roles << :load_balancer
-    end
-
-    if @roles.include?(:appengine)
       @roles << :load_balancer
     end
 
