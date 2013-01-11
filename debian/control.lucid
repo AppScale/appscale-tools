@@ -17,7 +17,7 @@ Depends:
 # euca2ools
  euca2ools, cloud-utils
 # ec2 tools
- openjdk-6-jdk,
+ openjdk-6-jdk, wget
 # Unknown
  make
 # pycrypto, used by paramiko
