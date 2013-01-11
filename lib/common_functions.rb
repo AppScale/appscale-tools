@@ -979,7 +979,7 @@ module CommonFunctions
     end
     filename = fullpath.scan(/\/?([\w\.]+\Z)/).flatten.to_s
 
-    temp_dir = CommonFunctions.get_random_alphanumeric
+    temp_dir = "appscale-app-" + CommonFunctions.get_random_alphanumeric
     FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
     FileUtils.mkdir_p("/tmp/#{temp_dir}")
 
@@ -994,7 +994,7 @@ module CommonFunctions
       app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
       language = CommonFunctions.get_language_via_yaml(temp_dir, app_config_loc)
       if File.directory?(fullpath)
-        temp_dir2 = CommonFunctions.get_random_alphanumeric
+        temp_dir2 = "appscale-app-" + CommonFunctions.get_random_alphanumeric
         FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
         FileUtils.mkdir_p("/tmp/#{temp_dir2}")
         CommonFunctions.shell("cd /tmp/#{temp_dir}; tar -czf ../#{temp_dir2}/#{app_name}.tar.gz .")
@@ -1015,7 +1015,7 @@ module CommonFunctions
                                            "App Engine #{JAVA_AE_VERSION}.")
       end
       FileUtils.mkdir_p("/tmp/#{temp_dir}/war/WEB-INF/lib")
-      temp_dir2 = CommonFunctions.get_random_alphanumeric
+      temp_dir2 = "appscale-app-" + CommonFunctions.get_random_alphanumeric
       FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
       FileUtils.mkdir_p("/tmp/#{temp_dir2}")
       FileUtils.rm_f("/tmp/#{temp_dir}/#{filename}")
