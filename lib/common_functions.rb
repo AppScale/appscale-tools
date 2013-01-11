@@ -711,6 +711,7 @@ module CommonFunctions
         pass = new_pass
         
         if pass =~ PASSWORD_REGEX
+          Kernel.print "\nYour account is being created... \n\n"
           break
         else
           Kernel.puts "\n\nThe password you typed in was not at least six characters long. Please try again.\n\n"
