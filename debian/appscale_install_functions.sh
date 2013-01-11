@@ -8,15 +8,15 @@
 
 set -e
 
-if [ -z "$APPSCALE_HOME" ]; then
-    export APPSCALE_HOME=/root/appscale
+if [ -z "$APPSCALE_TOOLS_HOME" ]; then
+    export APPSCALE_TOOLS_HOME=/root/appscale
 fi
 
 installexpect()
 {
   echo "Installing expect"
-  mkdir -pv ${APPSCALE_HOME}/downloads
-  cd ${APPSCALE_HOME}/downloads
+  mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
+  cd ${APPSCALE_TOOLS_HOME}/downloads
   curl -o expect5.45.tar.gz http://appscale.cs.ucsb.edu/appscale_files/expect5.45.tar.gz
   tar zxvf expect5.45.tar.gz
   pushd expect5.45
@@ -56,8 +56,8 @@ installsetuptools()
    if [ $? -ne 0 ]; then
      set -e
      echo "setuptools not found - installing."
-     mkdir -pv ${APPSCALE_HOME}/downloads
-     cd ${APPSCALE_HOME}/downloads
+     mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
+     cd ${APPSCALE_TOOLS_HOME}/downloads
      curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz
      tar zxvf setuptools-0.6c11.tar.gz
      pushd setuptools-0.6c11
@@ -76,16 +76,16 @@ installec2ools()
   if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
     set -e
     echo "EC2 tools not found - installing."
-    mkdir -p ${APPSCALE_HOME}/downloads
-    cd ${APPSCALE_HOME}/downloads
+    mkdir -p ${APPSCALE_TOOLS_HOME}/downloads
+    cd ${APPSCALE_TOOLS_HOME}/downloads
 
     curl -o ec2-api-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip
     curl -o ec2-ami-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip
 
-    unzip ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip
-    unzip ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip
-    rm -rf ${APPSCALE_HOME}/downloads/ec2-api-tools*.zip
-    rm -rf ${APPSCALE_HOME}/downloads/ec2-ami-tools*.zip
+    unzip ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*.zip
+    unzip ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*.zip
+    rm -rf ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*.zip
+    rm -rf ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*.zip
 
     mkdir -p ${DESTDIR}/usr/local/bin
     mkdir -p  ${DESTDIR}/usr/local/ec2-api-tools
@@ -94,11 +94,11 @@ installec2ools()
     rm -fr ${DESTDIR}/usr/local/ec2-ami-tools/*
     rm -fr ${DESTDIR}/usr/local/ec2-api-tools/*
 
-    mv -f ${APPSCALE_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools
-    mv -f ${APPSCALE_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools
+    mv -f ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools
+    mv -f ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools
 
-    rm -fr  ${APPSCALE_HOME}/downloads/ec2-ami-tools*/
-    rm -fr  ${APPSCALE_HOME}/downloads/ec2-api-tools*/
+    rm -fr  ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*/
+    rm -fr  ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*/
 
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/ec2.sh <<EOF
