@@ -14,6 +14,9 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
     # make the user tell us which shell calls are ok
     flexmock(CommonFunctions).should_receive(:shell).with("").and_return()
 
+    # disable fileuilts commands unless the tests override it
+    flexmock(FileUtils).should_receive(:cp).with("", "").and_return()
+
     @options_no_auto = {}
     @options_w_auto = {"auto" => "true"}
   end
@@ -70,6 +73,10 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
       with(/scp -i #{key} #{pub_key} root@1.2.3.4:.ssh\/id_rsa.pub/).
       and_return()
 
+    # finally, we copy the key to another file, so mock that out too
+    backup_key = key + ".key"
+    flexmock(FileUtils).should_receive(:cp).with(key, backup_key).and_return()
+
     one_node = {:appengine => '1.2.3.4'}
     options = {"ips" => one_node, "add_to_existing" => true}
     expected = {'success' => true}
@@ -98,6 +105,10 @@ class TestAppScaleAddKeypair < Test::Unit::TestCase
     commonfunctions.should_receive(:shell).
       with(/scp -i #{key} #{pub_key} root@1.2.3.[4|5]:.ssh\/id_rsa.pub/).
       and_return()
+
+    # finally, we copy the key to another file, so mock that out too
+    backup_key = key + ".key"
+    flexmock(FileUtils).should_receive(:cp).with(key, backup_key).and_return()
 
     two_nodes = {:appengine => ['1.2.3.4'], :database => '1.2.3.5'}
     options = {"ips" => two_nodes, "add_to_existing" => true}
