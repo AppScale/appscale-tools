@@ -180,6 +180,23 @@ class TestAppScale(unittest.TestCase):
     appscale.up()
 
 
+  def testSshWithNoAppScalefile(self):
+    # calling 'appscale ssh' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_raise(IOError))
+
+    self.assertRaises(AppScalefileException, appscale.ssh)
+
+
   def testStatusWithNoAppScalefile(self):
     # calling 'appscale status' with no AppScalefile in the local
     # directory should throw up and die

@@ -53,6 +53,7 @@ Usage: appscale command [<args>]
 Available commands:
   init: Writes a new configuration file for starting AppScale.
   up: Starts a new AppScale instance.
+  ssh: Logs into a virtual machine in a currently running AppScale deployment.
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
   destroy: Terminates the currently running AppScale deployment.
@@ -244,6 +245,16 @@ Available commands:
     success = t.is_authenticated()
     t.close()
     return success
+
+
+  # 'ssh' provides a simple way to log into virtual machines in an
+  # AppScale deployment, using the SSH key provided in the user's
+  # AppScalefile.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     directory.
+  def ssh(self):
+    contents = self.read_appscalefile()
 
 
   # 'status' is a more accessible way to query the state of the
