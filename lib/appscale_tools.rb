@@ -402,7 +402,7 @@ module AppScaleTools
       ip_dirs << ip_dir
     }
 
-    return {:result => :success, :log_dirs => ip_dirs}
+    return {:success => true, :log_dirs => ip_dirs}
   end
 
 
