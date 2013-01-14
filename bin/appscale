@@ -99,7 +99,7 @@ elif command == "tail":
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
-elif command == "destroy":
+elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
   except AppScalefileException as e:

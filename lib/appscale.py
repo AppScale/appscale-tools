@@ -60,6 +60,7 @@ Available commands:
   deploy: Deploys a Google App Engine app to AppScale.
   tail: Follows the output of log files in a currently running AppScale deployment.
   destroy: Terminates the currently running AppScale deployment.
+  down: An alias for 'destroy'.
   help: Displays this message.
 """
 
