@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+import os
+import sys
+from utils import appscale_tools, cli
+from utils.appscale_tools import AddKeyPairOptions
+from utils.commons import AppScaleToolsException
+
+__author__ = 'hiranya'
+
+if __name__ == '__main__':
+  options = [ cli.OPTION_AUTO, cli.OPTION_KEYNAME, cli.OPTION_IPS ]
+  parser = cli.get_parser(options)
+  (options, args) = parser.parse_args(sys.argv[1:])
+
+  if options.ips is None:
+    cli.print_usage_and_exit('IP address configuration not specified', parser)
+  elif not os.path.exists(options.ips) or not os.path.isfile(options.ips):
+    cli.print_usage_and_exit('IP address configuration must be a valid '
+                             'file path', parser)
+
+  add_key_pair_options = AddKeyPairOptions(options.ips, options.keyname,
+    options.auto)
+  try:
+    appscale_tools.add_key_pair(add_key_pair_options)
+  except AppScaleToolsException as e:
+    print e.message
