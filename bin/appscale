@@ -99,6 +99,16 @@ elif command == "tail":
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
+elif command == "logs":
+  if len(sys.argv) < 3:
+    cprint("Usage: appscale logs <location to copy logs to>", 'red')
+    exit(1)
+
+  try:
+    appscale.logs(sys.argv[2])
+  except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
