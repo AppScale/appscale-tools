@@ -323,7 +323,7 @@ Available commands:
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
-    command = ["ssh", "-i", self.get_key_location(keyname), "root@" + ip]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
     subprocess.call(command)
@@ -428,7 +428,7 @@ Available commands:
 
     # construct the ssh command to exec with that IP address
     tail = "tail -f /var/log/appscale/" + str(file_regex)
-    command = ["ssh", "-i", self.get_key_location(keyname), "root@" + ip, tail]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip, tail]
 
     # exec the ssh command
     subprocess.call(command)
