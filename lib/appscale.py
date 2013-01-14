@@ -297,7 +297,7 @@ Available commands:
     try:
       index = int(node)
     except ValueError:
-      raise TypeError("Usage: appscale ssh <integer>")
+      raise TypeError("Usage: appscale ssh <node id to ssh to>")
 
     # get a list of the nodes running
     if 'keyname' in contents_as_yaml:
@@ -317,7 +317,7 @@ Available commands:
     try:
       ip = nodes[index]['public_ip']
     except IndexError:
-      raise AppScaleException("Cannot ssh to node at index" +
+      raise AppScaleException("Cannot ssh to node at index " +
         str(index) + ", as there are only " + str(len(nodes)) +
         " in the currently running AppScale deployment.")
 
