@@ -165,7 +165,8 @@ class TestCommonFunctions < Test::Unit::TestCase
     flexmock(STDIN).should_receive(:gets).and_return("no\n")
     exception = flexmock("Exception")
     exception.should_receive(:class).and_return("BooException")
-    exception.should_receive(:backtrace).and_return("the stack trace")
+    exception.should_receive(:backtrace).and_return(["the stack trace"])
+    exception.should_receive(:message).and_return("message")
 
     expected = {
       :collected_logs => false,
@@ -184,7 +185,8 @@ class TestCommonFunctions < Test::Unit::TestCase
     flexmock(STDIN).should_receive(:gets).and_return("yes\n")
     exception = flexmock("Exception")
     exception.should_receive(:class).and_return("BooException")
-    exception.should_receive(:backtrace).and_return("the stack trace")
+    exception.should_receive(:backtrace).and_return(["the stack trace"])
+    exception.should_receive(:message).and_return("message")
 
     # mock out interacting with the local filesystem
     flexmock(Time).should_receive(:now).and_return("1234")
@@ -255,7 +257,8 @@ class TestCommonFunctions < Test::Unit::TestCase
     flexmock(STDIN).should_receive(:gets).and_return("yes\n", "yes\n")
     exception = flexmock("Exception")
     exception.should_receive(:class).and_return("BooException")
-    exception.should_receive(:backtrace).and_return("the stack trace")
+    exception.should_receive(:backtrace).and_return(["the stack trace"])
+    exception.should_receive(:message).and_return("message")
 
     # mock out interacting with the local filesystem
     flexmock(Time).should_receive(:now).and_return("1234")
