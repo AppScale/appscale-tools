@@ -46,6 +46,16 @@ elif command == "up":
   except AppScalefileException as e:
     cprint(e, 'red')
     exit(1)
+elif command == "ssh":
+  if len(sys.argv) < 3:
+    cprint("Usage: appscale ssh <integer>", 'red')
+    exit(1)
+
+  try:
+    appscale.ssh(sys.argv[2])
+  except TypeError, AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
 elif command == "status":
   try:
     appscale.status()

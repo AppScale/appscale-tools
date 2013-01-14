@@ -261,8 +261,10 @@ Available commands:
     contents = self.read_appscalefile()
 
     # make sure the user gave us an int for node
-    if not isinstance(node, int):
-      raise TypeError("Usage: appscale ssh <integer>")
+    try:
+      index = int(node)
+    except ValueError:
+      raise AppScalefileException("Usage: appscale ssh <integer>")
 
 
   # 'status' is a more accessible way to query the state of the
