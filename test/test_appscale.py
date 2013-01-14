@@ -182,7 +182,14 @@ class TestAppScale(unittest.TestCase):
     # directory should throw up and die
     appscale = AppScale()
     self.addMockForNoAppScalefile(appscale)
-    self.assertRaises(AppScalefileException, appscale.ssh, "")
+    self.assertRaises(AppScalefileException, appscale.ssh, 1)
+
+
+  def testSshWithNotIntArg(self):
+    # calling 'appscale ssh not-int' should throw up and die
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, "")
+    self.assertRaises(TypeError, appscale.ssh, "boo")
 
 
   def testStatusWithNoAppScalefile(self):

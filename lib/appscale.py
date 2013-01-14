@@ -250,11 +250,19 @@ Available commands:
   # 'ssh' provides a simple way to log into virtual machines in an
   # AppScale deployment, using the SSH key provided in the user's
   # AppScalefile.
+  # Args:
+  #   - node: An int that represents the node to SSH to. The value is
+  #       used as an index into the list of nodes running in the
+  #       AppScale deployment, starting with zero.
   # Raises:
   #   AppScalefileException: If there is no AppScalefile in the current
   #     directory.
-  def ssh(self):
+  def ssh(self, node):
     contents = self.read_appscalefile()
+
+    # make sure the user gave us an int for node
+    if not isinstance(node, int):
+      raise TypeError("Usage: appscale ssh <integer>")
 
 
   # 'status' is a more accessible way to query the state of the
