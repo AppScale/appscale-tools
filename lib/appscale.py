@@ -257,6 +257,7 @@ Available commands:
   # Raises:
   #   AppScalefileException: If there is no AppScalefile in the current
   #     directory.
+  #   TypeError: If the user does not provide an integer for 'node'.
   def ssh(self, node):
     contents = self.read_appscalefile()
 
@@ -264,7 +265,7 @@ Available commands:
     try:
       index = int(node)
     except ValueError:
-      raise AppScalefileException("Usage: appscale ssh <integer>")
+      raise TypeError("Usage: appscale ssh <integer>")
 
 
   # 'status' is a more accessible way to query the state of the

@@ -189,7 +189,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale ssh not-int' should throw up and die
     appscale = AppScale()
     self.addMockForAppScalefile(appscale, "")
-    self.assertRaises(AppScalefileException, appscale.ssh, "boo")
+    self.assertRaises(TypeError, appscale.ssh, "boo")
 
 
   def testStatusWithNoAppScalefile(self):
