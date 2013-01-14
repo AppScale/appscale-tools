@@ -440,8 +440,30 @@ Available commands:
     subprocess.call(command)
 
 
-  def logs(self, local_log_location):
+  # 'logs' provides a cleaner experience for users than the
+  # appscale-gather-logs command, by using the configuration options
+  # present in the AppScalefile found in the current working directory.
+  # Args:
+  #   location: The path on the local filesystem where logs should be
+  #     copied to.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     working directory.
+  def logs(self, location):
     contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # construct the appscale-gather-logs command
+    command = ["appscale-gather-logs"]
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml["keyname"])
+
+    command.append("--location")
+    command.append(location)
+
+    # and exec it
+    subprocess.call(command)
 
 
   # 'destroy' provides a nicer experience for users than the
