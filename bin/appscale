@@ -100,7 +100,7 @@ elif command == "tail":
     # don't print the stack trace on a Control-C
     pass
 elif command == "logs":
-  if len(sys.argv[2]):
+  if len(sys.argv) < 3:
     cprint("Usage: appscale logs <location to copy logs to>", 'red')
     exit(1)
 
