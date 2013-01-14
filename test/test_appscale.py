@@ -259,7 +259,7 @@ class TestAppScale(unittest.TestCase):
       .and_return(flexmock(read=lambda: nodes_contents)))
 
     flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["ssh", "-i", appscale.get_key_location('boo'), "root@blarg2"]).and_return().once()
+    subprocess.should_receive('call').with_args(["ssh", "-o", "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'), "root@blarg2"]).and_return().once()
     appscale.ssh(1)
 
 
@@ -357,6 +357,86 @@ class TestAppScale(unittest.TestCase):
     subprocess.should_receive('call').with_args(["appscale-upload-app", "--keyname", "bookey", "--test", "--file", "/bar/app"]).and_return().once()
     app = '/bar/app'
     appscale.deploy(app)
+
+
+  def testTailWithNoAppScalefile(self):
+    # calling 'appscale tail' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.tail, 0, '')
+
+
+  def testTailWithNotIntArg(self):
+    # calling 'appscale tail not-int *' should throw up and die
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, "")
+    self.assertRaises(TypeError, appscale.tail, "boo", "")
+
+
+  def testTailWithNoNodesJson(self):
+    # calling 'appscale tail' when there isn't a locations.json
+    # file should throw up and die
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_raise(IOError))
+
+    self.assertRaises(AppScaleException, appscale.tail, 0, "")
+
+  def testTailWithIndexOutOfBounds(self):
+    # calling 'appscale tail 1 *' should tail from the second node
+    # (nodes[1]). If there's only one node in this deployment,
+    # we should throw up and die
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    nodes = [one]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    self.assertRaises(AppScaleException, appscale.tail, 1, '')
+
+  def testTailWithIndexInBounds(self):
+    # calling 'appscale tail 1 *' should tail from the second node
+    # (nodes[1]). If there are two nodes in this deployment,
+    # we should tail from it successfully
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    two = {
+      'public_ip' : 'blarg2'
+    }
+    nodes = [one, two]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["ssh", "-o", "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'), "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
+    appscale.tail(1, "c*")
 
 
   def testDestroyWithNoAppScalefile(self):

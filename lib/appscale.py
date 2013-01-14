@@ -58,6 +58,7 @@ Available commands:
   ssh: Logs into a virtual machine in a currently running AppScale deployment.
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
+  tail: Follows the output of log files in a currently running AppScale deployment.
   destroy: Terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
   help: Displays this message.
@@ -323,7 +324,7 @@ Available commands:
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
-    command = ["ssh", "-i", self.get_key_location(keyname), "root@" + ip]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
     subprocess.call(command)
@@ -379,6 +380,61 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     subprocess.call(command)
+
+
+  # 'tail' provides a simple way to follow log files in an AppScale
+  # deployment, instead of having to ssh in to a machine, locate
+  # the logs directory, and then tail it.
+  # Args:
+  #   node: An int that indicates the id of the machine to tail logs
+  #     from.
+  #   file_regex: The regular expression that should be used to indicate
+  #     which logs to tail from on the remote host.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     working directory.
+  #   TypeError: If index is not an int.
+  def tail(self, node, file_regex):
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # ensure that index is an int
+    # TODO(cgb): Consider node = *, to tail from all nodes.
+    try:
+      index = int(node)
+    except ValueError:
+      raise TypeError("Usage: appscale tail <node id to tail from> <regex of files to tail>\n" +
+        "Example: appscale tail 0 controller*")
+
+    # get a list of the nodes running
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = "appscale"
+
+    try:
+      with open(self.get_locations_json_file(keyname)) as f:
+        nodes_json_raw = f.read()
+    except IOError as e:
+      raise AppScaleException("AppScale does not currently appear to" +
+        " be running. Please start it and try again.")
+
+    # make sure there is a node at position 'index'
+    nodes = json.loads(nodes_json_raw)
+    try:
+      ip = nodes[index]['public_ip']
+    except IndexError:
+      raise AppScaleException("Cannot tail from node at index " +
+        str(index) + ", as there are only " + str(len(nodes)) +
+        " in the currently running AppScale deployment.")
+
+    # construct the ssh command to exec with that IP address
+    tail = "tail -f /var/log/appscale/" + str(file_regex)
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip, tail]
+
+    # exec the ssh command
+    subprocess.call(command)
+
 
 
   # 'destroy' provides a nicer experience for users than the
