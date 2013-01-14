@@ -196,6 +196,8 @@ class TestAppScale(unittest.TestCase):
 
 
   def testSshWithNoNodesJson(self):
+    # calling 'appscale ssh' when there isn't a locations.json
+    # file should throw up and die
     appscale = AppScale()
 
     contents = { 'keyname' : 'boo' }
