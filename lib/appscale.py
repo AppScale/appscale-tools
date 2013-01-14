@@ -402,7 +402,8 @@ Available commands:
     try:
       index = int(node)
     except ValueError:
-      raise TypeError("Usage: appscale tail <node id to tail from> <files to tail>")
+      raise TypeError("Usage: appscale tail <node id to tail from> <regex of files to tail>\n" +
+        "Example: appscale tail 0 controller*")
 
     # get a list of the nodes running
     if 'keyname' in contents_as_yaml:
