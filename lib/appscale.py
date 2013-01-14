@@ -58,6 +58,7 @@ Available commands:
   ssh: Logs into a virtual machine in a currently running AppScale deployment.
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
+  tail: Follows the output of log files in a currently running AppScale deployment.
   destroy: Terminates the currently running AppScale deployment.
   help: Displays this message.
 """
@@ -378,6 +379,16 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     subprocess.call(command)
+
+
+  # 'tail' provides a simple way to follow log files in an AppScale
+  # deployment, instead of having to ssh in to a machine, locate
+  # the logs directory, and then tail it.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     working directory.
+  def tail(self):
+    contents = self.read_appscalefile()
 
 
   # 'destroy' provides a nicer experience for users than the
