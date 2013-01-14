@@ -439,6 +439,14 @@ class TestAppScale(unittest.TestCase):
     appscale.tail(1, "c*")
 
 
+  def testGetLogsWithNoAppScalefile(self):
+    # calling 'appscale logs' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.logs, '')
+
+
   def testDestroyWithNoAppScalefile(self):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die
