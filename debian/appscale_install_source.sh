@@ -13,6 +13,8 @@ case "$1" in
         installsetuptools
         #postinstallsetuptools
 
+        installpylibs
+
         installeuca2ools
         installec2ools
 
@@ -26,6 +28,8 @@ case "$1" in
         installsshcopyid
         installsetuptools
         #postinstallsetuptools
+
+        installpylibs
 
         installeuca2ools
         installec2ools

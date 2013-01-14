@@ -71,7 +71,7 @@ class TestAppScaleRemoveApp < Test::Unit::TestCase
 
   def test_no_appname_given
     options = {"keyname" => @key}
-    assert_raises(AppScaleException) {
+    assert_raises(BadConfigurationException) {
       AppScaleTools.remove_app(options)
     }
   end

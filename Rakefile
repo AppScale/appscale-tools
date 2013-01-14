@@ -57,11 +57,11 @@ end
 
 
 # responds to 'rake test'
-Rake::TestTask.new do |test|
-  test.libs << "test" 
-  test.test_files = Dir[ "test/tc*.rb" ]
-  test.verbose = true
+task :test do |test|
+  sh "ruby test/ts_all.rb"
+  sh "python test/test_suite.py"
 end
+
 
 # 'rake' should run all tests
 task :default => [:test]

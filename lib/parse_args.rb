@@ -1,6 +1,10 @@
 #!/usr/bin/ruby
 # Programmer: Chris Bunch
 
+
+require 'base64'
+
+
 $:.unshift File.join(File.dirname(__FILE__))
 require 'common_functions'
 require 'custom_exceptions'
@@ -25,9 +29,10 @@ YAML_CONTROL_MSG = "The provided IP yaml file did not have one IP " +
 EC2_USAGE_MSG = "You did not provide an ips.yaml file, and you" +
   " did not provide a machine id."
 EC2_IPS_MISSING_MSG = "You did not provide an ips.yaml or it was empty."
-INSTANCE_FLAG_NOT_IN_SET_MSG = "The instance type you provided was not " + 
-  "one of the allowed values. Currently we allow m1.large, m1.xlarge, " +
-  "and c1.xlarge as the instance types."
+POSSIBLE_INSTANCE_TYPES = ["m1.small", "m1.medium", "m1.large", "m1.xlarge", "c1.xlarge"]
+INSTANCE_FLAG_NOT_IN_SET_MSG = "The instance type you provided was " +
+  "not one of the allowed values. Currently we allow the " +
+  "#{POSSIBLE_INSTANCE_TYPES.join(', ')} instance types."
 INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG = "The infrastructure you provided " + 
   "was not one of the allowed values. Currently we allow ec2 and euca " + 
   "as the infrastructure types."
@@ -84,6 +89,12 @@ module ParseArgs
 
     self.get_min_and_max_images_and_ips(arg_hash, val_hash)
 
+    if arg_hash['add_to_existing']
+      val_hash['add_to_existing'] = true
+    else
+      val_hash['add_to_existing'] = false
+    end
+
     if arg_hash['file']
       true_location = File.expand_path(arg_hash['file'])
       if !File.exists?(true_location)
@@ -128,6 +139,10 @@ module ParseArgs
       val_hash['separate'] = true
     else
       val_hash['separate'] = false
+    end
+
+    if arg_hash['location']
+      val_hash['location'] = arg_hash['location']
     end
 
     val_hash['confirm'] = !arg_hash['confirm'].nil?
@@ -211,6 +226,14 @@ module ParseArgs
     else
       val_hash['ips'] = nil
     end
+
+    if arg_hash['ips_layout']
+      ips = YAML.load(Base64.decode64(arg_hash['ips_layout']))
+      val_hash['ips'] = {}
+      ips.each { |k, v|
+        val_hash['ips'][k.to_sym] = v
+      }
+    end
   end
 
   def self.get_table_args(arg_hash, val_hash)
@@ -264,23 +287,9 @@ module ParseArgs
       if !VALID_CLOUD_TYPES.include?(infra)
         raise BadCommandLineArgException.new(INFRASTRUCTURE_FLAG_NOT_IN_SET_MSG)
       end
-
-      if infra == "iaas"
-        val_hash['infrastructure'] = "euca"
-      else
-        val_hash['infrastructure'] = infra
-      end
+      val_hash['infrastructure'] = infra
     else
       val_hash['infrastructure'] = nil
-    end
-
-    #Override if --iaas is set
-    if arg_hash['iaas']
-      if arg_hash['iaas'] == "hybrid"
-        val_hash['infrastructure'] = "hybrid"
-      else
-        val_hash['infrastructure'] = "euca"
-      end
     end
 
     if arg_hash['machine']
@@ -292,9 +301,8 @@ module ParseArgs
       val_hash['machine'] = ENV['APPSCALE_MACHINE']
     end 
 
-    possible_instance_types = ["m1.small", "m1.large", "m1.xlarge", "c1.xlarge"]
     if arg_hash['instance_type']
-      if !possible_instance_types.include?(arg_hash['instance_type'])
+      if !POSSIBLE_INSTANCE_TYPES.include?(arg_hash['instance_type'])
         raise BadCommandLineArgException.new(INSTANCE_FLAG_NOT_IN_SET_MSG)
       end
       val_hash['instance_type'] = arg_hash['instance_type']

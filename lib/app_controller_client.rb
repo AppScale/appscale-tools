@@ -36,6 +36,7 @@ class AppControllerClient
     @conn.add_method("get_all_public_ips", "secret")
     @conn.add_method("kill", "secret")
     @conn.add_method("get_role_info", "secret")
+    @conn.add_method("start_roles_on_nodes", "ips_hash", "secret")
   end
   
   def make_call(time, retry_on_except, want_output=true)
@@ -48,11 +49,8 @@ class AppControllerClient
       }
     rescue Errno::ECONNREFUSED
       if refused_count > max
-        if want_output
-          abort("Connection with #{@ip} was refused. Is the AppController running?")
-        else
-          raise Exception
-        end
+        raise AppScaleException.new("Connection with #{@ip} was " +
+          "refused. Is the AppController running?")
       else
         refused_count += 1
         Kernel.sleep(1)
@@ -64,11 +62,10 @@ class AppControllerClient
       if retry_on_except
         retry
       else
-        if want_output
-          abort("We saw an unexpected error of the type #{except.class} with the following message:\n#{except}.")
-        else
-          raise except
-        end
+        trace = except.backtrace.join("\n")
+        raise AppScaleException.new("We saw an unexpected error of " +
+          "the type #{except.class} with the following message:" +
+          "\n#{except}, and trace #{trace}")
       end
     end
   end
@@ -136,8 +133,8 @@ class AppControllerClient
     make_call(30, RETRY_ON_FAIL) { @conn.update(app_names, @secret) }
   end
  
-  def get_all_public_ips()
-    make_call(30, RETRY_ON_FAIL) { @conn.get_all_public_ips(@secret) }
+  def get_all_public_ips(retry_on_fail=RETRY_ON_FAIL)
+    make_call(30, retry_on_fail) { @conn.get_all_public_ips(@secret) }
   end
 
   def kill()
@@ -174,6 +171,22 @@ class AppControllerClient
   def get_role_info()
     make_call(NO_TIMEOUT, ABORT_ON_FAIL) { 
       @conn.get_role_info(@secret) 
+    }
+  end
+
+
+  # Asks the AppController to add additional nodes to its AppScale
+  # deployment, with the specified roles.
+  # Args:
+  #   ips_hash: A Hash that maps roles to the IP addresses that should
+  #     run them. In cloud deployments, any unique identifier may be
+  #     used in place of the IP address.
+  # Returns:
+  #   The result of executing start_roles_on_nodes on the remote
+  #     AppController.
+  def start_roles_on_nodes(ips_hash)
+    make_call(NO_TIMEOUT, ABORT_ON_FAIL) {
+      @conn.start_roles_on_nodes(ips_hash, @secret)
     }
   end
 
