@@ -4,6 +4,7 @@
 
 # First party Python libraries
 import base64
+import json
 import os
 import shutil
 import socket
@@ -284,6 +285,13 @@ Available commands:
         " be running. Please start it and try again.")
 
     # make sure there is a node at position 'index'
+    nodes = json.loads(nodes_json_raw)
+    try:
+      ip = nodes[index]
+    except IndexError:
+      raise AppScaleException("Cannot ssh to node at index" +
+        str(index) + ", as there are only " + str(len(nodes)) +
+        " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
 

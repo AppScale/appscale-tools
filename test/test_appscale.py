@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import base64
+import json
 import os
 import shutil
 import subprocess
@@ -209,6 +210,29 @@ class TestAppScale(unittest.TestCase):
       .and_raise(IOError))
 
     self.assertRaises(AppScaleException, appscale.ssh, 0)
+
+
+  def testSshWithIndexOutOfBounds(self):
+    # calling 'appscale ssh 1' should ssh to the second node
+    # (nodes[1]). If there's only one node in this deployment,
+    # we should throw up and die
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    nodes = [one]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args("~/.appscale/locations-boo.json")
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    self.assertRaises(AppScaleException, appscale.ssh, 1)
 
 
   def testStatusWithNoAppScalefile(self):
