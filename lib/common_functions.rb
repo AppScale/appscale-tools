@@ -1660,11 +1660,15 @@ module CommonFunctions
   def self.collect_and_send_logs(options, exception)
     # first, ask the user if they want us to gather their logs
     # don't proceed further if they say 'no'.
+    backtrace = exception.backtrace.join("\n\tfrom ")
+    Kernel.puts("#{exception.message}\n\t#{backtrace}")
+
     collect_logs_prompt = "\nWe noticed that your AppScale deployment " +
-      "failed because of a #{exception.class} error, with backtrace " +
-      "#{exception.backtrace}. Is it ok if we gather the logs from " +
+      "failed because of a #{exception.class} error. " +
+      "Is it ok if we gather the logs from " +
       "your AppScale deployment to your local machine, to aid in " +
       "debugging this problem? (Y/N) "
+
     if !self.get_yes_or_no_from_stdin(collect_logs_prompt)
       Kernel.puts("Not copying over logs - quitting!")
       return {
