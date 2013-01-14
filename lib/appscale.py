@@ -4,6 +4,7 @@
 
 # First party Python libraries
 import base64
+import json
 import os
 import shutil
 import socket
@@ -16,6 +17,7 @@ import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
@@ -53,6 +55,7 @@ Usage: appscale command [<args>]
 Available commands:
   init: Writes a new configuration file for starting AppScale.
   up: Starts a new AppScale instance.
+  ssh: Logs into a virtual machine in a currently running AppScale deployment.
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
   destroy: Terminates the currently running AppScale deployment.
@@ -90,6 +93,35 @@ Available commands:
       raise AppScalefileException("No AppScalefile found in this " +
         "directory. Please run 'appscale init' to generate one and try " +
         "again.")
+
+
+  # Returns the location where the AppScale tools writes JSON data
+  # about where each virtual machine is located in the currently running
+  # AppScale deployment.
+  # Args:
+  #   - keyname: The name of the AppScale deployment to find the JSON
+  #       filename for.
+  # Returns:
+  #   The path on the local filesystem where the locations.json file
+  #   can be found.
+  def get_locations_json_file(self, keyname):
+    appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
+    json_file = appscale_dir + os.sep + "locations-" + keyname + ".json"
+    return json_file
+
+
+  # Returns the location where the AppScale tools places an SSH key that
+  # can be used to log into any virtual machine in the currently running
+  # AppScale deployment.
+  # Args:
+  #   - keyname: The name of the AppScale deployment to find the SSH
+  #       key for.
+  # Returns:
+  #   The path on the local filesystem where the SSH key can be found.
+  def get_key_location(self, keyname):
+    appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
+    key_file = appscale_dir + os.sep + keyname + ".key"
+    return key_file
 
 
   # Aborts and prints out the directives allowed for this module.
@@ -245,6 +277,56 @@ Available commands:
     success = t.is_authenticated()
     t.close()
     return success
+
+
+  # 'ssh' provides a simple way to log into virtual machines in an
+  # AppScale deployment, using the SSH key provided in the user's
+  # AppScalefile.
+  # Args:
+  #   - node: An int that represents the node to SSH to. The value is
+  #       used as an index into the list of nodes running in the
+  #       AppScale deployment, starting with zero.
+  # Raises:
+  #   AppScalefileException: If there is no AppScalefile in the current
+  #     directory.
+  #   TypeError: If the user does not provide an integer for 'node'.
+  def ssh(self, node):
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # make sure the user gave us an int for node
+    try:
+      index = int(node)
+    except ValueError:
+      raise TypeError("Usage: appscale ssh <node id to ssh to>")
+
+    # get a list of the nodes running
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = "appscale"
+
+    try:
+      with open(self.get_locations_json_file(keyname)) as f:
+        nodes_json_raw = f.read()
+    except IOError as e:
+      raise AppScaleException("AppScale does not currently appear to" +
+        " be running. Please start it and try again.")
+
+    # make sure there is a node at position 'index'
+    nodes = json.loads(nodes_json_raw)
+    try:
+      ip = nodes[index]['public_ip']
+    except IndexError:
+      raise AppScaleException("Cannot ssh to node at index " +
+        str(index) + ", as there are only " + str(len(nodes)) +
+        " in the currently running AppScale deployment.")
+
+    # construct the ssh command to exec with that IP address
+    command = ["ssh", "-i", self.get_key_location(keyname), "root@" + ip]
+
+    # exec the ssh command
+    subprocess.call(command)
 
 
   # 'status' is a more accessible way to query the state of the
