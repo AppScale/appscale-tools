@@ -59,7 +59,7 @@ elif command == "deploy":
   except AppScalefileException as e:
     cprint(e, 'red')
     exit(1)
-elif command == "destroy":
+elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
   except AppScalefileException as e:

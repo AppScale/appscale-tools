@@ -56,6 +56,7 @@ Available commands:
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
   destroy: Terminates the currently running AppScale deployment.
+  down: An alias for 'destroy'.
   help: Displays this message.
 """
 
