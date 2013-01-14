@@ -206,7 +206,10 @@ Available commands:
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-run-instances will do that for us.
-    subprocess.call(command)
+    try:
+      subprocess.call(command)
+    except KeyboardInterrupt:
+      pass
 
 
   # Determines whether or not we should call appscale-add-keypair,
