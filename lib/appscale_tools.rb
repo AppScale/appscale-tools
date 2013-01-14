@@ -482,6 +482,9 @@ module AppScaleTools
     head_node_ip = head_node_result[:head_node_ip]
     CommonFunctions.write_and_copy_node_file(options, node_layout,
       head_node_result)
+    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
 
     userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
