@@ -402,7 +402,7 @@ Available commands:
     try:
       index = int(node)
     except ValueError:
-      raise TypeError("Usage: appscale ssh <node id to ssh to>")
+      raise TypeError("Usage: appscale tail <node id to tail from> <files to tail>")
 
     # get a list of the nodes running
     if 'keyname' in contents_as_yaml:
