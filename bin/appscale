@@ -59,6 +59,9 @@ elif command == "ssh":
     AppScalefileException) as e:
     cprint(e, 'red')
     exit(1)
+  except KeyboardInterrupt:
+    # don't print the stack trace on a Control-C
+    pass
 elif command == "status":
   try:
     appscale.status()
@@ -72,6 +75,30 @@ elif command == "deploy":
   except AppScalefileException as e:
     cprint(e, 'red')
     exit(1)
+elif command == "tail":
+  if len(sys.argv) < 3:
+    # by default, tail the first node's logs, since that node is
+    # typically the head node
+    index = 0
+  else:
+    index = sys.argv[2]
+
+  if len(sys.argv) < 4:
+    # by default, tail the AppController logs, since that's the
+    # service we most often tail from
+    regex = "controller*"
+  else:
+    regex = sys.argv[3]
+
+  try:
+    appscale.tail(index, regex)
+  except (TypeError, AppScaleException,
+    AppScalefileException) as e:
+    cprint(e, 'red')
+    exit(1)
+  except KeyboardInterrupt:
+    # don't print the stack trace on a Control-C
+    pass
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
