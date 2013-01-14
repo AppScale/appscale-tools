@@ -9,11 +9,5 @@ require 'appscale_tools'
 if __FILE__ == $0
   options = ParseArgs.get_vals_from_args(ARGV, AppScaleTools::UPLOAD_APP_FLAGS,
     AppScaleTools::UPLOAD_APP_USAGE)
-  begin
-    AppScaleTools.upload_app(options)
-  rescue Exception => e
-    # collect all of the logs that could be useful in debugging
-    # why the above Exception was thrown
-    CommonFunctions.collect_and_send_logs(options, e)
-  end
+  AppScaleTools.upload_app(options)
 end
