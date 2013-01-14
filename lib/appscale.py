@@ -287,16 +287,18 @@ Available commands:
     # make sure there is a node at position 'index'
     nodes = json.loads(nodes_json_raw)
     try:
-      ip = nodes[index]
+      ip = nodes[index]['public_ip']
     except IndexError:
       raise AppScaleException("Cannot ssh to node at index" +
         str(index) + ", as there are only " + str(len(nodes)) +
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
+    key = "~/.appscale/" + keyname + ".key"
+    command = ["ssh", "-i", key, "root@" + ip]
 
     # exec the ssh command
-    pass
+    subprocess.call(command)
 
 
   # 'status' is a more accessible way to query the state of the

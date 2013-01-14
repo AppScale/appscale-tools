@@ -235,6 +235,34 @@ class TestAppScale(unittest.TestCase):
     self.assertRaises(AppScaleException, appscale.ssh, 1)
 
 
+  def testSshWithIndexInBounds(self):
+    # calling 'appscale ssh 1' should ssh to the second node
+    # (nodes[1]). If there are two nodes in this deployment,
+    # we should ssh into it successfully
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    two = {
+      'public_ip' : 'blarg2'
+    }
+    nodes = [one, two]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args("~/.appscale/locations-boo.json")
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["ssh", "-i", "~/.appscale/boo.key", "root@blarg2"]).and_return().once()
+    appscale.ssh(1)
+
+
   def testStatusWithNoAppScalefile(self):
     # calling 'appscale status' with no AppScalefile in the local
     # directory should throw up and die
