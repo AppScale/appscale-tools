@@ -112,7 +112,7 @@ class TestAppScaleGatherLogs < Test::Unit::TestCase
     flexmock(File).should_receive(:open).with(retval_file, Proc).
       and_return("1\n", "0\n")
     
-    expected = {:result => :success, :log_dirs => ["/baz/boo/boopublic"]}
+    expected = {:success => true, :log_dirs => ["/baz/boo/boopublic"]}
     actual = AppScaleTools.gather_logs(options)
     assert_equal(expected, actual)
   end
@@ -173,7 +173,7 @@ class TestAppScaleGatherLogs < Test::Unit::TestCase
     flexmock(File).should_receive(:open).with(retval_file, Proc).
       and_return("1\n", "0\n")
     
-    expected = {:result => :success, :log_dirs => 
+    expected = {:success => true, :log_dirs =>
       ["/baz/boo/boopublic1", "/baz/boo/boopublic2",
       "/baz/boo/boopublic3", "/baz/boo/boopublic4"]}
     actual = AppScaleTools.gather_logs(options)

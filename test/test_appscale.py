@@ -439,6 +439,51 @@ class TestAppScale(unittest.TestCase):
     appscale.tail(1, "c*")
 
 
+  def testGetLogsWithNoAppScalefile(self):
+    # calling 'appscale logs' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.logs, '')
+
+
+  def testGetLogsWithNoKeyname(self):
+    # calling 'appscale logs dir' with no keyname should produce
+    # a command to exec without the --keyname flag
+    appscale = AppScale()
+    contents = {
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # mock out the actual call to appscale-gather-logs
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["appscale-gather-logs",
+                                                 "--location",
+                                                 "/baz"]).and_return().once()
+    appscale.logs('/baz')
+
+
+  def testGetLogsWithKeyname(self):
+    # calling 'appscale logs dir' with a keyname should produce
+    # a command to exec with the --keyname flag
+    appscale = AppScale()
+    contents = {
+      "keyname" : "boo"
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # mock out the actual call to appscale-gather-logs
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["appscale-gather-logs",
+                                                 "--keyname",
+                                                 "boo",
+                                                 "--location",
+                                                 "/baz"]).and_return().once()
+    appscale.logs('/baz')
+
+
   def testDestroyWithNoAppScalefile(self):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die
