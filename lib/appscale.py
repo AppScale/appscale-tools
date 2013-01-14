@@ -267,6 +267,15 @@ Available commands:
     except ValueError:
       raise TypeError("Usage: appscale ssh <integer>")
 
+    # get a list of the nodes running
+
+    # make sure there is a node at position 'index'
+
+    # construct the ssh command to exec with that IP address
+
+    # exec the ssh command
+    pass
+
 
   # 'status' is a more accessible way to query the state of the
   # AppScale deployment than 'appscale-describe-instances', and calls
