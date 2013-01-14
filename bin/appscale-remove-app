@@ -12,12 +12,8 @@ if __FILE__ == $0
   begin
     AppScaleTools.remove_app(options)
   rescue Exception => e
-    # first, collect all of the logs that could be useful in debugging
+    # collect all of the logs that could be useful in debugging
     # why the above Exception was thrown
     CommonFunctions.collect_and_send_logs(options, e)
-
-    # now throw the original exception, since there's no corrective action
-    # we can take here
-    raise e
   end
 end
