@@ -20,6 +20,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale import AppScale
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
@@ -56,6 +57,8 @@ class TestAppScale(unittest.TestCase):
     (mock.should_receive('open')
      .with_args('/boo/' + appscale.APPSCALEFILE)
      .and_return(flexmock(read=lambda: contents)))
+
+    return mock
 
 
   def testReportHelp(self):
@@ -190,6 +193,20 @@ class TestAppScale(unittest.TestCase):
     appscale = AppScale()
     self.addMockForAppScalefile(appscale, "")
     self.assertRaises(TypeError, appscale.ssh, "boo")
+
+
+  def testSshWithNoNodesJson(self):
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args("~/.appscale/locations-boo.json")
+      .and_raise(IOError))
+
+    self.assertRaises(AppScaleException, appscale.ssh, 0)
 
 
   def testStatusWithNoAppScalefile(self):

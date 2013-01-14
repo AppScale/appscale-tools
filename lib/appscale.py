@@ -16,6 +16,7 @@ import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
@@ -260,6 +261,7 @@ Available commands:
   #   TypeError: If the user does not provide an integer for 'node'.
   def ssh(self, node):
     contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
 
     # make sure the user gave us an int for node
     try:
@@ -268,6 +270,18 @@ Available commands:
       raise TypeError("Usage: appscale ssh <integer>")
 
     # get a list of the nodes running
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = "appscale"
+
+    nodes_json_location = "~/.appscale/locations-" + keyname + ".json"
+    try:
+      with open(nodes_json_location) as f:
+        nodes_json_raw = f.read()
+    except IOError as e:
+      raise AppScaleException("AppScale does not currently appear to" +
+        " be running. Please start it and try again.")
 
     # make sure there is a node at position 'index'
 
