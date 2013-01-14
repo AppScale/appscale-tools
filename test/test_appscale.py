@@ -36,6 +36,17 @@ class TestAppScale(unittest.TestCase):
     pass
 
 
+  def addMockForNoAppScalefile(self, appscale):
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_raise(IOError))
+
+
   def testReportHelp(self):
     # calling 'appscale help' should report usage information
     appscale = AppScale()
@@ -78,16 +89,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale up' if there is no AppScalefile present
     # should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.up)
 
 
@@ -184,16 +186,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale ssh' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.ssh)
 
 
@@ -201,16 +194,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale status' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.status)
 
 
@@ -252,16 +236,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale deploy' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     app = "/bar/app"
     self.assertRaises(AppScalefileException, appscale.deploy, app)
 
@@ -339,16 +314,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.destroy)
 
 
