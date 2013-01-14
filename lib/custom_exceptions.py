@@ -3,6 +3,15 @@
 
 
 # A special Exception class that should be thrown if the user tries to
+# interact with an AppScale deployment, but it's not in the expected
+# state. Examples of this include scenarios when AppScale configuration
+# files aren't written locally, or if we expect AppScale to be running
+# and it isn't.
+class AppScaleException(Exception):
+  pass
+
+
+# A special Exception class that should be thrown if the user tries to
 # run an appscale command that interacts with an AppScalefile and the
 # file is either malformed or in an unexpected state.
 class AppScalefileException(Exception):

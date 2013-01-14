@@ -15,6 +15,7 @@ from termcolor import cprint
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale import AppScale
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 
@@ -44,6 +45,18 @@ elif command == "up":
   try:
     appscale.up()
   except AppScalefileException as e:
+    cprint(e, 'red')
+    exit(1)
+elif command == "ssh":
+  if len(sys.argv) < 3:
+    index = 0
+  else:
+    index = sys.argv[2]
+
+  try:
+    appscale.ssh(index)
+  except (TypeError, AppScaleException,
+    AppScalefileException) as e:
     cprint(e, 'red')
     exit(1)
 elif command == "status":

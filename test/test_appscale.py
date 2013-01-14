@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import base64
+import json
 import os
 import shutil
 import subprocess
@@ -20,6 +21,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale import AppScale
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
@@ -34,6 +36,30 @@ class TestAppScale(unittest.TestCase):
   
   def tearDown(self):
     pass
+
+
+  def addMockForNoAppScalefile(self, appscale):
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+      .with_args('/boo/' + appscale.APPSCALEFILE)
+      .and_raise(IOError))
+
+
+  def addMockForAppScalefile(self, appscale, contents):
+    flexmock(os)
+    os.should_receive('getcwd').and_return('/boo').once()
+
+    mock = flexmock(sys.modules['__builtin__'])
+    mock.should_call('open')  # set the fall-through
+    (mock.should_receive('open')
+     .with_args('/boo/' + appscale.APPSCALEFILE)
+     .and_return(flexmock(read=lambda: contents)))
+
+    return mock
 
 
   def testReportHelp(self):
@@ -78,16 +104,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale up' if there is no AppScalefile present
     # should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.up)
 
 
@@ -98,9 +115,6 @@ class TestAppScale(unittest.TestCase):
     # on a virtualized cluster
     appscale = AppScale()
 
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
     contents = {
@@ -110,12 +124,7 @@ class TestAppScale(unittest.TestCase):
     }
     yaml_dumped_contents = yaml.dump(contents)
     base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-     .with_args('/boo/' + appscale.APPSCALEFILE)
-     .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # for this test, let's say that we don't have an SSH key already
     # set up for ip1 and ip2
@@ -151,9 +160,6 @@ class TestAppScale(unittest.TestCase):
     # on EC2
     appscale = AppScale()
 
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
     contents = {
@@ -166,12 +172,7 @@ class TestAppScale(unittest.TestCase):
       'max' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
     # TODO(cgb): find a better way to do this
@@ -180,20 +181,93 @@ class TestAppScale(unittest.TestCase):
     appscale.up()
 
 
+  def testSshWithNoAppScalefile(self):
+    # calling 'appscale ssh' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.ssh, 1)
+
+
+  def testSshWithNotIntArg(self):
+    # calling 'appscale ssh not-int' should throw up and die
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, "")
+    self.assertRaises(TypeError, appscale.ssh, "boo")
+
+
+  def testSshWithNoNodesJson(self):
+    # calling 'appscale ssh' when there isn't a locations.json
+    # file should throw up and die
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_raise(IOError))
+
+    self.assertRaises(AppScaleException, appscale.ssh, 0)
+
+
+  def testSshWithIndexOutOfBounds(self):
+    # calling 'appscale ssh 1' should ssh to the second node
+    # (nodes[1]). If there's only one node in this deployment,
+    # we should throw up and die
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    nodes = [one]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    self.assertRaises(AppScaleException, appscale.ssh, 1)
+
+
+  def testSshWithIndexInBounds(self):
+    # calling 'appscale ssh 1' should ssh to the second node
+    # (nodes[1]). If there are two nodes in this deployment,
+    # we should ssh into it successfully
+    appscale = AppScale()
+
+    contents = { 'keyname' : 'boo' }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    one = {
+      'public_ip' : 'blarg'
+    }
+    two = {
+      'public_ip' : 'blarg2'
+    }
+    nodes = [one, two]
+    nodes_contents = json.dumps(nodes)
+
+    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    (mock.should_receive('open')
+      .with_args(appscale.get_locations_json_file('boo'))
+      .and_return(flexmock(read=lambda: nodes_contents)))
+
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(["ssh", "-i", appscale.get_key_location('boo'), "root@blarg2"]).and_return().once()
+    appscale.ssh(1)
+
+
   def testStatusWithNoAppScalefile(self):
     # calling 'appscale status' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.status)
 
 
@@ -203,9 +277,6 @@ class TestAppScale(unittest.TestCase):
     # 'appscale-describe-instances' command and then exec it
     appscale = AppScale()
 
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
     contents = {
@@ -218,12 +289,7 @@ class TestAppScale(unittest.TestCase):
       'max' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(subprocess)
@@ -235,16 +301,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale deploy' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     app = "/bar/app"
     self.assertRaises(AppScalefileException, appscale.deploy, app)
 
@@ -254,9 +311,6 @@ class TestAppScale(unittest.TestCase):
     # directory should collect any parameters needed for the
     # 'appscale-upload-app' command and then exec it
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
 
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
@@ -270,12 +324,7 @@ class TestAppScale(unittest.TestCase):
       'max' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(subprocess)
@@ -287,9 +336,6 @@ class TestAppScale(unittest.TestCase):
   def testDeployWithCloudAppScalefileAndTestFlag(self):
     # same as before, but with the 'test' flag in our AppScalefile
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
 
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
@@ -304,12 +350,7 @@ class TestAppScale(unittest.TestCase):
       'test' : True
     }
     yaml_dumped_contents = yaml.dump(contents)
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(subprocess)
@@ -322,16 +363,7 @@ class TestAppScale(unittest.TestCase):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_raise(IOError))
-
+    self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.destroy)
 
 
@@ -340,9 +372,6 @@ class TestAppScale(unittest.TestCase):
     # directory should collect any parameters needed for the
     # 'appscale-terminate-instances' command and then exec it
     appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo').once()
 
     # Mock out the actual file reading itself, and slip in a YAML-dumped
     # file
@@ -356,12 +385,7 @@ class TestAppScale(unittest.TestCase):
       'max' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
-
-    mock = flexmock(sys.modules['__builtin__'])
-    mock.should_call('open')  # set the fall-through
-    (mock.should_receive('open')
-      .with_args('/boo/' + appscale.APPSCALEFILE)
-      .and_return(flexmock(read=lambda: yaml_dumped_contents)))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-terminate-instances call
     flexmock(subprocess)
