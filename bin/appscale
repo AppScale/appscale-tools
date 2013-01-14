@@ -53,7 +53,7 @@ elif command == "ssh":
 
   try:
     appscale.ssh(sys.argv[2])
-  except TypeError, AppScalefileException as e:
+  except (TypeError, AppScalefileException) as e:
     cprint(e, 'red')
     exit(1)
 elif command == "status":
