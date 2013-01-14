@@ -94,6 +94,35 @@ Available commands:
         "again.")
 
 
+  # Returns the location where the AppScale tools writes JSON data
+  # about where each virtual machine is located in the currently running
+  # AppScale deployment.
+  # Args:
+  #   - keyname: The name of the AppScale deployment to find the JSON
+  #       filename for.
+  # Returns:
+  #   The path on the local filesystem where the locations.json file
+  #   can be found.
+  def get_locations_json_file(self, keyname):
+    appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
+    json_file = appscale_dir + os.sep + "locations-" + keyname + ".json"
+    return json_file
+
+
+  # Returns the location where the AppScale tools places an SSH key that
+  # can be used to log into any virtual machine in the currently running
+  # AppScale deployment.
+  # Args:
+  #   - keyname: The name of the AppScale deployment to find the SSH
+  #       key for.
+  # Returns:
+  #   The path on the local filesystem where the SSH key can be found.
+  def get_key_location(self, keyname):
+    appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
+    key_file = appscale_dir + os.sep + keyname + ".key"
+    return key_file
+
+
   # Aborts and prints out the directives allowed for this module.
   def help(self):
     raise UsageException(self.USAGE)
@@ -276,9 +305,8 @@ Available commands:
     else:
       keyname = "appscale"
 
-    nodes_json_location = "~/.appscale/locations-" + keyname + ".json"
     try:
-      with open(nodes_json_location) as f:
+      with open(self.get_locations_json_file(keyname)) as f:
         nodes_json_raw = f.read()
     except IOError as e:
       raise AppScaleException("AppScale does not currently appear to" +
@@ -294,8 +322,7 @@ Available commands:
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
-    key = "~/.appscale/" + keyname + ".key"
-    command = ["ssh", "-i", key, "root@" + ip]
+    command = ["ssh", "-i", self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
     subprocess.call(command)

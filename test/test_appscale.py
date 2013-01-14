@@ -206,7 +206,7 @@ class TestAppScale(unittest.TestCase):
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
     (mock.should_receive('open')
-      .with_args("~/.appscale/locations-boo.json")
+      .with_args(appscale.get_locations_json_file('boo'))
       .and_raise(IOError))
 
     self.assertRaises(AppScaleException, appscale.ssh, 0)
@@ -229,7 +229,7 @@ class TestAppScale(unittest.TestCase):
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
     (mock.should_receive('open')
-      .with_args("~/.appscale/locations-boo.json")
+      .with_args(appscale.get_locations_json_file('boo'))
       .and_return(flexmock(read=lambda: nodes_contents)))
 
     self.assertRaises(AppScaleException, appscale.ssh, 1)
@@ -255,11 +255,11 @@ class TestAppScale(unittest.TestCase):
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
     (mock.should_receive('open')
-      .with_args("~/.appscale/locations-boo.json")
+      .with_args(appscale.get_locations_json_file('boo'))
       .and_return(flexmock(read=lambda: nodes_contents)))
 
     flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["ssh", "-i", "~/.appscale/boo.key", "root@blarg2"]).and_return().once()
+    subprocess.should_receive('call').with_args(["ssh", "-i", appscale.get_key_location('boo'), "root@blarg2"]).and_return().once()
     appscale.ssh(1)
 
 
