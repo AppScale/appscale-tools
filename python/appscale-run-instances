@@ -1,0 +1,55 @@
+#!/usr/bin/python
+
+import sys
+from utils import cli, appscale_tools
+from utils.appscale_tools import RunInstancesOptions
+from utils.commons import AppScaleToolsException
+
+__author__ = 'hiranya'
+
+if __name__ == '__main__':
+  options = [
+    cli.OPTION_IPS,
+    cli.OPTION_MAX_IMAGES,
+    cli.OPTION_MIN_IMAGES,
+    cli.OPTION_APP_FILE,
+    cli.OPTION_DATABASE,
+    cli.OPTION_MACHINE,
+    cli.OPTION_INSTANCE_TYPE,
+    cli.OPTION_KEYNAME,
+    cli.OPTION_GROUP,
+    cli.OPTION_INFRASTRUCTURE,
+    cli.OPTION_REPLICATION,
+    cli.OPTION_READ_FACTOR,
+    cli.OPTION_WRITE_FACTOR,
+    cli.OPTION_APPENGINE,
+    cli.OPTION_RESTORE_FROM_TAR,
+    cli.OPTION_RESTORE_NEPTUNE_INFO,
+    cli.OPTION_SCP,
+    cli.OPTION_AUTO_SCALE
+  ]
+  parser = cli.get_parser(options)
+  (options, args) = parser.parse_args(sys.argv[1:])
+
+  run_instances_options = RunInstancesOptions()
+  run_instances_options.infrastructure = options.infrastructure
+  run_instances_options.machine = options.machine
+  run_instances_options.instance_type = options.instance_type
+  run_instances_options.min = options.min
+  run_instances_options.max = options.max
+  run_instances_options.ips = options.ips
+  run_instances_options.database = options.database
+  run_instances_options.keyname = options.keyname
+  run_instances_options.group = options.group
+  run_instances_options.scp = options.scp
+  run_instances_options.replication = options.replication
+  run_instances_options.read_q = options.read_factor
+  run_instances_options.write_q = options.write_factor
+  run_instances_options.app_engines = options.appengine
+  run_instances_options.auto_scale = options.autoscale
+  run_instances_options.restore_from_tar = options.restore_from_tar
+  run_instances_options.restore_neptune_info = options.restore_neptune_info
+  try:
+    appscale_tools.run_instances(run_instances_options)
+  except AppScaleToolsException as e:
+    print e.message
