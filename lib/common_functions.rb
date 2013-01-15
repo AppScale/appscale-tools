@@ -914,7 +914,7 @@ module CommonFunctions
   #     data in it.
   def self.erase_binary_in_yaml(path)
     contents = self.read_file(path, chomp=false)
-    new_contents = contents.gsub(/(.*)---/, '---')
+    new_contents = contents.gsub(/(.*)---?/, '---')
     self.write_file(path, new_contents)
   end
 
