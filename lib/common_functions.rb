@@ -902,7 +902,20 @@ module CommonFunctions
              :secret => secret , :db_master => db_master,
              :ips => ips , :infrastructure => infrastructure, :group => group }
     loc_path = File.expand_path(locations_yaml)
-    File.open(loc_path, "w") {|file| YAML.dump(tree, file)}
+    File.open(loc_path, "w+") {|file| file.write(YAML.dump(tree))}
+    self.erase_binary_in_yaml(loc_path)
+  end
+
+
+  # Removes any binary before the initial '---' found in YAML files that the
+  # tools reads and writes.
+  # Args:
+  #   path: The location where a YAML file can be found that may have binary
+  #     data in it.
+  def self.erase_binary_in_yaml(path)
+    contents = self.read_file(path, chomp=false)
+    new_contents = contents.gsub(/(.*)---?/, '---')
+    self.write_file(path, new_contents)
   end
 
 
