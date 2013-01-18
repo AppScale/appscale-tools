@@ -551,7 +551,7 @@ module VMTools
     }
   end
 
-  def self.terminate_infrastructure_machines(infrastructure, keyname)
+  def self.terminate_infrastructure_machines(infrastructure, keyname, group)
     # TODO: if we know all the other ips in the system, contact one
     # of them instead
 
@@ -562,10 +562,10 @@ module VMTools
     # for now, just kill them the hard way
     desc = "#{infrastructure}-describe-instances"
     term = "#{infrastructure}-terminate-instances"
-    cmd = "#{desc} | grep #{keyname} | awk '{print $2}' | xargs #{term}"
+    cmd = "#{desc} | grep #{keyname} | grep -v RESERVATION | awk '{print $2}' | xargs #{term}"
     puts "Unable to contact shadow node, shutting down via tools..."
     puts `#{cmd}`
-    cmd = "#{infrastructure}-delete-group appscale"
+    cmd = "#{infrastructure}-delete-group #{group}"
     puts `#{cmd}`
   end
 end

@@ -100,7 +100,9 @@ class NodeLayout
   # (except for ZooKeeper, which we triple since it requires a consensus
   # to function).
   def is_supported_advanced_format?
-    if @nodes.length == 4
+    if @nodes.length == 1
+      return true
+    elsif @nodes.length == 4
       # in a four node deployment, we are looking for one node to
       # be a load balancer, one to be an appserver, one to be a
       # database, and one to be zookeeper
@@ -724,7 +726,6 @@ class SimpleNode < Node
       @roles << :appengine
       @roles << :memcache
       @roles << :database
-      @roles << :load_balancer
       @roles << :rabbitmq
     end
 
@@ -743,10 +744,6 @@ class AdvancedNode < Node
     end
 
     if @roles.include?(:login)
-      @roles << :load_balancer
-    end
-
-    if @roles.include?(:appengine)
       @roles << :load_balancer
     end
 
