@@ -146,3 +146,15 @@ class TestParseArgs(unittest.TestCase):
     argv_3 = self.argv[:] + ['--instance_type', 'blarg1.humongous']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
+
+
+  def test_scaling_flags(self):
+    # Specifying a value for add_to_existing should fail
+    argv_1 = ["--add_to_existing", "boo"]
+    self.assertRaises(SystemExit, ParseArgs, argv_1,
+      "appscale-add-keypair")
+
+    # not specifying a value should set it to true
+    argv_2 = ["--add_to_existing"]
+    actual = ParseArgs(argv_2, "appscale-add-keypair")
+    self.assertEquals(True, actual.args.add_to_existing)

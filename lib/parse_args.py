@@ -84,6 +84,10 @@ class ParseArgs():
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
+    elif function == "appscale-add-keypair":
+      self.parser.add_argument('--add_to_existing',
+        action='store_true',
+        help='if we should add the given nodes to an existing deployment')
     else:
       raise SystemExit
 
@@ -103,6 +107,8 @@ class ParseArgs():
       self.validate_infrastructure_flags()
       self.validate_database_flags()
     elif function == "appscale-gather-logs":
+      pass
+    elif function == "appscale-add-keypair":
       pass
     else:
       raise SystemExit
