@@ -43,6 +43,7 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals(common_functions.APPSCALE_VERSION,
       context_manager.exception.message)
 
+
   def test_get_min_and_max(self):
     # Setting min or max below 1 is not acceptable
     argv_1 = ['--min', '0', '--max', '1']
@@ -62,6 +63,7 @@ class TestParseArgs(unittest.TestCase):
     argv_4 = ['--min', '10', '--max', '1']
     self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
       self.function)
+
 
   def test_table_flags(self):
     # Specifying a table that isn't accepted should abort
@@ -89,12 +91,14 @@ class TestParseArgs(unittest.TestCase):
     actual_5 = ParseArgs(argv_5, self.function)
     self.assertEquals(2, actual_5.args.n)
 
+
   def test_gather_logs_flags(self):
     # Specifying auto, force, or test should have that carried over
     # to in the resulting hash
     argv = ["--location", "/boo/baz"]
     actual = ParseArgs(argv, "appscale-gather-logs")
     self.assertEquals("/boo/baz", actual.args.location)
+
 
   def test_developer_flags(self):
     # Specifying force or test should have that carried over
@@ -108,34 +112,22 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals(True, actual_2.args.test)
 
 
-"""
-  def test_infrastructure_flags
+  def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    args_1 = ['--infrastructure', 'ec2']
-    all_flags_1 = ['infrastructure']
-    actual_1 = ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
-    assert_equal('ec2', actual_1['infrastructure'])
+    argv_1 = self.argv[:] + ['--infrastructure', 'ec2']
+    actual_1 = ParseArgs(argv_1, self.function)
+    self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    args_2 = ['--infrastructure', 'euca']
-    all_flags_2 = ['infrastructure']
-    actual_2 = ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    assert_equal('euca', actual_2['infrastructure'])
+    argv_2 = self.argv[:] + ['--infrastructure', 'euca']
+    actual_2 = ParseArgs(argv_2, self.function)
+    self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    args_3 = ['--infrastructure', 'boocloud']
-    all_flags_3 = ['infrastructure']
-    assert_raises(BadConfigurationException) {
-      ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
-    }
+    argv_3 = self.argv[:] + ['--infrastructure', 'boocloud']
+    self.assertRaises(BadConfigurationException, ParseArgs,
+      argv_3, self.function)
 
-    # Specifying infrastructure via --iaas is not acceptable.
-    args_4 = ['--iaas']
-    all_flags_4 = AppScaleTools::RUN_INSTANCES_FLAGS
-    assert_raises(BadConfigurationException) {
-      ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
-    }
-  end
-
+"""
   def test_instance_types
     # Specifying m1.large as the instance type is acceptable.
     args_1 = ['--instance_type', 'm1.large']

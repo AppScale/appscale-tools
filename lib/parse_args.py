@@ -62,6 +62,10 @@ class ParseArgs():
       self.parser.add_argument('--max', type=int,
         help="the maximum number of VMs to use")
 
+      # flags relating to cloud infrastructures
+      self.parser.add_argument('--infrastructure',
+        help="the cloud infrastructure to use")
+
       # flags relating to the datastore used
       self.parser.add_argument('--table',
         default=common_functions.DEFAULT_DATASTORE,
@@ -93,6 +97,7 @@ class ParseArgs():
     """
     if function == "appscale-run-instances":
       self.validate_min_and_max_flags()
+      self.validate_infrastructure_flag()
       self.validate_database_flags()
     elif function == "appscale-gather-logs":
       pass
@@ -123,6 +128,18 @@ class ParseArgs():
       raise BadConfigurationException("Min cannot exceed max.")
 
     return
+
+
+  def validate_infrastructure_flag(self):
+    """Validates the infrastructure flag given to us by the user.
+
+    Raises:
+      BadConfigurationException: If the value given to us for the
+        infrastructure flag was invalid.
+    """
+    if self.args.infrastructure is not None and \
+      self.args.infrastructure not in common_functions.ALLOWED_INFRASTRUCTURES:
+      raise BadConfigurationException("Infrastructure must be a supported value.")
 
 
   def validate_database_flags(self):

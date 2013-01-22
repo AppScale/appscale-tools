@@ -14,6 +14,10 @@ DEFAULT_DATASTORE = "cassandra"
 ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
 
 
+# A list of the infrastructures that AppScale can deploy to.
+ALLOWED_INFRASTRUCTURES = ["ec2", "euca"]
+
+
 """
 #!/usr/bin/ruby -w
 # Programmer: Chris Bunch
