@@ -30,12 +30,31 @@ require 'vm_tools'
 module AppScaleTools
 
 
+  # The list of flags that can be used with the 'appscale-add-instances'
+  # command.
+  ADD_INSTANCES_FLAGS = ["ips", "keyname"]
+
+
+  # The usage text that we display to users if they incorrectly invoke
+  # 'appscale-add-instances'.
+  ADD_INSTANCES_USAGE = UsageText.get_usage("appscale-add-instances",
+    ADD_INSTANCES_FLAGS)
+
+
   ADD_KEYPAIR_FLAGS = ["help", "usage", "h", "ips", "keyname", "version", 
-    "auto"]
+    "auto", "ips_layout", "add_to_existing"]
 
 
   ADD_KEYPAIR_USAGE = UsageText.get_usage("appscale-add-keypair", 
     ADD_KEYPAIR_FLAGS)
+
+
+  # A message that add-nodes can raise if the user does not indicate
+  # which machines should be used to start new roles in their AppScale
+  # deployment.
+  NO_IPS_GIVEN = "Please specify a YAML file that indicates what nodes " +
+    "should be used to start new roles in the currently running " +
+    "AppScale deployment."
 
 
   IP_REGEX = /\d+\.\d+\.\d+\.\d+/
@@ -62,6 +81,18 @@ module AppScaleTools
 
 
   APP_REMOVAL_CANCELLED = "Application removal cancelled."
+
+
+  # The flags that are acceptable to use with appscale-gather-logs.
+  # This command is fairly straightforward, and only accepts the
+  # keyname flag (outside of the normal help flags).
+  GATHER_LOGS_FLAGS = ["help", "h", "usage", "keyname", "location"]
+
+
+  # The usage that is displayed to users if they ask for help with
+  # the appscale-gather-logs command.
+  GATHER_LOGS_USAGE = UsageText.get_usage("appscale-gather-logs",
+    GATHER_LOGS_FLAGS)
 
 
   REMOVE_APP_FLAGS = ["help", "h", "usage", "appname", "version", "keyname", 
@@ -96,7 +127,7 @@ module AppScaleTools
   RUN_INSTANCES_FLAGS = ["help", "h", "min", "max", "file", "table", "ips",
     "v", "verbose", "machine", "instance_type", "usage", "version", "keyname",
     "infrastructure", "n", "r", "w", "scp", "test", "appengine",
-    "force", "restore_from_tar", "restore_neptune_info", "group"]
+    "force", "restore_from_tar", "restore_neptune_info", "group", "ips_layout"]
 
 
   RUN_INSTANCES_USAGE = UsageText.get_usage("appscale-run-instances", 
@@ -163,7 +194,7 @@ module AppScaleTools
 
 
   def self.add_keypair(options)
-    keyname = options['keyname']
+    keyname = options['keyname'] || "appscale"
     ips_yaml = options['ips']
     auto = options['auto']
 
@@ -182,7 +213,13 @@ module AppScaleTools
     CommonFunctions.make_appscale_directory()
 
     path = File.expand_path("~/.appscale/#{keyname}")
-    pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+
+    if options['add_to_existing']
+      pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
+      backup_key = File.expand_path("~/.appscale/#{keyname}.key")
+    else
+      pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+    end
 
     if auto
       if options["root_password"].nil?
@@ -192,26 +229,98 @@ module AppScaleTools
         puts "Using the provided root password to login to AppScale machines"
         password = options["root_password"]
       end
-
-      # Location of expect script that interacts with ssh-copy-id
-      expect_script = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
     end
 
-    ips = node_layout.nodes.collect { |node| node.id }
-    copy_success = true
+    if node_layout.valid?
+      ips = node_layout.nodes.collect { |node| node.id }
+    else
+      ips = []
+      ips_yaml.each { |role, ip|
+        ips << ip
+      }
+      ips.flatten!
+      ips.uniq!
+    end
 
     ips.each { |ip|
-      CommonFunctions.ssh_copy_id(ip, path, auto, expect_script, password)
+      CommonFunctions.ssh_copy_id(ip, path, auto, password)
+      CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
     }
-
-    head_node_ip = node_layout.head_node.id
-    CommonFunctions.scp_ssh_key_to_ip(head_node_ip, path, pub_key)
  
     FileUtils.cp(path, backup_key)
-    puts "A new ssh key has been generated for you and placed at" +
+    Kernel.puts "A new ssh key has been generated for you and placed at" +
       " #{path}. You can now use this key to log into any of the " +
-      "machines you specified without providing a password via the" +
-      " following command:\n\tssh root@#{head_node_ip} -i #{path}"
+      "machines you specified without providing a password."
+    return {'success' => true}
+  end
+
+  
+  # Works in conjunction with an already running AppScale deployment to
+  # add additional nodes. The nodes must be specified via a YAML file
+  # (of the same format used in run-instances).
+  # Args:
+  #   options: A Hash with the following keys:
+  #     ips: A Hash that maps roles to start on new nodes to the IPs
+  #       that they should be started on. For cloud deployments, IPs
+  #       need not be used - any unique identifier will suffice.
+  #     keyname (optional): The name of the key that is associated with
+  #       machines in this AppScale deployment.
+  # Raises:
+  #   BadConfigurationException: If the user failed to specify a Hash
+  #     indicating what roles should be added, or if the user tries to
+  #     add an additional 'master' role.
+  # Returns:
+  #   The result of the SOAP message dispatched to the AppController
+  #   asking it to add the additional nodes. For successful invocations,
+  #   this is a Hash that maps the IP addresses of the new nodes to the
+  #   roles started on those machines. For unsuccessful invocations, this
+  #   is a String that indicates why the call failed.
+  def self.add_instances(options)
+    ips_yaml = options['ips']
+    if ips_yaml.nil? or ips_yaml.empty?
+      raise BadConfigurationException.new(NO_IPS_GIVEN)
+    end
+
+    if ips_yaml.keys.include?(:master)
+      raise BadConfigurationException.new("Cannot add a master node to " +
+        "an already running AppScale deployment.")
+    end
+
+    # Skip checking for -n (replication) because we don't allow the user
+    # to specify it here (only allowed in run-instances).
+    additional_nodes_layout = NodeLayout.new(ips_yaml, options,
+      skip_replication=true)
+
+    # In non-cloud scenarios, we need to make sure that the user has
+    # set up SSH keys with the new nodes to add.
+    keyname = options['keyname'] || "appscale"
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+
+    infrastructure = CommonFunctions.get_infrastructure(keyname)
+    if infrastructure == "xen"
+      new_ips = ips_yaml.values.flatten
+      new_ips.each { |ip|
+        # throws an AppScaleException if the SSH key doesn't work
+        CommonFunctions.find_real_ssh_key([ssh_key], ip)
+      }
+    end
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+    secret = CommonFunctions.get_secret_key(keyname)
+    acc = AppControllerClient.new(head_node_ip, secret)
+
+    # Convert the keys in ips.yaml from Symbols to Strings, which
+    # are acceptable to pass via SOAP.
+    converted_ips_yaml = {}
+    ips_yaml.each { |k, v|
+      converted_ips_yaml[k.to_s] = v
+    }
+
+    # Return whatever the result of the SOAP request to the AppController
+    # is.
+    return acc.start_roles_on_nodes(converted_ips_yaml)
   end
 
 
@@ -228,6 +337,72 @@ module AppScaleTools
     }
 
     return {:error => nil, :result => instance_info }
+  end
+
+
+  # Copies all of the logs from an AppScale deployment to this
+  # machine, so that they can be easily examined or e-mailed to
+  # support.
+  # Args:
+  #   options: A Hash that optionally contains the keyname associated
+  #   with the AppScale instance to gather logs for, and the location
+  #   that the gathered logs should be placed in.
+  # Raises:
+  #   AppScaleException, if the location to store the logs from the
+  #   AppScale deployment already exists, or if AppScale wasn't running
+  #   with the keyname the user gave us.
+  # Returns:
+  #   A Hash indicating whether or not the logs were successfully
+  #   copied to the specified location.
+  def self.gather_logs(options)
+    keyname = options['keyname'] || "appscale"
+    location = File.expand_path(options['location'] || "/tmp/#{keyname}-logs/")
+
+    # First, make sure that the place we want to store logs doesn't
+    # already exist.
+    if File.exists?(location)
+      raise AppScaleException.new("The location that you specified " +
+        "to copy logs to, #{location}, already exists. Please " +
+        "specify a location that does not exist and try again.")
+    else
+      FileUtils.mkdir_p(location)
+    end
+
+    # Next, make sure that AppScale is actually running with the
+    # keyname the user gave us.
+    appscale_locations_file = File.expand_path("~/.appscale/locations-" +
+      "#{keyname}.yaml")
+    if !File.exists?(appscale_locations_file)
+      raise AppScaleException.new("AppScale is not currently running " +
+        "with the keyname #{keyname}.")
+    end
+
+    # Get the IP address of the head node from the locations file
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+
+    # Query the head node for a list of all the IPs in this
+    # AppScale deployment
+    secret = CommonFunctions.get_secret_key(keyname)
+
+    begin
+      acc = AppControllerClient.new(head_node_ip, secret)
+      all_ips = acc.get_all_public_ips(ABORT_ON_FAIL)
+    rescue AppScaleException
+      all_ips = [head_node_ip]
+    end
+
+    # Get the logs from each node, and store them in our local directory
+    ssh_key = File.expand_path("~/.appscale/#{keyname}.key")
+    ip_dirs = []
+    all_ips.each { |ip|
+      ip_dir = "#{location}/#{ip}"
+      FileUtils.mkdir_p(ip_dir)
+      CommonFunctions.scp_remote_to_local("/var/log/appscale", ip_dir,
+        ip, ssh_key)
+      ip_dirs << ip_dir
+    }
+
+    return {:success => true, :log_dirs => ip_dirs}
   end
 
 
@@ -307,6 +482,9 @@ module AppScaleTools
     head_node_ip = head_node_result[:head_node_ip]
     CommonFunctions.write_and_copy_node_file(options, node_layout,
       head_node_result)
+    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
 
     userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
@@ -369,7 +547,8 @@ module AppScaleTools
 
     infrastructure = CommonFunctions.get_infrastructure(keyname, required=true)
     if VALID_CLOUD_TYPES.include?(infrastructure)
-      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+      group = CommonFunctions.get_group(keyname, required=true)
+      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
     else
       CommonFunctions.terminate_via_vmm(keyname, options['verbose'])
     end

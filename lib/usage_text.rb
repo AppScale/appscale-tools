@@ -17,6 +17,10 @@ module UsageText
     return preamble + flag_text + "\n\n"
   end
 
+  def self.add_to_existing
+    "--add_to_existing: Uses the SSH keys already in use for the named AppScale deployment instead of generating new SSH keys."
+  end
+
   def self.appengine
     "--appengine NUM: The number of application servers that should be spawned up for each Google App Engine app."
   end
@@ -73,8 +77,16 @@ module UsageText
     "--ips: The YAML file containing the IPs (and optionally, the service placement) of the machines to use."
   end
 
+  def self.ips_layout
+    "--ips_layout: The Base64 encoded IPs layout (in YAML-dumped form) that indicates how to place services across machines"
+  end
+
   def self.keyname
     "--keyname KEYNAME: The name of the SSH key to use for Eucalyptus. Two AppScale instances can be run concurrently in one cloud if they have unique names, and they can conflict if they have the same name."
+  end
+
+  def self.location
+    "--location LOCATION: The location where logs should be copied to on the local filesystem."
   end
 
   def self.machine

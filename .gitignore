@@ -1,4 +1,5 @@
 .DS_Store
 *.swp
-*.pyc
+*.py[c|o]
 ips
+.idea

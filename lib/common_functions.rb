@@ -19,7 +19,7 @@ require 'user_app_client'
 require 'rubygems'
 require 'json'
 
-
+ALLOWED_RUNTIMES = ["python", "python27", "java", "go"]
 NO_SSH_KEY_FOUND = "No SSH key was found that could be used to log in to " +
   "your machine."
 MALFORMED_YAML = "The yaml file you provided was malformed. Please correct " +
@@ -48,10 +48,10 @@ IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
 CLOUDY_CREDS = ["ec2_access_key", "ec2_secret_key", 
   "aws_access_key_id", "aws_secret_access_key", 
   "SIMPLEDB_ACCESS_KEY", "SIMPLEDB_SECRET_KEY",
-  "CLOUD1_EC2_ACCESS_KEY", "CLOUD1_EC2_SECRET_KEY"]
+  "CLOUD_EC2_ACCESS_KEY", "CLOUD_EC2_SECRET_KEY"]
 
 
-VER_NUM = "1.6.5"
+VER_NUM = "1.6.6"
 AS_VERSION = "AppScale Tools, Version #{VER_NUM}, http://appscale.cs.ucsb.edu"
 
 
@@ -62,7 +62,7 @@ JAVA_CONFIG = "war/WEB-INF/appengine-web.xml"
 # When we try to ssh to other machines, we don't want to be asked for a password
 # (since we always should have the right SSH key present), and we don't want to
 # be asked to confirm the host's fingerprint, so set the options for that here.
-SSH_OPTIONS = "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no"
+SSH_OPTIONS = "-o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
 # A list of the databases that AppScale nodes can run, and a list of the cloud
@@ -88,7 +88,18 @@ LOCAL_APPSCALE_FILE_DIR = File.expand_path("~/.appscale")
 REMOTE_APPSCALE_FILE_DIR = "/etc/appscale/"
 
 
+# Location of expect script that interacts with ssh-copy-id
+EXPECT_SCRIPT = File.join(File.join(File.dirname(__FILE__), "..", "lib"),"sshcopyid")
+
+
 module CommonFunctions
+
+
+  # AppScale requires Java App Engine applications uploaded by users to
+  # be of the same version as what we support on our virtual machine
+  # images. To avoid contacting the VMs themselves to see what version
+  # they support, this constant is instead used.
+  JAVA_AE_VERSION = "1.7.3"
 
 
   # A convenience function that can be used to write a string to a file.
@@ -139,16 +150,16 @@ module CommonFunctions
         "AppScale data.")
     end
 
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
-    #self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
-    self.shell("rsync -e 'ssh -i #{ssh_key}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{controller}/* root@#{dest_ip}:/root/appscale/AppController")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{lib}/* root@#{dest_ip}:/root/appscale/lib")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{appmanager}/* root@#{dest_ip}:/root/appscale/AppManager")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{server}/* root@#{dest_ip}:/root/appscale/AppServer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loadbalancer}/* root@#{dest_ip}:/root/appscale/AppLoadBalancer")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{monitoring}/* root@#{dest_ip}:/root/appscale/AppMonitoring")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' #{appdb}/* root@#{dest_ip}:/root/appscale/AppDB")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{neptune}/* root@#{dest_ip}:/root/appscale/Neptune")
+    #self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{loki}/* root@#{dest_ip}:/root/appscale/Loki")
+    self.shell("rsync -e 'ssh -i #{ssh_key} #{SSH_OPTIONS}' -arv #{iaas_manager}/* root@#{dest_ip}:/root/appscale/InfrastructureManager")
   end
 
 
@@ -181,7 +192,7 @@ module CommonFunctions
     }
 
     if new_role_info.nil?
-      abort("Couldn't contact any AppControllers - is AppScale running?")
+      abort("Couldn't contact any AppControllers - is AppScale running? Make sure you are using the correct keyname. Tried with keyname #{keyname}.")
     end
 
     CommonFunctions.write_nodes_json(new_role_info, keyname)
@@ -217,7 +228,7 @@ module CommonFunctions
         "'#{not_allowed}' - this is a reserved name.")
     end
 
-    if app_name =~ /[^[a-z]-]/
+    if app_name =~ /^[a-z]-/
       raise AppEngineConfigException.new("App name can only contain " +
         "numeric and lowercase alphabetical characters.")
     end
@@ -578,7 +589,7 @@ module CommonFunctions
   def self.find_real_ssh_key(ssh_keys, host)
     ssh_keys.each { |key|
       key = File.expand_path(key)
-      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp
+      return_value = CommonFunctions.shell("ssh -i #{key} #{SSH_OPTIONS} 2>&1 root@#{host} 'touch /tmp/foo'; echo $? ").chomp[-1].chr
       if return_value == "0"
         return key
       end
@@ -591,7 +602,7 @@ module CommonFunctions
   def self.scp_file(local_file_loc, remote_file_loc, target_ip, public_key_loc)
     cmd = ""
     local_file_loc = File.expand_path(local_file_loc)
-    retval_file = File.expand_path("~/.appscale/retval-#{rand()}")
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
  
     if public_key_loc.class == Array
       public_key_loc.each { |key|
@@ -605,9 +616,22 @@ module CommonFunctions
     end
 
     cmd << "; echo $? > #{retval_file}"
-
     FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
 
+
+  def self.scp_remote_to_local(remote_source, local_dest, ip, ssh_key)
+    retval_file = File.expand_path("~/.appscale/retval-#{Kernel.rand()}")
+    cmd = "scp -r -i #{ssh_key} #{SSH_OPTIONS} 2>&1 " +
+      "root@#{ip}:#{remote_source} #{local_dest}; echo $? " +
+      "> #{retval_file}"
+    FileUtils.rm_f(retval_file)
+    self.scp(cmd, retval_file)
+  end
+
+
+  def self.scp(cmd, retval_file)
     begin
       Timeout::timeout(INFINITY) { CommonFunctions.shell("#{cmd}") }
     rescue Timeout::Error
@@ -687,6 +711,7 @@ module CommonFunctions
         pass = new_pass
         
         if pass =~ PASSWORD_REGEX
+          Kernel.print "\nYour account is being created... \n\n"
           break
         else
           Kernel.puts "\n\nThe password you typed in was not at least six characters long. Please try again.\n\n"
@@ -798,6 +823,10 @@ module CommonFunctions
     CommonFunctions.get_from_yaml(keyname, :infrastructure)
   end
 
+  def self.get_group(keyname, required=true)
+    CommonFunctions.get_from_yaml(keyname, :group)
+  end
+
 
   def self.make_appscale_directory()
     # AppScale generates private keys for each cloud that machines are 
@@ -857,7 +886,7 @@ module CommonFunctions
     CommonFunctions.write_node_file(head_node_ip,
       head_node_result[:instance_id], options['table'],
       head_node_result[:secret_key], db_master_ip, all_ips,
-      options['infrastructure'], locations_yaml)
+      options['infrastructure'], options['group'], locations_yaml)
     remote_locations_file = "/root/.appscale/locations-#{keyname}.yaml"
     CommonFunctions.scp_file(locations_yaml, remote_locations_file,
       head_node_ip, head_node_result[:true_key])
@@ -865,15 +894,28 @@ module CommonFunctions
 
 
   def self.write_node_file(head_node_ip, instance_id, table, secret, db_master,
-    ips, infrastructure, locations_yaml)
+    ips, infrastructure, group, locations_yaml)
 
     infrastructure ||= "xen"
     tree = { :load_balancer => head_node_ip, :instance_id => instance_id , 
              :table => table, :shadow => head_node_ip, 
              :secret => secret , :db_master => db_master,
-             :ips => ips , :infrastructure => infrastructure }
+             :ips => ips , :infrastructure => infrastructure, :group => group }
     loc_path = File.expand_path(locations_yaml)
-    File.open(loc_path, "w") {|file| YAML.dump(tree, file)}
+    File.open(loc_path, "w+") {|file| file.write(YAML.dump(tree))}
+    self.erase_binary_in_yaml(loc_path)
+  end
+
+
+  # Removes any binary before the initial '---' found in YAML files that the
+  # tools reads and writes.
+  # Args:
+  #   path: The location where a YAML file can be found that may have binary
+  #     data in it.
+  def self.erase_binary_in_yaml(path)
+    contents = self.read_file(path, chomp=false)
+    new_contents = contents.gsub(/(.*)---?/, '---')
+    self.write_file(path, new_contents)
   end
 
 
@@ -951,7 +993,7 @@ module CommonFunctions
     end
     filename = fullpath.scan(/\/?([\w\.]+\Z)/).flatten.to_s
 
-    temp_dir = CommonFunctions.get_random_alphanumeric
+    temp_dir = "appscale-app-" + CommonFunctions.get_random_alphanumeric
     FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
     FileUtils.mkdir_p("/tmp/#{temp_dir}")
 
@@ -964,9 +1006,9 @@ module CommonFunctions
 
     if app_file == PYTHON_CONFIG
       app_name = CommonFunctions.get_app_name_via_yaml(temp_dir, app_config_loc)
-      language = "python"
+      language = CommonFunctions.get_language_via_yaml(temp_dir, app_config_loc)
       if File.directory?(fullpath)
-        temp_dir2 = CommonFunctions.get_random_alphanumeric
+        temp_dir2 = "appscale-app-" + CommonFunctions.get_random_alphanumeric
         FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
         FileUtils.mkdir_p("/tmp/#{temp_dir2}")
         CommonFunctions.shell("cd /tmp/#{temp_dir}; tar -czf ../#{temp_dir2}/#{app_name}.tar.gz .")
@@ -980,8 +1022,14 @@ module CommonFunctions
       language = "java"
       # don't remove user's jar files, they may have their own jars in it
       #FileUtils.rm_rf("/tmp/#{temp_dir}/war/WEB-INF/lib/", :secure => true)
+      sdk_file = File.join(fullpath, "war/WEB-INF/lib/appengine-api-1.0-sdk-#{JAVA_AE_VERSION}.jar")
+      if !File.exists?(sdk_file)
+        raise AppEngineConfigException.new("Unsupported Java App Engine version. Please " +
+                                           "recompile and repackage your app with Java " +
+                                           "App Engine #{JAVA_AE_VERSION}.")
+      end
       FileUtils.mkdir_p("/tmp/#{temp_dir}/war/WEB-INF/lib")
-      temp_dir2 = CommonFunctions.get_random_alphanumeric
+      temp_dir2 = "appscale-app-" + CommonFunctions.get_random_alphanumeric
       FileUtils.rm_rf("/tmp/#{temp_dir2}", :secure => true)
       FileUtils.mkdir_p("/tmp/#{temp_dir2}")
       FileUtils.rm_f("/tmp/#{temp_dir}/#{filename}")
@@ -1002,6 +1050,34 @@ module CommonFunctions
     FileUtils.rm_rf("/tmp/#{temp_dir}", :secure => true)
     CommonFunctions.warn_on_large_app_size(file)
     return app_name, file, language 
+  end
+
+
+  # Parses the given app.yaml file to determine which runtime should be
+  # used to execute this Google App Engine application.
+  # Args:
+  #   temp_dir: The directory that we untar'ed the user's application to.
+  #   app_yaml_loc: The location of the app.yaml file, relative to temp_dir.
+  # Raises:
+  #   AppScaleException: If the user's app.yaml file is malformed, or if no
+  #     runtime was given.
+  # Returns:
+  #   A String corresponding to the runtime that should be used.
+  def self.get_language_via_yaml(temp_dir, app_yaml_loc)
+    app_yaml_loc = "/tmp/" + temp_dir + "/" + app_yaml_loc
+    
+    begin
+      tree = YAML.load_file(app_yaml_loc.chomp)
+      runtime = String(tree["runtime"])
+      if !ALLOWED_RUNTIMES.include?(runtime)
+        raise AppScaleException.new("The runtime you specified, #{runtime}" +
+          ", was not an acceptable value. Acceptable values are: " +
+          "#{ALLOWED_RUNTIMES.join(', ')}")
+      end
+      return runtime
+    rescue ArgumentError
+      raise AppScaleException.new(MALFORMED_YAML)
+    end
   end
 
 
@@ -1136,19 +1212,35 @@ module CommonFunctions
       return "YES"
     end
 
-    Kernel.print "We are about to attempt to remove your application, #{app_name}." +
-      "\nAre you sure you want to remove this application (Y/N)? "
+    Kernel.puts "We are about to attempt to remove your application, #{app_name}."
     STDOUT.flush
-    
+
+    prompt = "Are you sure you want to remove this application (Y/N)? "
+    if self.get_yes_or_no_from_stdin(prompt)
+      return "YES"
+    else
+      return "NO"
+    end
+  end
+
+
+  # Prompts the user for a yes or no response, and if yes or no is not given,
+  # prompts again until a yes or no is given.
+  # Args:
+  # - prompt: A String that is used to prompt the user for a yes or no answer.
+  # Returns:
+  #  A boolean that indicates whether or not the user replied "yes".
+  def self.get_yes_or_no_from_stdin(prompt)
     loop {
+      Kernel.print(prompt)
       result = STDIN.gets.chomp.upcase
       if result == "Y" or result == "YES" 
-        return "YES"
+        return true
       end
       if result == "N" or result == "NO"
-        return "NO"
+        return false
       end
-      Kernel.print "Please type in 'yes' or 'no'.\nAre you sure you want to remove this application (Y/N)? "
+      Kernel.puts "Please type in 'yes' or 'no'."
     }
   end
 
@@ -1192,7 +1284,7 @@ module CommonFunctions
     backup_key = File.expand_path("~/.appscale/#{keyname}.key")
     pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
 
-    #FileUtils.rm_f([path, backup_key, pub_key])
+    FileUtils.rm_f([path, backup_key, pub_key])
     unless File.exists?(path) and File.exists?(pub_key)
       FileUtils.rm_f([path, backup_key, pub_key])
       Kernel.puts CommonFunctions.shell("ssh-keygen -t rsa -N '' -f #{path}")
@@ -1202,13 +1294,13 @@ module CommonFunctions
   end
 
 
-  def self.ssh_copy_id(ip, path, auto, expect_script, password)
+  def self.ssh_copy_id(ip, path, auto, password)
     Kernel.puts "\n\n"
     Kernel.puts "Executing ssh-copy-id for host : " + ip
     Kernel.puts "------------------------------"
 
     if auto
-      Kernel.puts CommonFunctions.shell("#{expect_script} root@#{ip} #{path} #{password}")
+      Kernel.puts CommonFunctions.shell("#{EXPECT_SCRIPT} root@#{ip} #{path} #{password}")
     else
       Kernel.puts CommonFunctions.shell("ssh-copy-id -i #{path} root@#{ip}")
     end
@@ -1247,7 +1339,8 @@ module CommonFunctions
       error_msg = "An AppScale instance is already running with the given" +
         " keyname, #{keyname}. Please terminate that instance first with the" +
         " following command:\n\nappscale-terminate-instances --keyname " +
-        "#{keyname} <--ips path-to-ips.yaml if using non-cloud deployment>"
+        "#{keyname} <--ips path-to-ips.yaml if using non-cloud deployment>" +
+        "or use the --force flag to override this behavior."
       raise BadConfigurationException.new(error_msg)
     end
   end
@@ -1264,7 +1357,7 @@ module CommonFunctions
       deployment = "non-cloud environment"
     end
 
-    Kernel.puts "About to start AppScale over a #{deployment}."
+    Kernel.puts "About to start AppScale #{VER_NUM} over a #{deployment}."
   end
 
   def self.generate_node_layout(options)
@@ -1462,7 +1555,7 @@ module CommonFunctions
   end
 
 
-  def self.terminate_via_infrastructure(infrastructure, keyname, shadow_ip, secret)
+  def self.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
     Kernel.puts "About to terminate instances spawned via #{infrastructure} " +
       "with keyname '#{keyname}'..."
     Kernel.sleep(2)
@@ -1470,12 +1563,19 @@ module CommonFunctions
     acc = AppControllerClient.new(shadow_ip, secret)
     if acc.is_live?
       acc.kill()
-      # TODO(cgb): read the group from the locations.yaml file and delete that
-      cmd = "#{infrastructure}-delete-group appscale"
-      Kernel.puts CommonFunctions.shell("#{cmd}")
+      cmd = "#{infrastructure}-delete-group #{group} > /dev/null; echo $?"
+      while true
+        delete_group_output = CommonFunctions.shell("#{cmd}")
+        if delete_group_output.strip == "0"
+          break
+        else
+          Kernel.puts "Waiting for instances to shutdown"
+          Kernel.sleep(5)
+        end
+      end
       Kernel.puts "Terminated AppScale in cloud deployment."
     else
-      VMTools.terminate_infrastructure_machines(infrastructure, keyname)
+      VMTools.terminate_infrastructure_machines(infrastructure, keyname, group)
     end
   end
 
@@ -1552,4 +1652,95 @@ module CommonFunctions
   def self.verbose(msg, verbose)
     Kernel.puts msg if verbose
   end
+
+
+  # This method gathers the logs generated during an AppScale deployment
+  # and sends them for debugging purposes. We query the user if they
+  # want to gather the logs and again if they want to send them, in case
+  # they wish to opt-out of this feature. The intention here is to provide
+  # a method that can be called if any of the tools throw an exception, so
+  # the caller should also indicate what exception was thrown in the first
+  # place.
+  # Args:
+  # - options: A Hash that contains the configuration parameters used to
+  #   deploy AppScale.
+  # - exception: The Exception that caused an AppScaleTools method to
+  #   fail, which may be useful in debugging why the user's deployment
+  #   failed.
+  # Returns:
+  #   A Hash that indicates what actions we took and whether or not they
+  #   were successful.
+  def self.collect_and_send_logs(options, exception)
+    # first, ask the user if they want us to gather their logs
+    # don't proceed further if they say 'no'.
+    backtrace = exception.backtrace.join("\n\tfrom ")
+    Kernel.puts("#{exception.message}\n\t#{backtrace}")
+
+    collect_logs_prompt = "\nWe noticed that your AppScale deployment " +
+      "failed because of a #{exception.class} error. " +
+      "Is it ok if we gather the logs from " +
+      "your AppScale deployment to your local machine, to aid in " +
+      "debugging this problem? (Y/N) "
+
+    if !self.get_yes_or_no_from_stdin(collect_logs_prompt)
+      Kernel.puts("Not copying over logs - quitting!")
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "aborted by user"
+      }
+    end
+
+    # gather the logs, putting them in a unique location
+    options['location'] = "/tmp/appscale-logs-#{Time.now().to_i}"
+    begin
+      AppScaleTools.gather_logs(options)
+    rescue AppScaleException
+      return {
+        :collected_logs => false,
+        :sent_logs => false,
+        :reason => "unable to collect logs"
+      }
+    end
+
+    # tell them they can send it to the mailing list
+    Kernel.puts "Your logs have been collected and stored at " +
+      "#{options['location']}. Please visit " +
+      "https://groups.google.com/forum/?fromgroups#!forum/appscale_community" +
+      " and send us your logs so that we can debug your AppScale" +
+      " deployment."
+    return {
+      :collected_logs => true,
+      :sent_logs => false,
+      :reason => ""
+    }
+
+    # TODO(cgb): Once we set up a web app at logs.appscale.com, we can
+    # send the user's logs to it automatically. Of course, ask the user
+    # first if they want to do this, and  don't proceed further if they
+    # say 'no'.
+    #send_logs_prompt = "We can automatically send your crash report to " +
+    #  "AppScale Systems to be analyzed and have feedback incorporated " +
+    #  "into future versions of AppScale. Would you like us to do this? (Y/N)"
+    #if !self.get_yes_or_no_from_stdin(send_logs_prompt)
+    #  Kernel.puts("Not sending over crash report. Your logs have been " +
+    #    "stored at #{options['location']} if you wish to view them or " +
+    #    "send them to the AppScale team for debugging purposes.")
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => false,
+    #    :reason => "aborted by user"
+    #  }
+    #end
+
+    # TODO(cgb): send the log files, one at a time
+
+    #  return {
+    #    :collected_logs => true,
+    #    :sent_logs => true,
+    #    :reason => ""
+    #  }
+  end
+
+
 end

@@ -1,6 +1,10 @@
 #!/usr/bin/ruby
 # Programmer: Chris Bunch
 
+
+require 'base64'
+
+
 $:.unshift File.join(File.dirname(__FILE__))
 require 'common_functions'
 require 'custom_exceptions'
@@ -85,6 +89,12 @@ module ParseArgs
 
     self.get_min_and_max_images_and_ips(arg_hash, val_hash)
 
+    if arg_hash['add_to_existing']
+      val_hash['add_to_existing'] = true
+    else
+      val_hash['add_to_existing'] = false
+    end
+
     if arg_hash['file']
       true_location = File.expand_path(arg_hash['file'])
       if !File.exists?(true_location)
@@ -129,6 +139,10 @@ module ParseArgs
       val_hash['separate'] = true
     else
       val_hash['separate'] = false
+    end
+
+    if arg_hash['location']
+      val_hash['location'] = arg_hash['location']
     end
 
     val_hash['confirm'] = !arg_hash['confirm'].nil?
@@ -211,6 +225,14 @@ module ParseArgs
       end
     else
       val_hash['ips'] = nil
+    end
+
+    if arg_hash['ips_layout']
+      ips = YAML.load(Base64.decode64(arg_hash['ips_layout']))
+      val_hash['ips'] = {}
+      ips.each { |k, v|
+        val_hash['ips'][k.to_sym] = v
+      }
     end
   end
 
