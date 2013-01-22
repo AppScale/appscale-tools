@@ -1,12 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env ruby
+# Programmer: Chris Bunch
 
-"""
+$VERBOSE = nil # to surpress excessive SSL cert warnings
+
+
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'appscale_tools'
 
 
 if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV,
+  options = ParseArgs.get_vals_from_args(ARGV, 
     AppScaleTools::RUN_INSTANCES_FLAGS, AppScaleTools::RUN_INSTANCES_USAGE)
   begin
     AppScaleTools.run_instances(options)
@@ -16,4 +19,3 @@ if __FILE__ == $0
     CommonFunctions.collect_and_send_logs(options, e)
   end
 end
-"""
