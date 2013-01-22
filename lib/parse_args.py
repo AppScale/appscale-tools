@@ -44,6 +44,14 @@ class ParseArgs():
 
 
   def add_allowed_flags(self, function):
+    """Adds flag parsing capabilities based on the given function.
+
+    Args:
+      function: The name of the function that we're adding flags
+        on behalf of.
+    Raises:
+      SystemExit: If function is not a supported function.
+    """
     if function == "appscale-run-instances":
       self.parser.add_argument('--version', action='store_true')
       self.parser.add_argument('--min', type=int)
@@ -53,18 +61,29 @@ class ParseArgs():
 
 
   def validate_allowed_flags(self, function):
+    """Checks the values passed in by the user to ensure that
+    they are valid for an AppScale deployment.
+
+    Args:
+      function: The name of the function that we should be
+        validating parameters for.
+    Raises:
+      BadConfigurationException: If an argument has an invalid
+        value.
+      SystemExit: If function is not a supported function.
+    """
     if function == "appscale-run-instances":
       # if min is not set and max is, set min == max
       if self.args.min is None and self.args.max:
         self.args.min = self.args.max
 
       if self.args.min < 1:
-        raise BadConfigurationException
+        raise BadConfigurationException("Min cannot be less than 1.")
 
       if self.args.max < 1:
-        raise BadConfigurationException
+        raise BadConfigurationException("Max cannot be less than 1.")
 
       if self.args.min > self.args.max:
-        raise BadConfigurationException
+        raise BadConfigurationException("Min cannot exceed max.")
     else:
       raise SystemExit
