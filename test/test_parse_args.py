@@ -14,6 +14,7 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from common_functions import APPSCALE_VERSION
 from parse_args import ParseArgs
 
 
@@ -33,23 +34,15 @@ class TestParseArgs(unittest.TestCase):
     self.assertRaises(SystemExit, ParseArgs, argv_1, 
       all_flags_1, description)
 
+    # the version flag should quit and print the current
+    # version of the tools
+    argv_2 = ['--version']
+    all_flags_2 = ['version']
+    with self.assertRaises(SystemExit) as context_manager:
+      ParseArgs(argv_2, all_flags_2, description)
+    self.assertEquals(APPSCALE_VERSION, context_manager.exception.message)
 
 """
-    # The --usage flag should cause ParseArgs to abort and print the usage
-    args_2 = ['--usage']
-    all_flags_2 = ['usage']
-    assert_raises(BadCommandLineArgException) {
-      ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    }
-
-    # The --version flag should cause ParseArgs to abort and print the version
-    args_3 = ['--version']
-    all_flags_3 = ['version']
-    assert_raises(BadCommandLineArgException) {
-      ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
-    }
-  end
-
   def test_get_min_and_max
     # Setting min or max below 1 is not acceptable
     args_1 = ['--min', '0']
