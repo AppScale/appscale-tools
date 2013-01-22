@@ -52,15 +52,31 @@ class ParseArgs():
     Raises:
       SystemExit: If function is not a supported function.
     """
-    self.parser.add_argument('--version', action='store_true', help="shows the tools version and quits")
+    self.parser.add_argument('--version', action='store_true',
+      help="shows the tools version and quits")
 
     if function == "appscale-run-instances":
-      self.parser.add_argument('--min', type=int, help="the minimum number of VMs to use")
-      self.parser.add_argument('--max', type=int, help="the maximum number of VMs to use")
-      self.parser.add_argument('--table', default=common_functions.DEFAULT_DATASTORE, help="the datastore to use")
-      self.parser.add_argument('-n', type=int, help="the database replication factor")
+      # flags relating to how many VMs we should spawn
+      self.parser.add_argument('--min', type=int,
+        help="the minimum number of VMs to use")
+      self.parser.add_argument('--max', type=int,
+        help="the maximum number of VMs to use")
+
+      # flags relating to the datastore used
+      self.parser.add_argument('--table',
+        default=common_functions.DEFAULT_DATASTORE,
+        help="the datastore to use")
+      self.parser.add_argument('-n', type=int,
+        help="the database replication factor")
+
+      # developer flags
+      self.parser.add_argument('--force', action='store_true',
+        help="forces tools to continue if keyname or group exist")
+      self.parser.add_argument('--test', action='store_true',
+        help="uses a default username and password for cloud admin")
     elif function == "appscale-gather-logs":
-      self.parser.add_argument('--location', help="the location to store the collected logs")
+      self.parser.add_argument('--location',
+        help="the location to store the collected logs")
     else:
       raise SystemExit
 

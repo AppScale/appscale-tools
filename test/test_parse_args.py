@@ -96,18 +96,19 @@ class TestParseArgs(unittest.TestCase):
     actual = ParseArgs(argv, "appscale-gather-logs")
     self.assertEquals("/boo/baz", actual.args.location)
 
-"""
-  def test_developer_flags
-    # Specifying auto, force, or test should have that carried over
+  def test_developer_flags(self):
+    # Specifying force or test should have that carried over
     # to in the resulting hash
-    ['auto', 'force', 'test'].each { |param|
-      args = ["--#{param}"]
-      all_flags = [param]
-      actual = ParseArgs.get_vals_from_args(args, all_flags, @usage)
-      assert_equal(true, actual[param])
-    }
-  end
+    argv_1 = self.argv[:] + ['--force']
+    actual_1 = ParseArgs(argv_1, self.function)
+    self.assertEquals(True, actual_1.args.force)
 
+    argv_2 = self.argv[:] + ['--test']
+    actual_2 = ParseArgs(argv_2, self.function)
+    self.assertEquals(True, actual_2.args.test)
+
+
+"""
   def test_infrastructure_flags
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
     args_1 = ['--infrastructure', 'ec2']
