@@ -53,11 +53,11 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
-      self.parser.add_argument('--version', action='store_true')
-      self.parser.add_argument('--min', type=int)
-      self.parser.add_argument('--max', type=int)
-      self.parser.add_argument('--table', default=common_functions.DEFAULT_DATASTORE)
-      self.parser.add_argument('-n', type=int)
+      self.parser.add_argument('--version', action='store_true', help="shows the tools version and quits")
+      self.parser.add_argument('--min', type=int, help="the minimum number of VMs to use")
+      self.parser.add_argument('--max', type=int, help="the maximum number of VMs to use")
+      self.parser.add_argument('--table', default=common_functions.DEFAULT_DATASTORE, help="the datastore to use")
+      self.parser.add_argument('-n', type=int, help="the database replication factor")
     else:
       raise SystemExit
 
@@ -70,8 +70,6 @@ class ParseArgs():
       function: The name of the function that we should be
         validating parameters for.
     Raises:
-      BadConfigurationException: If an argument has an invalid
-        value.
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
