@@ -15,6 +15,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from common_functions import APPSCALE_VERSION
+from custom_exceptions import BadConfigurationException
 from parse_args import ParseArgs
 
 
@@ -29,53 +30,47 @@ class TestParseArgs(unittest.TestCase):
     # using a flag that isn't acceptable should raise
     # an exception
     argv_1 = ['--boo!']
-    all_flags_1 = []
+    function = "appscale-run-instances"
     description = "baz"
     self.assertRaises(SystemExit, ParseArgs, argv_1, 
-      all_flags_1, description)
+      function, description)
 
     # the version flag should quit and print the current
     # version of the tools
     argv_2 = ['--version']
     all_flags_2 = ['version']
     with self.assertRaises(SystemExit) as context_manager:
-      ParseArgs(argv_2, all_flags_2, description)
+      ParseArgs(argv_2, function, description)
     self.assertEquals(APPSCALE_VERSION, context_manager.exception.message)
 
-"""
-  def test_get_min_and_max
+  def test_get_min_and_max(self):
     # Setting min or max below 1 is not acceptable
-    args_1 = ['--min', '0']
-    all_flags_1 = ['min']
-    assert_raises(BadCommandLineArgException) {
-      ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
-    }
+    argv_1 = ['--min', '0', '--max', '1']
+    function = "appscale-run-instances"
+    description = "baz"
+    self.assertRaises(BadConfigurationException,
+      ParseArgs, argv_1, function, description)
 
-    args_2 = ['--max', '0']
-    all_flags_2 = ['max']
-    assert_raises(BadCommandLineArgException) {
-      ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    }
+    argv_2 = ['--min', '1', '--max', '0']
+    self.assertRaises(BadConfigurationException,
+      ParseArgs, argv_2, function, description)
 
     # If max is specified but not min, min should be equal to max
-    args_3 = ['--max', '1']
-    all_flags_3 = ['max']
-    actual_3 = ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
-    assert_equal(actual_3['min_images'], actual_3['max_images'])
+    argv_3 = ['--max', '1']
+    actual_3 = ParseArgs(argv_3, function, description)
+    self.assertEquals(actual_3.args.min, actual_3.args.max)
 
     # If max is less than min, it should abort
-    args_4 = ['--min', '10', '--max', '1']
-    all_flags_4 = ['min', 'max']
-    assert_raises(BadCommandLineArgException) {
-      ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
-    }
-  end
+    argv_4 = ['--min', '10', '--max', '1']
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
+      function, description)
 
+"""
   def test_table_flags
     # Specifying a table that isn't accepted should abort
     args_1 = ['--table', 'non-existant-table']
     all_flags_1 = ['table']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
     }
 
@@ -96,33 +91,33 @@ class TestParseArgs(unittest.TestCase):
     # Specifying r or w when Voldemort isn't used should abort
     args_4 = ['--table', 'cassandra', '-r', '1']
     all_flags_4 = ['table', 'r', 'w']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
     }
 
     args_5 = ['--table', 'cassandra', '-w', '1']
     all_flags_5 = ['table', 'r', 'w']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_5, all_flags_5, @usage)
     }
 
     # Specifying a non-positive integer for r or w with Voldemort should abort
     args_6 = ['--table', 'voldemort', '-r', 'boo']
     all_flags_6 = ['table', 'r', 'w']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_6, all_flags_6, @usage)
     }
 
     args_7 = ['--table', 'voldemort', '-w', '0']
     all_flags_7 = ['table', 'r', 'w']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_7, all_flags_7, @usage)
     }
 
     # Specifying a non-positive integer for n should abort
     args_8 = ['--table', 'cassandra', '-n', '0']
     all_flags_8 = ['table', 'n']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_8, all_flags_8, @usage)
     }
 
@@ -185,14 +180,14 @@ class TestParseArgs(unittest.TestCase):
     # Specifying something else as the infrastructure is not acceptable.
     args_3 = ['--infrastructure', 'boocloud']
     all_flags_3 = ['infrastructure']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_3, all_flags_3, @usage)
     }
 
     # Specifying infrastructure via --iaas is not acceptable.
     args_4 = ['--iaas']
     all_flags_4 = AppScaleTools::RUN_INSTANCES_FLAGS
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_4, all_flags_4, @usage)
     }
   end
@@ -201,7 +196,7 @@ class TestParseArgs(unittest.TestCase):
     # Specifying m1.large as the instance type is acceptable.
     args_1 = ['--instance_type', 'm1.large']
     all_flags_1 = ['instance_type']
-    assert_nothing_raised(BadCommandLineArgException) {
+    assert_nothing_raised(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
     }
 
@@ -209,7 +204,7 @@ class TestParseArgs(unittest.TestCase):
     # acceptable.
     args_2 = ['--instance_type', 'blarg1.humongous']
     all_flags_2 = ['instance_type']
-    assert_raises(BadCommandLineArgException) {
+    assert_raises(BadConfigurationException) {
       ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
     }
   end
