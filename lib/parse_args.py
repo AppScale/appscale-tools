@@ -52,12 +52,15 @@ class ParseArgs():
     Raises:
       SystemExit: If function is not a supported function.
     """
+    self.parser.add_argument('--version', action='store_true', help="shows the tools version and quits")
+
     if function == "appscale-run-instances":
-      self.parser.add_argument('--version', action='store_true', help="shows the tools version and quits")
       self.parser.add_argument('--min', type=int, help="the minimum number of VMs to use")
       self.parser.add_argument('--max', type=int, help="the maximum number of VMs to use")
       self.parser.add_argument('--table', default=common_functions.DEFAULT_DATASTORE, help="the datastore to use")
       self.parser.add_argument('-n', type=int, help="the database replication factor")
+    elif function == "appscale-gather-logs":
+      self.parser.add_argument('--location', help="the location to store the collected logs")
     else:
       raise SystemExit
 
@@ -75,6 +78,8 @@ class ParseArgs():
     if function == "appscale-run-instances":
       self.validate_min_and_max_flags()
       self.validate_database_flags()
+    elif function == "appscale-gather-logs":
+      pass
     else:
       raise SystemExit
 

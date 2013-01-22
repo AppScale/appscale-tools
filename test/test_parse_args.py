@@ -85,20 +85,18 @@ class TestParseArgs(unittest.TestCase):
       self.function)
 
     # Specifying a positive integer for n should be ok
-    args_5 = self.argv[:] + ['--table', 'cassandra', '-n', '2']
-    actual_5 = ParseArgs(args_5, self.function)
+    argv_5 = self.argv[:] + ['--table', 'cassandra', '-n', '2']
+    actual_5 = ParseArgs(argv_5, self.function)
     self.assertEquals(2, actual_5.args.n)
 
-"""
-  def test_gather_logs_flags
+  def test_gather_logs_flags(self):
     # Specifying auto, force, or test should have that carried over
     # to in the resulting hash
-    args = ["--location", "/boo/baz"]
-    all_flags = ['location']
-    actual = ParseArgs.get_vals_from_args(args, all_flags, @usage)
-    assert_equal("/boo/baz", actual['location'])
-  end
+    argv = ["--location", "/boo/baz"]
+    actual = ParseArgs(argv, "appscale-gather-logs")
+    self.assertEquals("/boo/baz", actual.args.location)
 
+"""
   def test_developer_flags
     # Specifying auto, force, or test should have that carried over
     # to in the resulting hash
