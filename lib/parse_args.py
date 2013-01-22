@@ -75,23 +75,47 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
-      # if min is not set and max is, set min == max
-      if self.args.min is None and self.args.max:
-        self.args.min = self.args.max
-
-      if self.args.min < 1:
-        raise BadConfigurationException("Min cannot be less than 1.")
-
-      if self.args.max < 1:
-        raise BadConfigurationException("Max cannot be less than 1.")
-
-      if self.args.min > self.args.max:
-        raise BadConfigurationException("Min cannot exceed max.")
-
-      if self.args.table not in common_functions.ALLOWED_DATASTORES:
-        raise BadConfigurationException("Table must be a supported datastore.")
-
-      if self.args.n is not None and self.args.n < 1:
-        raise BadConfigurationException("Replication factor cannot be less than 1.")
+      self.validate_min_and_max_flags()
+      self.validate_database_flags()
     else:
       raise SystemExit
+
+
+  def validate_min_and_max_flags(self):
+    """Validates the values given to us by the user for the --min
+    and --max flags, controlling how many virtual machines we spawn
+    in a cloud deployment.
+
+    Raises:
+      BadConfigurationException: If the values for the min or max
+        flags are invalid.
+    """
+    # if min is not set and max is, set min == max
+    if self.args.min is None and self.args.max:
+      self.args.min = self.args.max
+
+    if self.args.min < 1:
+      raise BadConfigurationException("Min cannot be less than 1.")
+
+    if self.args.max < 1:
+      raise BadConfigurationException("Max cannot be less than 1.")
+
+    if self.args.min > self.args.max:
+      raise BadConfigurationException("Min cannot exceed max.")
+
+    return
+
+
+  def validate_database_flags(self):
+    """Validates the values given to us by the user for any flag
+    relating to the database used.
+
+    Raises:
+      BadConfigurationException: If the values for any of the
+        database flags are not valid.
+    """
+    if self.args.table not in common_functions.ALLOWED_DATASTORES:
+      raise BadConfigurationException("Table must be a supported datastore.")
+
+    if self.args.n is not None and self.args.n < 1:
+      raise BadConfigurationException("Replication factor cannot be less than 1.")
