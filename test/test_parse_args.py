@@ -127,23 +127,22 @@ class TestParseArgs(unittest.TestCase):
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
 
-"""
-  def test_instance_types
+
+  def test_instance_types(self):
+    # Not specifying an instance type should default to a perdetermined
+    # value.
+    argv_1 = self.argv[:]
+    actual = ParseArgs(argv_1, self.function)
+    self.assertEquals(common_functions.DEFAULT_INSTANCE_TYPE,
+      actual.args.instance_type)
+
     # Specifying m1.large as the instance type is acceptable.
-    args_1 = ['--instance_type', 'm1.large']
-    all_flags_1 = ['instance_type']
-    assert_nothing_raised(BadConfigurationException) {
-      ParseArgs.get_vals_from_args(args_1, all_flags_1, @usage)
-    }
+    argv_2 = self.argv[:] + ['--instance_type', 'm1.large']
+    actual = ParseArgs(argv_2, self.function)
+    self.assertEquals("m1.large", actual.args.instance_type)
 
     # Specifying blarg1.humongous as the instance type is not
     # acceptable.
-    args_2 = ['--instance_type', 'blarg1.humongous']
-    all_flags_2 = ['instance_type']
-    assert_raises(BadConfigurationException) {
-      ParseArgs.get_vals_from_args(args_2, all_flags_2, @usage)
-    }
-  end
-
-end
-"""
+    argv_3 = self.argv[:] + ['--instance_type', 'blarg1.humongous']
+    self.assertRaises(BadConfigurationException, ParseArgs,
+      argv_3, self.function)

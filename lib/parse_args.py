@@ -65,6 +65,9 @@ class ParseArgs():
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
         help="the cloud infrastructure to use")
+      self.parser.add_argument('--instance_type',
+        default=common_functions.DEFAULT_INSTANCE_TYPE,
+        help="the instance type to use")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
@@ -97,7 +100,7 @@ class ParseArgs():
     """
     if function == "appscale-run-instances":
       self.validate_min_and_max_flags()
-      self.validate_infrastructure_flag()
+      self.validate_infrastructure_flags()
       self.validate_database_flags()
     elif function == "appscale-gather-logs":
       pass
@@ -130,16 +133,19 @@ class ParseArgs():
     return
 
 
-  def validate_infrastructure_flag(self):
-    """Validates the infrastructure flag given to us by the user.
+  def validate_infrastructure_flags(self):
+    """Validates flags corresponding to cloud infrastructures.
 
     Raises:
-      BadConfigurationException: If the value given to us for the
-        infrastructure flag was invalid.
+      BadConfigurationException: If the value given to us for
+        infrastructure-related flags were invalid.
     """
     if self.args.infrastructure is not None and \
       self.args.infrastructure not in common_functions.ALLOWED_INFRASTRUCTURES:
       raise BadConfigurationException("Infrastructure must be a supported value.")
+
+    if self.args.instance_type not in common_functions.ALLOWED_INSTANCE_TYPES:
+      raise BadConfigurationException("Instance type must be a supported value.")
 
 
   def validate_database_flags(self):

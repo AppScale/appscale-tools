@@ -18,6 +18,15 @@ ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
 ALLOWED_INFRASTRUCTURES = ["ec2", "euca"]
 
 
+# The instance type that should be used if the user does not
+# specify one.
+DEFAULT_INSTANCE_TYPE = "m1.large"
+
+
+# A list of the instance types we allow users to run AppScale over.
+ALLOWED_INSTANCE_TYPES = ["m1.large"]
+
+
 """
 #!/usr/bin/ruby -w
 # Programmer: Chris Bunch
