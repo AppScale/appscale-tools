@@ -65,6 +65,8 @@ class ParseArgs():
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
         help="the cloud infrastructure to use")
+      self.parser.add_argument('--machine',
+        help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type',
         default=common_functions.DEFAULT_INSTANCE_TYPE,
         help="the instance type to use")
