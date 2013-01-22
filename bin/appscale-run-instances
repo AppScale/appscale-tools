@@ -3,9 +3,11 @@
 """
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'appscale_tools'
+"""
 
-
-if __FILE__ == $0
+if __name == "__main__":
+  pass
+"""
   options = ParseArgs.get_vals_from_args(ARGV,
     AppScaleTools::RUN_INSTANCES_FLAGS, AppScaleTools::RUN_INSTANCES_USAGE)
   begin

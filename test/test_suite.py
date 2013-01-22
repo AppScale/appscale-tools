@@ -6,8 +6,14 @@ import unittest
 
 
 from test_appscale import TestAppScale
+from test_parse_args import TestParseArgs
 
 
-suite_appscale = unittest.TestLoader().loadTestsFromTestCase(TestAppScale)
-all_tests = unittest.TestSuite([suite_appscale])
+test_cases = [TestAppScale, TestParseArgs]
+appscale_test_suite = unittest.TestSuite()
+for test_class in test_cases:
+  tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
+  appscale_test_suite.addTests(tests)
+
+all_tests = unittest.TestSuite([appscale_test_suite])
 unittest.TextTestRunner(verbosity=2).run(all_tests)
