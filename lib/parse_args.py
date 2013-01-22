@@ -5,7 +5,7 @@
 import argparse
 
 
-from common_functions import APPSCALE_VERSION
+import common_functions
 from custom_exceptions import BadConfigurationException
 
 
@@ -38,7 +38,7 @@ class ParseArgs():
     self.args = self.parser.parse_args(argv)
 
     if self.args.version:
-      raise SystemExit(APPSCALE_VERSION)
+      raise SystemExit(common_functions.APPSCALE_VERSION)
 
     self.validate_allowed_flags(function)
 
@@ -56,6 +56,8 @@ class ParseArgs():
       self.parser.add_argument('--version', action='store_true')
       self.parser.add_argument('--min', type=int)
       self.parser.add_argument('--max', type=int)
+      self.parser.add_argument('--table', default=common_functions.DEFAULT_DATASTORE)
+      self.parser.add_argument('-n', type=int)
     else:
       raise SystemExit
 
@@ -85,5 +87,11 @@ class ParseArgs():
 
       if self.args.min > self.args.max:
         raise BadConfigurationException("Min cannot exceed max.")
+
+      if self.args.table not in common_functions.ALLOWED_DATASTORES:
+        raise BadConfigurationException("Table must be a supported datastore.")
+
+      if self.args.n is not None and self.args.n < 1:
+        raise BadConfigurationException("Replication factor cannot be less than 1.")
     else:
       raise SystemExit

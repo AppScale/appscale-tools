@@ -5,6 +5,15 @@
 APPSCALE_VERSION = "1.6.6"
 
 
+# The datastore that should be used if the user fails to
+# manually specify the datastore to use.
+DEFAULT_DATASTORE = "cassandra"
+
+
+# A list of the datastores that AppScale can deploy over.
+ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
+
+
 """
 #!/usr/bin/ruby -w
 # Programmer: Chris Bunch
