@@ -6,10 +6,11 @@ import unittest
 
 
 from test_appscale import TestAppScale
+from test_appscale_run_instances import TestAppScaleRunInstances
 from test_parse_args import TestParseArgs
 
 
-test_cases = [TestAppScale, TestParseArgs]
+test_cases = [TestAppScale, TestAppScaleRunInstances, TestParseArgs]
 appscale_test_suite = unittest.TestSuite()
 for test_class in test_cases:
   tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
