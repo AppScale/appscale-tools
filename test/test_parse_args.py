@@ -31,39 +31,37 @@ class TestParseArgs(unittest.TestCase):
     # an exception
     argv_1 = ['--boo!']
     function = "appscale-run-instances"
-    description = "baz"
     self.assertRaises(SystemExit, ParseArgs, argv_1, 
-      function, description)
+      function)
 
     # the version flag should quit and print the current
     # version of the tools
     argv_2 = ['--version']
     all_flags_2 = ['version']
     with self.assertRaises(SystemExit) as context_manager:
-      ParseArgs(argv_2, function, description)
+      ParseArgs(argv_2, function)
     self.assertEquals(APPSCALE_VERSION, context_manager.exception.message)
 
   def test_get_min_and_max(self):
     # Setting min or max below 1 is not acceptable
     argv_1 = ['--min', '0', '--max', '1']
     function = "appscale-run-instances"
-    description = "baz"
     self.assertRaises(BadConfigurationException,
-      ParseArgs, argv_1, function, description)
+      ParseArgs, argv_1, function)
 
     argv_2 = ['--min', '1', '--max', '0']
     self.assertRaises(BadConfigurationException,
-      ParseArgs, argv_2, function, description)
+      ParseArgs, argv_2, function)
 
     # If max is specified but not min, min should be equal to max
     argv_3 = ['--max', '1']
-    actual_3 = ParseArgs(argv_3, function, description)
+    actual_3 = ParseArgs(argv_3, function)
     self.assertEquals(actual_3.args.min, actual_3.args.max)
 
     # If max is less than min, it should abort
     argv_4 = ['--min', '10', '--max', '1']
     self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
-      function, description)
+      function)
 
 """
   def test_table_flags

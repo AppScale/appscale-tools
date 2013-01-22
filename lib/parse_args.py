@@ -10,10 +10,30 @@ from custom_exceptions import BadConfigurationException
 
 
 class ParseArgs():
+  """ParseArgs provides the AppScale Tools with the ability
+  to parse command-line arguments. Callers can customize
+  the arguments that are acceptable for their executable
+  as well as the description and usage printed for users
+  in need of assistance.
+  """
 
 
-  def __init__(self, argv, function, description):
-    self.parser = argparse.ArgumentParser(description)
+  def __init__(self, argv, function):
+    """Creates a new ParseArgs for a set of acceptable flags.
+
+    Args:
+      argv: A list of strs, representing command-line arguments
+        passed in by the user.
+      function: A str that represents the executable we are
+        parsing arguments for, which is used to make sure
+
+    Raises:
+      SystemExit: If the user asks us for just the version
+        of the AppScale Tools, or gives us arguments that
+        are not acceptable for the executable we are parsing
+        arguments for.
+    """
+    self.parser = argparse.ArgumentParser(function)
     self.add_allowed_flags(function)
     self.args = self.parser.parse_args(argv)
 
