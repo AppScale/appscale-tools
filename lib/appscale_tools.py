@@ -2,6 +2,7 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from custom_exceptions import BadConfigurationException
 
@@ -35,8 +36,15 @@ class AppScaleTools():
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
+
+    if args.infrastructure:
+      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+        " over the " + args.infrastructure + " cloud.")
+    else:
+      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+        "over a virtualized cluster.")
+
     """
-    CommonFunctions.print_starting_message(infrastructure, instance_type)
     RemoteLogging.remote_post(max_images, table, infrastructure, "starting", "unknown")
     time.sleep(2)
 
