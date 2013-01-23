@@ -2,6 +2,7 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+from local_state import LocalState
 from custom_exceptions import BadConfigurationException
 
 
@@ -36,3 +37,69 @@ class AppScaleTools():
     if options.infrastructure and not options.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
+
+    LocalState.make_appscale_directory()
+    """
+    CommonFunctions.validate_run_instances_options(options)
+    CommonFunctions.print_starting_message(infrastructure, instance_type)
+    RemoteLogging.remote_post(max_images, table, infrastructure, "starting", "unknown")
+    time.sleep(2)
+
+    apps_to_start, app_info = CommonFunctions.get_app_info_from_options(options)
+    node_layout, result = CommonFunctions.generate_node_layout(options)
+    head_node_result = CommonFunctions.start_head_node(options, node_layout,
+      apps_to_start)
+
+    print "\nPlease wait for AppScale to prepare your machines for use."
+    STDOUT.flush
+    print "\n"
+
+    acc = head_node_result[:acc]
+    secret_key = head_node_result[:secret_key]
+    head_node_ip = head_node_result[:head_node_ip]
+    CommonFunctions.write_and_copy_node_file(options, node_layout,
+      head_node_result)
+    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
+
+    userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
+    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
+    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
+      head_node_result[:true_key])
+    CommonFunctions.verbose("Run instances: UserAppServer is at #{userappserver_ip}", options['verbose'])
+    uac = UserAppClient.new(userappserver_ip, secret_key)
+    if options["admin_user"] and options["admin_pass"]:
+      print "Using the provided admin username and password"
+      user, password = options["admin_user"], options["admin_pass"]
+    else:
+      user, password = CommonFunctions.get_credentials(options['test'])
+
+    CommonFunctions.create_user(user, options['test'], head_node_ip,
+      secret_key, uac, password)
+
+    uac.set_cloud_admin_status(user, new_status="true")
+    uac.set_cloud_admin_capabilities(user)
+
+    CommonFunctions.wait_for_nodes_to_load(head_node_ip, secret_key)
+    if options['file_location']:
+      remote_file_path = CommonFunctions.scp_app_to_ip(app_info[:app_name],
+        user, app_info[:language], options['keyname'], head_node_ip,
+        app_info[:file], uac)
+
+      acc.done_uploading(app_info[:app_name], remote_file_path)
+
+      CommonFunctions.wait_for_app_to_start(head_node_ip, secret_key,
+        app_info[:app_name])
+      CommonFunctions.clear_app(app_info[:file])
+    else:
+      print "No app uploaded. Use appscale-upload-app to upload an app later."
+
+    login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
+    print "The status of your AppScale instance is at the following" + \
+      " URL: http://#{login_ip}/status"
+
+    CommonFunctions.write_and_copy_node_file(options, node_layout,
+      head_node_result)
+    RemoteLogging.remote_post(max_images, table, infrastructure, "started", "success")
+"""

@@ -11,7 +11,9 @@ import unittest
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
-import common_functions
+import local_state
+import vm_tools
+
 from custom_exceptions import BadConfigurationException
 from parse_args import ParseArgs
 
@@ -37,7 +39,7 @@ class TestParseArgs(unittest.TestCase):
     all_flags_2 = ['version']
     with self.assertRaises(SystemExit) as context_manager:
       ParseArgs(argv_2, self.function)
-    self.assertEquals(common_functions.APPSCALE_VERSION,
+    self.assertEquals(local_state.APPSCALE_VERSION,
       context_manager.exception.message)
 
 
@@ -76,7 +78,7 @@ class TestParseArgs(unittest.TestCase):
     # Failing to specify a table should default to a predefined table
     args_3 = self.argv[:]
     actual_3 = ParseArgs(args_3, self.function)
-    self.assertEquals(common_functions.DEFAULT_DATASTORE, actual_3.args.table)
+    self.assertEquals(local_state.DEFAULT_DATASTORE, actual_3.args.table)
 
     # Specifying a non-positive integer for n should abort
     argv_4 = self.argv[:] + ['--table', 'cassandra', '-n', '0']
@@ -130,7 +132,7 @@ class TestParseArgs(unittest.TestCase):
     # value.
     argv_1 = self.argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(common_functions.DEFAULT_INSTANCE_TYPE,
+    self.assertEquals(vm_tools.DEFAULT_INSTANCE_TYPE,
       actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.

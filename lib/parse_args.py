@@ -5,7 +5,10 @@
 import argparse
 
 
-import common_functions
+# AppScale-specific imports
+import local_state
+import vm_tools
+
 from custom_exceptions import BadConfigurationException
 
 
@@ -38,7 +41,7 @@ class ParseArgs():
     self.args = self.parser.parse_args(argv)
 
     if self.args.version:
-      raise SystemExit(common_functions.APPSCALE_VERSION)
+      raise SystemExit(local_state.APPSCALE_VERSION)
 
     self.validate_allowed_flags(function)
 
@@ -68,12 +71,12 @@ class ParseArgs():
       self.parser.add_argument('--machine',
         help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type',
-        default=common_functions.DEFAULT_INSTANCE_TYPE,
+        default=vm_tools.DEFAULT_INSTANCE_TYPE,
         help="the instance type to use")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
-        default=common_functions.DEFAULT_DATASTORE,
+        default=local_state.DEFAULT_DATASTORE,
         help="the datastore to use")
       self.parser.add_argument('-n', type=int,
         help="the database replication factor")
@@ -149,10 +152,10 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if self.args.infrastructure is not None and \
-      self.args.infrastructure not in common_functions.ALLOWED_INFRASTRUCTURES:
+      self.args.infrastructure not in vm_tools.ALLOWED_INFRASTRUCTURES:
       raise BadConfigurationException("Infrastructure must be a supported value.")
 
-    if self.args.instance_type not in common_functions.ALLOWED_INSTANCE_TYPES:
+    if self.args.instance_type not in vm_tools.ALLOWED_INSTANCE_TYPES:
       raise BadConfigurationException("Instance type must be a supported value.")
 
 
@@ -164,7 +167,7 @@ class ParseArgs():
       BadConfigurationException: If the values for any of the
         database flags are not valid.
     """
-    if self.args.table not in common_functions.ALLOWED_DATASTORES:
+    if self.args.table not in local_state.ALLOWED_DATASTORES:
       raise BadConfigurationException("Table must be a supported datastore.")
 
     if self.args.n is not None and self.args.n < 1:
