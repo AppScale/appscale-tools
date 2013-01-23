@@ -57,6 +57,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     self.assertRaises(BadConfigurationException,
       tools.run_instances, options)
 
+
 """
   def test_environment_variables_not_set_in_cloud_deployments(self):
     argv = self.argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
