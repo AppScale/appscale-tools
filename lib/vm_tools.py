@@ -21,5 +21,15 @@ EC2_ENVIRONMENT_VARIABLES = ["EC2_PRIVATE_KEY", "EC2_CERT",
   "EC2_SECRET_KEY", "EC2_ACCESS_KEY"]
 
 
+# The default security group to create and use for AppScale
+# cloud deployments.
+DEFAULT_SECURITY_GROUP = "appscale"
+
+
+# The default keypair name to create and use for AppScale
+# cloud deployments.
+DEFAULT_KEYNAME = "appscale"
+
+
 class VMTools():
   pass

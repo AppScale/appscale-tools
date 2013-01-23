@@ -10,6 +10,8 @@ import local_state
 import vm_tools
 
 from custom_exceptions import BadConfigurationException
+from agents.base_agent import BaseAgent
+from agents.factory import InfrastructureAgentFactory
 
 
 class ParseArgs():
@@ -64,6 +66,8 @@ class ParseArgs():
         help="the minimum number of VMs to use")
       self.parser.add_argument('--max', type=int,
         help="the maximum number of VMs to use")
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
 
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
@@ -73,6 +77,12 @@ class ParseArgs():
       self.parser.add_argument('--instance_type',
         default=vm_tools.DEFAULT_INSTANCE_TYPE,
         help="the instance type to use")
+      self.parser.add_argument('--group',
+        default=vm_tools.DEFAULT_SECURITY_GROUP,
+        help="the security group to use")
+      self.parser.add_argument('--keyname',
+        default=vm_tools.DEFAULT_KEYNAME,
+        help="the keypair name to use")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
@@ -108,8 +118,10 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
-      self.validate_min_and_max_flags()
+      self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
+      self.validate_credentials()
+      self.validate_machine_image()
       self.validate_database_flags()
     elif function == "appscale-gather-logs":
       pass
@@ -119,10 +131,9 @@ class ParseArgs():
       raise SystemExit
 
 
-  def validate_min_and_max_flags(self):
-    """Validates the values given to us by the user for the --min
-    and --max flags, controlling how many virtual machines we spawn
-    in a cloud deployment.
+  def validate_num_of_vms_flags(self):
+    """Validates the values given to us by the user relating to the
+    number of virtual machines we spawn in a cloud deployment.
 
     Raises:
       BadConfigurationException: If the values for the min or max
@@ -132,14 +143,17 @@ class ParseArgs():
     if self.args.min is None and self.args.max:
       self.args.min = self.args.max
 
-    if self.args.min < 1:
-      raise BadConfigurationException("Min cannot be less than 1.")
+    if self.args.ips:
+      pass
+    else:
+      if self.args.min < 1:
+        raise BadConfigurationException("Min cannot be less than 1.")
 
-    if self.args.max < 1:
-      raise BadConfigurationException("Max cannot be less than 1.")
+      if self.args.max < 1:
+        raise BadConfigurationException("Max cannot be less than 1.")
 
-    if self.args.min > self.args.max:
-      raise BadConfigurationException("Min cannot exceed max.")
+      if self.args.min > self.args.max:
+        raise BadConfigurationException("Min cannot exceed max.")
 
     return
 
@@ -151,8 +165,10 @@ class ParseArgs():
       BadConfigurationException: If the value given to us for
         infrastructure-related flags were invalid.
     """
-    if self.args.infrastructure is not None and \
-      self.args.infrastructure not in vm_tools.ALLOWED_INFRASTRUCTURES:
+    if not self.args.infrastructure:
+      return
+
+    if self.args.infrastructure not in vm_tools.ALLOWED_INFRASTRUCTURES:
       raise BadConfigurationException("Infrastructure must be a supported value.")
 
     if self.args.instance_type not in vm_tools.ALLOWED_INSTANCE_TYPES:
@@ -162,6 +178,19 @@ class ParseArgs():
     if self.args.infrastructure and not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
+
+
+  def validate_credentials(self):
+    if not self.args.infrastructure:
+      return
+
+    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    params = cloud_agent.get_params_from_args(self.args)
+    cloud_agent.assert_required_parameters(params, BaseAgent.OPERATION_RUN)
+
+
+  def validate_machine_image(self):
+    pass
 
 
   def validate_database_flags(self):

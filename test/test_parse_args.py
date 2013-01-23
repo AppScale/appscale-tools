@@ -22,7 +22,8 @@ class TestParseArgs(unittest.TestCase):
   
 
   def setUp(self):
-    self.argv = ['--min', '1', '--max', '1']
+    self.cloud_argv = ['--min', '1', '--max', '1']
+    self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
 
@@ -66,27 +67,27 @@ class TestParseArgs(unittest.TestCase):
 
   def test_table_flags(self):
     # Specifying a table that isn't accepted should abort
-    argv_1 = self.argv[:] + ['--table', 'non-existent-database']
+    argv_1 = self.cluster_argv[:] + ['--table', 'non-existent-database']
     self.assertRaises(BadConfigurationException, ParseArgs, argv_1,
       self.function)
 
     # Specifying a table that is accepted should return that in the result
-    argv_2 = self.argv[:] + ['--table', 'cassandra']
+    argv_2 = self.cluster_argv[:] + ['--table', 'cassandra']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('cassandra', actual_2.args.table)
 
     # Failing to specify a table should default to a predefined table
-    args_3 = self.argv[:]
+    args_3 = self.cluster_argv[:]
     actual_3 = ParseArgs(args_3, self.function)
     self.assertEquals(local_state.DEFAULT_DATASTORE, actual_3.args.table)
 
     # Specifying a non-positive integer for n should abort
-    argv_4 = self.argv[:] + ['--table', 'cassandra', '-n', '0']
+    argv_4 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '0']
     self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
       self.function)
 
     # Specifying a positive integer for n should be ok
-    argv_5 = self.argv[:] + ['--table', 'cassandra', '-n', '2']
+    argv_5 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '2']
     actual_5 = ParseArgs(argv_5, self.function)
     self.assertEquals(2, actual_5.args.n)
 
@@ -102,27 +103,27 @@ class TestParseArgs(unittest.TestCase):
   def test_developer_flags(self):
     # Specifying force or test should have that carried over
     # to in the resulting hash
-    argv_1 = self.argv[:] + ['--force']
+    argv_1 = self.cloud_argv[:] + ['--force']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals(True, actual_1.args.force)
 
-    argv_2 = self.argv[:] + ['--test']
+    argv_2 = self.cloud_argv[:] + ['--test']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals(True, actual_2.args.test)
 
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-XYZ']
+    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-XYZ']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABC']
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABC']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
 
@@ -130,19 +131,21 @@ class TestParseArgs(unittest.TestCase):
   def test_instance_types(self):
     # Not specifying an instance type should default to a perdetermined
     # value.
-    argv_1 = self.argv[:]
+    argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
     self.assertEquals(vm_tools.DEFAULT_INSTANCE_TYPE,
       actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
-    argv_2 = self.argv[:] + ['--instance_type', 'm1.large']
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
+      'ami-ABC', '--instance_type', 'm1.large']
     actual = ParseArgs(argv_2, self.function)
     self.assertEquals("m1.large", actual.args.instance_type)
 
     # Specifying blarg1.humongous as the instance type is not
     # acceptable.
-    argv_3 = self.argv[:] + ['--instance_type', 'blarg1.humongous']
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
+      'ami-ABC', '--instance_type', 'blarg1.humongous']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
 
@@ -150,7 +153,7 @@ class TestParseArgs(unittest.TestCase):
   def test_machine_not_set_in_cloud_deployments(self):
     # when running in a cloud infrastructure, we need to know what
     # machine image to use
-    argv = self.argv[:] + ["--infrastructure", "euca"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv,
       "appscale-run-instances")
 
