@@ -6,6 +6,10 @@
 import os
 
 
+# AppScale-specific imports
+from custom_exceptions import BadConfigurationException
+
+
 # The version of the AppScale Tools we're running on.
 APPSCALE_VERSION = "1.6.6"
 
@@ -36,6 +40,26 @@ class LocalState():
     else:
       os.mkdir(LOCAL_APPSCALE_PATH)
 
+
+  @classmethod
+  def ensure_appscale_isnt_running(cls, keyname, force):
+    """Checks the locations.yaml file to see if AppScale is running, and
+    aborts if it is.
+
+    Args:
+      keyname: The keypair name that is used to identify AppScale deployments.
+      force: A bool that is used to run AppScale even if the locations file
+        is present.
+    Raises:
+      BadConfigurationException: If AppScale is already running.
+    """
+    if force:
+      return
+
+    locations_yaml = LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
+    if os.path.exists(locations_yaml):
+      raise BadConfigurationException("AppScale is already running. Terminate" +
+        " it or use the --force flag to run anyways.")
 
 """
 #!/usr/bin/ruby -w
@@ -1341,39 +1365,6 @@ module CommonFunctions
     end
   end
 
-
-  def self.validate_run_instances_options(options)
-    infrastructure = options['infrastructure']
-    machine = options['machine']
-    # In non-hybrid cloud deployments, the user must specify the machine image
-    # (emi or ami) to use. Abort if they didn't.
-    if infrastructure && infrastructure != "hybrid" && machine.nil?
-      raise BadConfigurationException.new(AppScaleTools::NO_MACHINE_SET)
-    end
-
-    if infrastructure && infrastructure != "hybrid"
-      VMTools.verify_credentials_are_set_correctly(infrastructure)
-      VMTools.validate_machine_image(machine, infrastructure)
-    end
-
-    # If the user hasn't given us an ips.yaml file, then they're running in a cloud
-    # deployment. They need to give us a machine image id to spawn up - if they
-    # haven't, fail.
-    if options['ips'].nil? and machine.nil?
-      raise BadConfigurationException.new(EC2_USAGE_MSG)
-    end
-
-    keyname = options['keyname']
-    locations_yaml = File.expand_path("~/.appscale/locations-#{keyname}.yaml")
-    if File.exists?(locations_yaml) and !options['force']
-      error_msg = "An AppScale instance is already running with the given" +
-        " keyname, #{keyname}. Please terminate that instance first with the" +
-        " following command:\n\nappscale-terminate-instances --keyname " +
-        "#{keyname} <--ips path-to-ips.yaml if using non-cloud deployment>" +
-        "or use the --force flag to override this behavior."
-      raise BadConfigurationException.new(error_msg)
-    end
-  end
 
 
   def self.print_starting_message(infrastructure, instance_type)

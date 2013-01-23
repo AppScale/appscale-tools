@@ -34,8 +34,8 @@ class AppScaleTools():
         running on EC2 but not specifying EC2 credentials).
     """
     LocalState.make_appscale_directory()
+    LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
     """
-    CommonFunctions.validate_run_instances_options(options)
     CommonFunctions.print_starting_message(infrastructure, instance_type)
     RemoteLogging.remote_post(max_images, table, infrastructure, "starting", "unknown")
     time.sleep(2)
