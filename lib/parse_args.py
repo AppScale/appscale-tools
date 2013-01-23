@@ -158,6 +158,11 @@ class ParseArgs():
     if self.args.instance_type not in vm_tools.ALLOWED_INSTANCE_TYPES:
       raise BadConfigurationException("Instance type must be a supported value.")
 
+    # make sure the user gave us an ami if running in cloud
+    if self.args.infrastructure and not self.args.machine:
+      raise BadConfigurationException("Need a machine image (ami) " +
+        "when running in a cloud infrastructure.")
+
 
   def validate_database_flags(self):
     """Validates the values given to us by the user for any flag

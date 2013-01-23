@@ -33,11 +33,6 @@ class AppScaleTools():
         or if the user provides us contradictory options (e.g.,
         running on EC2 but not specifying EC2 credentials).
     """
-    # make sure the user gave us an ami if running in cloud
-    if options.infrastructure and not options.machine:
-      raise BadConfigurationException("Need a machine image (ami) " +
-        "when running in a cloud infrastructure.")
-
     LocalState.make_appscale_directory()
     """
     CommonFunctions.validate_run_instances_options(options)

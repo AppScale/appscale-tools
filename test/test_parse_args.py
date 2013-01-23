@@ -113,16 +113,16 @@ class TestParseArgs(unittest.TestCase):
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.argv[:] + ['--infrastructure', 'ec2']
+    argv_1 = self.argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-XYZ']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.argv[:] + ['--infrastructure', 'euca']
+    argv_2 = self.argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABC']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.argv[:] + ['--infrastructure', 'boocloud']
+    argv_3 = self.argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
 
@@ -145,6 +145,14 @@ class TestParseArgs(unittest.TestCase):
     argv_3 = self.argv[:] + ['--instance_type', 'blarg1.humongous']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
+
+
+  def test_machine_not_set_in_cloud_deployments(self):
+    # when running in a cloud infrastructure, we need to know what
+    # machine image to use
+    argv = self.argv[:] + ["--infrastructure", "euca"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv,
+      "appscale-run-instances")
 
 
   def test_scaling_flags(self):
