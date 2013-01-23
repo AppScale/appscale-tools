@@ -58,6 +58,7 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     self.parser.add_argument('--version', action='store_true',
+      default=False,
       help="shows the tools version and quits")
 
     if function == "appscale-run-instances":
@@ -93,14 +94,17 @@ class ParseArgs():
 
       # developer flags
       self.parser.add_argument('--force', action='store_true',
+        default=False,
         help="forces tools to continue if keyname or group exist")
       self.parser.add_argument('--test', action='store_true',
+        default=False,
         help="uses a default username and password for cloud admin")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
       self.parser.add_argument('--add_to_existing',
+        default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
     else:
