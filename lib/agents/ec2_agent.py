@@ -61,6 +61,11 @@ class EC2Agent(BaseAgent):
     'EC2_PRIVATE_KEY'
   )
 
+  # A tuple of the credentials that we build our internal
+  # credential list from.
+  REQUIRED_CREDENTIALS = REQUIRED_EC2_CREDENTIALS
+
+
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
   def configure_instance_security(self, parameters):
@@ -138,7 +143,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_KEYNAME : args.keyname,
     }
 
-    for credential in self.REQUIRED_EC2_CREDENTIALS:
+    for credential in self.REQUIRED_CREDENTIALS:
       if os.environ[credential] and os.environ[credential] != '':
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
