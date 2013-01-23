@@ -47,25 +47,3 @@ class TestAppScaleRunInstances(unittest.TestCase):
     os.path.should_receive('exists') \
       .with_args(lib) \
       .and_return(True)
-
-
-"""
-  def test_environment_variables_not_set_in_cloud_deployments(self):
-    argv = self.argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
-    options = ParseArgs(argv, "appscale-run-instances").args
-
-    for var in vm_tools.EC2_ENVIRONMENT_VARIABLES:
-      os.environ[var] = ''
-
-    tools = AppScaleTools()
-    self.assertRaises(BadConfigurationException, tools.run_instances, options)
-
-  def test_usage_is_up_to_date
-    AppScaleTools::RUN_INSTANCES_FLAGS.each { |flag|
-      assert_equal(true, 
-        AppScaleTools::RUN_INSTANCES_USAGE.include?("-#{flag}"), 
-        "No usage text for #{flag}.")
-    } 
-  end
-end
-"""

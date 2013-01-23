@@ -14,6 +14,15 @@ class EucalyptusAgent(EC2Agent):
   # The version of Eucalyptus API used to interact with Euca clouds
   EUCA_API_VERSION = '2010-08-31'
 
+
+  # A list of the credentials that we require users to provide the AppScale
+  # Tools with so that they can interact with Eucalyptus clouds. Right now
+  # it's the same as what's needed for EC2, with an extra argument indicating
+  # where the Eucalyptus deployment is located.
+  REQUIRED_EUCA_CREDENTIALS = list(EC2Agent.REQUIRED_EC2_CREDENTIALS) + \
+    ['EC2_URL']
+
+
   def open_connection(self, parameters):
     """
     Initialize a connection to the back-end Eucalyptus APIs.

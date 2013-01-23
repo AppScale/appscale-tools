@@ -48,6 +48,19 @@ class EC2Agent(BaseAgent):
     PARAM_INSTANCE_IDS
   )
 
+  # A list of the environment variables that must be provided
+  # to control machines in Amazon EC2.
+  # TODO(cgb): Strictly speaking, the tools don't need
+  # EC2_CERT and EC2_PRIVATE_KEY, but the AppController does.
+  # Once we refactor the AppController to use a library that
+  # doesn't need them, remove them from this list.
+  REQUIRED_EC2_CREDENTIALS = (
+    'EC2_SECRET_KEY',
+    'EC2_ACCESS_KEY',
+    'EC2_CERT',
+    'EC2_PRIVATE_KEY'
+  )
+
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
   def configure_instance_security(self, parameters):
@@ -118,12 +131,18 @@ class EC2Agent(BaseAgent):
         invoked an AppScale Tool with.
     """
     params = {
-      self.PARAM_CREDENTIALS : 'credentials',
+      self.PARAM_CREDENTIALS : {},
       self.PARAM_GROUP : args.group,
       self.PARAM_IMAGE_ID : args.machine,
       self.PARAM_INSTANCE_TYPE : args.instance_type,
       self.PARAM_KEYNAME : args.keyname,
     }
+
+    for credential in self.REQUIRED_EC2_CREDENTIALS:
+      if os.environ[credential] and os.environ[credential] != '':
+        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      else:
+        raise AgentConfigurationException("no " + credential)
 
     return params
 
@@ -142,9 +161,15 @@ class EC2Agent(BaseAgent):
     elif operation == BaseAgent.OPERATION_TERMINATE:
       required_params = self.REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS
 
+    # make sure the user set something for each parameter
     for param in required_params:
       if not self.has_parameter(param, parameters):
         raise AgentConfigurationException('no ' + param)
+
+    # next, make sure the user actually put in their credentials
+    for credential in self.REQUIRED_EC2_CREDENTIALS:
+      if not self.has_parameter(credential, parameters['credentials']):
+        raise AgentConfigurationException('no ' + credential)
 
   def describe_instances(self, parameters):
     """

@@ -14,6 +14,9 @@ sys.path.append(lib)
 import local_state
 import vm_tools
 
+from agents.base_agent import AgentConfigurationException
+from agents.ec2_agent import EC2Agent
+from agents.euca_agent import EucalyptusAgent
 from custom_exceptions import BadConfigurationException
 from parse_args import ParseArgs
 
@@ -25,6 +28,12 @@ class TestParseArgs(unittest.TestCase):
     self.cloud_argv = ['--min', '1', '--max', '1']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
+
+    # set up phony AWS credentials for each test
+    # ones that test not having them present can
+    # remove them
+    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = "baz"
 
 
   def test_flags_that_cause_program_abort(self):
@@ -168,3 +177,17 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = ["--add_to_existing"]
     actual = ParseArgs(argv_2, "appscale-add-keypair")
     self.assertEquals(True, actual.args.add_to_existing)
+
+
+  def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[var] = ''
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, "appscale-run-instances")
+
+
+  def test_environment_variables_not_set_in_euca_cloud_deployments(self):
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
+    for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
+      os.environ[var] = ''
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, "appscale-run-instances")
