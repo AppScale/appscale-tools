@@ -84,6 +84,18 @@ class BaseAgent:
     """
     raise NotImplementedError
 
+  def does_image_exist(self, parameters):
+    """
+    Verifies that the specified machine image exists in this cloud.
+
+    Args:
+      parameters: A dict that includes a key indicating the machine image
+        to validate.
+    Returns:
+      A bool that indicates if the machine image exists in this cloud.
+    """
+    raise NotImplementedError
+
   def get_params_from_args(self, args):
     """
     Converts a Namespace of arguments to a dict, the internal format used
@@ -106,7 +118,6 @@ class BaseAgent:
       AgentConfigurationException If a required parameter is absent
     """
     raise NotImplementedError
-
 
   def has_parameter(self, p, params):
     """

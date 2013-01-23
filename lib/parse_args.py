@@ -190,7 +190,19 @@ class ParseArgs():
 
 
   def validate_machine_image(self):
-    pass
+    """Checks with the given cloud (if running in a cloud) to ensure that the
+    user-specified ami/emi exists, aborting if it does not.
+
+    Raises:
+      BadConfigurationException: If the given machine image does not exist.
+    """
+    if not self.args.infrastructure:
+      return
+
+    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    params = cloud_agent.get_params_from_args(self.args)
+    if not cloud_agent.does_image_exist(params):
+      raise BadConfigurationException("The given machine image does not exist in this cloud.")
 
 
   def validate_database_flags(self):

@@ -28,7 +28,9 @@ class TestAppScaleRunInstances(unittest.TestCase):
 
 
   def setUp(self):
-    self.argv = ["--min", "1", "--max", "1"]
+    self.argv = ["--min", "1", "--max", "1", "--infrastructure",
+      "ec2", "--machine", "ami-ABCDEFG"]
+    self.function = "appscale-run-instances"
 
     for var in vm_tools.EC2_ENVIRONMENT_VARIABLES:
       os.environ[var] = "BOO"
@@ -47,3 +49,4 @@ class TestAppScaleRunInstances(unittest.TestCase):
     os.path.should_receive('exists') \
       .with_args(lib) \
       .and_return(True)
+

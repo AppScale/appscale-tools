@@ -1,5 +1,7 @@
+from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 import boto
+import os
 from urlparse import urlparse
 
 __author__ = 'hiranya'
@@ -55,3 +57,29 @@ class EucalyptusAgent(EC2Agent):
       path=result.path,
       is_secure=(result.scheme == 'https'),
       api_version=self.EUCA_API_VERSION, debug=2)
+
+
+  def get_params_from_args(self, args):
+    """
+    Searches through args to build a dict containing the parameters
+    necessary to interact with Eucalyptus.
+
+    Args:
+      args: A Namespace containing the arguments that the user has
+        invoked an AppScale Tool with.
+    """
+    params = {
+      self.PARAM_CREDENTIALS : {},
+      self.PARAM_GROUP : args.group,
+      self.PARAM_IMAGE_ID : args.machine,
+      self.PARAM_INSTANCE_TYPE : args.instance_type,
+      self.PARAM_KEYNAME : args.keyname,
+    }
+
+    for credential in self.REQUIRED_EUCA_CREDENTIALS:
+      if os.environ[credential] and os.environ[credential] != '':
+        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      else:
+        raise AgentConfigurationException("no " + credential)
+
+    return params

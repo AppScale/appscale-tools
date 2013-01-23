@@ -325,6 +325,25 @@ class EC2Agent(BaseAgent):
     for instance in terminated_instances:
       AppScaleLogger.log('Instance {0} was terminated'.format(instance.id))
 
+  def does_image_exist(self, parameters):
+    """
+    Queries Amazon EC2 to see if the specified image exists.
+
+    Args:
+      parameters A dict that contains the machine ID to check for existence.
+    Returns:
+      True if the machine ID exists, False otherwise.
+    """
+    try:
+      conn = self.open_connection(parameters)
+      image_id = parameters[self.PARAM_IMAGE_ID]
+      conn.get_image(image_id)
+      AppScaleLogger.log('Machine image {0} does exist'.format(image_id))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
+      return False
+
   def get_optimal_spot_price(self, conn, instance_type):
     """
     Returns the spot price for an EC2 instance of the specified instance type.

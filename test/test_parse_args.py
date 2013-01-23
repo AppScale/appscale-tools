@@ -8,6 +8,11 @@ import sys
 import unittest
 
 
+# Third-party imports
+import boto
+from flexmock import flexmock
+
+
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
@@ -18,6 +23,7 @@ from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
 from custom_exceptions import BadConfigurationException
+from logger import AppScaleLogger
 from parse_args import ParseArgs
 
 
@@ -29,11 +35,29 @@ class TestParseArgs(unittest.TestCase):
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
+    # mock out all logging, since it clutters our output
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('log').and_return()
+
     # set up phony AWS credentials for each test
     # ones that test not having them present can
     # remove them
-    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
+    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
       os.environ[credential] = "baz"
+    os.environ['EC2_URL'] = "http://boo"
+
+    # similarly, pretend that our image does exist in EC2
+    # and Euca
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_return()
+    fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
+      .and_return()
+
+    flexmock(boto)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_euca').and_return(fake_ec2)
+
 
 
   def test_flags_that_cause_program_abort(self):
@@ -123,11 +147,11 @@ class TestParseArgs(unittest.TestCase):
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-XYZ']
+    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABC']
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABCDEFG']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
@@ -147,14 +171,14 @@ class TestParseArgs(unittest.TestCase):
 
     # Specifying m1.large as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
-      'ami-ABC', '--instance_type', 'm1.large']
+      'ami-ABCDEFG', '--instance_type', 'm1.large']
     actual = ParseArgs(argv_2, self.function)
     self.assertEquals("m1.large", actual.args.instance_type)
 
     # Specifying blarg1.humongous as the instance type is not
     # acceptable.
     argv_3 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
-      'ami-ABC', '--instance_type', 'blarg1.humongous']
+      'ami-ABCDEFG', '--instance_type', 'blarg1.humongous']
     self.assertRaises(BadConfigurationException, ParseArgs,
       argv_3, self.function)
 
@@ -183,11 +207,24 @@ class TestParseArgs(unittest.TestCase):
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
     for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, "appscale-run-instances")
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
 
 
   def test_environment_variables_not_set_in_euca_cloud_deployments(self):
     argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
     for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, "appscale-run-instances")
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
+
+
+  def test_failure_when_ami_doesnt_exist(self):
+    # mock out boto calls to EC2 and put in that the image doesn't exist
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_raise(boto.exception.EC2ResponseError, '', '')
+
+    flexmock(boto)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
