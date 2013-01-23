@@ -228,3 +228,8 @@ class TestParseArgs(unittest.TestCase):
 
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+
+  def test_failure_when_user_doesnt_specify_ips_or_machine(self):
+    argv = self.cloud_argv[:] + ['--infrastructure', 'ec2']
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
