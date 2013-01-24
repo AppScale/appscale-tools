@@ -6,10 +6,13 @@
 import httplib
 
 
+# Third party library imports
+from termcolor import cprint
+
+
 class AppScaleLogger():
-  """This class receives requests to log message on behalf
-  of callers, and in response, prints them to the user and
-  saves them for later perusal and for debugging purposes.
+  """This class receives requests to log message on behalf of callers, and in
+  response, prints them to the user and saves them for debugging purposes.
   """
 
 
@@ -17,8 +20,7 @@ class AppScaleLogger():
   LOGS_HOST = "logs.appscale.com"
 
 
-  # The headers that we should send when posting data to
-  # the remote logs service.
+  # The headers necessary for posting data to the remote logs service.
   HEADERS = {
     'Content-Type' : 'application/x-www-form-urlencoded'
   }
@@ -48,18 +50,16 @@ class AppScaleLogger():
 
   @classmethod
   def remote_log_tools_state(cls, options, state):
-    """Converts the given debugging information to a message
-    that we can remotely log, and then logs it.
+    """Converts the given debugging information to a message that we can
+    remotely log, and then logs it.
 
     Args:
-      options: A Namespace containing the arguments used to
-        invoke an AppScale tool.
-      state: A str that indicates if the given AppScale
-        deployment is starting, has started successfully,
-        or has failed to start.
+      options: A Namespace containing the arguments used to invoke an AppScale
+        tool.
+      state: A str that indicates if the given AppScale deployment is starting,
+        has started successfully, or has failed to start.
     Returns:
-      A dict containing the debugging information that was
-      logged.
+      A dict containing the debugging information that was logged.
     """
     # turn namespace into a dict
     params = vars(options)
