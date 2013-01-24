@@ -98,14 +98,15 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(["The flag boo is not a supported flag"],
       layout_6.errors())
 
-    """
-  def test_simple_layout_options
-    # Using Euca with no input yaml, and no max or min images is not ok
-    options_1 = {:infrastructure => "euca"}
-    layout_1 = NodeLayout.new(@blank_input_yaml, options_1)
-    assert_equal(false, layout_1.valid?)
-    assert_equal(NO_INPUT_YAML_REQUIRES_MIN_IMAGES, layout_1.errors)
 
+  def test_simple_layout_options(self):
+    # Using Euca with no input yaml, and no max or min images is not ok
+    options_1 = {'infrastructure' : "euca", 'table' : 'cassandra'}
+    layout_1 = NodeLayout(self.blank_input_yaml, options_1)
+    self.assertEquals(False, layout_1.is_valid())
+    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_1.errors())
+
+    """
     options_2 = {:infrastructure => "euca", :max_images => 2}
     layout_2 = NodeLayout.new(@blank_input_yaml, options_2)
     assert_equal(false, layout_2.valid?)

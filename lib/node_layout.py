@@ -47,8 +47,6 @@ class NodeLayout():
   IP_REGEX = re.compile('\d+\.\d+\.\d+\.\d+')
 
 
-  # A regular expression that matches node IDs, used in ips.yaml files
-  # for cloud deployments.
   NODE_ID_REGEX = re.compile('(node)-(\d+)')
 
 
@@ -65,6 +63,18 @@ class NodeLayout():
   # The message to display if the user wants to run in a simple deployment,
   # and specifies too many controller nodes.
   ONLY_ONE_CONTROLLER = "Only one controller is allowed"
+
+
+  # The message to display if the user wants to run in a cloud without
+  # specifying their deployment, but they forget to tell us the minimum number
+  # of VMs to use.
+  NO_YAML_REQUIRES_MIN = "Must specify min if not using a YAML file"
+
+
+  # The message to display if the user wants to run in a cloud without
+  # specifying their deployment, but they forget to tell us the maximum number
+  # of VMs to use.
+  NO_YAML_REQUIRES_MAX = "Must specify max if not using a YAML file"
 
 
   def __init__(self, input_yaml, options):
@@ -96,6 +106,16 @@ class NodeLayout():
       self.infrastructure = options['infrastructure']
     else:
       self.infrastructure = None
+
+    if 'min_images' in options:
+      self.min_images = options['min_images']
+    else:
+      self.min_images = None
+
+    if 'max_images' in options:
+      self.max_images = options['max_images']
+    else:
+      self.max_images = None
 
     if 'replication' in options:
       self.replication = options['replication']
@@ -144,8 +164,6 @@ class NodeLayout():
 USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
   " Only simple (controller, servers) or advanced (master, appengine, etc) " +
   "can be used"
-NO_INPUT_YAML_REQUIRES_MIN_IMAGES = "If no input yaml is specified, " +
-  "min_images must be specified."
 NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
   "max_images must be specified."
 INPUT_YAML_REQUIRED = "An input yaml file is required for Xen, KVM, and " +
@@ -328,19 +346,17 @@ class NodeLayout
 
     if not self.input_yaml:
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not min_images:
-          return self.invalid(NO_INPUT_YAML_REQUIRES_MIN_IMAGES)
-        end
+        if not self.min_images:
+          return self.invalid(self.NO_YAML_REQUIRES_MIN)
 
-        if not max_images:
-          return self.invalid(NO_INPUT_YAML_REQUIRES_MAX_IMAGES)
-        end
+        if not self.max_images:
+          return self.invalid(self.NO_YAML_REQUIRES_MAX)
 
         # No layout was created, so create a generic one and then allow it
         # to be validated.
         self.input_yaml = self.generate_cloud_layout()
       else:
-        return self.invalid(INPUT_YAML_REQUIRED)
+        return self.invalid(self.INPUT_YAML_REQUIRED)
 
     nodes = []
     for role, ips in self.input_yaml.iteritems():
