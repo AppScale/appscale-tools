@@ -22,8 +22,8 @@ import vm_tools
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
+from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
-from logger import AppScaleLogger
 from parse_args import ParseArgs
 
 

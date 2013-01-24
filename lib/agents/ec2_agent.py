@@ -4,7 +4,7 @@ from boto.exception import EC2ResponseError
 import datetime
 import os
 import time
-from logger import AppScaleLogger
+from appscale_logger import AppScaleLogger
 
 __author__ = 'hiranya'
 __email__ = 'hiranya@appscale.com'
