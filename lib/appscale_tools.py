@@ -50,10 +50,18 @@ class AppScaleTools():
 
     AppScaleLogger.remote_log_tools_state(options, "started")
     time.sleep(2)
+
     node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException("There were errors with your " + \
+        "placement strategy:\n{0}".format(str(node_layout.errors())))
+
+    if not node_layout.is_supported():
+      AppScaleLogger.warn("Warning: This deployment strategy is not " + \
+        "officially supported.")
+      time.sleep(1)
 
     """
-    node_layout, result = CommonFunctions.generate_node_layout(options)
     head_node_result = CommonFunctions.start_head_node(options, node_layout,
       apps_to_start)
 

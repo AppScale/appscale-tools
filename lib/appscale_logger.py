@@ -26,13 +26,23 @@ class AppScaleLogger():
 
   @classmethod
   def log(cls, message):
-    """Prints the specified message to the user as well as to
-    a file.
+    """Prints the specified message to the user as well as to a file.
 
     Args:
       message: A str representing the message to log.
     """
     print message
+    # TODO(cgb): Also write it to a file or buffer somewhere
+
+
+  @classmethod
+  def warn(cls, message):
+    """Prints the specified message with red text as well as to a file.
+
+    Args:
+      message: A str representing the message to warn the user with.
+    """
+    cprint(message, 'red')
     # TODO(cgb): Also write it to a file or buffer somewhere
 
 
