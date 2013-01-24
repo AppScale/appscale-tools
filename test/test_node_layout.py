@@ -128,13 +128,13 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals([NodeLayout.INPUT_YAML_REQUIRED], layout_5.errors())
 
 
-  """
-  def test_advanced_format_yaml_only
-    input_yaml_1 = {:master => @ip_1, :database => @ip_1, :appengine => @ip_1, :open => @ip_2}
-    layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
-    assert_equal(true, layout_1.valid?)
-  end
+  def test_advanced_format_yaml_only(self):
+    input_yaml_1 = {'master' : self.ip_1, 'database' : self.ip_1,
+      'appengine' : self.ip_1, 'open' : self.ip_2}
+    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    self.assertEquals(True, layout_1.is_valid())
 
+  """
   def test_dont_warn_users_on_supported_deployment_strategies
     # all simple deployment strategies are supported
     input_yaml_1 = {:controller => @ip_1}

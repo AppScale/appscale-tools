@@ -465,7 +465,7 @@ class NodeLayout
             is_master = True
           else:
             is_master = False
-          node.add_db_role(database_type, is_master)
+          node.add_db_role(self.database_type, is_master)
         elif role == 'db_master':
           node.add_role('zookeeper')
           node.add_role('role')
