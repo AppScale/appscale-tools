@@ -134,21 +134,22 @@ class TestNodeLayout(unittest.TestCase):
     layout_1 = NodeLayout(input_yaml_1, self.default_options)
     self.assertEquals(True, layout_1.is_valid())
 
-  """
-  def test_dont_warn_users_on_supported_deployment_strategies
+
+  def test_dont_warn_users_on_supported_deployment_strategies(self):
     # all simple deployment strategies are supported
-    input_yaml_1 = {:controller => @ip_1}
-    layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
-    assert_equal(true, layout_1.supported?)
+    input_yaml_1 = {'controller' : self.ip_1}
+    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    self.assertEquals(True, layout_1.is_supported())
 
-    input_yaml_2 = {:controller => @ip_1, :servers => [@ip_2]}
-    layout_2 = NodeLayout.new(input_yaml_2, @blank_options)
-    assert_equal(true, layout_2.supported?)
+    input_yaml_2 = {'controller' : self.ip_1, 'servers' : [self.ip_2]}
+    layout_2 = NodeLayout(input_yaml_2, self.default_options)
+    self.assertEquals(True, layout_2.is_supported())
 
-    input_yaml_3 = {:controller => @ip_1, :servers => [@ip_2, @ip_3]}
-    layout_3 = NodeLayout.new(input_yaml_3, @blank_options)
-    assert_equal(true, layout_3.supported?)
+    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2, self.ip_3]}
+    layout_3 = NodeLayout(input_yaml_3, self.default_options)
+    self.assertEquals(True, layout_3.is_supported())
 
+  """
     # in advanced deployments, four nodes are ok with the following
     # layout: (1) load balancer, (2) appserver, (3) database,
     # (4) zookeeper

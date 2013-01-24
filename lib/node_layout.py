@@ -186,16 +186,17 @@ class NodeLayout
   # Returns:
   #   true if AppScale has been run with this deployment strategy,
   #     false otherwise.
-  def supported?
-    if is_simple_format?
-      return true
-    elsif is_advanced_format?
-      return is_supported_advanced_format?
-    else
-      return false
-    end
-  end
+  """
 
+  def is_supported(self):
+    if self.is_simple_format():
+      return True
+    elif self.is_advanced_format():
+      return self.is_supported_advanced_format()
+    else:
+      return False
+
+  """
   # is_supported_advanced_format? checks to see if AppScale has been
   # tested and successfully run over this advanced deployment strategy.
   # Specifically, we only support two advanced deployment strategies,
