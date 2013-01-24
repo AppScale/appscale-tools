@@ -18,7 +18,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
-from parse_args import ParseArgs
+from node_layout import NodeLayout
 
 from agents.ec2_agent import EC2Agent
 
@@ -42,28 +42,31 @@ class TestNodeLayout(unittest.TestCase):
     flexmock(boto)
     boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
 
-    """
-class TestNodeLayout < Test::Unit::TestCase
-  def setup
-    @blank_input_yaml = nil
-    @blank_options = {}
+    # add in some instance variables so that we don't have
+    # a lot IP addresses everywhere
+    self.blank_input_yaml = None
+    self.default_options = {
+      'table' : 'cassandra'
+    }
+    self.ip_1 = '192.168.1.1'
+    self.ip_2 = '192.168.1.2'
+    self.ip_3 = '192.168.1.3'
+    self.ip_4 = '192.168.1.4'
+    self.ip_5 = '192.168.1.5'
+    self.ip_6 = '192.168.1.6'
+    self.ip_7 = '192.168.1.7'
+    self.ip_8 = '192.168.1.8'
 
-    @ip_1 = '192.168.1.1'
-    @ip_2 = '192.168.1.2'
-    @ip_3 = '192.168.1.3'
-    @ip_4 = '192.168.1.4'
-    @ip_5 = '192.168.1.5'
-    @ip_6 = '192.168.1.6'
-    @ip_7 = '192.168.1.7'
-    @ip_8 = '192.168.1.8'
-  end
-
-  def test_simple_layout_yaml_only
+  def test_simple_layout_yaml_only(self):
     # Specifying one controller and one server should be ok
-    input_yaml_1 = {:controller => @ip_1, :servers => [@ip_2]}
-    layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
-    assert_equal(true, layout_1.valid?)
+    input_yaml_1 = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    self.assertEquals(True, layout_1.is_valid())
 
+    """
     # Specifying one controller should be ok
     input_yaml_2 = {:controller => @ip_1}
     layout_2 = NodeLayout.new(input_yaml_2, @blank_options)

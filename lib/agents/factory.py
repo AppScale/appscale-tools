@@ -10,6 +10,8 @@ class InfrastructureAgentFactory:
   agents.
   """
 
+  VALID_AGENTS = ['ec2', 'euca']
+
   agents = {
     'ec2': EC2Agent,
     'euca': EucalyptusAgent
