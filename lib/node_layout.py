@@ -196,88 +196,86 @@ class NodeLayout
     else:
       return False
 
-  """
-  # is_supported_advanced_format? checks to see if AppScale has been
-  # tested and successfully run over this advanced deployment strategy.
-  # Specifically, we only support two advanced deployment strategies,
-  # one with a minimal number of nodes (each with one service), and
-  # one that doubles the number of nodes of the minimal strategy
-  # (except for ZooKeeper, which we triple since it requires a consensus
-  # to function).
-  def is_supported_advanced_format?
-    if @nodes.length == 1
-      return true
-    elsif @nodes.length == 4
+
+  def is_supported_advanced_format(self):
+    """Checks to see if AppScale has been tested and successfully run over
+    this advanced deployment strategy. Specifically, we only support two
+    advanced deployment strategies, one with a minimal number of nodes (each
+    with one service), and one that doubles the number of nodes of the
+    minimal strategy (except for ZooKeeper, which we triple since it requires
+    a consensus to function).
+
+    Returns:
+      True if this deployment is supported, False otherwise.
+    """
+    if len(self.nodes) == 1:
+      return True
+    elif len(self.nodes) == 4:
       # in a four node deployment, we are looking for one node to
       # be a load balancer, one to be an appserver, one to be a
       # database, and one to be zookeeper
-      num_roles = count_roles
-      if num_roles[:login] == 1 and num_roles[:appengine] == 1 and
-        num_roles[:database] == 1 and num_roles[:zookeeper] == 1
-        return true
-      else
-        return false
-      end
-    elsif @nodes.length == 8
+      num_roles = self.count_roles()
+      if num_roles['login'] == 1 and num_roles['appengine'] == 1 and \
+        num_roles['database'] == 1 and num_roles['zookeeper'] == 1:
+        return True
+      else:
+        return False
+    elif len(self.nodes) == 8:
       # in an eight node deployment, we are looking for one node to
       # be a load balancer, two to be appservers, two to be databases,
       # and three to be zookeepers
-      num_roles = count_roles
-      if num_roles[:login] == 1 and num_roles[:appengine] == 2 and
-        num_roles[:database] == 2 and num_roles[:zookeeper] == 3
-        return true
-      else
-        return false
-      end
-    else
-      return false
-    end
-  end
+      num_roles = self.count_roles()
+      if num_roles['login'] == 1 and num_roles['appengine'] == 2 and \
+        num_roles['database'] == 2 and num_roles['zookeeper'] == 3:
+        return True
+      else:
+        return False
+    else:
+      return False
 
   
-  # Counts the number of roles that are hosted within the current
-  # deployment strategy. In particular, we're interested in counting
-  # one of the roles that make up a standard 'three-tier' web
-  # deployment strategy per node, so that we can tell if the deployment
-  # is officially supported or not.
-  # Returns:
-  #   A Hash that maps each of the main three-tier deployment roles to
-  #     how many nodes host that role.
-  def count_roles
+  def count_roles(self):
+    """Counts the number of roles that are hosted within the current
+    deployment strategy. In particular, we're interested in counting
+    one of the roles that make up a standard 'three-tier' web
+    deployment strategy per node, so that we can tell if the deployment
+    is officially supported or not.
+    
+    Returns:
+      A dict that maps each of the main three-tier deployment roles to
+      how many nodes host that role.
+    """
     num_roles = {
-      :login => 0,
-      :appengine => 0,
-      :database => 0,
-      :zookeeper => 0
+      'login' : 0,
+      'appengine' : 0,
+      'database' : 0,
+      'zookeeper' : 0
     }
 
-    @nodes.each { |node|
+    for node in self.nodes:
       roles = node.roles
-      found_three_tier_role = false
-      roles.each { |role|
-        break if found_three_tier_role
-        case role.to_sym
-        when :login then 
-          num_roles[:login] += 1
-          found_three_tier_role = true
-        when :appengine then 
-          num_roles[:appengine] += 1
-          found_three_tier_role = true
-        when :db_master then 
-          num_roles[:database] += 1
-          found_three_tier_role = true
-        when :db_slave then 
-          num_roles[:database] += 1
-          found_three_tier_role = true
-        when :zookeeper then 
-          num_roles[:zookeeper] += 1
-          found_three_tier_role = true
-        end
-      }
-    }
+      found_three_tier_role = False
+      for role in roles:
+        if found_three_tier_role:
+          break
+        if role == 'login':
+          num_roles['login'] += 1
+          found_three_tier_role = True
+        elif role == 'appengine':
+          num_roles['appengine'] += 1
+          found_three_tier_role = True
+        elif role == 'db_master':
+          num_roles['database'] += 1
+          found_three_tier_role = True
+        elif role == 'db_slave':
+          num_roles['database'] += 1
+          found_three_tier_role = True
+        elif role == 'zookeeper':
+          num_roles['zookeeper'] += 1
+          found_three_tier_role = True
+
     return num_roles
-  end
-"""
+
 
   def is_simple_format(self):
     """Determines if this NodeLayout represents a simple AppScale deployment.

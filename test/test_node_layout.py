@@ -149,35 +149,35 @@ class TestNodeLayout(unittest.TestCase):
     layout_3 = NodeLayout(input_yaml_3, self.default_options)
     self.assertEquals(True, layout_3.is_supported())
 
-  """
     # in advanced deployments, four nodes are ok with the following
     # layout: (1) load balancer, (2) appserver, (3) database,
     # (4) zookeeper
     advanced_yaml_1 = {
-      :master => @ip_1,
-      :appengine => @ip_2,
-      :database => @ip_3,
-      :zookeeper => @ip_4
+      'master' : self.ip_1,
+      'appengine' : self.ip_2,
+      'database' : self.ip_3,
+      'zookeeper' : self.ip_4
     }
-    advanced_layout_1 = NodeLayout.new(advanced_yaml_1, @blank_options)
-    assert_equal(true, advanced_layout_1.valid?)
-    assert_equal(true, advanced_layout_1.supported?)
+    advanced_layout_1 = NodeLayout(advanced_yaml_1, self.default_options)
+    self.assertEquals(True, advanced_layout_1.is_valid())
+    self.assertEquals(True, advanced_layout_1.is_supported())
 
     # in advanced deployments, eight nodes are ok with the following
     # layout: (1) load balancer, (2) appserver, (3) appserver,
     # (4) database, (5) database, (6) zookeeper, (7) zookeeper,
     # (8) zookeeper
     advanced_yaml_2 = {
-      :master => @ip_1,
-      :appengine => [@ip_2, @ip_3],
-      :database => [@ip_4, @ip_5],
-      :zookeeper => [@ip_6, @ip_7, @ip_8]
+      'master' : self.ip_1,
+      'appengine' : [self.ip_2, self.ip_3],
+      'database' : [self.ip_4, self.ip_5],
+      'zookeeper' : [self.ip_6, self.ip_7, self.ip_8]
     }
-    advanced_layout_2 = NodeLayout.new(advanced_yaml_2, @blank_options)
-    assert_equal(true, advanced_layout_2.valid?)
-    assert_equal(true, advanced_layout_2.supported?)
-  end
+    advanced_layout_2 = NodeLayout(advanced_yaml_2, self.default_options)
+    self.assertEquals(True, advanced_layout_2.is_valid())
+    self.assertEquals(True, advanced_layout_2.is_supported())
 
+
+  """
   def test_warn_users_on_unsupported_deployment_strategies
     # don't test simple deployments - those are all supported
     # instead, test out some variations of the supported advanced
