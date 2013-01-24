@@ -29,6 +29,11 @@ class NodeLayout():
   SIMPLE_FORMAT_KEYS = ('controller', 'servers')
 
 
+  # A tuple containing the keys that can be used in advanced deployments.
+  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
+    'zookeeper', 'memcache', 'rabbitmq']
+
+
   # A tuple containing all of the roles (simple and advanced) that the
   # AppController recognizes. These include _master and _slave roles, which
   # the user may not be able to specify directly.
@@ -45,6 +50,21 @@ class NodeLayout():
   # A regular expression that matches node IDs, used in ips.yaml files
   # for cloud deployments.
   NODE_ID_REGEX = re.compile('(node)-(\d+)')
+
+
+  # The message to display to users if they give us an ips.yaml file in a
+  # simple deployment, with the same IP address more than once.
+  DUPLICATE_IPS = "Cannot specify the same IP address more than once."
+
+
+  # The message to display if the user wants to run in a simple deployment,
+  # but does not specify a controller node.
+  NO_CONTROLLER = "No controller was specified"
+
+
+  # The message to display if the user wants to run in a simple deployment,
+  # and specifies too many controller nodes.
+  ONLY_ONE_CONTROLLER = "Only one controller is allowed"
 
 
   def __init__(self, input_yaml, options):
@@ -100,6 +120,26 @@ class NodeLayout():
     else:
       return False
 
+
+  def errors(self):
+    if self.is_valid():
+      return []
+
+    if self.is_simple_format():
+      return self.is_valid_simple_format()['message']
+    elif self.is_valid_advanced_format():
+      return self.is_valid_advanced_format['message']
+    elif not self.input_yaml:
+      return [self.INPUT_YAML_REQUIRED]
+    else:
+      for key in self.input_yaml.keys():
+        if key not in self.SIMPLE_FORMAT_KEYS \
+          and key not in self.ADVANCED_FORMAT_KEYS:
+          return ["The flag #{key} is not a supported flag"]
+
+      return [self.USED_SIMPLE_AND_ADVANCED_KEYS]
+
+
   """
 USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
   " Only simple (controller, servers) or advanced (master, appengine, etc) " +
@@ -110,10 +150,6 @@ NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
   "max_images must be specified."
 INPUT_YAML_REQUIRED = "An input yaml file is required for Xen, KVM, and " +
   "hybrid cloud deployments"
-DUPLICATE_IPS = "You specified some IP addresses more than once, which is " +
-  "not allowed in simple deployments."
-NO_CONTROLLER = "No controller was specified"
-ONLY_ONE_CONTROLLER = "Only one controller is allowed"
 
 NODE_ID_REGEX = /(node|cloud(\d+))-(\d+)/
 DEFAULT_NUM_NODES = 1
@@ -123,29 +159,6 @@ VALID_ROLES = [:master, :appengine, :database, :shadow, :open] +
 
 class NodeLayout
   SIMPLE_FORMAT_KEYS = [:controller, :servers]
-  ADVANCED_FORMAT_KEYS = [:master, :database, :appengine, :open, :login, :zookeeper, :memcache, :rabbitmq]
-
-  def errors
-    return [] if valid?
-
-    if is_simple_format? 
-      valid_simple_format?[:message]
-    elsif is_advanced_format?
-      valid_advanced_format?[:message]
-    elsif @input_yaml.nil?
-      [INPUT_YAML_REQUIRED]
-    else
-      keys = @input_yaml.keys
-
-      keys.each { |key|
-        if !(SIMPLE_FORMAT_KEYS.include?(key) || ADVANCED_FORMAT_KEYS.include?(key))
-          return ["The flag #{key} is not a supported flag"]
-        end
-      }
-
-      return [USED_SIMPLE_AND_ADVANCED_KEYS]
-    end
-  end
 
   # supported? is a method that checks to see if AppScale has normally
   # been tested and successfully run over this deployment strategy.
@@ -265,17 +278,17 @@ class NodeLayout
       else:
         return False
 
-  """
-  def is_advanced_format?
-    return false if @input_yaml.nil?
 
-    @input_yaml.keys.each do |key|
-      return false if !ADVANCED_FORMAT_KEYS.include?(key)
-    end
+  def is_advanced_format(self):
+    if not self.input_yaml:
+      return False
 
-    return true
-  end
-  """
+    for key in self.input_yaml.keys():
+      if key not in self.ADVANCED_FORMAT_KEYS:
+        return False
+
+    return True
+
 
   def parse_ip(self, ip):
     """Parses the given IP address or node ID and returns it and a str
@@ -374,7 +387,7 @@ class NodeLayout
 
     num_of_duplicate_ips = len(all_ips) - len(set(all_ips))
     if num_of_duplicate_ips > 0:
-      return self.invalid(DUPLICATE_IPS)
+      return self.invalid(self.DUPLICATE_IPS)
 
     if len(nodes) == 1:
       # Singleton node should be master and app engine
@@ -388,9 +401,9 @@ class NodeLayout
         controller_count += 1
 
     if controller_count == 0:
-      return self.invalid(NO_CONTROLLER)
+      return self.invalid(self.NO_CONTROLLER)
     elif controller_count > 1:
-      return self.invalid(ONLY_ONE_CONTROLLER)
+      return self.invalid(self.ONLY_ONE_CONTROLLER)
 
     database_count = 0
     for node in nodes:
@@ -411,7 +424,7 @@ class NodeLayout
     return self.valid()
 
   """
-  def valid_advanced_format?
+  def is_valid_advanced_format(self):
     # We already computed the nodes, its valid
     return valid if !@nodes.empty?
 

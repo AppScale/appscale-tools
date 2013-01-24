@@ -66,37 +66,38 @@ class TestNodeLayout(unittest.TestCase):
     layout_1 = NodeLayout(input_yaml_1, self.default_options)
     self.assertEquals(True, layout_1.is_valid())
 
-    """
     # Specifying one controller should be ok
-    input_yaml_2 = {:controller => @ip_1}
-    layout_2 = NodeLayout.new(input_yaml_2, @blank_options)
-    assert_equal(true, layout_2.valid?)
+    input_yaml_2 = {'controller' : self.ip_1}
+    layout_2 = NodeLayout(input_yaml_2, self.default_options)
+    self.assertEquals(True, layout_2.is_valid())
 
     # Specifying the same IP more than once is not ok
-    input_yaml_3 = {:controller => @ip_1, :servers => [@ip_1]}
-    layout_3 = NodeLayout.new(input_yaml_3, @blank_options)
-    assert_equal(false, layout_3.valid?)
-    assert_equal(DUPLICATE_IPS, layout_3.errors)
+    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_1]}
+    layout_3 = NodeLayout(input_yaml_3, self.default_options)
+    self.assertEquals(False, layout_3.is_valid())
+    self.assertEquals(NodeLayout.DUPLICATE_IPS, layout_3.errors())
 
     # Failing to specify a controller is not ok
-    input_yaml_4 = {:servers => [@ip_1, @ip_2]}
-    layout_4 = NodeLayout.new(input_yaml_4, @blank_options)
-    assert_equal(false, layout_4.valid?)
-    assert_equal(NO_CONTROLLER, layout_4.errors)
+    input_yaml_4 = {'servers' : [self.ip_1, self.ip_2]}
+    layout_4 = NodeLayout(input_yaml_4, self.default_options)
+    self.assertEquals(False, layout_4.is_valid())
+    self.assertEquals(NodeLayout.NO_CONTROLLER, layout_4.errors())
 
     # Specifying more than one controller is not ok
-    input_yaml_5 = {:controller => [@ip_1, @ip_2], :servers => [@ip_3]}
-    layout_5 = NodeLayout.new(input_yaml_5, @blank_options)
-    assert_equal(false, layout_5.valid?)
-    assert_equal(ONLY_ONE_CONTROLLER, layout_5.errors)
+    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' : [self.ip_3]}
+    layout_5 = NodeLayout(input_yaml_5, self.default_options)
+    self.assertEquals(False, layout_5.is_valid())
+    self.assertEquals(NodeLayout.ONLY_ONE_CONTROLLER, layout_5.errors())
 
+    """
     # Specifying something other than controller and servers in simple
     # deployments is not ok
-    input_yaml_6 = {:controller => @ip_1, :servers => [@ip_2], :boo => @ip_3}
-    layout_6 = NodeLayout.new(input_yaml_6, @blank_options)
-    assert_equal(false, layout_6.valid?)
-    assert_equal(["The flag boo is not a supported flag"], layout_6.errors)
-  end
+    input_yaml_6 = {'controller' : self.ip_1, 'servers' : [self.ip_2],
+      'boo' : self.ip_3}
+    layout_6 = NodeLayout(input_yaml_6, self.default_options)
+    self.assertEquals(False, layout_6.is_valid())
+    self.assertEquals(["The flag boo is not a supported flag"],
+      layout_6.errors())
 
   def test_simple_layout_options
     # Using Euca with no input yaml, and no max or min images is not ok
