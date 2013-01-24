@@ -89,7 +89,6 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(False, layout_5.is_valid())
     self.assertEquals(NodeLayout.ONLY_ONE_CONTROLLER, layout_5.errors())
 
-    """
     # Specifying something other than controller and servers in simple
     # deployments is not ok
     input_yaml_6 = {'controller' : self.ip_1, 'servers' : [self.ip_2],
@@ -99,6 +98,7 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(["The flag boo is not a supported flag"],
       layout_6.errors())
 
+    """
   def test_simple_layout_options
     # Using Euca with no input yaml, and no max or min images is not ok
     options_1 = {:infrastructure => "euca"}

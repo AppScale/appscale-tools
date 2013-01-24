@@ -127,15 +127,15 @@ class NodeLayout():
 
     if self.is_simple_format():
       return self.is_valid_simple_format()['message']
-    elif self.is_valid_advanced_format():
-      return self.is_valid_advanced_format['message']
+    elif self.is_advanced_format():
+      return self.is_valid_advanced_format()['message']
     elif not self.input_yaml:
       return [self.INPUT_YAML_REQUIRED]
     else:
       for key in self.input_yaml.keys():
         if key not in self.SIMPLE_FORMAT_KEYS \
           and key not in self.ADVANCED_FORMAT_KEYS:
-          return ["The flag #{key} is not a supported flag"]
+          return ["The flag {0} is not a supported flag".format(key)]
 
       return [self.USED_SIMPLE_AND_ADVANCED_KEYS]
 
@@ -362,7 +362,7 @@ class NodeLayout
         node.add_rabbitmq_role(is_master)
 
         if not node.is_valid():
-          return self.invalid(node.errors.join(","))
+          return self.invalid(node.errors().join(","))
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
           if not self.NODE_ID_REGEX.match(node.id):
@@ -423,171 +423,162 @@ class NodeLayout
     self.nodes = nodes
     return self.valid()
 
-  """
+
   def is_valid_advanced_format(self):
-    # We already computed the nodes, its valid
-    return valid if !@nodes.empty?
+    if self.nodes:
+      return self.valid()
 
     node_hash = {}
-    @input_yaml.each_pair do |role, ips|
+    for role, ips in self.input_yaml.iteritems():
       
-      ips.each_with_index do |ip, index|
-        node = nil
-        if node_hash[ip].nil?
-          id, cloud = parse_ip(ip)
-          node = AdvancedNode.new(id, cloud)
-        else
-          node = node_hash[ip]
-        end
+      if isinstance(ips, str):
+        ips = [ips]
 
-        if role.to_sym == :database
+      for index, ip in enumerate(ips):
+        node = None
+        if ip in node_hash:
+          node = node_hash[ip]
+        else:
+          id, cloud = self.parse_ip(ip)
+          node = AdvancedNode(id, cloud)
+
+        if role == 'database':
           # The first database node is the master
-          is_master = index.zero?
-          node.add_db_role @database_type, is_master
-        elsif role.to_sym == :db_master
-          node.add_role :zookeeper
-          node.add_role role
-        elsif role.to_sym == :rabbitmq
+          if index == 0:
+            is_master = True
+          else:
+            is_master = False
+          node.add_db_role(database_type, is_master)
+        elif role == 'db_master':
+          node.add_role('zookeeper')
+          node.add_role('role')
+        elif role == 'rabbitmq':
           # Like the database, the first rabbitmq node is the master
-          is_master = index.zero?
-          node.add_role :rabbitmq
-          node.add_rabbitmq_role is_master
-        else
-          node.add_role role
-        end
+          if index == 0:
+            is_master = True
+          else:
+            is_master = False
+          node.add_role('rabbitmq')
+          node.add_rabbitmq_role(is_master)
+        else:
+          node.add_role(role)
         
         node_hash[ip] = node
-      end
-    end
 
     # Dont need the hash any more, make a nodes list
-    nodes = node_hash.values
+    nodes = node_hash.values()
 
-    nodes.each do |node|
-      return invalid(node.errors.join(",")) unless node.valid?
+    for node in nodes:
+      if not node.is_valid():
+        return self.invalid(",".join(node.errors()))
 
-      if VALID_CLOUD_TYPES.include?(@infrastructure)
-        error_message = "Invalid cloud node ID: #{node.id} \n" + 
-          "Cloud node ID must be in the format 'node-{IDNUMBER}'" +
-          "\nor of the form cloud{CLOUDNUMBER}-{IDNUMBER} for hybrid deployments"
-        return invalid(error_message) if NODE_ID_REGEX.match(node.id.to_s).nil?
-      else
-        # Xen/KVM should be using the ip address as the node id
-        error_message = "Invalid virtualized node ID: #{node.id} \n" + 
-          "Virtualized node IDs must be a valid IP address"
-        return invalid(error_message) if IP_REGEX.match(node.id.to_s).nil?
-      end
-    end
+      if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+        if not self.NODE_ID_REGEX.match(node.id):
+          return self.invalid("{0} is not a valid node ID (must be node-int)".format(node.id))
+      else:
+        # Virtualized cluster deployments use IP addresses as node IDs
+        if not self.IP_REGEX.match(node.id):
+          return self.invalid("{0} must be an IP address".format(node.id))
 
-    master_nodes = nodes.select { |node| node.is_shadow? }.compact
+    master_nodes = []
+    for node in nodes:
+      if node.is_role('shadow'):
+        master_nodes.append(node)
 
     # need exactly one master
-    if master_nodes.length == 0
-      return invalid("No master was specified")
-    elsif master_nodes.length > 1
-      return invalid("Only one master is allowed")
-    end
+    if len(master_nodes) == 0:
+      return self.invalid("No master was specified")
+    elif len(master_nodes) > 1:
+      return self.invalid("Only one master is allowed")
 
-    master_node = master_nodes.first
+    master_node = master_nodes[0]
 
-    login_node = nodes.select { |node| node.is_login? }.compact
+    login_nodes = []
+    for node in nodes:
+      if node.is_role('login'):
+        login_nodes.append(node)
+
     # If a login node was not specified, make the master into the login node
-    if login_node.empty?
-      master_node.add_role :login
-    end
+    if not login_nodes:
+      master_node.add_role('login')
 
     appengine_count = 0
-    nodes.each do |node|
-      if node.is_appengine?
+    for node in nodes:
+      if node.is_role('appengine'):
         appengine_count += 1
-      end
-    end
 
-    if appengine_count < 1
-      return invalid("Not enough appengine nodes were provided.")
-    end
+    if appengine_count < 1:
+      return self.invalid("Need to specify at least one appengine node")
 
     memcache_count = 0
-    nodes.each do |node|
-      if node.is_memcache?
+    for node in nodes:
+      if node.is_role('memcache'):
         memcache_count += 1
-      end
-    end
 
     # if no memcache nodes were specified, make all appengine nodes
     # into memcache nodes
-    if memcache_count < 1
-      nodes.each { |node|
-        node.add_role :memcache if node.is_appengine?
-      }
-    end
+    if memcache_count < 1:
+      for node in nodes:
+        if node.is_role('appengine'):
+          node.add_role('memcache')
 
-    if VALID_CLOUD_TYPES.include?(@infrastructure)
-      # If min and max aren't specified, they default to the number of nodes in the system
-      @min_images ||= nodes.length
-      @max_images ||= nodes.length
+    if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+      if not self.min_images:
+        self.min_images = len(nodes)
+      if not self.max_images:
+        self.max_images = len(nodes)
 
-      # TODO: look into if that first guard is really necessary with the preceding lines
-
-      if @min_images && nodes.length < @min_images
-        return invalid("Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum")
-      end
+      # TODO(cgb): I think these checks aren't necessary.
+      #if len(nodes) < @min_images
+      #  return invalid("Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum")
  
-      if @max_images && nodes.length > @max_images
-        return invalid("Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum")
-      end
-    end
+      #if nodes.length > @max_images
+      #  return invalid("Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum")
 
     zookeeper_count = 0
-    nodes.each do |node|
-      if node.is_zookeeper?
+    for node in nodes:
+      if node.is_role('zookeeper'):
         zookeeper_count += 1
-      end
-    end
-    master_node.add_role :zookeeper if zookeeper_count.zero?
+    if not zookeeper_count:
+      master_node.add_role('zookeeper')
 
     # If no rabbitmq nodes are specified, make the shadow the rabbitmq_master
     rabbitmq_count = 0
-    nodes.each do |node|
-      if node.is_rabbitmq?
+    for node in nodes:
+      if node.is_role('rabbitmq'):
         rabbitmq_count += 1
-      end
-    end
-    if rabbitmq_count.zero?
-      master_node.add_role :rabbitmq
-      master_node.add_role :rabbitmq_master
-    end
+
+    if not rabbitmq_count:
+      master_node.add_role('rabbitmq')
+      master_node.add_role('rabbitmq_master')
 
     # Any node that runs appengine needs rabbitmq to dispatch task requests to
     # It's safe to add the slave role since we ensure above that somebody
     # already has the master role
-    nodes.each do |node|
-      if node.is_appengine? and !node.is_rabbitmq?
-        node.add_role :rabbitmq_slave
-      end
-    end
+    for node in nodes:
+      if node.is_role('appengine') and not node.is_role('rabbitmq'):
+        node.add_role('rabbitmq_slave')
 
     database_count = 0
-    nodes.each do |node|
-      if node.is_database?
+    for node in nodes:
+      if node.is_role('database'):
         database_count += 1
-      end
-    end
 
-    if @skip_replication
-      @nodes = nodes
-      return valid
-    end
+    # TODO(cgb): Revisit if this is necessary later.
+    #if @skip_replication
+    #  @nodes = nodes
+    #  return valid
+    #end
 
-    rep = valid_database_replication? nodes
-    return rep unless rep[:result]
+    rep = self.is_database_replication_valid(nodes)
 
-    # Wait until it is validated to assign it
-    @nodes = nodes
+    if not rep['result']:
+      return rep
 
-    return valid
-  end
-  """
+    self.nodes = nodes
+
+    return self.valid()
+
 
   def is_database_replication_valid(self, nodes):
     database_node_count = 0
@@ -808,26 +799,21 @@ class SimpleNode(Node):
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
 
-"""
-class AdvancedNode < Node
-  private
-  def expand_roles
-    # make sure that deleting here doesn't screw things up
-    if @roles.include?(:master)
-      @roles.delete(:master)
-      @roles << :shadow
-      @roles << :load_balancer
-    end
 
-    if @roles.include?(:login)
-      @roles << :load_balancer
-    end
+class AdvancedNode(Node):
 
-    if @roles.include?(:database)
-      @roles << :memcache
-    end
 
-    @roles.uniq!
-  end
-end
-"""
+  def expand_roles(self):
+    if 'master' in self.roles:
+      self.roles.remove('master')
+      self.roles.append('shadow')
+      self.roles.append('load_balancer')
+
+    if 'login' in self.roles:
+      self.roles.append('load_balancer')
+
+    if 'database' in self.roles:
+      self.roles.append('memcache')
+
+    # Remove any duplicate roles
+    self.roles = list(set(self.roles))
