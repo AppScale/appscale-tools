@@ -77,6 +77,9 @@ class NodeLayout():
   NO_YAML_REQUIRES_MAX = "Must specify max if not using a YAML file"
 
 
+  INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
+
+
   def __init__(self, input_yaml, options):
     """Creates a new NodeLayout from the given YAML file.
 
@@ -166,8 +169,6 @@ USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
   "can be used"
 NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
   "max_vms must be specified."
-INPUT_YAML_REQUIRED = "An input yaml file is required for Xen, KVM, and " +
-  "hybrid cloud deployments"
 
 NODE_ID_REGEX = /(node|cloud(\d+))-(\d+)/
 DEFAULT_NUM_NODES = 1

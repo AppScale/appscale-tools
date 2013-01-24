@@ -121,19 +121,14 @@ class TestNodeLayout(unittest.TestCase):
     layout_4 = NodeLayout(self.blank_input_yaml, options_4)
     self.assertEquals(True, layout_4.is_valid())
 
-    """
     # Using Xen or hybrid cloud deployments with no input yaml is not ok
-    options_5 = {:infrastructure => "xen"}
-    layout_5 = NodeLayout.new(@blank_input_yaml, options_5)
-    assert_equal(false, layout_5.valid?)
-    assert_equal([INPUT_YAML_REQUIRED], layout_5.errors)
+    options_5 = {'infrastructure' : "xen", 'table' : 'cassandra'}
+    layout_5 = NodeLayout(self.blank_input_yaml, options_5)
+    self.assertEquals(False, layout_5.is_valid())
+    self.assertEquals([NodeLayout.INPUT_YAML_REQUIRED], layout_5.errors())
 
-    options_6 = {:infrastructure => "hybrid"}
-    layout_6 = NodeLayout.new(@blank_input_yaml, options_6)
-    assert_equal(false, layout_6.valid?)
-    assert_equal([INPUT_YAML_REQUIRED], layout_6.errors)
-  end
 
+  """
   def test_advanced_format_yaml_only
     input_yaml_1 = {:master => @ip_1, :database => @ip_1, :appengine => @ip_1, :open => @ip_2}
     layout_1 = NodeLayout.new(input_yaml_1, @blank_options)
