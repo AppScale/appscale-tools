@@ -82,20 +82,22 @@ class NodeLayout():
   INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
 
 
-  def __init__(self, input_yaml, options):
+  def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
 
     Args:
-      input_yaml: YAML that represents the placement strategy to use for
+      options: A Namespace or dict that (optionally) contains a field
+        containing the YAML representing the placement strategy to use for
         this AppScale deployment. This YAML can be either raw YAML, or
         a str containing a path on the local filesystem that, when read,
         contains the YAML in question. It can also be set to None, for
-        deployments when the user specifies (via 'options') how many VMs
-        they wish to use.
-      options: A Namespace or dict that represents information about the
-        placement strategy not specifically relating to IP addresses or
-        services (e.g., database-specific parameters).
+        deployments when the user specifies how many VMs they wish to use.
     """
+    if 'ips' in options:
+      input_yaml = options['ips']
+    else:
+      input_yaml = None
+
     if isinstance(input_yaml, str):
       with open(input_yaml, 'r') as file_handle:
         self.input_yaml = yaml.safe_load(file_handle.read())

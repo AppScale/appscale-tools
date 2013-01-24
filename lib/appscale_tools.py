@@ -50,7 +50,7 @@ class AppScaleTools():
 
     AppScaleLogger.remote_log_tools_state(options, "started")
     time.sleep(2)
-    node_layout, result = NodeLayout.generate_layout_from_options(options)
+    node_layout = NodeLayout(options)
 
     """
     node_layout, result = CommonFunctions.generate_node_layout(options)

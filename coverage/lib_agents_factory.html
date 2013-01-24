@@ -5,7 +5,7 @@
     
     
     <meta http-equiv='X-UA-Compatible' content='IE=emulateIE7' />
-    <title>Coverage for lib/agents/factory: 90%</title>
+    <title>Coverage for lib/agents/factory: 91%</title>
     <link rel='stylesheet' href='style.css' type='text/css'>
     
     <script type='text/javascript' src='jquery-1.4.3.min.js'></script>
@@ -21,12 +21,12 @@
 <div id='header'>
     <div class='content'>
         <h1>Coverage for <b>lib/agents/factory</b> :
-            <span class='pc_cov'>90%</span>
+            <span class='pc_cov'>91%</span>
         </h1>
         <img id='keyboard_icon' src='keybd_closed.png'>
         <h2 class='stats'>
-            10 statements &nbsp;
-            <span class='run hide_run shortkey_r button_toggle_run'>9 run</span>
+            11 statements &nbsp;
+            <span class='run hide_run shortkey_r button_toggle_run'>10 run</span>
             <span class='mis shortkey_m button_toggle_mis'>1 missing</span>
             <span class='exc shortkey_x button_toggle_exc'>0 excluded</span>
             
@@ -75,12 +75,12 @@
 <p id='n12' class='pln'><a href='#n12'>12</a></p>
 <p id='n13' class='stm run hide_run'><a href='#n13'>13</a></p>
 <p id='n14' class='pln'><a href='#n14'>14</a></p>
-<p id='n15' class='pln'><a href='#n15'>15</a></p>
+<p id='n15' class='stm run hide_run'><a href='#n15'>15</a></p>
 <p id='n16' class='pln'><a href='#n16'>16</a></p>
 <p id='n17' class='pln'><a href='#n17'>17</a></p>
-<p id='n18' class='stm run hide_run'><a href='#n18'>18</a></p>
+<p id='n18' class='pln'><a href='#n18'>18</a></p>
 <p id='n19' class='pln'><a href='#n19'>19</a></p>
-<p id='n20' class='pln'><a href='#n20'>20</a></p>
+<p id='n20' class='stm run hide_run'><a href='#n20'>20</a></p>
 <p id='n21' class='pln'><a href='#n21'>21</a></p>
 <p id='n22' class='pln'><a href='#n22'>22</a></p>
 <p id='n23' class='pln'><a href='#n23'>23</a></p>
@@ -94,10 +94,12 @@
 <p id='n31' class='pln'><a href='#n31'>31</a></p>
 <p id='n32' class='pln'><a href='#n32'>32</a></p>
 <p id='n33' class='pln'><a href='#n33'>33</a></p>
-<p id='n34' class='stm run hide_run'><a href='#n34'>34</a></p>
-<p id='n35' class='stm run hide_run'><a href='#n35'>35</a></p>
-<p id='n36' class='pln'><a href='#n36'>36</a></p>
-<p id='n37' class='stm mis'><a href='#n37'>37</a></p>
+<p id='n34' class='pln'><a href='#n34'>34</a></p>
+<p id='n35' class='pln'><a href='#n35'>35</a></p>
+<p id='n36' class='stm run hide_run'><a href='#n36'>36</a></p>
+<p id='n37' class='stm run hide_run'><a href='#n37'>37</a></p>
+<p id='n38' class='pln'><a href='#n38'>38</a></p>
+<p id='n39' class='stm mis'><a href='#n39'>39</a></p>
                 
             </td>
             <td class='text' valign='top'>
@@ -113,31 +115,33 @@
 <p id='t10' class='pln'><span class='str'>&nbsp; agents.</span><span class='strut'>&nbsp;</span></p>
 <p id='t11' class='pln'><span class='str'>&nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
 <p id='t12' class='pln'><span class='strut'>&nbsp;</span></p>
-<p id='t13' class='stm run hide_run'>&nbsp; <span class='nam'>agents</span> <span class='op'>=</span> <span class='op'>{</span><span class='strut'>&nbsp;</span></p>
-<p id='t14' class='pln'>&nbsp; &nbsp; <span class='str'>&#39;ec2&#39;</span><span class='op'>:</span> <span class='nam'>EC2Agent</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
-<p id='t15' class='pln'>&nbsp; &nbsp; <span class='str'>&#39;euca&#39;</span><span class='op'>:</span> <span class='nam'>EucalyptusAgent</span><span class='strut'>&nbsp;</span></p>
-<p id='t16' class='pln'>&nbsp; <span class='op'>}</span><span class='strut'>&nbsp;</span></p>
-<p id='t17' class='pln'><span class='strut'>&nbsp;</span></p>
-<p id='t18' class='stm run hide_run'>&nbsp; <span class='op'>@</span><span class='nam'>classmethod</span><span class='strut'>&nbsp;</span></p>
-<p id='t19' class='pln'>&nbsp; <span class='key'>def</span> <span class='nam'>create_agent</span><span class='op'>(</span><span class='nam'>cls</span><span class='op'>,</span> <span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
-<p id='t20' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
-<p id='t21' class='pln'><span class='str'>&nbsp; &nbsp; Instantiate a new infrastructure agent.</span><span class='strut'>&nbsp;</span></p>
-<p id='t22' class='pln'><span class='strut'>&nbsp;</span></p>
-<p id='t23' class='pln'><span class='str'>&nbsp; &nbsp; Args:</span><span class='strut'>&nbsp;</span></p>
-<p id='t24' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; infrastructure&nbsp; A string indicating the type of infrastructure</span><span class='strut'>&nbsp;</span></p>
-<p id='t25' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; agent to be initialized.</span><span class='strut'>&nbsp;</span></p>
-<p id='t26' class='pln'><span class='strut'>&nbsp;</span></p>
-<p id='t27' class='pln'><span class='str'>&nbsp; &nbsp; Returns:</span><span class='strut'>&nbsp;</span></p>
-<p id='t28' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; An infrastructure agent instance that implements the BaseAgent API</span><span class='strut'>&nbsp;</span></p>
-<p id='t29' class='pln'><span class='strut'>&nbsp;</span></p>
-<p id='t30' class='pln'><span class='str'>&nbsp; &nbsp; Raises:</span><span class='strut'>&nbsp;</span></p>
-<p id='t31' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; NameError&nbsp; &nbsp; &nbsp;&nbsp; If the given input string does not map to any known</span><span class='strut'>&nbsp;</span></p>
-<p id='t32' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; agent type.</span><span class='strut'>&nbsp;</span></p>
-<p id='t33' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
-<p id='t34' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>cls</span><span class='op'>.</span><span class='nam'>agents</span><span class='op'>.</span><span class='nam'>has_key</span><span class='op'>(</span><span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
-<p id='t35' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>cls</span><span class='op'>.</span><span class='nam'>agents</span><span class='op'>[</span><span class='nam'>infrastructure</span><span class='op'>]</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
-<p id='t36' class='pln'>&nbsp; &nbsp; <span class='key'>else</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
-<p id='t37' class='stm mis'>&nbsp; &nbsp; &nbsp; <span class='key'>raise</span> <span class='nam'>NameError</span><span class='op'>(</span><span class='str'>&#39;Unrecognized infrastructure: &#39;</span> <span class='op'>+</span> <span class='nam'>str</span><span class='op'>(</span><span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t13' class='stm run hide_run'>&nbsp; <span class='nam'>VALID_AGENTS</span> <span class='op'>=</span> <span class='op'>[</span><span class='str'>&#39;ec2&#39;</span><span class='op'>,</span> <span class='str'>&#39;euca&#39;</span><span class='op'>]</span><span class='strut'>&nbsp;</span></p>
+<p id='t14' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t15' class='stm run hide_run'>&nbsp; <span class='nam'>agents</span> <span class='op'>=</span> <span class='op'>{</span><span class='strut'>&nbsp;</span></p>
+<p id='t16' class='pln'>&nbsp; &nbsp; <span class='str'>&#39;ec2&#39;</span><span class='op'>:</span> <span class='nam'>EC2Agent</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t17' class='pln'>&nbsp; &nbsp; <span class='str'>&#39;euca&#39;</span><span class='op'>:</span> <span class='nam'>EucalyptusAgent</span><span class='strut'>&nbsp;</span></p>
+<p id='t18' class='pln'>&nbsp; <span class='op'>}</span><span class='strut'>&nbsp;</span></p>
+<p id='t19' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t20' class='stm run hide_run'>&nbsp; <span class='op'>@</span><span class='nam'>classmethod</span><span class='strut'>&nbsp;</span></p>
+<p id='t21' class='pln'>&nbsp; <span class='key'>def</span> <span class='nam'>create_agent</span><span class='op'>(</span><span class='nam'>cls</span><span class='op'>,</span> <span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t22' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t23' class='pln'><span class='str'>&nbsp; &nbsp; Instantiate a new infrastructure agent.</span><span class='strut'>&nbsp;</span></p>
+<p id='t24' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t25' class='pln'><span class='str'>&nbsp; &nbsp; Args:</span><span class='strut'>&nbsp;</span></p>
+<p id='t26' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; infrastructure&nbsp; A string indicating the type of infrastructure</span><span class='strut'>&nbsp;</span></p>
+<p id='t27' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; agent to be initialized.</span><span class='strut'>&nbsp;</span></p>
+<p id='t28' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t29' class='pln'><span class='str'>&nbsp; &nbsp; Returns:</span><span class='strut'>&nbsp;</span></p>
+<p id='t30' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; An infrastructure agent instance that implements the BaseAgent API</span><span class='strut'>&nbsp;</span></p>
+<p id='t31' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t32' class='pln'><span class='str'>&nbsp; &nbsp; Raises:</span><span class='strut'>&nbsp;</span></p>
+<p id='t33' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; NameError&nbsp; &nbsp; &nbsp;&nbsp; If the given input string does not map to any known</span><span class='strut'>&nbsp;</span></p>
+<p id='t34' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; agent type.</span><span class='strut'>&nbsp;</span></p>
+<p id='t35' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t36' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>cls</span><span class='op'>.</span><span class='nam'>agents</span><span class='op'>.</span><span class='nam'>has_key</span><span class='op'>(</span><span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t37' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>cls</span><span class='op'>.</span><span class='nam'>agents</span><span class='op'>[</span><span class='nam'>infrastructure</span><span class='op'>]</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t38' class='pln'>&nbsp; &nbsp; <span class='key'>else</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t39' class='stm mis'>&nbsp; &nbsp; &nbsp; <span class='key'>raise</span> <span class='nam'>NameError</span><span class='op'>(</span><span class='str'>&#39;Unrecognized infrastructure: &#39;</span> <span class='op'>+</span> <span class='nam'>str</span><span class='op'>(</span><span class='nam'>infrastructure</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
                 
             </td>
         </tr>

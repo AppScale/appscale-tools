@@ -63,29 +63,39 @@ class TestNodeLayout(unittest.TestCase):
       'controller' : self.ip_1,
       'servers' : [self.ip_2]
     }
-    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    layout_1 = NodeLayout(options_1)
     self.assertEquals(True, layout_1.is_valid())
 
     # Specifying one controller should be ok
     input_yaml_2 = {'controller' : self.ip_1}
-    layout_2 = NodeLayout(input_yaml_2, self.default_options)
+    options_2 = self.default_options.copy()
+    options_2['ips'] = input_yaml_2
+    layout_2 = NodeLayout(options_2)
     self.assertEquals(True, layout_2.is_valid())
 
     # Specifying the same IP more than once is not ok
     input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_1]}
-    layout_3 = NodeLayout(input_yaml_3, self.default_options)
+    options_3 = self.default_options.copy()
+    options_3['ips'] = input_yaml_3
+    layout_3 = NodeLayout(options_3)
     self.assertEquals(False, layout_3.is_valid())
     self.assertEquals(NodeLayout.DUPLICATE_IPS, layout_3.errors())
 
     # Failing to specify a controller is not ok
     input_yaml_4 = {'servers' : [self.ip_1, self.ip_2]}
-    layout_4 = NodeLayout(input_yaml_4, self.default_options)
+    options_4 = self.default_options.copy()
+    options_4['ips'] = input_yaml_4
+    layout_4 = NodeLayout(options_4)
     self.assertEquals(False, layout_4.is_valid())
     self.assertEquals(NodeLayout.NO_CONTROLLER, layout_4.errors())
 
     # Specifying more than one controller is not ok
     input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' : [self.ip_3]}
-    layout_5 = NodeLayout(input_yaml_5, self.default_options)
+    options_5 = self.default_options.copy()
+    options_5['ips'] = input_yaml_5
+    layout_5 = NodeLayout(options_5)
     self.assertEquals(False, layout_5.is_valid())
     self.assertEquals(NodeLayout.ONLY_ONE_CONTROLLER, layout_5.errors())
 
@@ -93,7 +103,9 @@ class TestNodeLayout(unittest.TestCase):
     # deployments is not ok
     input_yaml_6 = {'controller' : self.ip_1, 'servers' : [self.ip_2],
       'boo' : self.ip_3}
-    layout_6 = NodeLayout(input_yaml_6, self.default_options)
+    options_6 = self.default_options.copy()
+    options_6['ips'] = input_yaml_6
+    layout_6 = NodeLayout(options_6)
     self.assertEquals(False, layout_6.is_valid())
     self.assertEquals(["The flag boo is not a supported flag"],
       layout_6.errors())
@@ -101,52 +113,68 @@ class TestNodeLayout(unittest.TestCase):
 
   def test_simple_layout_options(self):
     # Using Euca with no input yaml, and no max or min images is not ok
-    options_1 = {'infrastructure' : "euca", 'table' : 'cassandra'}
-    layout_1 = NodeLayout(self.blank_input_yaml, options_1)
+    options_1 = self.default_options.copy()
+    options_1['infrastructure'] = 'euca'
+    layout_1 = NodeLayout(options_1)
     self.assertEquals(False, layout_1.is_valid())
     self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_1.errors())
 
-    options_2 = {'infrastructure' : "euca", 'table' : 'cassandra', 'max' : 2}
-    layout_2 = NodeLayout(self.blank_input_yaml, options_2)
+    options_2 = self.default_options.copy()
+    options_2['infrastructure'] = "euca"
+    options_2['max'] = 2
+    layout_2 = NodeLayout(options_2)
     self.assertEquals(False, layout_2.is_valid())
     self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_2.errors())
 
-    options_3 = {'infrastructure' : "euca", 'table': 'cassandra', 'min' : 2}
-    layout_3 = NodeLayout(self.blank_input_yaml, options_3)
+    options_3 = self.default_options.copy()
+    options_3['infrastructure'] = "euca"
+    options_3['min'] = 2
+    layout_3 = NodeLayout(options_3)
     self.assertEquals(False, layout_3.is_valid())
     self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MAX, layout_3.errors())
 
     # Using Euca with no input yaml, with max and min images set is ok
-    options_4 = {'infrastructure' : "euca", 'table' : 'cassandra', 'min' : 2, 'max' : 2}
-    layout_4 = NodeLayout(self.blank_input_yaml, options_4)
+    options_4 = self.default_options.copy()
+    options_4['infrastructure'] = "euca"
+    options_4['min'] = 2
+    options_4['max'] = 2
+    layout_4 = NodeLayout(options_4)
     self.assertEquals(True, layout_4.is_valid())
 
-    # Using Xen or hybrid cloud deployments with no input yaml is not ok
-    options_5 = {'infrastructure' : "xen", 'table' : 'cassandra'}
-    layout_5 = NodeLayout(self.blank_input_yaml, options_5)
+    # Using virtualized deployments with no input yaml is not ok
+    options_5 = self.default_options.copy()
+    layout_5 = NodeLayout(options_5)
     self.assertEquals(False, layout_5.is_valid())
     self.assertEquals([NodeLayout.INPUT_YAML_REQUIRED], layout_5.errors())
 
 
   def test_advanced_format_yaml_only(self):
-    input_yaml_1 = {'master' : self.ip_1, 'database' : self.ip_1,
+    input_yaml = {'master' : self.ip_1, 'database' : self.ip_1,
       'appengine' : self.ip_1, 'open' : self.ip_2}
-    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    layout_1 = NodeLayout(options)
     self.assertEquals(True, layout_1.is_valid())
 
 
   def test_dont_warn_users_on_supported_deployment_strategies(self):
     # all simple deployment strategies are supported
     input_yaml_1 = {'controller' : self.ip_1}
-    layout_1 = NodeLayout(input_yaml_1, self.default_options)
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    layout_1 = NodeLayout(options_1)
     self.assertEquals(True, layout_1.is_supported())
 
     input_yaml_2 = {'controller' : self.ip_1, 'servers' : [self.ip_2]}
-    layout_2 = NodeLayout(input_yaml_2, self.default_options)
+    options_2 = self.default_options.copy()
+    options_2['ips'] = input_yaml_2
+    layout_2 = NodeLayout(options_2)
     self.assertEquals(True, layout_2.is_supported())
 
     input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2, self.ip_3]}
-    layout_3 = NodeLayout(input_yaml_3, self.default_options)
+    options_3 = self.default_options.copy()
+    options_3['ips'] = input_yaml_3
+    layout_3 = NodeLayout(options_3)
     self.assertEquals(True, layout_3.is_supported())
 
     # in advanced deployments, four nodes are ok with the following
@@ -158,7 +186,9 @@ class TestNodeLayout(unittest.TestCase):
       'database' : self.ip_3,
       'zookeeper' : self.ip_4
     }
-    advanced_layout_1 = NodeLayout(advanced_yaml_1, self.default_options)
+    options_1 = self.default_options.copy()
+    options_1['ips'] = advanced_yaml_1
+    advanced_layout_1 = NodeLayout(options_1)
     self.assertEquals(True, advanced_layout_1.is_valid())
     self.assertEquals(True, advanced_layout_1.is_supported())
 
@@ -172,7 +202,9 @@ class TestNodeLayout(unittest.TestCase):
       'database' : [self.ip_4, self.ip_5],
       'zookeeper' : [self.ip_6, self.ip_7, self.ip_8]
     }
-    advanced_layout_2 = NodeLayout(advanced_yaml_2, self.default_options)
+    options_2 = self.default_options.copy()
+    options_2['ips'] = advanced_yaml_2
+    advanced_layout_2 = NodeLayout(options_2)
     self.assertEquals(True, advanced_layout_2.is_valid())
     self.assertEquals(True, advanced_layout_2.is_supported())
 
@@ -187,7 +219,9 @@ class TestNodeLayout(unittest.TestCase):
       'database' : self.ip_2,
       'zookeeper' : self.ip_2
     }
-    advanced_layout_1 = NodeLayout(advanced_yaml_1, self.default_options)
+    options_1 = self.default_options.copy()
+    options_1['ips'] = advanced_yaml_1
+    advanced_layout_1 = NodeLayout(options_1)
     self.assertEquals(True, advanced_layout_1.is_valid())
     self.assertEquals(False, advanced_layout_1.is_supported())
 
@@ -200,7 +234,9 @@ class TestNodeLayout(unittest.TestCase):
       'zookeeper' : self.ip_3,
       'open' : self.ip_4
     }
-    advanced_layout_2 = NodeLayout(advanced_yaml_2, self.default_options)
+    options_2 = self.default_options.copy()
+    options_2['ips'] = advanced_yaml_2
+    advanced_layout_2 = NodeLayout(options_2)
     self.assertEquals(True, advanced_layout_2.is_valid())
     self.assertEquals(False, advanced_layout_2.is_supported())
 
@@ -213,6 +249,8 @@ class TestNodeLayout(unittest.TestCase):
       'zookeeper' : [self.ip_6, self.ip_7],
       'open' : self.ip_8
     }
-    advanced_layout_3 = NodeLayout(advanced_yaml_3, self.default_options)
+    options_3 = self.default_options.copy()
+    options_3['ips'] = advanced_yaml_3
+    advanced_layout_3 = NodeLayout(options_3)
     self.assertEquals(True, advanced_layout_3.is_valid())
     self.assertEquals(False, advanced_layout_3.is_supported())
