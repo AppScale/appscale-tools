@@ -107,15 +107,15 @@ class NodeLayout():
     else:
       self.infrastructure = None
 
-    if 'min_images' in options:
-      self.min_images = options['min_images']
+    if 'min' in options:
+      self.min_vms = options['min']
     else:
-      self.min_images = None
+      self.min_vms = None
 
-    if 'max_images' in options:
-      self.max_images = options['max_images']
+    if 'max' in options:
+      self.max_vms = options['max']
     else:
-      self.max_images = None
+      self.max_vms = None
 
     if 'replication' in options:
       self.replication = options['replication']
@@ -165,7 +165,7 @@ USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
   " Only simple (controller, servers) or advanced (master, appengine, etc) " +
   "can be used"
 NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
-  "max_images must be specified."
+  "max_vms must be specified."
 INPUT_YAML_REQUIRED = "An input yaml file is required for Xen, KVM, and " +
   "hybrid cloud deployments"
 
@@ -346,10 +346,10 @@ class NodeLayout
 
     if not self.input_yaml:
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.min_images:
+        if not self.min_vms:
           return self.invalid(self.NO_YAML_REQUIRES_MIN)
 
-        if not self.max_images:
+        if not self.max_vms:
           return self.invalid(self.NO_YAML_REQUIRES_MAX)
 
         # No layout was created, so create a generic one and then allow it
@@ -539,17 +539,17 @@ class NodeLayout
           node.add_role('memcache')
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_images:
-        self.min_images = len(nodes)
-      if not self.max_images:
-        self.max_images = len(nodes)
+      if not self.min_vms:
+        self.min_vms = len(nodes)
+      if not self.max_vms:
+        self.max_vms = len(nodes)
 
       # TODO(cgb): I think these checks aren't necessary.
-      #if len(nodes) < @min_images
-      #  return invalid("Too few nodes were provided, #{nodes.length} were specified but #{@min_images} was the minimum")
+      #if len(nodes) < @min_vms
+      #  return invalid("Too few nodes were provided, #{nodes.length} were specified but #{@min_vms} was the minimum")
  
-      #if nodes.length > @max_images
-      #  return invalid("Too many nodes were provided, #{nodes.length} were specified but #{@max_images} was the maximum")
+      #if nodes.length > @max_vms
+      #  return invalid("Too many nodes were provided, #{nodes.length} were specified but #{@max_vms} was the maximum")
 
     zookeeper_count = 0
     for node in nodes:
@@ -628,7 +628,7 @@ class NodeLayout
   def generate_cloud_layout
     layout = {:controller => "node-0"}
     servers = []
-    num_slaves = @min_images - 1
+    num_slaves = @min_vms - 1
     num_slaves.times do |i|
       servers << "node-#{i+1}"
     end
@@ -658,16 +658,16 @@ class NodeLayout
     @write_factor
   end
 
-  def min_images
+  def min_vms
     return nil unless valid? 
 
-    @min_images
+    @min_vms
   end
 
-  def max_images
+  def max_vms
     return nil unless valid?
     
-    @max_images
+    @max_vms
   end
 
   def nodes

@@ -106,12 +106,12 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(False, layout_1.is_valid())
     self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_1.errors())
 
-    """
-    options_2 = {:infrastructure => "euca", :max_images => 2}
-    layout_2 = NodeLayout.new(@blank_input_yaml, options_2)
-    assert_equal(false, layout_2.valid?)
-    assert_equal(NO_INPUT_YAML_REQUIRES_MIN_IMAGES, layout_2.errors)
+    options_2 = {'infrastructure' : "euca", 'table' : 'cassandra', 'max' : 2}
+    layout_2 = NodeLayout(self.blank_input_yaml, options_2)
+    self.assertEquals(False, layout_2.is_valid())
+    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_2.errors())
 
+    """
     options_3 = {:infrastructure => "euca", :min_images => 2}
     layout_3 = NodeLayout.new(@blank_input_yaml, options_3)
     assert_equal(false, layout_3.valid?)
