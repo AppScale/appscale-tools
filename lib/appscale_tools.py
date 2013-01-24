@@ -44,6 +44,7 @@ class AppScaleTools():
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         "over a virtualized cluster.")
 
+    AppScaleLogger.remote_log_options(options)
     """
     RemoteLogging.remote_post(max_images, table, infrastructure, "starting", "unknown")
     time.sleep(2)

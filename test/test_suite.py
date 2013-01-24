@@ -5,13 +5,19 @@
 import unittest
 
 
+# imports for appscale executable tests
 from test_appscale import TestAppScale
 from test_appscale_run_instances import TestAppScaleRunInstances
+
+
+# imports for appscale library tests
+from test_appscale_logger import TestAppScaleLogger
 from test_local_state import TestLocalState
 from test_parse_args import TestParseArgs
 
 
-test_cases = [TestAppScale, TestAppScaleRunInstances, TestLocalState, TestParseArgs]
+test_cases = [TestAppScale, TestAppScaleRunInstances,
+  TestAppScaleLogger, TestLocalState, TestParseArgs]
 appscale_test_suite = unittest.TestSuite()
 for test_class in test_cases:
   tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
