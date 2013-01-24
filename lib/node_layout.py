@@ -328,8 +328,8 @@ class NodeLayout
       id = ip
       cloud = "not-cloud"
     else:
-      id = match[0]
-      cloud = match[1]
+      id = match.group(0)
+      cloud = match.group(1)
     return id, cloud
 
 
@@ -623,20 +623,19 @@ class NodeLayout
 
     return self.valid()
 
-  """
+
   # Generates an yaml file for non-hybrid cloud layouts which don't have them
-  def generate_cloud_layout
-    layout = {:controller => "node-0"}
+  def generate_cloud_layout(self):
+    layout = {'controller' : "node-0"}
     servers = []
-    num_slaves = @min_vms - 1
-    num_slaves.times do |i|
-      servers << "node-#{i+1}"
-    end
+    num_slaves = self.min_vms - 1
+    for i in xrange(num_slaves):
+      servers.append("node-{0}".format(i+1))
 
-    layout[:servers] = servers
-    YAML.load(layout.to_yaml)
-  end
+    layout['servers'] = servers
+    return layout
 
+  """
   def replication_factor
     return nil unless valid?
 

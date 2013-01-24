@@ -111,17 +111,17 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(False, layout_2.is_valid())
     self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_2.errors())
 
-    """
-    options_3 = {:infrastructure => "euca", :min_images => 2}
-    layout_3 = NodeLayout.new(@blank_input_yaml, options_3)
-    assert_equal(false, layout_3.valid?)
-    assert_equal(NO_INPUT_YAML_REQUIRES_MAX_IMAGES, layout_3.errors)
+    options_3 = {'infrastructure' : "euca", 'table': 'cassandra', 'min' : 2}
+    layout_3 = NodeLayout(self.blank_input_yaml, options_3)
+    self.assertEquals(False, layout_3.is_valid())
+    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MAX, layout_3.errors())
 
     # Using Euca with no input yaml, with max and min images set is ok
-    options_4 = {:infrastructure => "euca", :min_images => 2, :max_images => 2}
-    layout_4 = NodeLayout.new(@blank_input_yaml, options_4)
-    assert_equal(true, layout_4.valid?)
+    options_4 = {'infrastructure' : "euca", 'table' : 'cassandra', 'min' : 2, 'max' : 2}
+    layout_4 = NodeLayout(self.blank_input_yaml, options_4)
+    self.assertEquals(True, layout_4.is_valid())
 
+    """
     # Using Xen or hybrid cloud deployments with no input yaml is not ok
     options_5 = {:infrastructure => "xen"}
     layout_5 = NodeLayout.new(@blank_input_yaml, options_5)
