@@ -2,6 +2,10 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+# General-purpose Python library imports
+import time
+
+
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from custom_exceptions import BadConfigurationException
@@ -44,12 +48,11 @@ class AppScaleTools():
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         "over a virtualized cluster.")
 
-    AppScaleLogger.remote_log_options(options)
-    """
-    RemoteLogging.remote_post(max_images, table, infrastructure, "starting", "unknown")
+    AppScaleLogger.remote_log_tools_state(options, "started")
     time.sleep(2)
+    node_layout, result = NodeLayout.generate_layout_from_options(options)
 
-    apps_to_start, app_info = CommonFunctions.get_app_info_from_options(options)
+    """
     node_layout, result = CommonFunctions.generate_node_layout(options)
     head_node_result = CommonFunctions.start_head_node(options, node_layout,
       apps_to_start)
@@ -86,19 +89,6 @@ class AppScaleTools():
     uac.set_cloud_admin_capabilities(user)
 
     CommonFunctions.wait_for_nodes_to_load(head_node_ip, secret_key)
-    if options['file_location']:
-      remote_file_path = CommonFunctions.scp_app_to_ip(app_info[:app_name],
-        user, app_info[:language], options['keyname'], head_node_ip,
-        app_info[:file], uac)
-
-      acc.done_uploading(app_info[:app_name], remote_file_path)
-
-      CommonFunctions.wait_for_app_to_start(head_node_ip, secret_key,
-        app_info[:app_name])
-      CommonFunctions.clear_app(app_info[:file])
-    else:
-      print "No app uploaded. Use appscale-upload-app to upload an app later."
-
     login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
     print "The status of your AppScale instance is at the following" + \
       " URL: http://#{login_ip}/status"
