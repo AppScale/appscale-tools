@@ -47,6 +47,8 @@ class NodeLayout():
   IP_REGEX = re.compile('\d+\.\d+\.\d+\.\d+')
 
 
+  # A regular expression that matches cloud IDs, used in ips.yaml files for
+  # cloud deployments.
   NODE_ID_REGEX = re.compile('(node)-(\d+)')
 
 
@@ -145,6 +147,12 @@ class NodeLayout():
 
 
   def errors(self):
+    """Generates a list that indicates why this NodeLayout is invalid
+    (e.g., if no database nodes were specified).
+
+    Returns:
+      A list containing all of the reasons why this NodeLayout is invalid.
+    """
     if self.is_valid():
       return []
 
@@ -163,32 +171,17 @@ class NodeLayout():
       return [self.USED_SIMPLE_AND_ADVANCED_KEYS]
 
 
-  """
-USED_SIMPLE_AND_ADVANCED_KEYS = "Used both simple and advanced layout roles." +
-  " Only simple (controller, servers) or advanced (master, appengine, etc) " +
-  "can be used"
-NO_INPUT_YAML_REQUIRES_MAX_IMAGES = "If no input yaml is specified, " +
-  "max_vms must be specified."
-
-NODE_ID_REGEX = /(node|cloud(\d+))-(\d+)/
-DEFAULT_NUM_NODES = 1
-VALID_ROLES = [:master, :appengine, :database, :shadow, :open] + 
-  [:load_balancer, :login, :db_master, :db_slave, :zookeeper, :memcache] +
-  [:rabbitmq, :rabbitmq_master, :rabbitmq_slave]
-
-class NodeLayout
-  SIMPLE_FORMAT_KEYS = [:controller, :servers]
-
-  # supported? is a method that checks to see if AppScale has normally
-  # been tested and successfully run over this deployment strategy.
-  # All simple deployments are supported, but only two specific types
-  # of advanced deployments are supported.
-  # Returns:
-  #   true if AppScale has been run with this deployment strategy,
-  #     false otherwise.
-  """
-
   def is_supported(self):
+    """Checks to see if AppScale has normally been tested and successfully
+    run over this deployment strategy.
+
+    All simple deployments are supported, but only two specific types of
+    advanced deployments are supported.
+
+    Returns:
+      True if AppScale has been run with this deployment strategy, False
+      otherwise.
+    """
     if self.is_simple_format():
       return True
     elif self.is_advanced_format():
@@ -298,6 +291,12 @@ class NodeLayout
 
 
   def is_advanced_format(self):
+    """Checks the YAML given to see if the user wants us to run services
+    via the advanced deployment strategy.
+
+    Returns:
+      True if all the roles specified are advanced roles, and False otherwise.
+    """
     if not self.input_yaml:
       return False
 
@@ -374,7 +373,7 @@ class NodeLayout
         # the shadow node, and db slave / rabbitmq slave is always on the other
         # nodes
         is_master = node.is_role('shadow')
-        node.add_db_role(self.database_type, is_master)
+        node.add_db_role(is_master)
         node.add_rabbitmq_role(is_master)
 
         if not node.is_valid():
@@ -441,6 +440,13 @@ class NodeLayout
 
 
   def is_valid_advanced_format(self):
+    """Checks to see if this NodeLayout represents an acceptable advanced
+    deployment strategy, and if so, constructs self.nodes from it.
+
+    Returns:
+      A dict that indicates if the deployment strategy is valid, and if
+      not, the reason why it is invalid.
+    """
     if self.nodes:
       return self.valid()
 
@@ -464,7 +470,7 @@ class NodeLayout
             is_master = True
           else:
             is_master = False
-          node.add_db_role(self.database_type, is_master)
+          node.add_db_role(is_master)
         elif role == 'db_master':
           node.add_role('zookeeper')
           node.add_role('role')
@@ -544,13 +550,6 @@ class NodeLayout
       if not self.max_vms:
         self.max_vms = len(nodes)
 
-      # TODO(cgb): I think these checks aren't necessary.
-      #if len(nodes) < @min_vms
-      #  return invalid("Too few nodes were provided, #{nodes.length} were specified but #{@min_vms} was the minimum")
- 
-      #if nodes.length > @max_vms
-      #  return invalid("Too many nodes were provided, #{nodes.length} were specified but #{@max_vms} was the maximum")
-
     zookeeper_count = 0
     for node in nodes:
       if node.is_role('zookeeper'):
@@ -575,19 +574,7 @@ class NodeLayout
       if node.is_role('appengine') and not node.is_role('rabbitmq'):
         node.add_role('rabbitmq_slave')
 
-    database_count = 0
-    for node in nodes:
-      if node.is_role('database'):
-        database_count += 1
-
-    # TODO(cgb): Revisit if this is necessary later.
-    #if @skip_replication
-    #  @nodes = nodes
-    #  return valid
-    #end
-
     rep = self.is_database_replication_valid(nodes)
-
     if not rep['result']:
       return rep
 
@@ -597,6 +584,13 @@ class NodeLayout
 
 
   def is_database_replication_valid(self, nodes):
+    """Checks if the database replication factor specified is valid, setting
+    it if it is not present.
+
+    Returns:
+      A dict indicating that the replication factor is valid, or in cases
+      when it is not valid, the reason why it is not valid.
+    """
     database_node_count = 0
     for node in nodes:
       if node.is_role('database') or node.is_role('db_master'):
@@ -624,8 +618,13 @@ class NodeLayout
     return self.valid()
 
 
-  # Generates an yaml file for non-hybrid cloud layouts which don't have them
   def generate_cloud_layout(self):
+    """Generates a simple placement strategy for cloud deployments when the user
+      has not specified one themselves.
+
+      Returns:
+        A dict that has one controller node and the other nodes set as servers.
+    """
     layout = {'controller' : "node-0"}
     servers = []
     num_slaves = self.min_vms - 1
@@ -640,21 +639,6 @@ class NodeLayout
     return nil unless valid?
 
     @replication
-  end
-
-  # TODO: can we just replace the if w/ unless and change ! to = ?
-  # or does that not exactly work due to the || ?
-
-  def read_factor
-    return nil if !valid? || @database_type != :voldemort
-
-    @read_factor
-  end
-
-  def write_factor
-    return nil if !valid? || @database_type != :voldemort
-
-    @write_factor
   end
 
   def min_vms
@@ -722,26 +706,56 @@ class NodeLayout
   """
 
   def valid(self, message = None):
+    """Generates a dict that indicates that this NodeLayout is valid, optionally
+    including the reason why it is valid.
+
+    Returns:
+      A dict representing a valid NodeLayout.
+    """
     return { 'result' : True, 'message' : message }
 
 
   def invalid(self, message):
+    """Generates a dict that indicates that this NodeLayout is not valid, along
+    with the reason why it is invalid.
+
+    Returns:
+      A dict representing an invalid NodeLayout.
+    """
     return { 'result' : False, 'message' : message }
 
 
 class Node():
+  """Nodes are a representation of a virtual machine in an AppScale deployment.
+  Callers should not use this class directly, but should instead use SimpleNode
+  or AdvancedNode, depending on the deployment type.
+  """
 
 
   def __init__(self, id, cloud, roles=[]):
-    # For virtualized deployments, id is the public IP address, and in cloud
-    # deployments, we use node-int (since we don't know the IP address)
+    """Creates a new Node, representing the given id in the specified cloud.
+
+
+    Args:
+      id: A unique identifier for this Node. For virtualized deployments, id is
+        the public IP address, and in cloud deployments, we use node-int (since
+        we don't know the IP address)
+      cloud: The cloud that this Node belongs to.
+      roles: A list of roles that this Node will run in an AppScale deployment.
+    """
     self.id = id
     self.cloud = cloud
     self.roles = roles
     self.expand_roles()
 
 
-  def add_db_role(self, db_type, is_master):
+  def add_db_role(self, is_master):
+    """Adds a database master or slave role to this Node, depending on
+    the argument given.
+
+    Args:
+      is_master: A bool that indicates we should add a database master role.
+    """
     if is_master:
       self.add_role('db_master')
     else:
@@ -749,6 +763,12 @@ class Node():
 
 
   def add_rabbitmq_role(self, is_master):
+    """Adds a RabbitMQ master or slave role to this Node, depending on
+    the argument given.
+
+    Args:
+      is_master: A bool that indicates we should add a RabbitMQ master role.
+    """
     if is_master:
       self.add_role('rabbitmq_master')
     else:
@@ -756,11 +776,26 @@ class Node():
 
 
   def add_role(self, role):
+    """Adds the specified role to this Node.
+
+    Args:
+      role: A str that represents the role to add to this Node. If the
+        role represents more than one other roles (e.g., controller
+        represents several internal roles), then we automatically perform
+        this conversion for the caller.
+    """
     self.roles.append(role)
     self.expand_roles()
 
 
   def is_role(self, role):
+    """Checks to see if this Node runs the specified role.
+
+    Args:
+      role: The role that we should see if this Node runs.
+    Returns:
+      True if this Node runs the given role, False otherwise.
+    """
     if role in self.roles:
       return True
     else:
@@ -768,6 +803,12 @@ class Node():
 
   
   def is_valid(self):
+    """Checks to see if this Node's roles can be used together in an AppScale
+    deployment.
+
+    Returns:
+      True if the roles on this Node can run together, False otherwise.
+    """
     if self.errors():
       return False
     else:
@@ -775,6 +816,13 @@ class Node():
 
 
   def errors(self):
+    """Reports the reasons why the roles associated with this Node cannot
+    function on an AppScale deployment.
+
+    Returns:
+      A list of strs, each of which representing a reason why this Node cannot
+      operate in an AppScale deployment.
+    """
     errors = []
     for role in self.roles:
       if not role in NodeLayout.VALID_ROLES:
@@ -783,15 +831,23 @@ class Node():
 
 
   def expand_roles(self):
-    error_msg = "Expand roles should never be called on a node type." + \
-      " All nodes should be either a SimpleNode or AdvancedNode"
-    raise Exception(error_msg)
+    """Converts any composite roles in this Node to the roles that they
+    represent. As this function should be implemented by SimpleNodes and
+    AdvancedNodes, we do not implement it here.
+    """
+    raise NotImplementedError
 
 
 class SimpleNode(Node):
+  """SimpleNode represents a Node in a simple AppScale deployment, along with
+  the roles that users can specify in simple deployments.
+  """
 
 
   def expand_roles(self):
+    """Converts the 'controller' and 'servers' composite roles into the roles
+    that they represent.
+    """
     if 'controller' in self.roles:
       self.roles.remove('controller')
       self.roles.append('shadow')
@@ -816,9 +872,15 @@ class SimpleNode(Node):
 
 
 class AdvancedNode(Node):
+  """AdvancedNode represents a Node in an advanced AppScale deployment, along
+  with the roles that users can specify in advanced deployments.
+  """
 
 
   def expand_roles(self):
+    """Converts the 'master' composite role into the roles it represents, and
+    adds dependencies necessary for the 'login' and 'database' roles.
+    """
     if 'master' in self.roles:
       self.roles.remove('master')
       self.roles.append('shadow')
@@ -827,6 +889,8 @@ class AdvancedNode(Node):
     if 'login' in self.roles:
       self.roles.append('load_balancer')
 
+    # TODO(cgb): Look into whether or not the database still needs memcache
+    # support. If not, remove this addition and the validation of it above.
     if 'database' in self.roles:
       self.roles.append('memcache')
 
