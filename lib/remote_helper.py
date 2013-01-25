@@ -2,6 +2,11 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+# General-purpose Python library imports
+import socket
+import time
+
+
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
@@ -15,6 +20,10 @@ class RemoteHelper():
   This includes the ability to start services on remote machines and copy files
   to them.
   """
+
+
+  # The default port that the ssh daemon runs on.
+  SSH_PORT = 22
 
 
   @classmethod
@@ -43,8 +52,8 @@ class RemoteHelper():
     """
 
     if options.infrastructure:
-      RemoteHelper.spawn_node_in_cloud(options)
-      RemoteHelper.copy_ssh_keys_to_node(options)
+      cls.spawn_node_in_cloud(options)
+      cls.copy_ssh_keys_to_node(options)
     else:
       # construct locations
       pass
@@ -55,7 +64,29 @@ class RemoteHelper():
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
     agent.configure_instance_security(params)
-    agent.run_instances(count=1, parameters=params, security_configured=True)
+    instance_ids, public_ips, private_ips = agent.run_instances(count=1,
+      parameters=params, security_configured=True)
+    AppScaleLogger.log("Please wait for your instance to boot up.")
+    cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT)
+    time.sleep(10)
+
+
+  @classmethod
+  def sleep_until_port_is_open(cls, host, port):
+    while not cls.is_port_open(host, port):
+      AppScaleLogger.log("Waiting for {0}:{1} to open".format(host, port))
+      time.sleep(2)
+
+
+  @classmethod
+  def is_port_open(cls, host, port):
+    try:
+      sock = socket.socket()
+      sock.connect((host, port))
+      return True
+    except Exception as exception:
+      AppScaleLogger.log(str(exception))
+      return False
 
 
   @classmethod

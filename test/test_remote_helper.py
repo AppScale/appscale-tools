@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import os
+import socket
 import sys
 import time
 import unittest
@@ -95,6 +96,14 @@ class TestRemoteHelper(unittest.TestCase):
     # finally, inject our mocked EC2
     flexmock(boto)
     boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+
+    # assume that ssh comes up on the third attempt
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args(('public1',
+      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
 
 
   def test_start_head_node_in_cloud(self):
