@@ -4,6 +4,7 @@
 
 # First-party Python imports
 import os
+from uuid import uuid4
 
 
 # AppScale-specific imports
@@ -23,22 +24,29 @@ DEFAULT_DATASTORE = "cassandra"
 ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
 
 
-# The path on the local filesystem where we can read and write
-# AppScale deployment metadata.
-LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
-
-
 class LocalState():
+  """LocalState handles all interactions necessary to read and write AppScale
+  configuration files on the machine that executes the AppScale Tools.
+  """
+
+  # The path on the local filesystem where we can read and write
+  # AppScale deployment metadata.
+  LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
+
+
+  # The length of the randomly generated secret that is used to authenticate
+  # AppScale services.
+  SECRET_KEY_LENGTH = 32
 
 
   @classmethod
   def make_appscale_directory(cls):
     """Creates a ~/.appscale directory, if it doesn't already exist.
     """
-    if os.path.exists(LOCAL_APPSCALE_PATH):
+    if os.path.exists(cls.LOCAL_APPSCALE_PATH):
       return
     else:
-      os.mkdir(LOCAL_APPSCALE_PATH)
+      os.mkdir(cls.LOCAL_APPSCALE_PATH)
 
 
   @classmethod
@@ -56,10 +64,34 @@ class LocalState():
     if force:
       return
 
-    locations_yaml = LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
+    locations_yaml = cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
     if os.path.exists(locations_yaml):
       raise BadConfigurationException("AppScale is already running. Terminate" +
         " it or use the --force flag to run anyways.")
+
+
+  @classmethod
+  def generate_secret_key(cls):
+    """Creates a new secret, which is used to authenticate callers that
+    communicate between services in an AppScale deployment.
+    """
+    return str(uuid4()).replace('-', '')[:cls.SECRET_KEY_LENGTH]
+
+
+  @classmethod
+  def write_key_file(cls, location, contents):
+    """Writes the SSH key contents to the given location and makes it
+    usable for SSH connections.
+
+    Args:
+      location: A str representing the path on the local filesystem where the
+        SSH key should be written to.
+      contents: A str containing the SSH key.
+    """
+    with open(location, 'w') as file_handle:
+      file_handle.write(contents)
+    os.chmod(location, 0600)  # so that SSH will accept the key
+
 
 """
 #!/usr/bin/ruby -w

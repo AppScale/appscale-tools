@@ -133,6 +133,20 @@ class BaseAgent:
     """
     return params.has_key(p) and params[p] is not None
 
+  def diff(self, list1, list2):
+    """
+    Returns the list of entries that are present in list1 but not
+    in list2.
+
+    Args:
+      list1 A list of elements
+      list2 Another list of elements
+
+    Returns:
+      A list of elements unique to list1
+    """
+    return sorted(set(list1) - set(list2))
+
 
 class AgentConfigurationException(Exception):
   """

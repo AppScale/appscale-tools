@@ -367,7 +367,6 @@ class NodeLayout():
       if isinstance(ips, str):
         ips = [ips]
       for ip in ips:
-        print "\n\n" + ip  +"\n\n"
         id, cloud = self.parse_ip(ip)
         node = SimpleNode(id, cloud, [role])
 

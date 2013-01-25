@@ -18,7 +18,6 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState
-from local_state import LOCAL_APPSCALE_PATH
 
 
 class TestLocalState(unittest.TestCase):
@@ -34,7 +33,7 @@ class TestLocalState(unittest.TestCase):
       .and_return(True)
 
     self.keyname = "booscale"
-    self.locations_yaml = LOCAL_APPSCALE_PATH + "locations-" + \
+    self.locations_yaml = LocalState.LOCAL_APPSCALE_PATH + "locations-" + \
       self.keyname + ".yaml"
 
 
@@ -42,13 +41,13 @@ class TestLocalState(unittest.TestCase):
     # let's say that our ~/.appscale directory
     # does not exist
     os.path.should_receive('exists') \
-      .with_args(LOCAL_APPSCALE_PATH) \
+      .with_args(LocalState.LOCAL_APPSCALE_PATH) \
       .and_return(False) \
       .once()
 
     # thus, mock out making the appscale dir
     os.should_receive('mkdir') \
-      .with_args(LOCAL_APPSCALE_PATH) \
+      .with_args(LocalState.LOCAL_APPSCALE_PATH) \
       .and_return()
 
     LocalState.make_appscale_directory()

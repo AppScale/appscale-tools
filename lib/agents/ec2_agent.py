@@ -5,6 +5,7 @@ import datetime
 import os
 import time
 from appscale_logger import AppScaleLogger
+from local_state import LocalState
 
 __author__ = 'hiranya'
 __email__ = 'hiranya@appscale.com'
@@ -84,14 +85,11 @@ class EC2Agent(BaseAgent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
 
-    key_path = '/etc/appscale/keys/cloud1/{0}.key'.format(keyname)
-    ssh_key = os.path.abspath(key_path)
+    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     AppScaleLogger.log('About to spawn EC2 instances - ' \
               'Expecting to find a key at {0}'.format(ssh_key))
     if os.path.exists(ssh_key):
-      AppScaleLogger.log('SSH keys found in the local system - '
-                'Not initializing EC2 security')
-      return False
+      self.handle_failure('SSH key found locally - please use a different keyname')
 
     try:
       conn = self.open_connection(parameters)
@@ -99,7 +97,7 @@ class EC2Agent(BaseAgent):
       if key_pair is None:
         AppScaleLogger.log('Creating key pair: ' + keyname)
         key_pair = conn.create_key_pair(keyname)
-      utils.write_key_file(ssh_key, key_pair.material)
+      LocalState.write_key_file(ssh_key, key_pair.material)
 
       security_groups = conn.get_all_security_groups()
       group_exists = False
@@ -122,9 +120,6 @@ class EC2Agent(BaseAgent):
     except EC2ResponseError as exception:
       self.handle_failure('EC2 response error while initializing '
                           'security: ' + exception.error_message)
-    except Exception as exception:
-      self.handle_failure('Error while initializing EC2 '
-                          'security: ' + exception.message)
 
   def get_params_from_args(self, args):
     """
@@ -265,7 +260,7 @@ class EC2Agent(BaseAgent):
       instance_ids = []
       public_ips = []
       private_ips = []
-      utils.sleep(10)
+      time.sleep(10)
       end_time = datetime.datetime.now() + datetime.timedelta(0,
         self.MAX_VM_CREATION_TIME)
       now = datetime.datetime.now()
@@ -277,9 +272,9 @@ class EC2Agent(BaseAgent):
         public_ips = instance_info[0]
         private_ips = instance_info[1]
         instance_ids = instance_info[2]
-        public_ips = utils.diff(public_ips, active_public_ips)
-        private_ips = utils.diff(private_ips, active_private_ips)
-        instance_ids = utils.diff(instance_ids, active_instances)
+        public_ips = self.diff(public_ips, active_public_ips)
+        private_ips = self.diff(private_ips, active_private_ips)
+        instance_ids = self.diff(instance_ids, active_instances)
         if count == len(public_ips):
           break
         time.sleep(self.SLEEP_TIME)
@@ -309,11 +304,6 @@ class EC2Agent(BaseAgent):
     except EC2ResponseError as exception:
       self.handle_failure('EC2 response error while starting VMs: ' +
                           exception.error_message)
-    except Exception as exception:
-      if isinstance(exception, AgentRuntimeException):
-        raise exception
-      else:
-        self.handle_failure('Error while starting VMs: ' + exception.message)
 
   def terminate_instances(self, parameters):
     """

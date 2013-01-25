@@ -2,6 +2,12 @@
 # Programmer: Chris Bunch (chris@appscale.com)
 
 
+# AppScale-specific imports
+from agents.factory import InfrastructureAgentFactory
+from appscale_logger import AppScaleLogger
+from local_state import LocalState
+
+
 class RemoteHelper():
   """RemoteHelper provides a simple interface to interact with other machines
   (typically, AppScale virtual machines).
@@ -26,4 +32,100 @@ class RemoteHelper():
       node_layout: A NodeLayout that describes the placement strategy that
         should be used for this AppScale deployment.
     """
+    secret_key = LocalState.generate_secret_key()
+    AppScaleLogger.log("Secret key is {0}".format(secret_key))
+
+    """
+    named_key_loc = "~/.appscale/#{keyname}.key"
+    named_backup_key_loc = "~/.appscale/#{keyname}.private"
+    ssh_key_location = named_key_loc
+    ssh_keys = [ssh_key_location, named_key_loc, named_backup_key_loc]
+    """
+
+    if options.infrastructure:
+      RemoteHelper.spawn_node_in_cloud(options)
+      RemoteHelper.copy_ssh_keys_to_node(options)
+    else:
+      # construct locations
+      pass
+
+
+  @classmethod
+  def spawn_node_in_cloud(cls, options):
+    agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
+    params = agent.get_params_from_args(options)
+    agent.configure_instance_security(params)
+    agent.run_instances(count=1, parameters=params, security_configured=True)
+
+
+  @classmethod
+  def copy_ssh_keys_to_node(cls, options):
     pass
+
+
+    """
+
+    # TODO: serialize via json instead of this hacky way
+    ips_hash = node_layout.to_hash
+    ips_to_use = ips_hash.map { |node,roles| "#{node}--#{roles}" }.join("..")
+
+    head_node = node_layout.head_node
+    infrastructure = options['infrastructure']
+    head_node_infra = infrastructure
+    machine = options['machine']
+
+    locations = VMTools.spawn_head_node(head_node, head_node_infra, keyname,
+      ssh_key_location, ssh_keys, options['force'], machine,
+      options['instance_type'], options['group'], options['verbose'])
+
+    head_node_ip = locations.split(":")[0]
+    instance_id = locations.scan(/i-\w+/).flatten.to_s
+    locations = [locations]
+
+    true_key = CommonFunctions.find_real_ssh_key(ssh_keys, head_node_ip)
+
+    self.verbose("Log in to your head node: ssh -i #{true_key} " +
+      "root@#{head_node_ip}", options['verbose'])
+
+    CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
+    CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
+    CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
+      true_key)
+
+    scp = options['scp']
+    if scp
+      Kernel.puts "Copying over local copy of AppScale from #{scp}"
+      CommonFunctions.rsync_files(head_node_ip, true_key, scp)
+    end
+
+    keypath = true_key.scan(/([\d|\w|\.]+)\Z/).flatten.to_s
+    remote_key_location = "/root/.appscale/#{keyname}.key"
+    CommonFunctions.scp_file(true_key, remote_key_location, head_node_ip, true_key)
+
+    creds = CommonFunctions.generate_appscale_credentials(options, node_layout,
+      head_node_ip, ips_to_use, true_key)
+    self.verbose(CommonFunctions.obscure_creds(creds).inspect, options['verbose'])
+
+    Kernel.puts "Head node successfully created at #{head_node_ip}. It is now " +
+      "starting up #{options['table']} via the command line arguments given."
+
+    RemoteLogging.remote_post(options['max_images'], options['table'],
+      infrastructure, "started headnode", "success")
+
+    Kernel.sleep(10) # sometimes this helps out with ec2 / euca deployments
+      # gives them an extra moment to come up and accept scp requests
+
+    CommonFunctions.copy_keys(secret_key_location, head_node_ip, true_key,
+      options)
+
+    CommonFunctions.start_appcontroller(head_node_ip, true_key,
+      options['verbose'])
+
+    acc = AppControllerClient.new(head_node_ip, secret_key)
+    creds = creds.to_a.flatten
+    acc.set_parameters(locations, creds, apps_to_start)
+
+    return {:acc => acc, :head_node_ip => head_node_ip,
+      :instance_id => instance_id, :true_key => true_key,
+      :secret_key => secret_key}
+    """
