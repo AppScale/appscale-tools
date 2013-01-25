@@ -4,7 +4,6 @@
 
 # General-purpose Python library imports
 import os
-import re
 import sys
 import unittest
 
@@ -24,13 +23,10 @@ class TestLocalState(unittest.TestCase):
 
 
   def setUp(self):
-    # let's say that any python libraries exist
+    # set up a mock here to avoid making every test do it
     flexmock(os)
     flexmock(os.path)
-    lib = re.compile('/System/.*')
-    os.path.should_receive('exists') \
-      .with_args(lib) \
-      .and_return(True)
+    os.path.should_call('exists')
 
     self.keyname = "booscale"
     self.locations_yaml = LocalState.LOCAL_APPSCALE_PATH + "locations-" + \
