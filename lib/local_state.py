@@ -93,6 +93,11 @@ class LocalState():
     os.chmod(location, 0600)  # so that SSH will accept the key
 
 
+  @classmethod
+  def get_key_path_from_name(cls, name):
+    return cls.LOCAL_APPSCALE_PATH + name + ".key"
+
+
 """
 #!/usr/bin/ruby -w
 # Programmer: Chris Bunch

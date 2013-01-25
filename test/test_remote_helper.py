@@ -4,7 +4,9 @@
 
 # General-purpose Python library imports
 import os
+import re
 import socket
+import subprocess
 import sys
 import time
 import unittest
@@ -104,6 +106,11 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(None)
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
+
+    # and assume that we can ssh in as ubuntu to enable root login
+    flexmock(subprocess)
+    subprocess.should_receive('call').with_args(re.compile('ubuntu'), shell=True) \
+      .and_return()
 
 
   def test_start_head_node_in_cloud(self):

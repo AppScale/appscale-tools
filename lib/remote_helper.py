@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import socket
+import subprocess
 import time
 
 
@@ -24,6 +25,11 @@ class RemoteHelper():
 
   # The default port that the ssh daemon runs on.
   SSH_PORT = 22
+
+
+  # The options that should be used when making ssh and scp calls.
+  SSH_OPTIONS = "-o LogLevel=quiet -o NumberOfPasswordPrompts=0 " + \
+    "-o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
   @classmethod
@@ -93,7 +99,21 @@ class RemoteHelper():
 
   @classmethod
   def enable_root_login(cls, host, keyname):
-    pass
+    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_key /root/.ssh',
+      user='ubuntu')
+
+
+  @classmethod
+  def ssh(cls, host, keyname, command, user='root'):
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    return cls.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
+      cls.SSH_OPTIONS, user, host, command))
+
+
+  @classmethod
+  def shell(cls, command):
+    AppScaleLogger.log(command)
+    subprocess.call(command, shell=True)
 
 
   @classmethod
