@@ -69,6 +69,8 @@ class RemoteHelper():
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT)
     time.sleep(10)
+    cls.enable_root_login(public_ips[0], options.keyname)
+    return public_ips[0]
 
 
   @classmethod
@@ -87,6 +89,11 @@ class RemoteHelper():
     except Exception as exception:
       AppScaleLogger.log(str(exception))
       return False
+
+
+  @classmethod
+  def enable_root_login(cls, host, keyname):
+    pass
 
 
   @classmethod
