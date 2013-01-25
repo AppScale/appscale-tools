@@ -12,15 +12,15 @@ import unittest
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_tools import AppScaleTools
-from common_functions import CommonFunctions
 from parse_args import ParseArgs
 
 
-if __name == "__main__":
+if __name__ == "__main__":
   options = ParseArgs(sys.argv, "appscale-run-instances").args
   try:
     AppScaleTools.run_instances(options)
   except Exception as e:
     # collect all of the logs that could be useful in debugging
     # why the above Exception was thrown
-    CommonFunctions.collect_and_send_logs(options, e)
+    #CommonFunctions.collect_and_send_logs(options, e)
+    pass
