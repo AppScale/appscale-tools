@@ -112,7 +112,7 @@ I1
 sg20
 I0
 sg21
-I26
+I28
 sg22
 I0
 sg23
@@ -120,7 +120,7 @@ I1
 sg24
 I0
 sbssg25
-S'\xcd\x9f%\x93Q\x10\xb9}KC\xf9\xd6\x8f%\x0c4'
+S'\xd8]\xae\xe3\x81\xce\xd92\x84\x81\xaf\x8c{\xe3\x9d\xe1'
 p42
 ssS'lib_appscale'
 p43
@@ -282,7 +282,7 @@ I1
 sg20
 I0
 sg21
-I40
+I49
 sg22
 I0
 sg23
@@ -290,7 +290,7 @@ I0
 sg24
 I0
 sbssg25
-S'X\x00A\x8d3\x9c\xdb\x88^\xc3B\xa1\xa6 \xef\xf7'
+S'\xc7\x9d\xff\x1c\xa8\xf4\xa7\x15g\xc3[\xef\xca\xf7@*'
 p82
 ssS'lib_custom_exceptions'
 p83
