@@ -15,10 +15,12 @@ from test_appscale_logger import TestAppScaleLogger
 from test_local_state import TestLocalState
 from test_node_layout import TestNodeLayout
 from test_parse_args import TestParseArgs
+from test_remote_helper import TestRemoteHelper
 
 
 test_cases = [TestAppScale, TestAppScaleRunInstances,
-  TestAppScaleLogger, TestLocalState, TestNodeLayout, TestParseArgs]
+  TestAppScaleLogger, TestLocalState, TestNodeLayout, TestParseArgs,
+  TestRemoteHelper]
 appscale_test_suite = unittest.TestSuite()
 for test_class in test_cases:
   tests = unittest.TestLoader().loadTestsFromTestCase(test_class)

@@ -61,6 +61,7 @@ class AppScaleTools():
         "officially supported.")
       time.sleep(1)
 
+    head_node_params = RemoteHelper.start_head_node(options, node_layout)
     """
     head_node_result = CommonFunctions.start_head_node(options, node_layout,
       apps_to_start)
