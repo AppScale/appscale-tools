@@ -237,12 +237,12 @@ class LocalState():
     # self signing a certificate
     cert.sign(pkey, md="sha256")
 
-    key.save_pub_key(LocalState.get_public_key_location(keyname))
+    key.save_key(LocalState.get_private_key_location(keyname))
     cert.save_pem(LocalState.get_certificate_location(keyname))
 
 
   @classmethod
-  def get_public_key_location(cls, keyname):
+  def get_private_key_location(cls, keyname):
     return cls.LOCAL_APPSCALE_PATH + keyname + "-key.pem"
 
 

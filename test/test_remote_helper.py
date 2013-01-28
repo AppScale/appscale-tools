@@ -14,6 +14,7 @@ import unittest
 
 # Third party libraries
 import boto
+import M2Crypto
 from flexmock import flexmock
 
 
@@ -238,6 +239,32 @@ class TestRemoteHelper(unittest.TestCase):
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
 
+    # mock out generating the private key
+    flexmock(M2Crypto.RSA)
+    fake_rsa_key = flexmock(name='fake_rsa_key')
+    fake_rsa_key.should_receive('save_key').with_args(
+      LocalState.get_private_key_location('bookey'))
+    M2Crypto.RSA.should_receive('gen_key').and_return(fake_rsa_key)
+
+    flexmock(M2Crypto.EVP)
+    fake_pkey = flexmock(name='fake_pkey')
+    fake_pkey.should_receive('assign_rsa').with_args(fake_rsa_key).and_return()
+    M2Crypto.EVP.should_receive('PKey').and_return(fake_pkey)
+
+    # and mock out generating the certificate
+    flexmock(M2Crypto.X509)
+    fake_cert = flexmock(name='fake_x509')
+    fake_cert.should_receive('set_pubkey').with_args(fake_pkey).and_return()
+    fake_cert.should_receive('set_subject')
+    fake_cert.should_receive('set_issuer_name')
+    fake_cert.should_receive('set_not_before')
+    fake_cert.should_receive('set_not_after')
+    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha256")
+    fake_cert.should_receive('save_pem').with_args(
+      LocalState.get_certificate_location('bookey'))
+    M2Crypto.X509.should_receive('X509').and_return(fake_cert)
+
+    # next, mock out copying the private key and certificate
     subprocess.should_receive('Popen').with_args(re.compile('mycert.pem'),
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
@@ -252,3 +279,35 @@ class TestRemoteHelper(unittest.TestCase):
 
     options = flexmock(name='options', keyname='bookey', infrastructure='ec2')
     RemoteHelper.copy_deployment_credentials('public1', options)
+
+
+  def test_start_remote_appcontroller(self):
+    # mock out removing the old json file
+    subprocess.should_receive('Popen').with_args(re.compile('rm -rf'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # assume we started god on public1 fine
+    subprocess.should_receive('Popen').with_args(re.compile('god &'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # also assume that we scp'ed over the god config file fine
+    subprocess.should_receive('Popen').with_args(re.compile('appcontroller'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # and assume we started the AppController on public1 fine
+    subprocess.should_receive('Popen').with_args(re.compile('god load'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # finally, assume the appcontroller comes up after a few tries
+    # assume that ssh comes up on the third attempt
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args(('public1',
+      RemoteHelper.APPCONTROLLER_PORT)).and_raise(Exception) \
+      .and_raise(Exception).and_return(None)
+    socket.should_receive('socket').and_return(fake_socket)
+
+    RemoteHelper.start_remote_appcontroller('public1', 'bookey')

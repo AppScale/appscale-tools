@@ -28,6 +28,10 @@ class RemoteHelper():
   """
 
 
+  # The default port that the AppController daemon runs on.
+  APPCONTROLLER_PORT = 17443
+
+
   # The default port that the ssh daemon runs on.
   SSH_PORT = 22
 
@@ -35,6 +39,10 @@ class RemoteHelper():
   # The options that should be used when making ssh and scp calls.
   SSH_OPTIONS = "-o LogLevel=quiet -o NumberOfPasswordPrompts=0 " + \
     "-o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+
+  TEMPLATE_GOD_CONFIG_FILE = os.path.dirname(__file__) + os.sep + ".." + \
+    os.sep + "templates" + os.sep + "appcontroller.god"
 
 
   @classmethod
@@ -80,14 +88,9 @@ class RemoteHelper():
     time.sleep(10)  # gives machines in cloud extra time to boot up
 
     cls.copy_deployment_credentials(public_ip, options)
+    cls.start_remote_appcontroller(public_ip, options.keyname)
 
     """
-    CommonFunctions.copy_keys(secret_key_location, head_node_ip, true_key,
-      options)
-
-    CommonFunctions.start_appcontroller(head_node_ip, true_key,
-      options['verbose'])
-
     acc = AppControllerClient.new(head_node_ip, secret_key)
     creds = creds.to_a.flatten
     acc.set_parameters(locations, creds, apps_to_start)
@@ -378,7 +381,7 @@ class RemoteHelper():
     LocalState.generate_ssl_cert(options.keyname)
     cls.scp(host, options.keyname, LocalState.get_certificate_location(
       options.keyname), '/etc/appscale/certs/mycert.pem')
-    cls.scp(host, options.keyname, LocalState.get_public_key_location(
+    cls.scp(host, options.keyname, LocalState.get_private_key_location(
       options.keyname), '/etc/appscale/certs/mykey.pem')
 
     AppScaleLogger.log("Copying over deployment credentials")
@@ -392,3 +395,31 @@ class RemoteHelper():
     cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1')
     cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem")
     cls.scp(host, options.keyname, private_key, "/etc/appscale/keys/cloud1/mykey.pem")
+
+
+  @classmethod
+  def start_remote_appcontroller(cls, host, keyname):
+    AppScaleLogger.log("Starting AppController at {0}".format(host))
+
+    # remove any possible appcontroller state that may not have been
+    # properly removed in virtualized clusters
+    cls.ssh(host, LocalState.get_key_path_from_name(keyname),
+      'rm -rf /etc/appscale/appcontroller-state.json')
+
+    # start up god, who will start up the appcontroller once we give it the
+    # right config file
+    cls.ssh(host, LocalState.get_key_path_from_name(keyname), 'god &')
+    time.sleep(1)
+
+    # scp over that config file
+    cls.scp(host, LocalState.get_key_path_from_name(keyname),
+      cls.TEMPLATE_GOD_CONFIG_FILE, '/tmp/appcontroller.god')
+
+    # finally, tell god to start the appcontroller and then wait for it to start
+    cls.ssh(host, LocalState.get_key_path_from_name(keyname),
+      'god load /tmp/appcontroller.god')
+
+    AppScaleLogger.log("Please wait for the AppController to finish " + \
+      "pre-processing tasks.")
+
+    cls.sleep_until_port_is_open(host, cls.APPCONTROLLER_PORT)
