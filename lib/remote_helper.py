@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import os
 import socket
 import subprocess
 import time
@@ -12,6 +13,7 @@ import time
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -63,6 +65,10 @@ class RemoteHelper():
       LocalState.get_key_path_from_name(options.keyname), public_ip))
 
     cls.ensure_machine_is_compatible(public_ip, options.keyname, options.table)
+    if options.scp:
+      AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
+        options.scp))
+      cls.rsync_files(public_ip, options.keyname, options.scp)
 
 
   @classmethod
@@ -288,18 +294,44 @@ class RemoteHelper():
     except ShellException:
       return False
 
+  
+  @classmethod
+  def rsync_files(cls, host, keyname, local_appscale_dir):
+    """Copies over an AppScale source directory from this machine to the
+    specified host.
+
+    Args:
+      host: A str representing a host that should be accessible from this
+        machine.
+      keyname: A str representing the name of the SSH keypair that can log into
+        the specified machine.
+      local_appscale_dir: A str representing the path on the local filesystem
+        where the AppScale source to copy over can be found.
+    Raises:
+      BadConfigurationException: If local_appscale_dir does not exist locally,
+        or if any of the standard AppScale module folders do not exist.
     """
-    CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
-    CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
-    CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
-      true_key)
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
+      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager"]
+    for dir_name in appscale_dirs:
+      local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
+      if not os.path.exists(local_path):
+        raise BadConfigurationException("The location you specified to copy " +
+          "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
+          local_path))
+      cls.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:" + \
+        "/root/appscale/{2}".format(ssh_key, cls.SSH_OPTIONS, dir_name, host))
 
-    scp = options['scp']
-    if scp
-      Kernel.puts "Copying over local copy of AppScale from #{scp}"
-      CommonFunctions.rsync_files(head_node_ip, true_key, scp)
-    end
+    # Rsync AppDB separately, as it has a lot of paths we may need to exclude
+    # (e.g., built database binaries).
+    cls.shell("rsync -e 'ssh -i {0} #{1}' -arv --exclude='logs/*' " + \
+      "--exclude='hadoop-*' --exclude='hbase/hbase-*' " + \
+      "--exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' " + \
+      "AppDB/* root@#{2}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS,
+      host))
 
+    """
     keypath = true_key.scan(/([\d|\w|\.]+)\Z/).flatten.to_s
     remote_key_location = "/root/.appscale/#{keyname}.key"
     CommonFunctions.scp_file(true_key, remote_key_location, head_node_ip, true_key)

@@ -22,6 +22,7 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
@@ -186,3 +187,27 @@ class TestRemoteHelper(unittest.TestCase):
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.node_layout)
+
+
+  def test_rsync_files_from_dir_that_doesnt_exist(self):
+    # if the user specifies that we should copy from a directory that doesn't
+    # exist, we should throw up and die
+    flexmock(os.path)
+    os.path.should_receive('exists').with_args('/tmp/booscale-local/lib').and_return(False)
+    self.assertRaises(BadConfigurationException, RemoteHelper.rsync_files,
+      'public1', 'booscale', '/tmp/booscale-local')
+
+
+  def test_rsync_files_from_dir_that_does_exist(self):
+    # if the user specifies that we should copy from a directory that does
+    # exist, and has all the right directories in it, we should succeed
+    flexmock(os.path)
+    os.path.should_receive('exists').with_args(re.compile(
+      '/tmp/booscale-local/')).and_return(True)
+
+    # assume the rsyncs succeed
+    subprocess.should_receive('Popen').with_args(re.compile('rsync'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local')
