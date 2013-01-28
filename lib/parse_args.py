@@ -22,6 +22,21 @@ class ParseArgs():
   in need of assistance.
   """
 
+  # The instance type that should be used if the user does not specify one.
+  DEFAULT_INSTANCE_TYPE = "m1.large"
+
+
+  # A list of the instance types we allow users to run AppScale over.
+  ALLOWED_INSTANCE_TYPES = ["m1.large"]
+
+
+  # The default security group to create and use for AppScale cloud deployments.
+  DEFAULT_SECURITY_GROUP = "appscale"
+
+
+  # The default keypair name to create and use for AppScale cloud deployments.
+  DEFAULT_KEYNAME = "appscale"
+
 
   def __init__(self, argv, function):
     """Creates a new ParseArgs for a set of acceptable flags.
@@ -72,17 +87,19 @@ class ParseArgs():
 
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
+        choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
       self.parser.add_argument('--machine',
         help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type',
-        default=vm_tools.DEFAULT_INSTANCE_TYPE,
+        default=self.DEFAULT_INSTANCE_TYPE,
+        choices=self.ALLOWED_INSTANCE_TYPES,
         help="the instance type to use")
       self.parser.add_argument('--group',
-        default=vm_tools.DEFAULT_SECURITY_GROUP,
+        default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
       self.parser.add_argument('--keyname',
-        default=vm_tools.DEFAULT_KEYNAME,
+        default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -171,12 +188,6 @@ class ParseArgs():
     """
     if not self.args.infrastructure:
       return
-
-    if self.args.infrastructure not in vm_tools.ALLOWED_INFRASTRUCTURES:
-      raise BadConfigurationException("Infrastructure must be a supported value.")
-
-    if self.args.instance_type not in vm_tools.ALLOWED_INSTANCE_TYPES:
-      raise BadConfigurationException("Instance type must be a supported value.")
 
     # make sure the user gave us an ami if running in cloud
     if self.args.infrastructure and not self.args.machine:

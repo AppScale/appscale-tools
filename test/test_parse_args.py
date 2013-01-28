@@ -157,17 +157,15 @@ class TestParseArgs(unittest.TestCase):
 
     # Specifying something else as the infrastructure is not acceptable.
     argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs,
-      argv_3, self.function)
+    self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
 
   def test_instance_types(self):
-    # Not specifying an instance type should default to a perdetermined
+    # Not specifying an instance type should default to a predetermined
     # value.
     argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(vm_tools.DEFAULT_INSTANCE_TYPE,
-      actual.args.instance_type)
+    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
@@ -179,8 +177,7 @@ class TestParseArgs(unittest.TestCase):
     # acceptable.
     argv_3 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
       'ami-ABCDEFG', '--instance_type', 'blarg1.humongous']
-    self.assertRaises(BadConfigurationException, ParseArgs,
-      argv_3, self.function)
+    self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
 
   def test_machine_not_set_in_cloud_deployments(self):
