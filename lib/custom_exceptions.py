@@ -24,6 +24,12 @@ class BadConfigurationException(Exception):
   pass
 
 
+# A special Exception class that should be thrown if a shell command is
+# executed and has a non-zero return value.
+class ShellException(Exception):
+  pass
+
+
 # A special Exception class that should be thrown if the user attempts
 # to run the 'help' directive, which reports on the usage of this tool.
 class UsageException(Exception):

@@ -21,6 +21,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
@@ -111,13 +112,18 @@ class TestRemoteHelper(unittest.TestCase):
     # it fails the first time
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(re.compile('ubuntu'), shell=True) \
-      .and_return(1, 0)
+      .and_return(0, 1)
 
     # also assume that we can scp over our ssh keys, but that it fails the first
     # time
     subprocess.should_receive('call').with_args(re.compile('/root/.ssh/id_'),
-      shell=True).and_return(1, 0)
+      shell=True).and_return(0, 1)
 
 
-  def test_start_head_node_in_cloud(self):
-    RemoteHelper.start_head_node(self.options, self.node_layout)
+  def test_start_head_node_in_cloud_but_ami_not_appscale(self):
+    # mock out our attempts to find /etc/appscale and presume it doesn't exist
+    subprocess.should_receive('call').with_args(re.compile('/etc/appscale'),
+      shell=True).and_return(0)
+
+    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
+      self.options, self.node_layout)

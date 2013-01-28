@@ -11,6 +11,8 @@ import time
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
+from custom_exceptions import ShellException
 from local_state import LocalState
 
 
@@ -50,18 +52,16 @@ class RemoteHelper():
     secret_key = LocalState.generate_secret_key()
     AppScaleLogger.log("Secret key is {0}".format(secret_key))
 
-    """
-    named_key_loc = "~/.appscale/#{keyname}.key"
-    named_backup_key_loc = "~/.appscale/#{keyname}.private"
-    ssh_key_location = named_key_loc
-    ssh_keys = [ssh_key_location, named_key_loc, named_backup_key_loc]
-    """
-
     if options.infrastructure:
-      cls.spawn_node_in_cloud(options)
+      instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
       # construct locations
       pass
+
+    AppScaleLogger.log("Log in to your head node: ssh -i {0} root@#{1}".format(
+      LocalState.get_key_path_from_name(options.keyname), public_ip))
+
+    cls.ensure_image_is_compatible(public_ip, options.keyname, options.table)
 
 
   @classmethod
@@ -77,7 +77,7 @@ class RemoteHelper():
 
     cls.enable_root_login(public_ips[0], options.keyname)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname)
-    return public_ips[0]
+    return instance_ids[0], public_ips[0], private_ips[0]
 
 
   @classmethod
@@ -124,11 +124,12 @@ class RemoteHelper():
     tries_left = 5
     while tries_left:
       if subprocess.call(command, shell=True):
-        break
+        return
       AppScaleLogger.log("[{0}] failed. Trying again momentarily." \
         .format(command))
       tries_left -= 1
       time.sleep(1)
+    raise ShellException('Could not execute command: {0}'.format(command))
 
 
   @classmethod
@@ -137,30 +138,31 @@ class RemoteHelper():
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_dsa')
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_rsa')
 
+
+  @classmethod
+  def ensure_image_is_compatible(cls, host, keyname, database):
+    # first, make sure the image is an appscale image
+    if not cls.does_host_have_location(host, keyname, '/etc/appscale'):
+      raise AppScaleException("The machine at {0} does not have AppScale " + \
+        "installed. Please install AppScale on it and try again.")
+
+    # next, make sure it has the same version of appscale installed as the tools
+
+    # finally, make sure it has the database installed that the user requests
+
+    # fin!
+    pass
+
+
+  @classmethod
+  def does_host_have_location(cls, host, keyname, location):
+    try:
+      cls.ssh(cls, host, keyname, 'ls {0}'.format(location))
+      return True
+    except ShellException:
+      return False
+
     """
-
-    # TODO: serialize via json instead of this hacky way
-    ips_hash = node_layout.to_hash
-    ips_to_use = ips_hash.map { |node,roles| "#{node}--#{roles}" }.join("..")
-
-    head_node = node_layout.head_node
-    infrastructure = options['infrastructure']
-    head_node_infra = infrastructure
-    machine = options['machine']
-
-    locations = VMTools.spawn_head_node(head_node, head_node_infra, keyname,
-      ssh_key_location, ssh_keys, options['force'], machine,
-      options['instance_type'], options['group'], options['verbose'])
-
-    head_node_ip = locations.split(":")[0]
-    instance_id = locations.scan(/i-\w+/).flatten.to_s
-    locations = [locations]
-
-    true_key = CommonFunctions.find_real_ssh_key(ssh_keys, head_node_ip)
-
-    self.verbose("Log in to your head node: ssh -i #{true_key} " +
-      "root@#{head_node_ip}", options['verbose'])
-
     CommonFunctions.ensure_image_is_appscale(head_node_ip, true_key)
     CommonFunctions.ensure_version_is_supported(head_node_ip, true_key)
     CommonFunctions.ensure_db_is_supported(head_node_ip, options['table'],
