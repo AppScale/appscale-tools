@@ -231,6 +231,7 @@ class RemoteHelper():
     ssh_key = LocalState.get_key_path_from_name(keyname)
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_dsa')
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_rsa')
+    cls.scp(host, keyname, ssh_key, '/root/.appscale/{0}.key'.format(keyname))
 
 
   @classmethod
@@ -332,10 +333,6 @@ class RemoteHelper():
       host))
 
     """
-    keypath = true_key.scan(/([\d|\w|\.]+)\Z/).flatten.to_s
-    remote_key_location = "/root/.appscale/#{keyname}.key"
-    CommonFunctions.scp_file(true_key, remote_key_location, head_node_ip, true_key)
-
     creds = CommonFunctions.generate_appscale_credentials(options, node_layout,
       head_node_ip, ips_to_use, true_key)
     self.verbose(CommonFunctions.obscure_creds(creds).inspect, options['verbose'])

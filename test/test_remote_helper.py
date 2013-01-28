@@ -130,19 +130,26 @@ class TestRemoteHelper(unittest.TestCase):
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
     flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('ubuntu'), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+    subprocess.should_receive('Popen').with_args(re.compile('ubuntu'), \
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.failed).and_return(self.success)
 
     # also assume that we can scp over our ssh keys, but that it fails the first
     # time
     subprocess.should_receive('Popen').with_args(re.compile('/root/.ssh/id_'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).and_return(self.failed).and_return(self.success)
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed).and_return(self.success)
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/root/.appscale/bookey.key'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed).and_return(self.success)
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).and_return(self.failed)
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.node_layout)
