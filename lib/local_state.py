@@ -4,7 +4,13 @@
 
 # First-party Python imports
 import os
+import re
+import time
 from uuid import uuid4
+
+
+# Third-party imports
+import M2Crypto
 
 
 # AppScale-specific imports
@@ -62,11 +68,35 @@ class LocalState():
 
 
   @classmethod
-  def generate_secret_key(cls):
+  def generate_secret_key(cls, keyname):
     """Creates a new secret, which is used to authenticate callers that
     communicate between services in an AppScale deployment.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str that represents the secret key.
     """
-    return str(uuid4()).replace('-', '')[:cls.SECRET_KEY_LENGTH]
+    key = str(uuid4()).replace('-', '')[:cls.SECRET_KEY_LENGTH]
+    with open(cls.get_secret_key_location(keyname), 'w') as file_handle:
+      file_handle.write(key)
+    return key
+
+
+  @classmethod
+  def get_secret_key_location(cls, keyname):
+    """Returns the path on the local filesystem where the secret key can be
+    located.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str that corresponds to a location on the local filesystem where the
+      secret key can be found.
+    """
+    return cls.LOCAL_APPSCALE_PATH + keyname + ".secret"
 
 
   @classmethod
@@ -128,6 +158,97 @@ class LocalState():
       creds.update(additional_creds)
 
     return creds
+
+
+  @classmethod
+  def obscure_dict(cls, dict_to_obscure):
+    """Creates a copy of the given dictionary, but replaces values that may be
+    too sensitive to print to standard out or log with a partially masked
+    version.
+
+    Args:
+      dict_to_obscure: The dictionary whose values we wish to obscure.
+    Returns:
+      A dictionary with the same keys as dict_to_obscure, but with values that
+      are masked if the key relates to a cloud credential.
+    """
+    obscured = {}
+    obscure_regex = re.compile('[EC2]|[ec2]')
+    for key, value in dict_to_obscure.iteritems():
+      if obscure_regex.match(key):
+        obscured[key] = cls.obscure_str(value)
+      else:
+        obscured[key] = value
+
+    return obscured
+
+
+  @classmethod
+  def obscure_str(cls, str_to_obscure):
+    """Obscures the given string by replacing all but four of its characters
+    with asterisks.
+
+    Args:
+      str_to_obscure: The str that we wish to obscure.
+    Returns:
+      A str whose contents have been replaced by asterisks, except for the
+      trailing 4 characters.
+    """
+    if len(str_to_obscure) < 4:
+      return str_to_obscure
+    last_four = str_to_obscure[len(str_to_obscure)-4:len(str_to_obscure)]
+    return "*" * (len(str_to_obscure) - 4) + last_four
+
+
+  @classmethod
+  def generate_ssl_cert(cls, keyname):
+    """Generates a self-signed SSL certificate that AppScale services can use
+    to encrypt traffic with.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    """
+    # lifted from http://sheogora.blogspot.com/2012/03/m2crypto-for-python-x509-certificates.html
+    key = M2Crypto.RSA.gen_key(2048, 65537)
+
+    pkey = M2Crypto.EVP.PKey()
+    pkey.assign_rsa(key)
+
+    cur_time = M2Crypto.ASN1.ASN1_UTCTIME()
+    cur_time.set_time(int(time.time()) - 60*60*24)
+    expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
+
+    # Expire certs in 1 hour.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+
+    # creating a certificate
+    cert = M2Crypto.X509.X509()
+    cert.set_pubkey(pkey)
+    cs_name = M2Crypto.X509.X509_Name()
+    cs_name.C = "US"
+    cs_name.CN = "appscale.com"
+    cs_name.Email = "support@appscale.com"
+    cert.set_subject(cs_name)
+    cert.set_issuer_name(cs_name)
+    cert.set_not_before(cur_time)
+    cert.set_not_after(expire_time)
+
+    # self signing a certificate
+    cert.sign(pkey, md="sha256")
+
+    key.save_pub_key(LocalState.get_public_key_location(keyname))
+    cert.save_pem(LocalState.get_certificate_location(keyname))
+
+
+  @classmethod
+  def get_public_key_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-key.pem"
+
+
+  @classmethod
+  def get_certificate_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-cert.pem"
 
 
 """

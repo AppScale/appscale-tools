@@ -62,14 +62,10 @@ class AppScaleTools():
       time.sleep(1)
 
     head_node_params = RemoteHelper.start_head_node(options, node_layout)
+    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
+      "for use.")
+
     """
-    head_node_result = CommonFunctions.start_head_node(options, node_layout,
-      apps_to_start)
-
-    print "\nPlease wait for AppScale to prepare your machines for use."
-    STDOUT.flush
-    print "\n"
-
     acc = head_node_result[:acc]
     secret_key = head_node_result[:secret_key]
     head_node_ip = head_node_result[:head_node_ip]

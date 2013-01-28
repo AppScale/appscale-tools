@@ -110,3 +110,28 @@ class TestLocalState(unittest.TestCase):
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1')
     self.assertEquals(expected, actual)
+
+
+  def test_obscure_dict(self):
+    # make sure that EC2 credentials get filtered correctly
+    creds = {
+      'ec2_access_key' : 'ABCDEFG',
+      'ec2_secret_key' : 'HIJKLMN',
+      'CLOUD_EC2_ACCESS_KEY' : 'OPQRSTU',
+      'CLOUD_EC2_SECRET_KEY' : 'VWXYZAB'
+    }
+
+    expected = {
+      'ec2_access_key' : '***DEFG',
+      'ec2_secret_key' : '***KLMN',
+      'CLOUD_EC2_ACCESS_KEY' : '***RSTU',
+      'CLOUD_EC2_SECRET_KEY' : '***YZAB'
+    }
+
+    actual = LocalState.obscure_dict(creds)
+    self.assertEquals(expected['ec2_access_key'], actual['ec2_access_key'])
+    self.assertEquals(expected['ec2_secret_key'], actual['ec2_secret_key'])
+    self.assertEquals(expected['CLOUD_EC2_ACCESS_KEY'],
+      actual['CLOUD_EC2_ACCESS_KEY'])
+    self.assertEquals(expected['CLOUD_EC2_SECRET_KEY'],
+      actual['CLOUD_EC2_SECRET_KEY'])

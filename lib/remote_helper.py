@@ -52,7 +52,7 @@ class RemoteHelper():
       node_layout: A NodeLayout that describes the placement strategy that
         should be used for this AppScale deployment.
     """
-    secret_key = LocalState.generate_secret_key()
+    secret_key = LocalState.generate_secret_key(options.keyname)
     AppScaleLogger.log("Secret key is {0}".format(secret_key))
 
     if options.infrastructure:
@@ -72,10 +72,30 @@ class RemoteHelper():
 
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip)
-    """
-    self.verbose(CommonFunctions.obscure_creds(creds).inspect, options['verbose'])
-    """
+    AppScaleLogger.log(str(LocalState.obscure_dict(deployment_creds)))
+    AppScaleLogger.log("Head node successfully initialized at {0}. It is " + \
+      "now starting up {1}.".format(public_ip, options.table))
 
+    AppScaleLogger.remote_log_tools_state(options, "started head node")
+    time.sleep(10)  # gives machines in cloud extra time to boot up
+
+    cls.copy_deployment_credentials(public_ip, options)
+
+    """
+    CommonFunctions.copy_keys(secret_key_location, head_node_ip, true_key,
+      options)
+
+    CommonFunctions.start_appcontroller(head_node_ip, true_key,
+      options['verbose'])
+
+    acc = AppControllerClient.new(head_node_ip, secret_key)
+    creds = creds.to_a.flatten
+    acc.set_parameters(locations, creds, apps_to_start)
+
+    return {:acc => acc, :head_node_ip => head_node_ip,
+      :instance_id => instance_id, :true_key => true_key,
+      :secret_key => secret_key}
+    """
 
   @classmethod
   def spawn_node_in_cloud(cls, options):
@@ -338,31 +358,37 @@ class RemoteHelper():
       "AppDB/* root@#{2}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS,
       host))
 
+
+  @classmethod
+  def copy_deployment_credentials(cls, host, options):
+    """Copies credentials needed to start the AppController and have it create
+    other instances (in cloud deployments).
+
+    Args:
+      host: A str representing the machine (reachable from this computer) to
+        copy our deployment credentials to.
+      options: A Namespace that indicates which SSH keypair to use, and whether
+        or not we are running in a cloud infrastructure.
     """
-    creds = CommonFunctions.generate_appscale_credentials(options, node_layout,
-      head_node_ip, ips_to_use, true_key)
-    self.verbose(CommonFunctions.obscure_creds(creds).inspect, options['verbose'])
+    cls.scp(host, options.keyname, LocalState.get_secret_key_location(
+      options.keyname), '/etc/appscale/secret.key')
+    cls.scp(host, options.keyname, LocalState.get_key_path_from_name(
+      options.keyname), '/etc/appscale/ssh.key')
 
-    Kernel.puts "Head node successfully created at #{head_node_ip}. It is now " +
-      "starting up #{options['table']} via the command line arguments given."
+    LocalState.generate_ssl_cert(options.keyname)
+    cls.scp(host, options.keyname, LocalState.get_certificate_location(
+      options.keyname), '/etc/appscale/certs/mycert.pem')
+    cls.scp(host, options.keyname, LocalState.get_public_key_location(
+      options.keyname), '/etc/appscale/certs/mykey.pem')
 
-    RemoteLogging.remote_post(options['max_images'], options['table'],
-      infrastructure, "started headnode", "success")
+    AppScaleLogger.log("Copying over deployment credentials")
+    if options.infrastructure:
+      cert = os.environ["EC2_CERT"]
+      private_key = os.environ["EC2_PRIVATE_KEY"]
+    else:
+      cert = '/etc/appscale/certs/mycert.pem'
+      private_key = '/etc/appscale/certs/mykey.pem'
 
-    Kernel.sleep(10) # sometimes this helps out with ec2 / euca deployments
-      # gives them an extra moment to come up and accept scp requests
-
-    CommonFunctions.copy_keys(secret_key_location, head_node_ip, true_key,
-      options)
-
-    CommonFunctions.start_appcontroller(head_node_ip, true_key,
-      options['verbose'])
-
-    acc = AppControllerClient.new(head_node_ip, secret_key)
-    creds = creds.to_a.flatten
-    acc.set_parameters(locations, creds, apps_to_start)
-
-    return {:acc => acc, :head_node_ip => head_node_ip,
-      :instance_id => instance_id, :true_key => true_key,
-      :secret_key => secret_key}
-    """
+    cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1')
+    cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem")
+    cls.scp(host, options.keyname, private_key, "/etc/appscale/keys/cloud1/mykey.pem")

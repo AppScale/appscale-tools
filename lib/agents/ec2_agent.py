@@ -91,35 +91,32 @@ class EC2Agent(BaseAgent):
     if os.path.exists(ssh_key):
       self.handle_failure('SSH key found locally - please use a different keyname')
 
-    try:
-      conn = self.open_connection(parameters)
-      key_pair = conn.get_key_pair(keyname)
-      if key_pair is None:
-        AppScaleLogger.log('Creating key pair: ' + keyname)
-        key_pair = conn.create_key_pair(keyname)
-      LocalState.write_key_file(ssh_key, key_pair.material)
+    conn = self.open_connection(parameters)
+    key_pair = conn.get_key_pair(keyname)
+    if key_pair is None:
+      AppScaleLogger.log('Creating key pair: ' + keyname)
+      key_pair = conn.create_key_pair(keyname)
+    LocalState.write_key_file(ssh_key, key_pair.material)
 
-      security_groups = conn.get_all_security_groups()
-      group_exists = False
-      for security_group in security_groups:
-        if security_group.name == group:
-          group_exists = True
-          break
+    security_groups = conn.get_all_security_groups()
+    group_exists = False
+    for security_group in security_groups:
+      if security_group.name == group:
+        group_exists = True
+        break
 
-      if not group_exists:
-        AppScaleLogger.log('Creating security group: ' + group)
-        conn.create_security_group(group, 'AppScale security group')
-        conn.authorize_security_group(group, from_port=1,
-          to_port=65535, ip_protocol='udp')
-        conn.authorize_security_group(group, from_port=1,
-          to_port=65535, ip_protocol='tcp')
-        conn.authorize_security_group(group, ip_protocol='icmp',
-          cidr_ip='0.0.0.0/0')
+    if not group_exists:
+      AppScaleLogger.log('Creating security group: ' + group)
+      conn.create_security_group(group, 'AppScale security group')
+      conn.authorize_security_group(group, from_port=1,
+        to_port=65535, ip_protocol='udp')
+      conn.authorize_security_group(group, from_port=1,
+        to_port=65535, ip_protocol='tcp')
+      conn.authorize_security_group(group, ip_protocol='icmp',
+        cidr_ip='0.0.0.0/0')
 
-      return True
-    except EC2ResponseError as exception:
-      self.handle_failure('EC2 response error while initializing '
-                          'security: ' + exception.error_message)
+    return True
+
 
   def get_params_from_args(self, args):
     """

@@ -59,13 +59,21 @@ class TestRemoteHelper(unittest.TestCase):
     fake_ec2.should_receive('create_key_pair').with_args('bookey') \
       .and_return(fake_key)
 
+    # mock out writing the secret key
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    secret_key_location = LocalState.LOCAL_APPSCALE_PATH + "bookey.secret"
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('write').and_return()
+    builtins.should_receive('open').with_args(secret_key_location, 'w') \
+      .and_return(fake_secret)
+
     # also, mock out the keypair writing and chmod'ing
     ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + "bookey.key"
     fake_file = flexmock(name="fake_file")
     fake_file.should_receive('write').with_args(key_contents).and_return()
 
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
     builtins.should_receive('open').with_args(ssh_key_location, 'w') \
       .and_return(fake_file)
 
@@ -218,3 +226,29 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(self.success)
 
     RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local')
+
+
+  def test_copy_deployment_credentials_in_cloud(self):
+    # mock out the scp'ing to public1 and assume they succeed
+    subprocess.should_receive('Popen').with_args(re.compile('secret.key'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile('ssh.key'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile('mycert.pem'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile('mykey.pem'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    options = flexmock(name='options', keyname='bookey', infrastructure='ec2')
+    RemoteHelper.copy_deployment_credentials('public1', options)
