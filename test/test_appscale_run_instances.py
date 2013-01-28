@@ -18,9 +18,7 @@ sys.path.append(lib)
 from appscale_tools import AppScaleTools
 from custom_exceptions import BadConfigurationException
 from parse_args import ParseArgs
-
 import local_state
-import vm_tools
 
 
 class TestAppScaleRunInstances(unittest.TestCase):

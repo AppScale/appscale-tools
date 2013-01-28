@@ -17,7 +17,6 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 import local_state
-import vm_tools
 
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent

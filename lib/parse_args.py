@@ -7,8 +7,6 @@ import argparse
 
 # AppScale-specific imports
 import local_state
-import vm_tools
-
 from custom_exceptions import BadConfigurationException
 from agents.base_agent import BaseAgent
 from agents.factory import InfrastructureAgentFactory
