@@ -113,6 +113,11 @@ class TestRemoteHelper(unittest.TestCase):
     subprocess.should_receive('call').with_args(re.compile('ubuntu'), shell=True) \
       .and_return(1, 0)
 
+    # also assume that we can scp over our ssh keys, but that it fails the first
+    # time
+    subprocess.should_receive('call').with_args(re.compile('/root/.ssh/id_'),
+      shell=True).and_return(1, 0)
+
 
   def test_start_head_node_in_cloud(self):
     RemoteHelper.start_head_node(self.options, self.node_layout)

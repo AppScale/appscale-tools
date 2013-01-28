@@ -59,7 +59,6 @@ class RemoteHelper():
 
     if options.infrastructure:
       cls.spawn_node_in_cloud(options)
-      cls.copy_ssh_keys_to_node(options)
     else:
       # construct locations
       pass
@@ -75,7 +74,9 @@ class RemoteHelper():
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT)
     time.sleep(10)
+
     cls.enable_root_login(public_ips[0], options.keyname)
+    cls.copy_ssh_keys_to_node(public_ips[0], options.keyname)
     return public_ips[0]
 
 
@@ -99,7 +100,7 @@ class RemoteHelper():
 
   @classmethod
   def enable_root_login(cls, host, keyname):
-    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_key /root/.ssh',
+    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
       user='ubuntu')
 
 
@@ -108,6 +109,13 @@ class RemoteHelper():
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return cls.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
       cls.SSH_OPTIONS, user, host, command))
+
+
+  @classmethod
+  def scp(cls, host, keyname, source, dest, user='root'):
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+      cls.SSH_OPTIONS, source, user, host, dest))
 
 
   @classmethod
@@ -124,9 +132,10 @@ class RemoteHelper():
 
 
   @classmethod
-  def copy_ssh_keys_to_node(cls, options):
-    pass
-
+  def copy_ssh_keys_to_node(cls, host, keyname):
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    cls.scp(host, keyname, ssh_key, '/root/.ssh/id_dsa')
+    cls.scp(host, keyname, ssh_key, '/root/.ssh/id_rsa')
 
     """
 
