@@ -107,10 +107,11 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # and assume that we can ssh in as ubuntu to enable root login
+    # and assume that we can ssh in as ubuntu to enable root login, but that
+    # it fails the first time
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(re.compile('ubuntu'), shell=True) \
-      .and_return()
+      .and_return(1, 0)
 
 
   def test_start_head_node_in_cloud(self):

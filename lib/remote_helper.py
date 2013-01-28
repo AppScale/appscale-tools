@@ -112,8 +112,15 @@ class RemoteHelper():
 
   @classmethod
   def shell(cls, command):
-    AppScaleLogger.log(command)
-    subprocess.call(command, shell=True)
+    AppScaleLogger.log("shell> ".format(command))
+    tries_left = 5
+    while tries_left:
+      if subprocess.call(command, shell=True):
+        break
+      AppScaleLogger.log("[{0}] failed. Trying again momentarily." \
+        .format(command))
+      tries_left -= 1
+      time.sleep(1)
 
 
   @classmethod
