@@ -282,7 +282,6 @@ class RemoteHelper():
       True if the remote host has a file or directory at the specified location,
         False otherwise.
     """
-    print 'looking for location ' + str(location)
     try:
       cls.ssh(cls, host, keyname, 'ls {0}'.format(location))
       return True
