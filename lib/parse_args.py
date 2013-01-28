@@ -22,6 +22,16 @@ class ParseArgs():
   in need of assistance.
   """
 
+
+  # The datastore that should be used if the user fails to
+  # manually specify the datastore to use.
+  DEFAULT_DATASTORE = "cassandra"
+
+
+  # A list of the datastores that AppScale can deploy over.
+  ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
+
+
   # The instance type that should be used if the user does not specify one.
   DEFAULT_INSTANCE_TYPE = "m1.large"
 
@@ -104,7 +114,8 @@ class ParseArgs():
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
-        default=local_state.DEFAULT_DATASTORE,
+        default=self.DEFAULT_DATASTORE,
+        choices=self.ALLOWED_DATASTORES,
         help="the datastore to use")
       self.parser.add_argument('-n', type=int,
         help="the database replication factor")
@@ -228,8 +239,5 @@ class ParseArgs():
       BadConfigurationException: If the values for any of the
         database flags are not valid.
     """
-    if self.args.table not in local_state.ALLOWED_DATASTORES:
-      raise BadConfigurationException("Table must be a supported datastore.")
-
     if self.args.n is not None and self.args.n < 1:
       raise BadConfigurationException("Replication factor cannot be less than 1.")

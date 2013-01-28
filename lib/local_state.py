@@ -15,15 +15,6 @@ from custom_exceptions import BadConfigurationException
 APPSCALE_VERSION = "1.6.6"
 
 
-# The datastore that should be used if the user fails to
-# manually specify the datastore to use.
-DEFAULT_DATASTORE = "cassandra"
-
-
-# A list of the datastores that AppScale can deploy over.
-ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
-
-
 class LocalState():
   """LocalState handles all interactions necessary to read and write AppScale
   configuration files on the machine that executes the AppScale Tools.

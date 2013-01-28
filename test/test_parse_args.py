@@ -101,8 +101,7 @@ class TestParseArgs(unittest.TestCase):
   def test_table_flags(self):
     # Specifying a table that isn't accepted should abort
     argv_1 = self.cluster_argv[:] + ['--table', 'non-existent-database']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_1,
-      self.function)
+    self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
 
     # Specifying a table that is accepted should return that in the result
     argv_2 = self.cluster_argv[:] + ['--table', 'cassandra']
@@ -112,7 +111,7 @@ class TestParseArgs(unittest.TestCase):
     # Failing to specify a table should default to a predefined table
     args_3 = self.cluster_argv[:]
     actual_3 = ParseArgs(args_3, self.function)
-    self.assertEquals(local_state.DEFAULT_DATASTORE, actual_3.args.table)
+    self.assertEquals(ParseArgs.DEFAULT_DATASTORE, actual_3.args.table)
 
     # Specifying a non-positive integer for n should abort
     argv_4 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '0']
