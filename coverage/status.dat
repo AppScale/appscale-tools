@@ -112,7 +112,7 @@ I1
 sg20
 I0
 sg21
-I26
+I32
 sg22
 I0
 sg23
@@ -120,7 +120,7 @@ I1
 sg24
 I0
 sbssg25
-S'\xc1N\xa0\x8aL\xf8\xc2\x9f\xc0\x0b\xee\x15#\r\xc2\xbf'
+S'\xe0\x97"[\xa5\xbb&\t\xf6}$6\x1c\x81@w'
 p42
 ssS'lib_appscale'
 p43
@@ -282,15 +282,15 @@ I1
 sg20
 I0
 sg21
-I62
+I103
 sg22
 I0
 sg23
-I3
+I5
 sg24
 I0
 sbssg25
-S'\xab\xfb\x7fS\x9d\x81#\xc4\x8f\x9cKA\x02\xff\x97g'
+S'\x9e\xb9\xbf\xe1 \x9c\xf0E\x94\xc9\xf2\x165\xb0\x08\x86'
 p82
 ssS'lib_custom_exceptions'
 p83
@@ -316,7 +316,7 @@ I1
 sg20
 I0
 sg21
-I8
+I10
 sg22
 I0
 sg23
@@ -324,7 +324,7 @@ I0
 sg24
 I0
 sbssg25
-S'+\x9b\xa3Zp\xc5\xd2zjL\xd7\x98Y\x02\xc2\x8a'
+S'\xb6\x1c\x03}\xbf\xcby\x95H\xd6\xf5]\n\x95\xce\x0f'
 p90
 ssS'lib_appscale_tools'
 p91
@@ -418,15 +418,15 @@ I1
 sg20
 I0
 sg21
-I373
+I390
 sg22
 I0
 sg23
-I46
+I47
 sg24
 I0
 sbssg25
-S'&\xf4f\xe8\x08\x13c]\x9d\xcd\x92\xb0-\xe5\x1aU'
+S'\xf4\x83\x19\x1b\xc8\x95\xb3 h\x846\xd1\xaf\xfa\xb7\x10'
 p114
 ssS'lib_agents_factory'
 p115
