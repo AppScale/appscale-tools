@@ -635,13 +635,20 @@ class NodeLayout():
     layout['servers'] = servers
     return layout
 
+
+  def replication_factor(self):
+    """Returns the replication factor for this NodeLayout, if the layout is one
+    that AppScale can deploy with.
+
+    Returns:
+      The replication factor if the NodeLayout is valid, None otherwise.
+    """
+    if self.is_valid():
+      return self.replication
+    else:
+      return None
+
   """
-  def replication_factor
-    return nil unless valid?
-
-    @replication
-  end
-
   def min_vms
     return nil unless valid? 
 
@@ -670,15 +677,20 @@ class NodeLayout():
     # TODO: is the last guard necessary?
     head_node.empty? ? nil : head_node[0]
   end
+  """
 
-  def other_nodes
-    return [] unless valid?
+  def other_nodes(self):
+    if not self.is_valid():
+      return []
 
-    other_nodes = @nodes.select { |n| !n.is_shadow? }.compact
-    
-    other_nodes.empty? ? [] : other_nodes
-  end
+    other_nodes = []
+    for node in self.nodes:
+      if not node.is_role('shadow'):
+        other_nodes.append(node)
+    return other_nodes
 
+
+  """
   def db_master
     return nil unless valid?
 
@@ -694,17 +706,16 @@ class NodeLayout():
     
     login.empty? ? nil : login[0]
   end
+  """
 
 
-  def to_hash
+  def to_dict_without_head_node(self):
     result = {}
     # Put all nodes except the head node in the hash
-    other_nodes.each do |node|
-      result[node.id] = node.roles.join(":")
-    end
-    result
-  end
-  """
+    for node in self.other_nodes():
+      result[node.id] = node.roles
+    return result
+
 
   def valid(self, message = None):
     """Generates a dict that indicates that this NodeLayout is valid, optionally

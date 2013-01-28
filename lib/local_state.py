@@ -89,6 +89,47 @@ class LocalState():
     return cls.LOCAL_APPSCALE_PATH + name + ".key"
 
 
+  @classmethod
+  def generate_deployment_params(cls, options, node_layout, first_host):
+    """Constructs a dict that tells the AppController which machines are part of
+    this AppScale deployment, what their roles are, and how to host API services
+    within this deployment.
+
+    Args:
+      options: A Namespace that dictates API service information, not including
+        information about machine to role hosting.
+      node_layout: A NodeLayout that indicates which machines host which roles
+        (API services).
+      first_host: A str that indicates which machine should be contacted by
+        others to bootstrap and get initial service information.
+    Returns:
+      A dict whose keys indicate API service information as well as a special
+      key that indicates machine to role mapping information.
+    """
+    creds = {
+      "table" : options.table,
+      "hostname" : first_host,
+      "ips" : node_layout.to_dict_without_head_node(),
+      "keyname" : options.keyname,
+      "replication" : str(node_layout.replication_factor()),
+      "appengine" : str(options.appengine),
+      "autoscale" : str(options.autoscale),
+      "group" : options.group
+    }
+
+    if options.infrastructure:
+      additional_creds = {
+        'machine' : options.machine,
+        'instance_type' : options.instance_type,
+        'infrastructure' : options.infrastructure,
+        'min_images' : node_layout.min_vms,
+        'max_images' : node_layout.max_vms
+      }
+      creds.update(additional_creds)
+
+    return creds
+
+
 """
 #!/usr/bin/ruby -w
 # Programmer: Chris Bunch

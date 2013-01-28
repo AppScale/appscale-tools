@@ -70,6 +70,12 @@ class RemoteHelper():
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp)
 
+    deployment_params = LocalState.generate_deployment_params(options,
+      node_layout, public_ip)
+    """
+    self.verbose(CommonFunctions.obscure_creds(creds).inspect, options['verbose'])
+    """
+
 
   @classmethod
   def spawn_node_in_cloud(cls, options):

@@ -17,6 +17,7 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState
+from node_layout import NodeLayout
 
 
 class TestLocalState(unittest.TestCase):
@@ -75,3 +76,37 @@ class TestLocalState(unittest.TestCase):
       .and_return(False)
 
     LocalState.ensure_appscale_isnt_running(self.keyname, False)
+
+
+  def test_generate_deployment_params(self):
+    # this method is fairly light, so just make sure that it constructs the dict
+    # to send to the AppController correctly
+    options = flexmock(name='options', table='cassandra', keyname='boo',
+      appengine='1', autoscale=False, group='bazgroup',
+      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large')
+    node_layout = NodeLayout({
+      'table' : 'cassandra',
+      'infrastructure' : "ec2",
+      'min' : 2,
+      'max' : 2
+    })
+
+    expected = {
+      'table' : 'cassandra',
+      'hostname' : 'public1',
+      'ips' : {'node-1': ['rabbitmq_slave', 'database', 'rabbitmq', 'memcache',
+        'db_slave', 'appengine']},
+      'keyname' : 'boo',
+      'replication' : '2',
+      'appengine' : '1',
+      'autoscale' : 'False',
+      'group' : 'bazgroup',
+      'machine' : 'ami-ABCDEFG',
+      'infrastructure' : 'ec2',
+      'instance_type' : 'm1.large',
+      'min_images' : 2,
+      'max_images' : 2
+    }
+    actual = LocalState.generate_deployment_params(options, node_layout,
+      'public1')
+    self.assertEquals(expected, actual)
