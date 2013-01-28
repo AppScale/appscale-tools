@@ -22,6 +22,7 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
@@ -42,8 +43,8 @@ class TestRemoteHelper(unittest.TestCase):
     # set up some fake options so that we don't have to generate them via
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
-      machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey')
-    self.options.should_receive('table').and_return('cassandra')
+      machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
+      table='cassandra')
     self.node_layout = NodeLayout(self.options)
 
     # mock out calls to EC2
@@ -108,22 +109,80 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
+    # throw some default mocks together for when invoking via shell succeeds
+    # and when it fails
+    fake_output = flexmock(name='out')
+    fake_output.should_receive('read').and_return('boo out')
+    fake_output.should_receive('close').and_return()
+
+    fake_error = flexmock(name='err')
+    fake_error.should_receive('read').and_return('boo err')
+    fake_error.should_receive('close').and_return()
+
+    self.success = flexmock(name='success', returncode=0, stdout=fake_output,
+      stderr=fake_error)
+    self.success.should_receive('wait').and_return(0)
+
+    self.failed = flexmock(name='success', returncode=1)
+    self.failed.should_receive('wait').and_return(1)
+
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
     flexmock(subprocess)
-    subprocess.should_receive('call').with_args(re.compile('ubuntu'), shell=True) \
-      .and_return(0, 1)
+    subprocess.should_receive('Popen').with_args(re.compile('ubuntu'), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed).and_return(self.success)
 
     # also assume that we can scp over our ssh keys, but that it fails the first
     # time
-    subprocess.should_receive('call').with_args(re.compile('/root/.ssh/id_'),
-      shell=True).and_return(0, 1)
+    subprocess.should_receive('Popen').with_args(re.compile('/root/.ssh/id_'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).and_return(self.failed).and_return(self.success)
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
-    subprocess.should_receive('call').with_args(re.compile('/etc/appscale'),
-      shell=True).and_return(0)
+    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).and_return(self.failed)
+
+    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
+      self.options, self.node_layout)
+
+
+  def test_start_head_node_in_cloud_but_ami_wrong_version(self):
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # mock out our attempts to find /etc/appscale/version and presume it doesn't
+    # exist
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed)
+
+    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
+      self.options, self.node_layout)
+
+
+  def test_start_head_node_in_cloud_but_using_unsupported_database(self):
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # mock out our attempts to find /etc/appscale/version and presume it does
+    # exist
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+
+    # finally, put in a mock indicating that the database the user wants
+    # isn't supported
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, 'cassandra')),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.node_layout)
