@@ -3,6 +3,7 @@
 
 
 # First-party Python imports
+import getpass
 import hashlib
 import json
 import os
@@ -363,3 +364,35 @@ class LocalState():
       if 'login' in node['jobs']:
         return node['public_ip']
     raise AppScaleException("Couldn't find a login node.")
+
+
+  @classmethod
+  def get_credentials(cls):
+    """Queries the user for the username and password that should be set for the
+    cloud administrator's account in this AppScale deployment.
+
+    Returns:
+      The username and password that the user typed in.
+    """
+    username, password = None, None
+
+    while True:
+      username = raw_input('Enter your desired admin e-mail address: ')
+      email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
+      if re.match(email_regex, username):
+        break
+      else:
+        AppScaleLogger.warn('Invalid e-mail address. Please try again.')
+
+    while True:
+      password = getpass.getpass('Enter new password: ')
+      if len(password) < 6:
+        AppScaleLogger.warn('Password must be at least 6 characters long')
+        continue
+      password_confirmation = getpass.getpass('Confirm password: ')
+      if password == password_confirmation:
+        break
+      else:
+        AppScaleLogger.warn('Passwords entered do not match. Please try again.')
+
+    return username, password

@@ -98,9 +98,6 @@ class AppScaleTools():
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
       keyname)
     """
-    CommonFunctions.create_user(user, options['test'], head_node_ip,
-      secret_key, uac, password)
-
     uac.set_cloud_admin_status(user, new_status="true")
     uac.set_cloud_admin_capabilities(user)
 
