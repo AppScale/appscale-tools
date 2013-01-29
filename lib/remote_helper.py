@@ -426,3 +426,24 @@ class RemoteHelper():
       "pre-processing tasks.")
 
     cls.sleep_until_port_is_open(host, cls.APPCONTROLLER_PORT)
+
+
+  @classmethod
+  def copy_local_metadata(cls, host, keyname):
+    """Copies the locations.yaml and locations.json files found locally (which
+    contain metadata about this AppScale deployment) to the specified host.
+
+    Args:
+      host: The machine that we should copy the metadata files to.
+      keyname: The name of the SSH keypair that we can use to log into the given
+        host.
+    """
+    # copy the metadata files for AppScale itself to use
+    cls.scp(host, keyname, LocalState.get_locations_yaml_location(keyname),
+      '/etc/appscale/locations-{0}.yaml'.format(keyname))
+    cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
+      '/etc/appscale/locations-{0}.json'.format(keyname))
+
+    # and copy the json file if the tools on that box wants to use it
+    cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
+      '/root/.appscale/locations-{0}.json'.format(keyname))

@@ -67,6 +67,7 @@ class AppScaleTools():
 
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname)
     """
     CommonFunctions.write_and_copy_node_file(options, node_layout,
       head_node_result)

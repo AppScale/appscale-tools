@@ -311,3 +311,12 @@ class TestRemoteHelper(unittest.TestCase):
     socket.should_receive('socket').and_return(fake_socket)
 
     RemoteHelper.start_remote_appcontroller('public1', 'bookey')
+
+
+  def test_copy_local_metadata(self):
+    # mock out the copying of the two files
+    subprocess.should_receive('Popen').with_args(re.compile(
+      'locations-bookey.[yaml|json]'),
+      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      .and_return(self.success)
+    RemoteHelper.copy_local_metadata('public1', 'bookey')
