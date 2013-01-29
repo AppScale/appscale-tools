@@ -694,15 +694,17 @@ class NodeLayout():
     return other_nodes
 
 
+  def db_master(self):
+    if not self.is_valid():
+      return None
+
+    for node in self.nodes:
+      if node.is_role('db_master'):
+        return node
+    return None
+
+
   """
-  def db_master
-    return nil unless valid?
-
-    db_master = @nodes.select { |n| n.is_db_master? }.compact
-    
-    db_master.empty? ? nil : db_master[0]
-  end
-
   def login_node
     return nil unless valid?
 

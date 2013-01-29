@@ -3,10 +3,12 @@
 
 
 # First-party Python imports
+import json
 import os
 import re
 import time
 from uuid import uuid4
+import yaml
 
 
 # Third-party imports
@@ -14,6 +16,7 @@ import M2Crypto
 
 
 # AppScale-specific imports
+from appcontroller_client import AppControllerClient
 from custom_exceptions import BadConfigurationException
 
 
@@ -97,6 +100,20 @@ class LocalState():
       secret key can be found.
     """
     return cls.LOCAL_APPSCALE_PATH + keyname + ".secret"
+
+
+  @classmethod
+  def get_secret_key(cls, keyname):
+    """Retrieves the secret key, used to authenticate AppScale services.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str containing the secret key.
+    """
+    with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
+      return file_handle.read()
 
 
   @classmethod
@@ -250,6 +267,53 @@ class LocalState():
   def get_certificate_location(cls, keyname):
     return cls.LOCAL_APPSCALE_PATH + keyname + "-cert.pem"
 
+
+  @classmethod
+  def get_locations_yaml_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
+
+
+  @classmethod
+  def get_locations_json_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".json"
+
+
+  @classmethod
+  def update_local_metadata(cls, options, node_layout, host, instance_id):
+    """Writes a locations.yaml and locations.json file to the local filesystem,
+    that the tools can use to locate machines in an AppScale deployment.
+
+    Args:
+      options: A Namespace that indicates deployment-specific parameters not
+        relating to the placement strategy in use.
+      node_layout: A NodeLayout that indicates the placement strategy in use
+        for this deployment.
+      host: A str representing the location we can reach an AppController at.
+      instance_id: The instance ID (if running in a cloud environment)
+        associated with the given host.
+    """
+    # find out every machine's IP address and what they're doing
+    acc = AppControllerClient(host, cls.get_secret_key(options.keyname))
+    all_ips = acc.get_all_public_ips()
+    role_info = acc.get_role_info()
+
+    # write our yaml metadata file
+    yaml_contents = {
+      'load_balancer' : host,
+      'instance_id' : instance_id,
+      'table' : options.table,
+      'secret' : cls.get_secret_key(options.keyname),
+      'db_master' : node_layout.db_master().id,
+      'ips' : all_ips,
+      'infrastructure' : options.infrastructure,
+      'group' : options.group
+    }
+    with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
+      file_handle.write(yaml.dump(yaml_contents))
+
+    # and now we can write the json metadata file
+    with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
+      file_handle.write(json.dumps(role_info))
 
 """
 #!/usr/bin/ruby -w

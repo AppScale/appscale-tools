@@ -61,14 +61,13 @@ class AppScaleTools():
         "officially supported.")
       time.sleep(1)
 
-    head_node_params = RemoteHelper.start_head_node(options, node_layout)
+    public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
       "for use.")
 
+    LocalState.update_local_metadata(options, node_layout, public_ip,
+      instance_id)
     """
-    acc = head_node_result[:acc]
-    secret_key = head_node_result[:secret_key]
-    head_node_ip = head_node_result[:head_node_ip]
     CommonFunctions.write_and_copy_node_file(options, node_layout,
       head_node_result)
     CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])

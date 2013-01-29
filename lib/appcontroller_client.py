@@ -36,11 +36,11 @@ class AppControllerClient():
 
 
   def get_all_public_ips(self):
-    nodes = []
-    ips = self.server.get_all_public_ips(self.secret)
-    for ip in ips:
-      nodes.append(ip)
-    return nodes
+    return self.server.get_all_public_ips(self.secret)
+
+
+  def get_role_info(self):
+    return self.server.get_role_info(self.secret)
 
 
   def get_user_manager_host(self):

@@ -3,12 +3,15 @@
 
 
 # General-purpose Python library imports
+import json
 import os
 import sys
 import unittest
+import yaml
 
 
 # Third party testing libraries
+import SOAPpy
 from flexmock import flexmock
 
 
@@ -135,3 +138,61 @@ class TestLocalState(unittest.TestCase):
       actual['CLOUD_EC2_ACCESS_KEY'])
     self.assertEquals(expected['CLOUD_EC2_SECRET_KEY'],
       actual['CLOUD_EC2_SECRET_KEY'])
+
+
+  def test_update_local_metadata(self):
+    # mock out getting all the ips in the deployment from the head node
+    fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('get_all_public_ips').with_args('the secret') \
+      .and_return('public1')
+    role_info = [{
+        'public_ip' : 'public1',
+        'private_ip' : 'private1',
+        'jobs' : ['shadow', 'db_master']
+    }]
+    fake_soap.should_receive('get_role_info').with_args('the secret') \
+      .and_return(role_info)
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_soap)
+
+    # mock out reading the secret key
+    fake_secret = flexmock(name='fake_secret')
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')
+    builtins.should_receive('open').with_args(
+      LocalState.get_secret_key_location('booscale'), 'r') \
+      .and_return(fake_secret)
+
+    # mock out writing the yaml file
+    fake_locations_yaml = flexmock(name='fake_locations_yaml')
+    fake_locations_yaml.should_receive('write').with_args(yaml.dump({
+      'load_balancer': 'public1', 'instance_id': 'i-ABCDEFG',
+      'secret': 'the secret', 'infrastructure': 'ec2',
+      'group': 'boogroup', 'ips': 'public1', 'table': 'cassandra',
+      'db_master': 'node-0'
+    })).and_return()
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_yaml_location('booscale'), 'w') \
+      .and_return(fake_locations_yaml)
+
+    # and mock out writing the json file
+    fake_locations_json = flexmock(name='fake_locations_json')
+    fake_locations_json.should_receive('write').with_args(json.dumps(
+      role_info)).and_return()
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location('booscale'), 'w') \
+      .and_return(fake_locations_json)
+
+    options = flexmock(name='options', table='cassandra', infrastructure='ec2',
+      keyname='booscale', group='boogroup')
+    node_layout = NodeLayout(options={
+      'min' : 1,
+      'max' : 1,
+      'infrastructure' : 'ec2',
+      'table' : 'cassandra'
+    })
+    host = 'public1'
+    instance_id = 'i-ABCDEFG'
+    LocalState.update_local_metadata(options, node_layout, host, instance_id)
