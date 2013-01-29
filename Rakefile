@@ -67,7 +67,7 @@ end
 task :coverage do |test|
   sh "rm -rf coverage"
   sh "coverage -e"
-  sh "coverage run --include='*lib*' --omit='*tests*' --omit='/System/*' test/test_suite.py"
+  sh "coverage run --include='*lib*' --omit='*tests*' --omit='*Python*' test/test_suite.py"
   sh "coverage report -m"
   sh "coverage html"
   sh "mv htmlcov coverage"
