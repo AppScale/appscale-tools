@@ -59,6 +59,9 @@ class RemoteHelper():
         names, security group names).
       node_layout: A NodeLayout that describes the placement strategy that
         should be used for this AppScale deployment.
+    Returns:
+      The public IP and instance ID (a dummy value in non-cloud deployments)
+      corresponding to the node that was started.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
     AppScaleLogger.log("Secret key is {0}".format(secret_key))
@@ -90,15 +93,14 @@ class RemoteHelper():
     cls.copy_deployment_credentials(public_ip, options)
     cls.start_remote_appcontroller(public_ip, options.keyname)
 
-    """
-    acc = AppControllerClient.new(head_node_ip, secret_key)
-    creds = creds.to_a.flatten
-    acc.set_parameters(locations, creds, apps_to_start)
+    acc = AppControllerClient(public_ip, secret_key)
+    head_node_location = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
+      ":".join(node_layout.roles()), instance_id)]
+    locations = [head_node_location]
+    acc.set_parameters(locations, deployment_params, [])
 
-    return {:acc => acc, :head_node_ip => head_node_ip,
-      :instance_id => instance_id, :true_key => true_key,
-      :secret_key => secret_key}
-    """
+    return public_ip, instance_id
+
 
   @classmethod
   def spawn_node_in_cloud(cls, options):

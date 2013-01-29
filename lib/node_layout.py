@@ -669,15 +669,19 @@ class NodeLayout():
   end
   
   # head node -> shadow
-  def head_node
-    return nil unless valid?
-
-    head_node = @nodes.select { |n| n.is_shadow? }.compact
-    
-    # TODO: is the last guard necessary?
-    head_node.empty? ? nil : head_node[0]
-  end
   """
+
+
+  def head_node(self):
+    if not self.is_valid():
+      return None
+
+    for node in self.nodes:
+      if node.is_role('shadow'):
+        return node
+
+    return None
+
 
   def other_nodes(self):
     if not self.is_valid():
