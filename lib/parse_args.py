@@ -2,7 +2,9 @@
 
 
 # General-purpose Python library imports
+import base64
 import argparse
+import yaml
 
 
 # AppScale-specific imports
@@ -92,6 +94,8 @@ class ParseArgs():
         help="the maximum number of VMs to use")
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--ips_layout',
+        help="a base64-encoded YAML dictating the placement strategy")
 
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
@@ -175,6 +179,8 @@ class ParseArgs():
 
     if self.args.ips:
       pass
+    elif self.args.ips_layout:
+      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
       if self.args.min < 1:
         raise BadConfigurationException("Min cannot be less than 1.")

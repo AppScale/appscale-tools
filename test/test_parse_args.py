@@ -3,9 +3,11 @@
 
 
 # General-purpose Python library imports
+import base64
 import os
 import sys
 import unittest
+import yaml
 
 
 # Third-party imports
@@ -228,3 +230,18 @@ class TestParseArgs(unittest.TestCase):
   def test_failure_when_user_doesnt_specify_ips_or_machine(self):
     argv = self.cloud_argv[:] + ['--infrastructure', 'ec2']
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+
+  def test_ips_layout_flag(self):
+    # first, make sure that the flag works
+    ips_layout = yaml.load("""
+    'controller' : public1,
+    'servers' : public2'
+    """)
+    base64ed_ips = base64.b64encode(yaml.dump(ips_layout))
+    argv = ['--ips_layout', base64ed_ips]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals(base64ed_ips, actual.ips_layout)
+
+    # next, make sure that it got assigned to ips
+    self.assertEquals(ips_layout, actual.ips)
