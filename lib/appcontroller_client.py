@@ -12,6 +12,10 @@ import time
 import SOAPpy
 
 
+# AppScale-specific imports
+from appscale_logger import AppScaleLogger
+
+
 class AppControllerClient():
 
 
@@ -43,12 +47,12 @@ class AppControllerClient():
     return self.server.get_role_info(self.secret)
 
 
-  def get_user_manager_host(self):
+  def get_uaserver_host(self):
     last_known_state = None
     while True:
       try:
         status = self.get_status()
-        self.logger.verbose('Received status from head node: ' + status)
+        AppScaleLogger.log('Received status from head node: ' + status)
         match = re.search(r'Database is at (.*)', status)
         if match and match.group(1) != 'not-up-yet':
           return match.group(1)
@@ -57,9 +61,9 @@ class AppControllerClient():
           if match:
             if last_known_state != match.group(1):
               last_known_state = match.group(1)
-            self.logger.info(last_known_state + "...")
+            AppScaleLogger.log(last_known_state + "...")
           else:
-            self.logger.info('Waiting for AppScale nodes to complete '
+            AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process...')
       except Exception:
         pass

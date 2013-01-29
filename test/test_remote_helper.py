@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import json
 import os
 import re
 import socket
@@ -14,8 +15,9 @@ import unittest
 
 # Third party libraries
 import boto
-import M2Crypto
 from flexmock import flexmock
+import M2Crypto
+import SOAPpy
 
 
 # AppScale import, the library that we're testing here
@@ -320,3 +322,39 @@ class TestRemoteHelper(unittest.TestCase):
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
     RemoteHelper.copy_local_metadata('public1', 'bookey')
+
+
+  def test_create_user_accounts(self):
+    # mock out reading the secret key
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    secret_key_location = LocalState.LOCAL_APPSCALE_PATH + "bookey.secret"
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # mock out reading the locations.json file, and slip in our own json
+    fake_nodes_json = flexmock(name="fake_nodes_json")
+    fake_nodes_json.should_receive('read').and_return(json.dumps([{
+      "public_ip" : "public1",
+      "private_ip" : "private1",
+      "jobs" : ["shadow", "login"]
+    }]))
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location('bookey'), 'r') \
+      .and_return(fake_nodes_json)
+
+    # mock out SOAP interactions with the UserAppServer
+    fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
+      'xmpp_user', 'the secret').and_return('true')
+    fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
+      'xmpp_user', 'the secret').and_return('true')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
+      .and_return(fake_soap)
+
+    RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
+      'bookey')

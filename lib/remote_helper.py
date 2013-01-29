@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import os
+import re
 import socket
 import subprocess
 import time
@@ -18,6 +19,7 @@ from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
+from user_app_client import UserAppClient
 
 
 class RemoteHelper():
@@ -447,3 +449,37 @@ class RemoteHelper():
     # and copy the json file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
       '/root/.appscale/locations-{0}.json'.format(keyname))
+
+  
+  @classmethod
+  def create_user_accounts(cls, email, password, uaserver_host, keyname):
+    """Registers two new user accounts with the UserAppServer.
+
+    One account is the standard account that users log in with (via their
+    e-mail address. The other is their XMPP account, so that they can log into
+    any jabber-compatible service and send XMPP messages to their application
+    (and receive them).
+
+    Args:
+      email: The e-mail address that should be registered for the user's
+        standard account.
+      password: The password that should be used for both the standard and XMPP
+        accounts.
+      uaserver_host: The location of a UserAppClient, that can create new user
+        accounts.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+    """
+    uaserver = UserAppClient(uaserver_host, LocalState.get_secret_key(keyname))
+
+    # first, create the standard account
+    encrypted_pass = LocalState.encrypt_password(email, password)
+    uaserver.create_user(email, encrypted_pass)
+
+    # next, create the XMPP account. if the user's e-mail is a@a.a, then that
+    # means their XMPP account name is a@login_ip
+    username_regex = re.compile('\A(.*)@')
+    username = username_regex.match(email).groups()[0]
+    xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
+    xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
+    uaserver.create_user(xmpp_user, xmpp_pass)
+    AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
