@@ -11,6 +11,7 @@ import time
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
+from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
@@ -97,7 +98,7 @@ class RemoteHelper():
     head_node_location = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
       ":".join(node_layout.roles()), instance_id)]
     locations = [head_node_location]
-    acc.set_parameters(locations, deployment_params, [])
+    acc.set_parameters(locations, deployment_params)
 
     return public_ip, instance_id
 
