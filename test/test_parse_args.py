@@ -245,3 +245,13 @@ class TestParseArgs(unittest.TestCase):
 
     # next, make sure that it got assigned to ips
     self.assertEquals(ips_layout, actual.ips)
+
+
+  def test_scp_flag(self):
+    # first, make sure --scp fails if no arg is provided
+    argv_1 = self.cloud_argv[:] + ['--scp']
+    self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
+
+    argv_2 = self.cloud_argv[:] + ['--scp', '/tmp/booscale']
+    actual = ParseArgs(argv_2, self.function).args
+    self.assertEquals('/tmp/booscale', actual.scp)
