@@ -358,3 +358,47 @@ class TestRemoteHelper(unittest.TestCase):
 
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
       'bookey')
+
+
+  def test_wait_for_machines_to_finish_loading(self):
+    # mock out reading the secret key
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    secret_key_location = LocalState.LOCAL_APPSCALE_PATH + "bookey.secret"
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # mock out getting all the ips in the deployment from the head node
+    fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('get_all_public_ips').with_args('the secret') \
+      .and_return(['public1', 'public2'])
+    role_info = [
+      {
+        'public_ip' : 'public1',
+        'private_ip' : 'private1',
+        'jobs' : ['shadow', 'db_master']
+      },
+      {
+        'public_ip' : 'public2',
+        'private_ip' : 'private2',
+        'jobs' : ['appengine']
+      }
+    ]
+    fake_soap.should_receive('get_role_info').with_args('the secret') \
+      .and_return(role_info)
+
+    # also, let's say that our machines aren't running the first time we ask,
+    # but that they are the second time
+    fake_soap.should_receive('is_done_initializing').with_args('the secret') \
+      .and_return(False).and_return(True)
+
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_soap)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public2:17443') \
+      .and_return(fake_soap)
+
+    RemoteHelper.wait_for_machines_to_finish_loading('public1', 'bookey')

@@ -483,3 +483,27 @@ class RemoteHelper():
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
     uaserver.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
+
+
+  @classmethod
+  def wait_for_machines_to_finish_loading(cls, host, keyname):
+    """Queries all of the AppControllers in this AppScale deployment to see if
+    they have started all of the API services on their machine, and if not,
+    waits until they have.
+
+    Args:
+      host: The location where an AppController can be found, who will then have
+        the locations of all the other AppControllers in this AppScale
+        deployment.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+    """
+    acc = AppControllerClient(host, LocalState.get_secret_key(keyname))
+    all_ips = acc.get_all_public_ips()
+
+    for ip in all_ips:
+      while True:
+        acc = AppControllerClient(ip, LocalState.get_secret_key(keyname))
+        if acc.is_initialized():
+          break
+        else:
+          time.sleep(10)

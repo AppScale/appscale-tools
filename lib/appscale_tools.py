@@ -97,16 +97,16 @@ class AppScaleTools():
 
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
       keyname)
-    """
-    uac.set_cloud_admin_status(user, new_status="true")
-    uac.set_cloud_admin_capabilities(user)
+    uaserver_client.set_admin_role(username)
 
-    CommonFunctions.wait_for_nodes_to_load(head_node_ip, secret_key)
-    login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
-    print "The status of your AppScale instance is at the following" + \
-      " URL: http://#{login_ip}/status"
+    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, keyname)
+    AppScaleLogger.log("View status information about your AppScale " + \
+      "deployment at http://{0}/status".format(LocalState.get_login_host(
+      options.keyname)))
 
-    CommonFunctions.write_and_copy_node_file(options, node_layout,
-      head_node_result)
-    RemoteLogging.remote_post(max_images, table, infrastructure, "started", "success")
-"""
+    # Finally, update our metadata once we know that all of the machines are
+    # up and have started all their API services.
+    LocalState.update_local_metadata(options, node_layout, public_ip,
+      instance_id)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname)
+    AppScaleLogger.remote_log_tools_state(options, "finished")
