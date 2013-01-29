@@ -6,9 +6,12 @@
 import time
 
 
+# AppScale-specific imports
+from appscale_logger import AppScaleLogger
+from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
-from custom_exceptions import BadConfigurationException
+from node_layout import NodeLayout
 
 
 class AppScaleTools():
@@ -42,7 +45,7 @@ class AppScaleTools():
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
-    if args.infrastructure:
+    if options.infrastructure:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over the " + args.infrastructure + " cloud.")
     else:

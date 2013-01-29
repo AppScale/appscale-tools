@@ -93,6 +93,9 @@ class NodeLayout():
         contains the YAML in question. It can also be set to None, for
         deployments when the user specifies how many VMs they wish to use.
     """
+    if not isinstance(options, dict):
+      options = vars(options)
+
     if 'ips' in options:
       input_yaml = options['ips']
     else:
