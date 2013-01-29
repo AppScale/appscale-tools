@@ -25,6 +25,7 @@ class AppScaleTools():
   """
 
 
+  @classmethod
   def run_instances(self, options):
     """Starts a new AppScale deployment with the parameters given.
 

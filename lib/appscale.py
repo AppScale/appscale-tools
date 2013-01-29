@@ -23,6 +23,11 @@ from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
 
 
+# AppScale-specific imports
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
 # AppScale provides a configuration-file-based alternative to the
 # command-line interface that the AppScale Tools require.
 class AppScale():
@@ -193,7 +198,7 @@ Available commands:
         subprocess.call(add_keypair_command)
 
     # Construct a run-instances command from the file's contents
-    command = ["appscale-run-instances"]
+    command = []
     for key, value in contents_as_yaml.items():
       if value is True:
         command.append(str("--%s" % key))
@@ -205,12 +210,9 @@ Available commands:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
 
-    # Finally, exec the command. Don't worry about validating it -
-    # appscale-run-instances will do that for us.
-    try:
-      subprocess.call(command)
-    except KeyboardInterrupt:
-      pass
+    # Finally, call AppScaleTools.run_instances
+    options = ParseArgs(command, "appscale-run-instances").args
+    AppScaleTools.run_instances(options)
 
 
   # Determines whether or not we should call appscale-add-keypair,
