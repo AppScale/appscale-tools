@@ -20,6 +20,9 @@ class UserAppClient():
   USER_APP_SERVER_PORT = 4343
 
 
+  ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
+
+
   def __init__(self, host, secret):
     self.host = host
     self.server = SOAPpy.SOAPProxy('https://%s:4343' % host)

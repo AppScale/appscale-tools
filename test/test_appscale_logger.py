@@ -51,6 +51,8 @@ class TestAppScaleLogger(unittest.TestCase):
     self.options = ParseArgs(argv, function).args
 
     self.expected = {
+      "appengine" : 1,
+      "autoscale" : True,
       "min" : 1,
       "max" : 1,
       "infrastructure" : "ec2",

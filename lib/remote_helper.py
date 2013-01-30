@@ -31,8 +31,7 @@ class RemoteHelper():
   """
 
 
-  # The default port that the AppController daemon runs on.
-  APPCONTROLLER_PORT = 17443
+  DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
   # The default port that the ssh daemon runs on.
@@ -72,8 +71,9 @@ class RemoteHelper():
     if options.infrastructure:
       instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
-      # construct locations
-      pass
+      instance_id = cls.DUMMY_INSTANCE_ID
+      public_ip = node_layout.head_node().id
+      private_ip = node_layout.head_node().id
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@#{1}".format(
       LocalState.get_key_path_from_name(options.keyname), public_ip))
@@ -86,7 +86,7 @@ class RemoteHelper():
 
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip)
-    AppScaleLogger.log(str(LocalState.obscure_dict(deployment_creds)))
+    AppScaleLogger.log(str(LocalState.obscure_dict(deployment_params)))
     AppScaleLogger.log("Head node successfully initialized at {0}. It is " + \
       "now starting up {1}.".format(public_ip, options.table))
 
@@ -97,9 +97,8 @@ class RemoteHelper():
     cls.start_remote_appcontroller(public_ip, options.keyname)
 
     acc = AppControllerClient(public_ip, secret_key)
-    head_node_location = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
-      ":".join(node_layout.roles()), instance_id)]
-    locations = [head_node_location]
+    locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
+      ":".join(node_layout.head_node().roles), instance_id)]
     acc.set_parameters(locations, deployment_params)
 
     return public_ip, instance_id
@@ -408,26 +407,23 @@ class RemoteHelper():
 
     # remove any possible appcontroller state that may not have been
     # properly removed in virtualized clusters
-    cls.ssh(host, LocalState.get_key_path_from_name(keyname),
-      'rm -rf /etc/appscale/appcontroller-state.json')
+    cls.ssh(host, keyname, 'rm -rf /etc/appscale/appcontroller-state.json')
 
     # start up god, who will start up the appcontroller once we give it the
     # right config file
-    cls.ssh(host, LocalState.get_key_path_from_name(keyname), 'god &')
+    cls.ssh(host, keyname, 'god &')
     time.sleep(1)
 
     # scp over that config file
-    cls.scp(host, LocalState.get_key_path_from_name(keyname),
-      cls.TEMPLATE_GOD_CONFIG_FILE, '/tmp/appcontroller.god')
+    cls.scp(host, keyname, cls.TEMPLATE_GOD_CONFIG_FILE, '/tmp/appcontroller.god')
 
     # finally, tell god to start the appcontroller and then wait for it to start
-    cls.ssh(host, LocalState.get_key_path_from_name(keyname),
-      'god load /tmp/appcontroller.god')
+    cls.ssh(host, keyname, 'god load /tmp/appcontroller.god')
 
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
 
-    cls.sleep_until_port_is_open(host, cls.APPCONTROLLER_PORT)
+    cls.sleep_until_port_is_open(host, AppControllerClient.PORT)
 
 
   @classmethod

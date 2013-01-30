@@ -19,13 +19,14 @@ from appscale_logger import AppScaleLogger
 class AppControllerClient():
 
 
-  APP_CONTROLLER_PORT = 17443
+  # The port that the AppController runs on by default.
+  PORT = 17443
 
 
   def __init__(self, host, secret):
     self.host = host
     self.server = SOAPpy.SOAPProxy('https://%s:%s' % (host,
-      self.APP_CONTROLLER_PORT))
+      self.PORT))
     self.secret = secret
 
 
@@ -65,8 +66,8 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process...')
-      except Exception:
-        pass
+      except Exception as e:
+        AppScaleLogger.warn('Saw {0}, waiting a few moments to try again'.format(str(e)))
       time.sleep(10)
 
 

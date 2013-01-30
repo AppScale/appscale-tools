@@ -23,6 +23,7 @@ import SOAPpy
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
@@ -308,7 +309,7 @@ class TestRemoteHelper(unittest.TestCase):
     # assume that ssh comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')
     fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APPCONTROLLER_PORT)).and_raise(Exception) \
+      AppControllerClient.PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 

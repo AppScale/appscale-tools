@@ -9,7 +9,7 @@ import json
 import os
 import re
 import time
-from uuid import uuid4
+import uuid
 import yaml
 
 
@@ -41,6 +41,14 @@ class LocalState():
   SECRET_KEY_LENGTH = 32
 
 
+  # The username for the cloud administrator if the --test options is used.
+  DEFAULT_USER = "a@a.a"
+
+
+  # The password to set for the default user.
+  DEFAULT_PASSWORD = "aaaaaa"
+
+
   @classmethod
   def make_appscale_directory(cls):
     """Creates a ~/.appscale directory, if it doesn't already exist.
@@ -66,8 +74,7 @@ class LocalState():
     if force:
       return
 
-    locations_yaml = cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
-    if os.path.exists(locations_yaml):
+    if os.path.exists(cls.get_locations_yaml_location(keyname)):
       raise BadConfigurationException("AppScale is already running. Terminate" +
         " it or use the --force flag to run anyways.")
 
@@ -83,7 +90,7 @@ class LocalState():
     Returns:
       A str that represents the secret key.
     """
-    key = str(uuid4()).replace('-', '')[:cls.SECRET_KEY_LENGTH]
+    key = str(uuid.uuid4()).replace('-', '')[:cls.SECRET_KEY_LENGTH]
     with open(cls.get_secret_key_location(keyname), 'w') as file_handle:
       file_handle.write(key)
     return key

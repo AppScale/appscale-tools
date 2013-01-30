@@ -7,11 +7,14 @@ import time
 
 
 # AppScale-specific imports
+from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
+from remote_helper import RemoteHelper
+from user_app_client import UserAppClient
 
 
 class AppScaleTools():
@@ -87,23 +90,23 @@ class AppScaleTools():
 
     AppScaleLogger.log("UserAppServer is at {0}".format(uaserver_host))
 
-    uaserver_client = UserAppClient.new(uaserver_host,
+    uaserver_client = UserAppClient(uaserver_host,
       LocalState.get_secret_key(options.keyname))
 
-    if options.admin_user and options.admin_pass:
+    if 'admin_user' in options and 'admin_pass' in options:
       AppScaleLogger.log("Using the provided admin username/password")
       username, password = options.admin_user, options.admin_pass
-    elif options.test:
+    elif 'test' in options:
       AppScaleLogger.log("Using default admin username/password")
       username, password = LocalState.DEFAULT_USER, LocalState.DEFAULT_PASSWORD
     else:
       username, password = LocalState.get_credentials()
 
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
-      keyname)
+      options.keyname)
     uaserver_client.set_admin_role(username)
 
-    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, keyname)
+    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
     AppScaleLogger.log("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))

@@ -109,9 +109,6 @@ class NodeLayout():
     else:
       self.input_yaml = None
 
-    if not isinstance(options, dict):
-      options = vars(options)
-
     if 'infrastructure' in options:
       self.infrastructure = options['infrastructure']
     else:

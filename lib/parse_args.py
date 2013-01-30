@@ -122,6 +122,13 @@ class ParseArgs():
       self.parser.add_argument('-n', type=int,
         help="the database replication factor")
 
+      # flags relating to application servers
+      self.parser.add_argument('--appengine', type=int, default=1,
+        help="the number of application servers to use per app")
+      self.parser.add_argument('--autoscale', action='store_true',
+        default=True,
+        help="adds/removes application servers based on incoming traffic")
+
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,
