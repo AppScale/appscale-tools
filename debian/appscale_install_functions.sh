@@ -118,6 +118,7 @@ installpylibs()
   easy_install M2Crypto
   easy_install SOAPpy
   easy_install paramiko
+  easy_install yaml
   easy_install boto==2.6
 }
 

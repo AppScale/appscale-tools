@@ -3,7 +3,6 @@
 
 
 # General-purpose Python library imports
-import json
 import os
 import re
 import socket
@@ -67,7 +66,8 @@ class RemoteHelper():
       corresponding to the node that was started.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
-    AppScaleLogger.log("Secret key is {0}".format(secret_key))
+    AppScaleLogger.verbose("Secret key is {0}".format(secret_key),
+      options.verbose)
 
     if options.infrastructure:
       instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
@@ -152,7 +152,7 @@ class RemoteHelper():
       AppScaleLogger.verbose("Waiting for {0}:{1} to open".format(host, port),
         is_verbose)
       time.sleep(sleep_time)
-      sleep_time = min(sleep_time * 2, 30)
+      sleep_time = min(sleep_time * 2, 20)
 
 
   @classmethod
