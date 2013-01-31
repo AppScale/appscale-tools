@@ -171,22 +171,28 @@ class TestAppScaleRunInstances(unittest.TestCase):
     fake_socket.should_receive('connect').with_args(('1.2.3.4',
       AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
+
+    # same for the UserAppServer
+    fake_socket.should_receive('connect').with_args(('1.2.3.4',
+      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, dict,
+    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
       ['none'], 'the secret').and_return('OK')
     fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(['1.2.3.4'])
+      .and_return(json.dumps(['1.2.3.4']))
     role_info = [{
       'public_ip' : '1.2.3.4',
       'private_ip' : '1.2.3.4',
       'jobs' : ['shadow', 'login']
     }]
     fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(role_info)
+      .and_return(json.dumps(role_info))
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('nothing interesting here') \
       .and_return('Database is at not-up-yet') \

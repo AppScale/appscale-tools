@@ -50,7 +50,7 @@ class AppScaleTools():
 
     if options.infrastructure:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
-        " over the " + args.infrastructure + " cloud.")
+        " over the " + options.infrastructure + " cloud.")
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")

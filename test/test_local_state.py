@@ -144,14 +144,14 @@ class TestLocalState(unittest.TestCase):
     # mock out getting all the ips in the deployment from the head node
     fake_soap = flexmock(name='fake_soap')
     fake_soap.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return('public1')
+      .and_return(json.dumps(['public1']))
     role_info = [{
         'public_ip' : 'public1',
         'private_ip' : 'private1',
         'jobs' : ['shadow', 'db_master']
     }]
     fake_soap.should_receive('get_role_info').with_args('the secret') \
-      .and_return(role_info)
+      .and_return(json.dumps(role_info))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_soap)
