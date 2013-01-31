@@ -108,13 +108,13 @@ class AppScaleTools():
     uaserver_client.set_admin_role(username)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
-    AppScaleLogger.log("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(LocalState.get_login_host(
-      options.keyname)))
-
     # Finally, update our metadata once we know that all of the machines are
     # up and have started all their API services.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
     RemoteHelper.copy_local_metadata(public_ip, options.keyname)
+
+    AppScaleLogger.success("View status information about your AppScale " + \
+      "deployment at http://{0}/status".format(LocalState.get_login_host(
+      options.keyname)))
     AppScaleLogger.remote_log_tools_state(options, "finished")

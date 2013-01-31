@@ -49,6 +49,17 @@ class AppScaleLogger():
 
 
   @classmethod
+  def success(cls, message):
+    """Prints the specified message with green text as well as to a file.
+
+    Args:
+      message: A str representing the message to log.
+    """
+    cprint(message, 'green')
+    # TODO(cgb): Also write it to a file or buffer somewhere
+
+
+  @classmethod
   def remote_log_tools_state(cls, options, state):
     """Converts the given debugging information to a message that we can
     remotely log, and then logs it.
