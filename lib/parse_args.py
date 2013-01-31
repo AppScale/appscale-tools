@@ -228,7 +228,8 @@ class ParseArgs():
     if not self.args.infrastructure:
       return
 
-    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    cloud_agent = InfrastructureAgentFactory.create_agent(
+      self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
     cloud_agent.assert_required_parameters(params, BaseAgent.OPERATION_RUN)
 
@@ -243,10 +244,11 @@ class ParseArgs():
     if not self.args.infrastructure:
       return
 
-    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    cloud_agent = InfrastructureAgentFactory.create_agent(
+      self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
     if not cloud_agent.does_image_exist(params):
-      raise BadConfigurationException("The given machine image does not exist in this cloud.")
+      raise BadConfigurationException("Couldn't find the given machine image.")
 
 
   def validate_database_flags(self):
@@ -258,4 +260,4 @@ class ParseArgs():
         database flags are not valid.
     """
     if self.args.n is not None and self.args.n < 1:
-      raise BadConfigurationException("Replication factor cannot be less than 1.")
+      raise BadConfigurationException("Replication factor must exceed 0.")
