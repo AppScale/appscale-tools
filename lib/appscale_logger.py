@@ -34,7 +34,7 @@ class AppScaleLogger():
       message: A str representing the message to log.
     """
     print message
-    # TODO(cgb): Also write it to a file or buffer somewhere
+    cls.append_to_log(message)
 
 
   @classmethod
@@ -45,7 +45,7 @@ class AppScaleLogger():
       message: A str representing the message to warn the user with.
     """
     cprint(message, 'red')
-    # TODO(cgb): Also write it to a file or buffer somewhere
+    cls.append_to_log(message)
 
 
   @classmethod
