@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import json
 import os
 import re
 import socket
@@ -87,8 +88,7 @@ class RemoteHelper():
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip)
     AppScaleLogger.log(str(LocalState.obscure_dict(deployment_params)))
-    AppScaleLogger.log("Head node successfully initialized at {0}. It is " + \
-      "now starting up {1}.".format(public_ip, options.table))
+    AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
 
     AppScaleLogger.remote_log_tools_state(options, "started head node")
     time.sleep(10)  # gives machines in cloud extra time to boot up
@@ -99,7 +99,7 @@ class RemoteHelper():
     acc = AppControllerClient(public_ip, secret_key)
     locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
       ":".join(node_layout.head_node().roles), instance_id)]
-    acc.set_parameters(locations, deployment_params)
+    acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
 
     return public_ip, instance_id
 
@@ -231,9 +231,9 @@ class RemoteHelper():
       ShellException: If, after five attempts, executing the named command
       failed.
     """
-    AppScaleLogger.log("shell> ".format(command))
     tries_left = 5
     while tries_left:
+      AppScaleLogger.log("shell> {0}".format(command))
       result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
       result.wait()
@@ -243,7 +243,7 @@ class RemoteHelper():
         result.stdout.close()
         result.stderr.close()
         return stdout, stderr
-      AppScaleLogger.log("[{0}] failed. Trying again momentarily." \
+      AppScaleLogger.log("Command failed. Trying again momentarily." \
         .format(command))
       tries_left -= 1
       time.sleep(1)
@@ -323,7 +323,7 @@ class RemoteHelper():
         False otherwise.
     """
     try:
-      cls.ssh(cls, host, keyname, 'ls {0}'.format(location))
+      cls.ssh(host, keyname, 'ls {0}'.format(location))
       return True
     except ShellException:
       return False
@@ -393,8 +393,8 @@ class RemoteHelper():
       cert = os.environ["EC2_CERT"]
       private_key = os.environ["EC2_PRIVATE_KEY"]
     else:
-      cert = '/etc/appscale/certs/mycert.pem'
-      private_key = '/etc/appscale/certs/mykey.pem'
+      cert = LocalState.get_certificate_location(options.keyname)
+      private_key = LocalState.get_private_key_location(options.keyname)
 
     cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1')
     cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem")

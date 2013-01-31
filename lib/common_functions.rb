@@ -759,6 +759,10 @@ module CommonFunctions
 
     value = tree[tag]
 
+    if value.nil?
+      value = tree[tag.to_s]
+    end
+
     if value.nil? and required
       raise AppScaleException.new("The location file did not contain a #{tag} tag.")
     end

@@ -263,7 +263,7 @@ class LocalState():
     # self signing a certificate
     cert.sign(pkey, md="sha256")
 
-    key.save_key(LocalState.get_private_key_location(keyname))
+    key.save_key(LocalState.get_private_key_location(keyname), None)
     cert.save_pem(LocalState.get_certificate_location(keyname))
 
 
@@ -303,8 +303,10 @@ class LocalState():
     """
     # find out every machine's IP address and what they're doing
     acc = AppControllerClient(host, cls.get_secret_key(options.keyname))
-    all_ips = acc.get_all_public_ips()
+    all_ips = [str(ip) for ip in acc.get_all_public_ips()]
     role_info = acc.get_role_info()
+
+    infrastructure = options.infrastructure or 'xen'
 
     # write our yaml metadata file
     yaml_contents = {
@@ -314,7 +316,7 @@ class LocalState():
       'secret' : cls.get_secret_key(options.keyname),
       'db_master' : node_layout.db_master().id,
       'ips' : all_ips,
-      'infrastructure' : options.infrastructure,
+      'infrastructure' : infrastructure,
       'group' : options.group
     }
     with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
@@ -403,3 +405,22 @@ class LocalState():
         AppScaleLogger.warn('Passwords entered do not match. Please try again.')
 
     return username, password
+
+
+  @classmethod
+  def map_to_array(cls, the_map):
+    """
+    Convert a map (dictionary) into list. Given a map {k1:v1, k2:v2,...kn:vn}
+    this will return a list [k1,v1,k2,v2,...,kn,vn].
+
+    Args:
+      the_map A dictionary of objects
+
+    Returns:
+      A list containing all the keys and values in the input dictionary
+    """
+    the_list = []
+    for k,v in the_map.items():
+      the_list.append(k)
+      the_list.append(v)
+    return the_list

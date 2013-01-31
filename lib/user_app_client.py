@@ -11,13 +11,10 @@ import SOAPpy
 from appscale_logger import AppScaleLogger
 
 
-ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
-
-
 class UserAppClient():
 
 
-  USER_APP_SERVER_PORT = 4343
+  PORT = 4343
 
 
   ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
@@ -25,7 +22,7 @@ class UserAppClient():
 
   def __init__(self, host, secret):
     self.host = host
-    self.server = SOAPpy.SOAPProxy('https://%s:4343' % host)
+    self.server = SOAPpy.SOAPProxy('https://%s:%s' % (host, self.PORT))
     self.secret = secret
 
 
@@ -55,4 +52,4 @@ class UserAppClient():
   def set_admin_role(self, username):
     AppScaleLogger.log('Granting admin privileges to %s' % username)
     self.server.set_cloud_admin_status(username, 'true', self.secret)
-    self.server.set_capabilities(username, ADMIN_CAPABILITIES, self.secret)
+    self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)

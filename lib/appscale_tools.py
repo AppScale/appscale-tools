@@ -53,7 +53,7 @@ class AppScaleTools():
         " over the " + args.infrastructure + " cloud.")
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
-        "over a virtualized cluster.")
+        " over a virtualized cluster.")
 
     AppScaleLogger.remote_log_tools_state(options, "started")
     time.sleep(2)
@@ -81,6 +81,7 @@ class AppScaleTools():
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
     uaserver_host = acc.get_uaserver_host()
+    RemoteHelper.sleep_until_port_is_open(public_ip, UserAppClient.PORT)
 
     # Update our metadata again so that users can SSH into other boxes that
     # may have been started.

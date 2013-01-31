@@ -4,6 +4,7 @@
 
 
 # General-purpose Python library imports
+import json
 import re
 import time
 
@@ -41,11 +42,11 @@ class AppControllerClient():
 
 
   def get_all_public_ips(self):
-    return self.server.get_all_public_ips(self.secret)
+    return json.loads(self.server.get_all_public_ips(self.secret))
 
 
   def get_role_info(self):
-    return self.server.get_role_info(self.secret)
+    return json.loads(self.server.get_role_info(self.secret))
 
 
   def get_uaserver_host(self):

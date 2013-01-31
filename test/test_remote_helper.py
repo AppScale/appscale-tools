@@ -246,7 +246,7 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(M2Crypto.RSA)
     fake_rsa_key = flexmock(name='fake_rsa_key')
     fake_rsa_key.should_receive('save_key').with_args(
-      LocalState.get_private_key_location('bookey'))
+      LocalState.get_private_key_location('bookey'), None)
     M2Crypto.RSA.should_receive('gen_key').and_return(fake_rsa_key)
 
     flexmock(M2Crypto.EVP)
