@@ -422,9 +422,12 @@ class RemoteHelper():
       cert = LocalState.get_certificate_location(options.keyname)
       private_key = LocalState.get_private_key_location(options.keyname)
 
-    cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1', options.verbose)
-    cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem", options.verbose)
-    cls.scp(host, options.keyname, private_key, "/etc/appscale/keys/cloud1/mykey.pem", options.verbose)
+    cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1',
+      options.verbose)
+    cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem",
+      options.verbose)
+    cls.scp(host, options.keyname, private_key,
+      "/etc/appscale/keys/cloud1/mykey.pem", options.verbose)
 
 
   @classmethod
