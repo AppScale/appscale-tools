@@ -19,6 +19,8 @@ import M2Crypto
 
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
+from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 
 
@@ -138,11 +140,6 @@ class LocalState():
     with open(location, 'w') as file_handle:
       file_handle.write(contents)
     os.chmod(location, 0600)  # so that SSH will accept the key
-
-
-  @classmethod
-  def get_key_path_from_name(cls, name):
-    return cls.LOCAL_APPSCALE_PATH + name + ".key"
 
 
   @classmethod
@@ -268,22 +265,74 @@ class LocalState():
 
 
   @classmethod
+  def get_key_path_from_name(cls, keyname):
+    """Determines the location where the SSH private key used to log into the
+    virtual machines in this AppScale deployment can be found.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+    Returns:
+      A str that indicates where the private key can be found.
+    """
+    return cls.LOCAL_APPSCALE_PATH + keyname + ".key"
+
+
+  @classmethod
   def get_private_key_location(cls, keyname):
+    """Determines the location where the private key used to sign the
+    self-signed certificate used for this AppScale deployment can be found.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+    Returns:
+      A str that indicates where the private key can be found.
+    """
     return cls.LOCAL_APPSCALE_PATH + keyname + "-key.pem"
 
 
   @classmethod
   def get_certificate_location(cls, keyname):
+    """Determines the location where the self-signed certificate for this
+    AppScale deployment can be found.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+    Returns:
+      A str that indicates where the self-signed certificate can be found.
+    """
     return cls.LOCAL_APPSCALE_PATH + keyname + "-cert.pem"
 
 
   @classmethod
   def get_locations_yaml_location(cls, keyname):
+    """Determines the location where the YAML file can be found that contains
+    information not related to service placement (e.g., what cloud we're
+    running on, security group names).
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+    Returns:
+      A str that indicates where the locations.yaml file can be found.
+    """
     return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".yaml"
 
 
   @classmethod
   def get_locations_json_location(cls, keyname):
+    """Determines the location where the JSON file can be found that contains
+    information related to service placement (e.g., where machines can be found
+    and what services they run).
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+    Returns:
+      A str that indicates where the locations.json file can be found.
+    """
     return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".json"
 
 
@@ -409,18 +458,17 @@ class LocalState():
 
   @classmethod
   def map_to_array(cls, the_map):
-    """
-    Convert a map (dictionary) into list. Given a map {k1:v1, k2:v2,...kn:vn}
-    this will return a list [k1,v1,k2,v2,...,kn,vn].
+    """Converts a dict into list. Given a map {k1:v1, k2:v2,...kn:vn}, this will
+    return a list [k1,v1,k2,v2,...,kn,vn].
 
     Args:
-      the_map A dictionary of objects
+      the_map: A dictionary of objects to convert into a list.
 
     Returns:
-      A list containing all the keys and values in the input dictionary
+      A list containing all the keys and values in the input dictionary.
     """
     the_list = []
-    for k,v in the_map.items():
-      the_list.append(k)
-      the_list.append(v)
+    for key, value in the_map.items():
+      the_list.append(key)
+      the_list.append(value)
     return the_list
