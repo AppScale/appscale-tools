@@ -28,10 +28,10 @@ from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
 
 
-# AppScale provides a configuration-file-based alternative to the
-# command-line interface that the AppScale Tools require.
 class AppScale():
-
+  """AppScale provides a configuration-file-based alternative to the
+  command-line interface that the AppScale Tools require.
+  """
 
   # The name of the configuration file that is used for storing
   # AppScale deployment information.
@@ -40,12 +40,14 @@ class AppScale():
 
   # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cloud'.
-  TEMPLATE_CLOUD_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile-cloud"
+  TEMPLATE_CLOUD_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + \
+    "../templates/AppScalefile-cloud"
 
 
   # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cluster'.
-  TEMPLATE_CLUSTER_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + "../templates/AppScalefile-cluster"
+  TEMPLATE_CLUSTER_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + \
+    "../templates/AppScalefile-cluster"
 
 
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
@@ -75,84 +77,95 @@ Available commands:
     pass
 
 
-  # Constructs a string that corresponds to the location of the
-  # AppScalefile for this deployment.
-  # Returns:
-  #   The location where the user's AppScalefile can be found.
   def get_appscalefile_location(self):
+    """Constructs a string that corresponds to the location of the
+    AppScalefile for this deployment.
+    
+    Returns:
+      The location where the user's AppScalefile can be found.
+    """
     return os.getcwd() + os.sep + self.APPSCALEFILE
 
 
-  # Checks the local directory for an AppScalefile and reads its
-  # contents.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the
-  #     local directory.
-  # Returns:
-  #   The contents of the AppScalefile in the current working directory.
   def read_appscalefile(self):
+    """Checks the local directory for an AppScalefile and reads its
+    contents.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the
+        local directory.
+    Returns:
+      The contents of the AppScalefile in the current working directory.
+    """
     # Don't check for existence and then open it later - this lack of
     # atomicity is potentially a TOCTOU vulnerability.
     try:
-      with open(self.get_appscalefile_location()) as f:
-        return f.read()
-    except IOError as e:
+      with open(self.get_appscalefile_location()) as file_handle:
+        return file_handle.read()
+    except IOError:
       raise AppScalefileException("No AppScalefile found in this " +
         "directory. Please run 'appscale init' to generate one and try " +
         "again.")
 
 
-  # Returns the location where the AppScale tools writes JSON data
-  # about where each virtual machine is located in the currently running
-  # AppScale deployment.
-  # Args:
-  #   - keyname: The name of the AppScale deployment to find the JSON
-  #       filename for.
-  # Returns:
-  #   The path on the local filesystem where the locations.json file
-  #   can be found.
   def get_locations_json_file(self, keyname):
+    """Returns the location where the AppScale tools writes JSON data
+    about where each virtual machine is located in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the AppScale deployment to find the JSON filename
+        for.
+    Returns:
+      The path on the local filesystem where the locations.json file can be
+        found.
+    """
     appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
     json_file = appscale_dir + os.sep + "locations-" + keyname + ".json"
     return json_file
 
 
-  # Returns the location where the AppScale tools places an SSH key that
-  # can be used to log into any virtual machine in the currently running
-  # AppScale deployment.
-  # Args:
-  #   - keyname: The name of the AppScale deployment to find the SSH
-  #       key for.
-  # Returns:
-  #   The path on the local filesystem where the SSH key can be found.
   def get_key_location(self, keyname):
+    """Returns the location where the AppScale tools places an SSH key that
+    can be used to log into any virtual machine in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the AppScale deployment to find the SSH key for.
+
+    Returns:
+      The path on the local filesystem where the SSH key can be found.
+    """
     appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
     key_file = appscale_dir + os.sep + keyname + ".key"
     return key_file
 
 
-  # Aborts and prints out the directives allowed for this module.
   def help(self):
+    """Aborts and prints out the directives allowed for this module.
+    """
     raise UsageException(self.USAGE)
 
 
-  # Writes an AppScalefile in the local directory, that contains
-  # common configuration parameters.
-  # Args:
-  #   environment: A str that indicates whether the AppScalefile to
-  #     write should be tailed to a 'cloud' environment or a 'cluster'
-  #     environment.
-  # Raises:
-  #   AppScalefileException: If there already is an AppScalefile in the
-  #     local directory.
   def init(self, environment):
+    """Writes an AppScalefile in the local directory, that contains common
+    configuration parameters.
+
+    Args:
+      environment: A str that indicates whether the AppScalefile to write should
+      be tailed to a 'cloud' environment or a 'cluster' environment.
+
+    Raises:
+      AppScalefileException: If there already is an AppScalefile in the local
+      directory.
+    """
     # first, make sure there isn't already an AppScalefile in this
     # directory
     appscalefile_location = self.get_appscalefile_location()
     if os.path.exists(appscalefile_location):
-       raise AppScalefileException("There is already an AppScalefile" +
-         " in this directory. Please remove it and run 'appscale init'" +
-         " again to generate a new AppScalefile.")
+      raise AppScalefileException("There is already an AppScalefile" +
+        " in this directory. Please remove it and run 'appscale init'" +
+        " again to generate a new AppScalefile.")
 
     # next, see if we're making a cloud template file or a cluster
     # template file
@@ -169,12 +182,14 @@ Available commands:
     shutil.copy(template_file, appscalefile_location)
 
 
-  # Starts an AppScale deployment with the configuration options from
-  # the AppScalefile in the current directory.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     directory.
   def up(self):
+    """Starts an AppScale deployment with the configuration options from the
+    AppScalefile in the current directory.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current
+      directory.
+    """
     contents = self.read_appscalefile()
 
     # If running in a cluster environment, we first need to set up SSH keys
@@ -215,17 +230,19 @@ Available commands:
     AppScaleTools.run_instances(options)
 
 
-  # Determines whether or not we should call appscale-add-keypair,
-  # by collecting all the IP addresses in the given IPs layout and
-  # attempting to SSH to each of them with the specified keyname.
-  # Args:
-  #   config: A dictionary that includes the IPs layout (which itself
-  #     is a dict mapping role names to IPs) and, optionally, the keyname
-  #     to use.
-  # Returns:
-  #   A bool indicating whether or not the specified keyname can be
-  #   used to log into each IP address without a password.
   def valid_ssh_key(self, config):
+    """Determines whether or not we should call appscale-add-keypair, by
+    collecting all the IP addresses in the given IPs layout and attempting to
+    SSH to each of them with the specified keyname.
+
+    Args:
+      config: A dictionary that includes the IPs layout (which itself is a dict
+        mapping role names to IPs) and, optionally, the keyname to use.
+
+    Returns:
+      A bool indicating whether or not the specified keyname can be used to log
+      into each IP address without a password.
+    """
     if "keyname" in config:
       keyname = config["keyname"]
     else:
@@ -252,16 +269,19 @@ Available commands:
     return True
 
 
-  # Attempts to SSH into the machine located at the given IP address
-  # with the given SSH key.
-  # Args:
-  #   ip: The IP address to attempt to SSH into.
-  #   ssh_key_location: The location on the local filesystem where the
-  #     SSH key to use is located.
-  # Returns:
-  #   A bool that indicates whether or not the given SSH key can log in
-  #   without a password to the given machine.
   def can_ssh_to_ip(self, ip, ssh_key_location):
+    """Attempts to SSH into the machine located at the given IP address with the
+    given SSH key.
+
+    Args:
+      ip: The IP address to attempt to SSH into.
+      ssh_key_location: The location on the local filesystem where the SSH key
+        to use is located.
+
+    Returns:
+      A bool that indicates whether or not the given SSH key can log in without
+      a password to the given machine.
+    """
     try:
       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       sock.connect((ip, 22))
@@ -286,18 +306,19 @@ Available commands:
     return success
 
 
-  # 'ssh' provides a simple way to log into virtual machines in an
-  # AppScale deployment, using the SSH key provided in the user's
-  # AppScalefile.
-  # Args:
-  #   - node: An int that represents the node to SSH to. The value is
-  #       used as an index into the list of nodes running in the
-  #       AppScale deployment, starting with zero.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     directory.
-  #   TypeError: If the user does not provide an integer for 'node'.
   def ssh(self, node):
+    """'ssh' provides a simple way to log into virtual machines in an AppScale
+    deployment, using the SSH key provided in the user's AppScalefile.
+
+    Args:
+      node: An int that represents the node to SSH to. The value is used as an
+        index into the list of nodes running in the AppScale deployment,
+        starting with zero.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current
+        directory.
+      TypeError: If the user does not provide an integer for 'node'.
+    """
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
@@ -330,19 +351,22 @@ Available commands:
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
-    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
+      self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
     subprocess.call(command)
 
 
-  # 'status' is a more accessible way to query the state of the
-  # AppScale deployment than 'appscale-describe-instances', and calls
-  # it with the parameters in the user's AppScalefile.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     directory.
   def status(self):
+    """'status' is a more accessible way to query the state of the AppScale
+    deployment than 'appscale-describe-instances', and calls it with the
+    parameters in the user's AppScalefile.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current
+      directory.
+    """
     contents = self.read_appscalefile()
 
     # Construct a describe-instances command from the file's contents
@@ -357,17 +381,19 @@ Available commands:
     subprocess.call(command)
 
 
-  # 'deploy' is a more accessible way to tell an AppScale deployment to
-  # run a Google App Engine application than 'appscale-upload-app'. It
-  # calls that command with the configuration options found in the
-  # AppScalefile in the current working directory.
-  # Args:
-  #   app: The path (absolute or relative) to the Google App Engine
-  #     application that should be uploaded.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     working directory.
   def deploy(self, app):
+    """'deploy' is a more accessible way to tell an AppScale deployment to run a
+    Google App Engine application than 'appscale-upload-app'. It calls that
+    command with the configuration options found in the AppScalefile in the
+    current working directory.
+
+    Args:
+      app: The path (absolute or relative) to the Google App Engine application
+        that should be uploaded.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
     contents = self.read_appscalefile()
 
     # Construct an upload-app command from the file's contents
@@ -388,19 +414,20 @@ Available commands:
     subprocess.call(command)
 
 
-  # 'tail' provides a simple way to follow log files in an AppScale
-  # deployment, instead of having to ssh in to a machine, locate
-  # the logs directory, and then tail it.
-  # Args:
-  #   node: An int that indicates the id of the machine to tail logs
-  #     from.
-  #   file_regex: The regular expression that should be used to indicate
-  #     which logs to tail from on the remote host.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     working directory.
-  #   TypeError: If index is not an int.
   def tail(self, node, file_regex):
+    """'tail' provides a simple way to follow log files in an AppScale
+    deployment, instead of having to ssh in to a machine, locate the logs
+    directory, and then tail it.
+
+    Args:
+      node: An int that indicates the id of the machine to tail logs from.
+      file_regex: The regular expression that should be used to indicate which
+        logs to tail from on the remote host.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+      TypeError: If index is not an int.
+    """
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
@@ -409,8 +436,8 @@ Available commands:
     try:
       index = int(node)
     except ValueError:
-      raise TypeError("Usage: appscale tail <node id to tail from> <regex of files to tail>\n" +
-        "Example: appscale tail 0 controller*")
+      raise TypeError("Usage: appscale tail <node id to tail from> " + \
+        "<regex of files to tail>\nExample: appscale tail 0 controller*")
 
     # get a list of the nodes running
     if 'keyname' in contents_as_yaml:
@@ -442,16 +469,17 @@ Available commands:
     subprocess.call(command)
 
 
-  # 'logs' provides a cleaner experience for users than the
-  # appscale-gather-logs command, by using the configuration options
-  # present in the AppScalefile found in the current working directory.
-  # Args:
-  #   location: The path on the local filesystem where logs should be
-  #     copied to.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     working directory.
   def logs(self, location):
+    """'logs' provides a cleaner experience for users than the
+    appscale-gather-logs command, by using the configuration options present in
+    the AppScalefile found in the current working directory.
+
+    Args:
+      location: The path on the local filesystem where logs should be copied to.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
@@ -468,14 +496,15 @@ Available commands:
     subprocess.call(command)
 
 
-  # 'destroy' provides a nicer experience for users than the
-  # appscale-terminate-instances command, by using the configuration
-  # options present in the AppScalefile found in the current working
-  # directory.
-  # Raises:
-  #   AppScalefileException: If there is no AppScalefile in the current
-  #     working directory.
   def destroy(self):
+    """'destroy' provides a nicer experience for users than the
+    appscale-terminate-instances command, by using the configuration options
+    present in the AppScalefile found in the current working directory.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
     contents = self.read_appscalefile()
 
     # Construct an upload-app command from the file's contents
