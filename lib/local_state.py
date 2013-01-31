@@ -320,7 +320,7 @@ class LocalState():
       'group' : options.group
     }
     with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
-      file_handle.write(yaml.dump(yaml_contents))
+      file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
     # and now we can write the json metadata file
     with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:

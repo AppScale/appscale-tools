@@ -5,6 +5,10 @@ require 'openssl'
 require 'soap/rpc/driver'
 require 'timeout'
 
+
+require 'rubygems'
+require 'json'
+
 IP_REGEX = /\d+\.\d+\.\d+\.\d+/
 FQDN_REGEX = /[\w\d\.\-]+/
 IP_OR_FQDN = /#{IP_REGEX}|#{FQDN_REGEX}/
@@ -134,7 +138,7 @@ class AppControllerClient
   end
  
   def get_all_public_ips(retry_on_fail=RETRY_ON_FAIL)
-    make_call(30, retry_on_fail) { @conn.get_all_public_ips(@secret) }
+    make_call(30, retry_on_fail) { JSON.load(@conn.get_all_public_ips(@secret)) }
   end
 
   def kill()
@@ -170,7 +174,7 @@ class AppControllerClient
   # about the given node.
   def get_role_info()
     make_call(NO_TIMEOUT, ABORT_ON_FAIL) { 
-      @conn.get_role_info(@secret) 
+      JSON.load(@conn.get_role_info(@secret))
     }
   end
 

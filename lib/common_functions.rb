@@ -1589,7 +1589,7 @@ module CommonFunctions
       "keyname '#{keyname}'..."
     Kernel.sleep(2)
 
-    ssh_key_location = "~/.appscale/#{keyname}"
+    ssh_key_location = "~/.appscale/#{keyname}.key"
     live_ips = CommonFunctions.stop_appcontrollers(keyname, ssh_key_location,
       verbose)
     CommonFunctions.wait_for_appcontrollers_to_stop(live_ips, ssh_key_location)
