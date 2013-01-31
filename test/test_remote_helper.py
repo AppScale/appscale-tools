@@ -49,7 +49,7 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra')
+      table='cassandra', verbose=False)
     self.node_layout = NodeLayout(self.options)
 
     # mock out calls to EC2
@@ -214,7 +214,7 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(os.path)
     os.path.should_receive('exists').with_args('/tmp/booscale-local/lib').and_return(False)
     self.assertRaises(BadConfigurationException, RemoteHelper.rsync_files,
-      'public1', 'booscale', '/tmp/booscale-local')
+      'public1', 'booscale', '/tmp/booscale-local', False)
 
 
   def test_rsync_files_from_dir_that_does_exist(self):
@@ -229,7 +229,8 @@ class TestRemoteHelper(unittest.TestCase):
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
 
-    RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local')
+    RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local',
+      False)
 
 
   def test_copy_deployment_credentials_in_cloud(self):
@@ -280,7 +281,8 @@ class TestRemoteHelper(unittest.TestCase):
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
 
-    options = flexmock(name='options', keyname='bookey', infrastructure='ec2')
+    options = flexmock(name='options', keyname='bookey', infrastructure='ec2',
+      verbose=True)
     RemoteHelper.copy_deployment_credentials('public1', options)
 
 
@@ -313,7 +315,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 
-    RemoteHelper.start_remote_appcontroller('public1', 'bookey')
+    RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 
 
   def test_copy_local_metadata(self):
@@ -322,7 +324,7 @@ class TestRemoteHelper(unittest.TestCase):
       'locations-bookey.[yaml|json]'),
       shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
       .and_return(self.success)
-    RemoteHelper.copy_local_metadata('public1', 'bookey')
+    RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
 
   def test_create_user_accounts(self):

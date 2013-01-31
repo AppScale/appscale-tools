@@ -56,7 +56,27 @@ class AppScaleLogger():
       message: A str representing the message to log.
     """
     cprint(message, 'green')
-    # TODO(cgb): Also write it to a file or buffer somewhere
+    cls.append_to_log(message)
+
+
+  @classmethod
+  def verbose(cls, message, is_verbose):
+    """Prints the specified message if we're running in 'verbose' mode, and
+    always logs it.
+
+    Args:
+      message: A str representing the message to log.
+      is_verbose: A bool that indicates whether or not the message should be
+        printed to stdout.
+    """
+    if is_verbose:
+      print message
+    cls.append_to_log(message)
+
+
+  @classmethod
+  def append_to_log(cls,message):
+    return
 
 
   @classmethod
@@ -85,6 +105,6 @@ class AppScaleLogger():
       conn = httplib.HTTPSConnection(cls.LOGS_HOST)
       conn.request('POST', '/upload', payload, cls.HEADERS)
     except Exception:
-      cls.log("Unable to log {0} state".format(state))
+      cls.verbose("Unable to log {0} state".format(state), options.verbose)
 
     return params

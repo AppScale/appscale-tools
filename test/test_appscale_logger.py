@@ -67,6 +67,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "scp" : None,
       "table" : "cassandra",
       "test" : False,
+      "verbose" : False,
       "version" : False
     }
 

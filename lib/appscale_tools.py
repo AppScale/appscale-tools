@@ -76,18 +76,21 @@ class AppScaleTools():
     # machines via 'appscale ssh'
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
-    uaserver_host = acc.get_uaserver_host()
-    RemoteHelper.sleep_until_port_is_open(public_ip, UserAppClient.PORT)
+    uaserver_host = acc.get_uaserver_host(options.verbose)
+    RemoteHelper.sleep_until_port_is_open(public_ip, UserAppClient.PORT,
+      options.verbose)
 
     # Update our metadata again so that users can SSH into other boxes that
     # may have been started.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
     AppScaleLogger.log("UserAppServer is at {0}".format(uaserver_host))
 
@@ -112,8 +115,9 @@ class AppScaleTools():
     # up and have started all their API services.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
 
+    AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))

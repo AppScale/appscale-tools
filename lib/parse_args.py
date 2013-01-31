@@ -129,6 +129,11 @@ class ParseArgs():
         default=True,
         help="adds/removes application servers based on incoming traffic")
 
+      # flags relating to how much output we produce
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
+
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,

@@ -49,12 +49,13 @@ class AppControllerClient():
     return json.loads(self.server.get_role_info(self.secret))
 
 
-  def get_uaserver_host(self):
+  def get_uaserver_host(self, is_verbose):
     last_known_state = None
     while True:
       try:
         status = self.get_status()
-        AppScaleLogger.log('Received status from head node: ' + status)
+        AppScaleLogger.verbose('Received status from head node: ' + status,
+          is_verbose)
         match = re.search(r'Database is at (.*)', status)
         if match and match.group(1) != 'not-up-yet':
           return match.group(1)
@@ -63,10 +64,10 @@ class AppControllerClient():
           if match:
             if last_known_state != match.group(1):
               last_known_state = match.group(1)
-            AppScaleLogger.log(last_known_state + "...")
+            AppScaleLogger.log(last_known_state)
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
-                             'the initialization process...')
+                             'the initialization process')
       except Exception as e:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again'.format(str(e)))
       time.sleep(10)
