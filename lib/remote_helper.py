@@ -354,16 +354,13 @@ class RemoteHelper():
         raise BadConfigurationException("The location you specified to copy " +
           "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
           local_path))
-      cls.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:" + \
-        "/root/appscale/{2}".format(ssh_key, cls.SSH_OPTIONS, dir_name, host))
+      cls.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:/root/appscale/{4}" \
+        .format(ssh_key, cls.SSH_OPTIONS, local_path, host, dir_name))
 
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
     # (e.g., built database binaries).
-    cls.shell("rsync -e 'ssh -i {0} #{1}' -arv --exclude='logs/*' " + \
-      "--exclude='hadoop-*' --exclude='hbase/hbase-*' " + \
-      "--exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' " + \
-      "AppDB/* root@#{2}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS,
-      host))
+    local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
+    cls.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host))
 
 
   @classmethod
