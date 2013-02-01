@@ -49,6 +49,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
+    AppScaleLogger.should_receive('success').and_return()
 
     # mock out all sleeping
     flexmock(time)
