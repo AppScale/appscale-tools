@@ -7,6 +7,8 @@ import os
 import re
 import socket
 import subprocess
+import sys
+import tempfile
 import time
 
 
@@ -29,6 +31,10 @@ class RemoteHelper():
   This includes the ability to start services on remote machines and copy files
   to them.
   """
+
+
+  # The number of times to execute shell commands before aborting, by default.
+  DEFAULT_NUM_RETRIES = 5
 
 
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
@@ -86,8 +92,15 @@ class RemoteHelper():
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
+    if options.infrastructure:
+      agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
+      params = agent.get_params_from_args(options)
+      additional_params = params[agent.PARAM_CREDENTIALS]
+    else:
+      additional_params = {}
+
     deployment_params = LocalState.generate_deployment_params(options,
-      node_layout, public_ip)
+      node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
       options.verbose)
     AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
@@ -236,7 +249,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def shell(cls, command, is_verbose):
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
 
@@ -244,24 +257,25 @@ class RemoteHelper():
       command: A str representing the command to execute.
       is_verbose: A bool that indicates if we should print the command we are
         executing to stdout.
+      num_retries: The number of times we should try to execute the given
+        command before aborting.
     Returns:
       The standard output and standard error produced when the command executes.
     Raises:
       ShellException: If, after five attempts, executing the named command
       failed.
     """
-    tries_left = 5
+    tries_left = num_retries
     while tries_left:
       AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-      result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+      the_temp_file = tempfile.TemporaryFile()
+      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+        stderr=sys.stdout)
       result.wait()
       if result.returncode == 0:
-        stdout = result.stdout.read()
-        stderr = result.stderr.read()
-        result.stdout.close()
-        result.stderr.close()
-        return stdout, stderr
+        output = the_temp_file.read()
+        the_temp_file.close()
+        return output
       AppScaleLogger.verbose("Command failed. Trying again momentarily." \
         .format(command), is_verbose)
       tries_left -= 1

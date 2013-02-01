@@ -143,7 +143,8 @@ class LocalState():
 
 
   @classmethod
-  def generate_deployment_params(cls, options, node_layout, first_host):
+  def generate_deployment_params(cls, options, node_layout, first_host,
+    additional_creds):
     """Constructs a dict that tells the AppController which machines are part of
     this AppScale deployment, what their roles are, and how to host API services
     within this deployment.
@@ -155,6 +156,8 @@ class LocalState():
         (API services).
       first_host: A str that indicates which machine should be contacted by
         others to bootstrap and get initial service information.
+      additional_creds: A dict that specifies arbitrary credentials that should
+        also be passed in with the generated parameters.
     Returns:
       A dict whose keys indicate API service information as well as a special
       key that indicates machine to role mapping information.
@@ -169,16 +172,17 @@ class LocalState():
       "autoscale" : str(options.autoscale),
       "group" : options.group
     }
+    creds.update(additional_creds)
 
     if options.infrastructure:
-      additional_creds = {
+      iaas_creds = {
         'machine' : options.machine,
         'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms
       }
-      creds.update(additional_creds)
+      creds.update(iaas_creds)
 
     return creds
 
