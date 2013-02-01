@@ -10,6 +10,7 @@ import time
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -139,13 +140,6 @@ class AppScaleTools():
         format(options.keyname))
 
   """
-  def self.terminate_instances(options)
-    keyname = options['keyname']
-    locations_yaml = File.expand_path("~/.appscale/locations-#{keyname}.yaml")
-    if !File.exists?(locations_yaml)
-      raise AppScaleException.new(APPSCALE_NOT_RUNNING)
-    end
-
     CommonFunctions.update_locations_file(keyname)
     shadow_ip = CommonFunctions.get_head_node_ip(keyname)
     secret = CommonFunctions.get_secret_key(keyname)
