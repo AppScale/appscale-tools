@@ -11,6 +11,7 @@ import re
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 import uuid
@@ -55,16 +56,14 @@ class TestAppScaleRunInstances(unittest.TestCase):
 
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
-    fake_output = flexmock(name='out')
-    fake_output.should_receive('read').and_return('boo out')
-    fake_output.should_receive('close').and_return()
+    self.fake_temp_file = flexmock(name='fake_temp_file')
+    self.fake_temp_file.should_receive('read').and_return('boo out')
+    self.fake_temp_file.should_receive('close').and_return()
 
-    fake_error = flexmock(name='err')
-    fake_error.should_receive('read').and_return('boo err')
-    fake_error.should_receive('close').and_return()
+    flexmock(tempfile)
+    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
 
-    self.success = flexmock(name='success', returncode=0, stdout=fake_output,
-      stderr=fake_error)
+    self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
 
     self.failed = flexmock(name='success', returncode=1)
@@ -109,20 +108,20 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # mock out our attempts to find /etc/appscale and presume it does exist
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
     subprocess.should_receive('Popen').with_args(re.compile(
       '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # put in a mock indicating that the database the user wants is supported
     subprocess.should_receive('Popen').with_args(re.compile(
       '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, 'cassandra')),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # mock out generating the private key
@@ -152,18 +151,18 @@ class TestAppScaleRunInstances(unittest.TestCase):
 
     # assume that we started god fine
     subprocess.should_receive('Popen').with_args(re.compile('god &'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # and that we copied over the AppController's god file
     subprocess.should_receive('Popen').with_args(re.compile(
       'appcontroller.god'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # also, that we started the AppController itself
     subprocess.should_receive('Popen').with_args(re.compile('god load'),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # assume that the AppController comes up on the third attempt
@@ -223,7 +222,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # copying over the locations yaml and json files should be fine
     subprocess.should_receive('Popen').with_args(re.compile(
       'locations-{0}.[yaml|json]'.format(self.keyname)),
-      shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # mock out calls to the UserAppServer and presume that calls to create new
