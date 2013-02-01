@@ -142,8 +142,10 @@ class AppScaleTools():
 
     if LocalState.get_infrastructure(options.keyname) in \
       InfrastructureAgentFactory.VALID_AGENTS:
-      RemoteHelper.terminate_cloud_infrastructure(options.keyname)
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+        options.verbose)
     else:
-      RemoteHelper.terminate_virtualized_cluster(options.keyname)
+      RemoteHelper.terminate_virtualized_cluster(options.keyname,
+        options.verbose)
 
     LocalState.cleanup_appscale_files(options.keyname)

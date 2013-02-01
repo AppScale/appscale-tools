@@ -428,11 +428,26 @@ class LocalState():
     Returns:
       A str containing the host that runs the login service.
     """
+    return cls.get_host_with_role(keyname, 'login')
+
+
+  @classmethod
+  def get_host_with_role(cls, keyname, role):
+    """Searches through the local metadata to see which virtual machine runs the
+    specified role.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      role: A str indicating the role to search for.
+    Returns:
+      A str containing the host that runs the specified service.
+    """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if 'login' in node['jobs']:
+      if role in node['jobs']:
         return node['public_ip']
-    raise AppScaleException("Couldn't find a login node.")
+    raise AppScaleException("Couldn't find a {0} node.".format(role))
 
 
   @classmethod

@@ -573,7 +573,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def terminate_virtualized_cluster(cls, keyname):
+  def terminate_virtualized_cluster(cls, keyname, is_verbose):
     """Stops all API services running on all nodes in the currently running
     AppScale deployment.
 
@@ -583,46 +583,54 @@ class RemoteHelper():
     AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
       "keyname {0}".format(keyname))
     time.sleep(2)
-    """
-    command = "service appscale-controller stop"
 
-    ips = CommonFunctions.get_all_public_ips(keyname)
-    live_ips = []
+    shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    all_ips = acc.get_all_public_ips()
 
     threads = []
-    ips.each { |ip|
-      threads << Thread.new {
-        CommonFunctions.run_remote_command(ip, command, ssh_key, verbose)
-        Kernel.sleep(5)
-        CommonFunctions.run_remote_command(ip, command, ssh_key, verbose)
-        live_ips << ip
-      }
-    }
+    for ip in all_ips:
+      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
+        keyname, is_verbose))
+      thread.start()
+      threads.append(thread)
 
-    threads.each { |t| t.join }
-    return live_ips
+    for thread in threads:
+      thread.join()
 
     boxes_shut_down = 0
-    live_ips.each { |ip|
-      Kernel.print "Shutting down AppScale components at #{ip}"
-      STDOUT.flush
-      loop {
-        remote_cmd = "ssh root@#{ip} #{SSH_OPTIONS} -i #{ssh_key} 'ps x'"
-        ps = CommonFunctions.shell(remote_cmd)
-        processes_left = ps.scan(/appscale-controller stop/).length
-        break if processes_left.zero?
-        Kernel.print '.'
-        STDOUT.flush
-        Kernel.sleep(0.3)
-      }
+    is_running_regex = re.compile("appscale-controller stop")
+    for ip in all_ips:
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+      while True:
+        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
+        AppScaleLogger.log(remote_output)
+        if not is_running_regex.match(remote_output):
+          break
+        time.sleep(0.3)
       boxes_shut_down += 1
-      Kernel.print "\n"
-    }
 
-    if boxes_shut_down.zero?
-      raise AppScaleException.new(
-        AppScaleTools::UNABLE_TO_TERMINATE_ANY_MACHINES)
-    end
+    if boxes_shut_down != len(all_ips):
+      raise AppScaleException("Couldn't terminate your AppScale deployment " + \
+        "on all machines - please do so manually.")
 
-    Kernel.puts "Terminated AppScale across #{boxes_shut_down} boxes."
+    AppScaleLogger.log("Terminated AppScale on {0} machines."
+      .format(boxes_shut_down))
+
+  
+  @classmethod
+  def stop_remote_appcontroller(cls, host, keyname, is_verbose):
+    """Stops the AppController daemon on the specified host.
+
+    Tries the stop command twice, just to make sure that the AppController gets
+    the message.
+
+    Args:
+      host: The location of the AppController to stop.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the stop commands we
+        exec to stdout.
     """
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
+    time.sleep(5)
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
