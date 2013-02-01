@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import os
 import time
 
 
@@ -121,3 +122,47 @@ class AppScaleTools():
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
     AppScaleLogger.remote_log_tools_state(options, "finished")
+
+
+  @classmethod
+  def terminate_instances(cls, options):
+    """Stops all services running in an AppScale deployment, and in cloud
+    deployments, also powers off the instances previously spawned.
+
+    Raises:
+      AppScaleException: If AppScale is not running, and thus can't be
+      terminated.
+    """
+    if not os.path.exists(LocalState.get_locations_yaml_location(
+      options.keyname)):
+      raise AppScaleException("AppScale is not running with the keyname {0}".
+        format(options.keyname))
+
+  """
+  def self.terminate_instances(options)
+    keyname = options['keyname']
+    locations_yaml = File.expand_path("~/.appscale/locations-#{keyname}.yaml")
+    if !File.exists?(locations_yaml)
+      raise AppScaleException.new(APPSCALE_NOT_RUNNING)
+    end
+
+    CommonFunctions.update_locations_file(keyname)
+    shadow_ip = CommonFunctions.get_head_node_ip(keyname)
+    secret = CommonFunctions.get_secret_key(keyname)
+
+    if options['backup_neptune_info']
+      CommonFunctions.backup_neptune_info(keyname, shadow_ip,
+        options['backup_neptune_info'])
+    end
+
+    infrastructure = CommonFunctions.get_infrastructure(keyname, required=true)
+    if VALID_CLOUD_TYPES.include?(infrastructure)
+      group = CommonFunctions.get_group(keyname, required=true)
+      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
+    else
+      CommonFunctions.terminate_via_vmm(keyname, options['verbose'])
+    end
+
+    CommonFunctions.delete_appscale_files(keyname)
+  end
+  """

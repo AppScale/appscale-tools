@@ -151,6 +151,10 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-terminate-instances":
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     else:
       raise SystemExit
 
@@ -174,6 +178,8 @@ class ParseArgs():
     elif function == "appscale-gather-logs":
       pass
     elif function == "appscale-add-keypair":
+      pass
+    elif function == "appscale-terminate-instances":
       pass
     else:
       raise SystemExit
