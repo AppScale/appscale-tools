@@ -155,6 +155,10 @@ class ParseArgs():
       self.parser.add_argument('--keyname',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+      # flags relating to how much output we produce
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
     else:
       raise SystemExit
 
