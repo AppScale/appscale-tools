@@ -95,6 +95,7 @@ class TestLocalState(unittest.TestCase):
     })
 
     expected = {
+      'a' : 'b',
       'table' : 'cassandra',
       'hostname' : 'public1',
       'ips' : json.dumps({'node-1': ['rabbitmq_slave', 'database', 'rabbitmq', 'memcache',
@@ -111,7 +112,7 @@ class TestLocalState(unittest.TestCase):
       'max_images' : 2
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
-      'public1')
+      'public1', {'a':'b'})
     self.assertEquals(expected, actual)
 
 

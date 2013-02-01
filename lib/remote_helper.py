@@ -92,8 +92,15 @@ class RemoteHelper():
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
+    if options.infrastructure:
+      agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
+      params = agent.get_params_from_args(options)
+      additional_params = params[agent.PARAM_CREDENTIALS]
+    else:
+      additional_params = {}
+
     deployment_params = LocalState.generate_deployment_params(options,
-      node_layout, public_ip)
+      node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
       options.verbose)
     AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
