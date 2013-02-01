@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 import unittest
+import yaml
 
 
 # Third party libraries
@@ -78,3 +79,35 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.terminate_instances,
       options)
+
+
+  def test_terminate_in_virtual_cluster(self):
+    # let's say that there is a locations.yaml file, which means appscale is
+    # running, so we should terminate the services on each box
+    flexmock(os.path)
+    os.path.should_call('exists')  # set up the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
+
+    # mock out reading the locations.yaml file, and pretend that we're on
+    # a virtualized cluster
+    fake_file = flexmock(name='fake_file')
+    fake_file.should_receive('read').and_return(yaml.dump({
+      'infrastructure' : 'xen'
+    }))
+
+    # finally, mock out removing the yaml file, json file, and secret key from
+    # this machine
+    flexmock(os)
+    os.should_receive('remove').with_args(
+      LocalState.get_locations_yaml_location(self.keyname)).and_return()
+    os.should_receive('remove').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return()
+    os.should_receive('remove').with_args(
+      LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    argv = [
+      "--keyname", self.keyname
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.terminate_instances(options)

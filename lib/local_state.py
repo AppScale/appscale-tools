@@ -397,6 +397,13 @@ class LocalState():
 
 
   @classmethod
+  def get_host_for_role(cls, keyname, role):
+    for node in cls.get_local_nodes_info(keyname):
+      if role in node["jobs"]:
+          return node["public_ip"]
+
+
+  @classmethod
   def encrypt_password(cls, username, password):
     """Salts the given password with the provided username and encrypts it.
 
@@ -476,3 +483,32 @@ class LocalState():
       the_list.append(key)
       the_list.append(value)
     return the_list
+
+
+  @classmethod
+  def get_infrastructure(cls, keyname):
+    """Reads the locations.yaml file to see if this AppScale deployment is
+    running over a cloud infrastructure or a virtualized cluster.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the cloud infrastructure that AppScale is running over, or
+      'xen' if running over a virtualized cluster.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["infrastructure"]
+
+
+  @classmethod
+  def cleanup_appscale_files(cls, keyname):
+    """Removes all AppScale metadata files from this machine.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    """
+    os.remove(LocalState.get_locations_yaml_location(keyname))
+    os.remove(LocalState.get_locations_json_location(keyname))
+    os.remove(LocalState.get_secret_key_location(keyname))

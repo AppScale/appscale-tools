@@ -8,6 +8,7 @@ import time
 
 
 # AppScale-specific imports
+from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
@@ -139,24 +140,10 @@ class AppScaleTools():
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
-  """
-    CommonFunctions.update_locations_file(keyname)
-    shadow_ip = CommonFunctions.get_head_node_ip(keyname)
-    secret = CommonFunctions.get_secret_key(keyname)
+    if LocalState.get_infrastructure(options.keyname) in \
+      InfrastructureAgentFactory.VALID_AGENTS:
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname)
+    else:
+      RemoteHelper.terminate_virtualized_cluster(options.keyname)
 
-    if options['backup_neptune_info']
-      CommonFunctions.backup_neptune_info(keyname, shadow_ip,
-        options['backup_neptune_info'])
-    end
-
-    infrastructure = CommonFunctions.get_infrastructure(keyname, required=true)
-    if VALID_CLOUD_TYPES.include?(infrastructure)
-      group = CommonFunctions.get_group(keyname, required=true)
-      CommonFunctions.terminate_via_infrastructure(infrastructure, keyname, group, shadow_ip, secret)
-    else
-      CommonFunctions.terminate_via_vmm(keyname, options['verbose'])
-    end
-
-    CommonFunctions.delete_appscale_files(keyname)
-  end
-  """
+    LocalState.cleanup_appscale_files(options.keyname)

@@ -559,3 +559,69 @@ class RemoteHelper():
           break
         else:
           time.sleep(10)
+
+
+  @classmethod
+  def terminate_cloud_infrastructure(cls, keyname):
+    """Powers off all machines in the currently running AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+    """
+    pass
+
+
+  @classmethod
+  def terminate_virtualized_cluster(cls, keyname):
+    """Stops all API services running on all nodes in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+    """
+    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
+      "keyname {0}".format(keyname))
+    time.sleep(2)
+    """
+    command = "service appscale-controller stop"
+
+    ips = CommonFunctions.get_all_public_ips(keyname)
+    live_ips = []
+
+    threads = []
+    ips.each { |ip|
+      threads << Thread.new {
+        CommonFunctions.run_remote_command(ip, command, ssh_key, verbose)
+        Kernel.sleep(5)
+        CommonFunctions.run_remote_command(ip, command, ssh_key, verbose)
+        live_ips << ip
+      }
+    }
+
+    threads.each { |t| t.join }
+    return live_ips
+
+    boxes_shut_down = 0
+    live_ips.each { |ip|
+      Kernel.print "Shutting down AppScale components at #{ip}"
+      STDOUT.flush
+      loop {
+        remote_cmd = "ssh root@#{ip} #{SSH_OPTIONS} -i #{ssh_key} 'ps x'"
+        ps = CommonFunctions.shell(remote_cmd)
+        processes_left = ps.scan(/appscale-controller stop/).length
+        break if processes_left.zero?
+        Kernel.print '.'
+        STDOUT.flush
+        Kernel.sleep(0.3)
+      }
+      boxes_shut_down += 1
+      Kernel.print "\n"
+    }
+
+    if boxes_shut_down.zero?
+      raise AppScaleException.new(
+        AppScaleTools::UNABLE_TO_TERMINATE_ANY_MACHINES)
+    end
+
+    Kernel.puts "Terminated AppScale across #{boxes_shut_down} boxes."
+    """
