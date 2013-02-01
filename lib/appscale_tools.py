@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import sys
 import time
 
 
@@ -28,6 +29,33 @@ class AppScaleTools():
   current working directory (as opposed to a dict), but under the hood these
   methods get called anyways.
   """
+
+
+  @classmethod
+  def reset_password(cls, options):
+    """Resets a user's password the currently running AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    secret = LocalState.get_secret_key(options.keyname)
+    username, password = LocalState.get_credentials(is_admin=False)
+    encrypted_password = LocalState.encrypt_password(username, password)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      secret)
+    userappserver_ip = acc.get_uaserver_host(options.verbose)
+    uac = UserAppClient(userappserver_ip, secret)
+
+    try:
+      uac.change_password(username, encrypted_password)
+      AppScaleLogger.success("The password was successfully changed for the " + \
+        "given user.")
+    except Exception as e:
+      AppScaleLogger.warn("Could not change the user's password for the " + \
+        "following reason: {0}".format(str(e)))
+      sys.exit(1)
 
 
   @classmethod
