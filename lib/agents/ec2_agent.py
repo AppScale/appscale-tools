@@ -7,8 +7,8 @@ import time
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
 
-__author__ = 'hiranya'
-__email__ = 'hiranya@appscale.com'
+__author__ = 'hiranya,Brian'
+__email__ = 'hiranya@appscale.com,brian@appscale.com'
 
 class EC2Agent(BaseAgent):
   """
@@ -88,15 +88,24 @@ class EC2Agent(BaseAgent):
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     AppScaleLogger.log('About to spawn EC2 instances - ' \
               'Expecting to find a key at {0}'.format(ssh_key))
-    if os.path.exists(ssh_key):
-      self.handle_failure('SSH key found locally - please use a different keyname')
 
     conn = self.open_connection(parameters)
-    key_pair = conn.get_key_pair(keyname)
-    if key_pair is None:
-      AppScaleLogger.log('Creating key pair: ' + keyname)
-      key_pair = conn.create_key_pair(keyname)
-    LocalState.write_key_file(ssh_key, key_pair.material)
+    if os.path.exists(ssh_key):
+      #TODO: why is this a failure, if the key exists, we don't need to write 
+      #      a new one
+      #self.handle_failure('SSH key found locally - please use a different keyname')
+      #TODO: this should validate that the SSH correctly formatted
+      print "SSH key found locally: "+ssh_key
+    else:
+      print "SSH not key found, fetching from cloud"
+      key_pair = conn.get_key_pair(keyname)
+      if key_pair is None:
+        AppScaleLogger.log('Creating key pair: ' + keyname)
+        key_pair = conn.create_key_pair(keyname)
+      print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+");"
+      key_pair.save(os.environ['HOME']+'/.appscale');
+      print "calling: LocalState.write_key_file("+ssh_key+", "+key_pair.material+")"
+      LocalState.write_key_file(ssh_key, key_pair.material)
 
     security_groups = conn.get_all_security_groups()
     group_exists = False
@@ -127,12 +136,16 @@ class EC2Agent(BaseAgent):
       args: A Namespace containing the arguments that the user has
         invoked an AppScale Tool with.
     """
+    #need to convert this to a dict if it is not already
+    if not isinstance(args,dict):
+     args = vars(args)
+
     params = {
       self.PARAM_CREDENTIALS : {},
-      self.PARAM_GROUP : args.group,
-      self.PARAM_IMAGE_ID : args.machine,
-      self.PARAM_INSTANCE_TYPE : args.instance_type,
-      self.PARAM_KEYNAME : args.keyname,
+      self.PARAM_GROUP : args['group'],
+      self.PARAM_IMAGE_ID : args['machine'],
+      self.PARAM_INSTANCE_TYPE : args['instance_type'],
+      self.PARAM_KEYNAME : args['keyname'],
     }
 
     for credential in self.REQUIRED_CREDENTIALS:
@@ -302,9 +315,44 @@ class EC2Agent(BaseAgent):
       self.handle_failure('EC2 response error while starting VMs: ' +
                           exception.error_message)
 
-  def terminate_instances(self, parameters):
+  def stop_instances(self, parameters):
     """
     Stop one of more EC2 instances using. The input instance IDs are
+    fetched from the 'instance_ids' parameters in the input map. (Also
+    see documentation for the BaseAgent class)
+
+    Args:
+      parameters  A dictionary of parameters
+    """
+    instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+    conn = self.open_connection(parameters)
+    #print "EC2Agent.stop_instances(instance_ids="+str(instance_ids)+")"
+    #print "       parameters="+str(dir(parameters))
+    stoppped_instances = conn.stop_instances(instance_ids)
+    actual_stopped_instances=[]
+    for instance in stoppped_instances:
+      AppScaleLogger.log('Stopping instance {0}'.format(instance.id))
+    # wait for status=stopped
+    while True:
+      time.sleep(10)
+      reservations = conn.get_all_instances(instance_ids)
+      instances = [i for r in reservations for i in r.instances]
+      for i in instances:
+        #print "instance "+i.id+" reports as "+i.state
+        if i.state == 'stopped' and i.key_name == parameters[self.PARAM_KEYNAME]:
+          if i.id not in actual_stopped_instances:
+            actual_stopped_instances.append(i.id)
+      if len(actual_stopped_instances) >= len(instance_ids):
+        break
+
+
+
+
+
+
+  def terminate_instances(self, parameters):
+    """
+    Terminate one of more EC2 instances using. The input instance IDs are
     fetched from the 'instance_ids' parameters in the input map. (Also
     see documentation for the BaseAgent class)
 
@@ -316,6 +364,23 @@ class EC2Agent(BaseAgent):
     terminated_instances = conn.terminate_instances(instance_ids)
     for instance in terminated_instances:
       AppScaleLogger.log('Instance {0} was terminated'.format(instance.id))
+
+
+  def create_image(self,instance_id,name,parameters):
+    """
+    Take the instance id and name, and creates a cloud image
+    
+    Args:
+      instance_id: id of the (stopped) instance to create an image of
+      name: human readable name for the image
+    Return:
+      string contain the id of the new image
+     """
+    conn = self.open_connection(parameters)
+    id_str = conn.create_image(instance_id,name)
+    #print "create_image(): new image id="+str(id_str)
+    return id_str
+
 
   def does_image_exist(self, parameters):
     """
