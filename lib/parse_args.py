@@ -158,6 +158,10 @@ class ParseArgs():
       self.parser.add_argument('--confirm', action='store_true',
         default=False,
         help="does not ask user to confirm application removal")
+      # flags relating to how much output we produce
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
     else:
       raise SystemExit
 

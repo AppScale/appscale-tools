@@ -44,27 +44,16 @@ class AppScaleTools():
       if response != 'yes' and response != 'y':
         raise AppScaleException("Cancelled application removal.")
 
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+    if not userappclient.does_app_exist(options.appname):
+      raise AppScaleException("The given application is not currently running.")
+
     """
-    result = CommonFunctions.confirm_app_removal(options['confirm'],
-      options['appname'])
-    if result == "NO"
-      raise AppScaleException.new(APP_REMOVAL_CANCELLED)
-    end
-
-    CommonFunctions.remove_app(options['appname'], options['keyname'])
-    secret_key = CommonFunctions.get_secret_key(keyname)
-    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
-    acc = AppControllerClient.new(head_node_ip, secret_key)
-    userappserver_ip = acc.get_userappserver_ip()
-
-    uac = UserAppClient.new(userappserver_ip, secret_key)
-    app_exists = uac.does_app_exist?(app_name, retry_on_except=true)
-
-    if !app_exists
-      raise AppEngineConfigException.new(AppScaleTools::APP_NOT_RUNNING)
-    end
-
-    load_balancer_ip = CommonFunctions.get_load_balancer_ip(keyname)
     acc.stop_app(app_name)
 
     Kernel.puts "Please wait for your app to shut down."

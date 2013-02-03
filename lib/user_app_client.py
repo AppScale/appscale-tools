@@ -3,6 +3,10 @@
 # Adapted from Hiranya's version
 
 
+# General-purpose Python libraries
+import re
+
+
 # Third-party imports
 import SOAPpy
 
@@ -110,3 +114,20 @@ class UserAppClient():
     AppScaleLogger.log('Granting admin privileges to %s' % username)
     self.server.set_cloud_admin_status(username, 'true', self.secret)
     self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)
+
+
+  def does_app_exist(self, appname):
+    """Queries the UserAppServer to see if the named application exists.
+
+    Args:
+      appname: The name of the app that we should check for existence.
+    Returns:
+      True if the app does exist, False otherwise.
+    """
+    app_data = self.server.get_app_data(appname, self.secret)
+
+    num_of_ports_regex = re.compile("num_ports:(\d+)")
+    if num_of_ports_regex.match(app_data):
+      return True
+    else:
+      return False
