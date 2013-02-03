@@ -149,3 +149,4 @@ class AppScaleTools():
         options.verbose)
 
     LocalState.cleanup_appscale_files(options.keyname)
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")

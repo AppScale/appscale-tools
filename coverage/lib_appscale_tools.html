@@ -5,7 +5,7 @@
     
     
     <meta http-equiv='X-UA-Compatible' content='IE=emulateIE7' />
-    <title>Coverage for lib/appscale_tools: 87%</title>
+    <title>Coverage for lib/appscale_tools: 89%</title>
     <link rel='stylesheet' href='style.css' type='text/css'>
     
     <script type='text/javascript' src='jquery-1.4.3.min.js'></script>
@@ -21,13 +21,13 @@
 <div id='header'>
     <div class='content'>
         <h1>Coverage for <b>lib/appscale_tools</b> :
-            <span class='pc_cov'>87%</span>
+            <span class='pc_cov'>89%</span>
         </h1>
         <img id='keyboard_icon' src='keybd_closed.png'>
         <h2 class='stats'>
-            60 statements &nbsp;
-            <span class='run hide_run shortkey_r button_toggle_run'>52 run</span>
-            <span class='mis shortkey_m button_toggle_mis'>8 missing</span>
+            61 statements &nbsp;
+            <span class='run hide_run shortkey_r button_toggle_run'>54 run</span>
+            <span class='mis shortkey_m button_toggle_mis'>7 missing</span>
             <span class='exc shortkey_x button_toggle_exc'>0 excluded</span>
             
         </h2>
@@ -205,13 +205,14 @@
 <p id='n142' class='pln'><a href='#n142'>142</a></p>
 <p id='n143' class='stm run hide_run'><a href='#n143'>143</a></p>
 <p id='n144' class='pln'><a href='#n144'>144</a></p>
-<p id='n145' class='stm mis'><a href='#n145'>145</a></p>
+<p id='n145' class='stm run hide_run'><a href='#n145'>145</a></p>
 <p id='n146' class='pln'><a href='#n146'>146</a></p>
 <p id='n147' class='pln'><a href='#n147'>147</a></p>
 <p id='n148' class='stm run hide_run'><a href='#n148'>148</a></p>
 <p id='n149' class='pln'><a href='#n149'>149</a></p>
 <p id='n150' class='pln'><a href='#n150'>150</a></p>
 <p id='n151' class='stm run hide_run'><a href='#n151'>151</a></p>
+<p id='n152' class='stm run hide_run'><a href='#n152'>152</a></p>
                 
             </td>
             <td class='text' valign='top'>
@@ -359,13 +360,14 @@
 <p id='t142' class='pln'><span class='strut'>&nbsp;</span></p>
 <p id='t143' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>LocalState</span><span class='op'>.</span><span class='nam'>get_infrastructure</span><span class='op'>(</span><span class='nam'>options</span><span class='op'>.</span><span class='nam'>keyname</span><span class='op'>)</span> <span class='key'>in</span> <span class='xx'>\</span><span class='strut'>&nbsp;</span></p>
 <p id='t144' class='pln'>&nbsp; &nbsp; &nbsp; <span class='nam'>InfrastructureAgentFactory</span><span class='op'>.</span><span class='nam'>VALID_AGENTS</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
-<p id='t145' class='stm mis'>&nbsp; &nbsp; &nbsp; <span class='nam'>RemoteHelper</span><span class='op'>.</span><span class='nam'>terminate_cloud_infrastructure</span><span class='op'>(</span><span class='nam'>options</span><span class='op'>.</span><span class='nam'>keyname</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t145' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; <span class='nam'>RemoteHelper</span><span class='op'>.</span><span class='nam'>terminate_cloud_infrastructure</span><span class='op'>(</span><span class='nam'>options</span><span class='op'>.</span><span class='nam'>keyname</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
 <p id='t146' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>options</span><span class='op'>.</span><span class='nam'>verbose</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
 <p id='t147' class='pln'>&nbsp; &nbsp; <span class='key'>else</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
 <p id='t148' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; <span class='nam'>RemoteHelper</span><span class='op'>.</span><span class='nam'>terminate_virtualized_cluster</span><span class='op'>(</span><span class='nam'>options</span><span class='op'>.</span><span class='nam'>keyname</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
 <p id='t149' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>options</span><span class='op'>.</span><span class='nam'>verbose</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
 <p id='t150' class='pln'><span class='strut'>&nbsp;</span></p>
 <p id='t151' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>LocalState</span><span class='op'>.</span><span class='nam'>cleanup_appscale_files</span><span class='op'>(</span><span class='nam'>options</span><span class='op'>.</span><span class='nam'>keyname</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t152' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>AppScaleLogger</span><span class='op'>.</span><span class='nam'>success</span><span class='op'>(</span><span class='str'>&quot;Successfully shut down your AppScale deployment.&quot;</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
                 
             </td>
         </tr>
