@@ -138,13 +138,25 @@ appengine:  public3
     os.should_receive('chmod').with_args(public_key, 0600).and_return()
     os.should_receive('chmod').with_args(private_key, 0600).and_return()
 
+    # and assume that we can ssh-copy-id to each of the three IPs below
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('ssh-copy-id'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
+    # also, we should be able to copy over our new public and private keys fine
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('id_rsa[.pub]?'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
     ips_layout = yaml.safe_load("""
-master : public1
-database: public1
-zookeeper: public2
-appengine:  public3
+master : 1.2.3.4
+database: 1.2.3.4
+zookeeper: 1.2.3.5
+appengine: 1.2.3.6
     """)
 
     argv = [

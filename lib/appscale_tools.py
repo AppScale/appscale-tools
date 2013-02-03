@@ -40,7 +40,6 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    node_layout = NodeLayout(options)
     LocalState.require_ssh_commands(options.auto, options.verbose)
     LocalState.make_appscale_directory()
 
@@ -52,39 +51,40 @@ class AppScaleTools():
       public_key, private_key = LocalState.generate_rsa_key(options.keyname,
         options.verbose)
 
-    """
-    if auto
-      if options["root_password"].nil?
-        print "\nEnter SSH password of root: "
-        password = CommonFunctions.get_line_from_stdin_no_echo()
-      else
-        puts "Using the provided root password to login to AppScale machines"
-        password = options["root_password"]
-      end
-    end
+    if options.auto:
+      if 'root_password' in options:
+        AppScaleLogger.log("Using the provided root password to log into " + \
+          "your VMs.")
+        password = options.root_password
+      else:
+        AppScaleLogger.log("Please enter the password for the root user on" + \
+          " your VMs:")
+        password = getpass.getpass()
 
-    if node_layout.valid?
-      ips = node_layout.nodes.collect { |node| node.id }
-    else
-      ips = []
-      ips_yaml.each { |role, ip|
-        ips << ip
-      }
-      ips.flatten!
-      ips.uniq!
-    end
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException("There were problems with your " + \
+        "placement strategy: " + str(node_layout.errors()))
 
-    ips.each { |ip|
-      CommonFunctions.ssh_copy_id(ip, path, auto, password)
-      CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
-    }
-     FileUtils.cp(path, backup_key)
-    Kernel.puts "A new ssh key has been generated for you and placed at" +
-      " #{path}. You can now use this key to log into any of the " +
-      "machines you specified without providing a password."
-    return {'success' => true}
-  end
-    """
+    all_ips = [node.id for node in node_layout.nodes]
+    for ip in all_ips:
+      # first, set up passwordless ssh
+      AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
+      if options.auto:
+        LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
+          private_key, password), options.verbose)
+      else:
+        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
+          options.verbose)
+
+      # next, copy over the ssh keypair we generate
+      RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
+        options.verbose)
+      RemoteHelper.scp(ip, options.keyname, private_key, '/root/.ssh/id_rsa',
+        options.verbose)
+
+    AppScaleLogger.success("Generated a new SSH key for this deployment " + \
+      "at {0}".format(private_key))
 
 
   @classmethod
