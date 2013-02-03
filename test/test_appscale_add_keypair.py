@@ -116,6 +116,28 @@ appengine:  public3
     os.path.should_receive('exists').with_args(LocalState.LOCAL_APPSCALE_PATH) \
       .and_return(True)
 
+    # and assume that we don't have public and private keys already made
+    path = LocalState.LOCAL_APPSCALE_PATH + self.keyname
+    public_key = LocalState.LOCAL_APPSCALE_PATH + self.keyname + '.pub'
+    private_key = LocalState.LOCAL_APPSCALE_PATH + self.keyname + '.key'
+
+    os.path.should_receive('exists').with_args(public_key).and_return(False)
+    os.path.should_receive('exists').with_args(private_key).and_return(False)
+
+    # next, assume that ssh-keygen ran fine
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('ssh-keygen'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
+    # assume that we can rename the private key
+    flexmock(os)
+    os.should_receive('rename').with_args(path, private_key).and_return()
+
+    # finally, assume that we can chmod 0600 those files fine
+    os.should_receive('chmod').with_args(public_key, 0600).and_return()
+    os.should_receive('chmod').with_args(private_key, 0600).and_return()
+
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
     ips_layout = yaml.safe_load("""

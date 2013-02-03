@@ -570,6 +570,7 @@ class LocalState():
       os.remove(private_key)
 
     cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(path), is_verbose)
+    os.rename(path, private_key)
     os.chmod(public_key, 0600)
     os.chmod(private_key, 0600)
     return public_key, private_key
