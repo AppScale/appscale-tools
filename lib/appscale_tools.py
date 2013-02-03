@@ -43,16 +43,16 @@ class AppScaleTools():
     node_layout = NodeLayout(options)
     LocalState.require_ssh_commands(options.auto, options.verbose)
     LocalState.make_appscale_directory()
+
+    path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
+    if options.add_to_existing:
+      public_key = path + ".pub"
+      private_key = path + ".key"
+    else:
+      public_key, private_key = LocalState.generate_rsa_key(options.keyname,
+        options.verbose)
+
     """
-    path = File.expand_path("~/.appscale/#{keyname}")
-
-    if options['add_to_existing']
-      pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
-      backup_key = File.expand_path("~/.appscale/#{keyname}.key")
-    else
-      pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
-    end
-
     if auto
       if options["root_password"].nil?
         print "\nEnter SSH password of root: "

@@ -546,3 +546,30 @@ class LocalState():
       except ShellException:
         raise BadConfigurationException("Couldn't find {0} in your PATH."
           .format(command))
+
+
+  @classmethod
+  def generate_rsa_key(cls, keyname, is_verbose):
+    """Generates a new RSA public and private keypair, and saves it to the
+    local filesystem.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      is_verbose: A bool that indicates if we should print the ssh-keygen
+        command to stdout.
+    """
+    path = cls.LOCAL_APPSCALE_PATH + keyname
+    public_key = path + ".pub"
+    private_key = path + ".key"
+
+    if os.path.exists(public_key):
+      os.remove(public_key)
+
+    if os.path.exists(private_key):
+      os.remove(private_key)
+
+    RemoteHelper.shell("ssh-keygen -t rsa -N '' -f {0}".format(path), is_verbose)
+    os.chmod(public_key, 0600)
+    os.chmod(private_key, 0600)
+    return public_key, private_key
