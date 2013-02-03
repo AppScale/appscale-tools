@@ -144,25 +144,10 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       .and_return(self.failed).and_return(self.success)
 
     # next, mock out our checks to see how the stopping process is going and
-    # assume that it isn't stopped the first time, and is the second
-    still_running = flexmock(name='fake_temp_file')
-    still_running.should_receive('read').and_return('service appscale-controller stop')
-    still_running.should_receive('close').and_return()
-
-    not_running = flexmock(name='fake_temp_file')
-    not_running.should_receive('read').and_return('')
-    not_running.should_receive('close').and_return()
-
-    flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file) \
-      .and_return(still_running).and_return(not_running)
-
+    # assume that it has stopped
+    flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ps x'),
-      shell=True, stdout=still_running, stderr=sys.stdout) \
-      .and_return(self.success)
-
-    subprocess.should_receive('Popen').with_args(re.compile('ps x'),
-      shell=True, stdout=not_running, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     # finally, mock out removing the yaml file, json file, and secret key from
