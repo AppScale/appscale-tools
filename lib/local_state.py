@@ -8,6 +8,9 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import sys
+import tempfile
 import time
 import uuid
 import yaml
@@ -22,6 +25,7 @@ from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
@@ -32,6 +36,11 @@ class LocalState():
   """LocalState handles all interactions necessary to read and write AppScale
   configuration files on the machine that executes the AppScale Tools.
   """
+
+
+  # The number of times to execute shell commands before aborting, by default.
+  DEFAULT_NUM_RETRIES = 5
+
 
   # The path on the local filesystem where we can read and write
   # AppScale deployment metadata.
@@ -476,3 +485,64 @@ class LocalState():
       the_list.append(key)
       the_list.append(value)
     return the_list
+
+
+  @classmethod
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
+    """Executes a command on this machine, retrying it up to five times if it
+    initially fails.
+
+    Args:
+      command: A str representing the command to execute.
+      is_verbose: A bool that indicates if we should print the command we are
+        executing to stdout.
+      num_retries: The number of times we should try to execute the given
+        command before aborting.
+    Returns:
+      The standard output and standard error produced when the command executes.
+    Raises:
+      ShellException: If, after five attempts, executing the named command
+      failed.
+    """
+    tries_left = num_retries
+    while tries_left:
+      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+      the_temp_file = tempfile.TemporaryFile()
+      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+        stderr=sys.stdout)
+      result.wait()
+      if result.returncode == 0:
+        output = the_temp_file.read()
+        the_temp_file.close()
+        return output
+      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+        .format(command), is_verbose)
+      tries_left -= 1
+      time.sleep(1)
+    raise ShellException('Could not execute command: {0}'.format(command))
+
+
+  @classmethod
+  def require_ssh_commands(cls, needs_expect, is_verbose):
+    """Checks to make sure the commands needed to set up passwordless SSH
+    access are installed on this machine.
+
+    Args:
+      needs_expect: A bool that indicates if we should also check for the
+        'expect' command.
+      is_verbose: A bool that indicates if we should print how we check for
+        each command to stdout.
+    Raises:
+      BadConfigurationException: If any of the required commands aren't present
+        on this machine.
+    """
+    required_commands = ['ssh-keygen', 'ssh-copy-id']
+    if needs_expect:
+      required_commands.append('expect')
+
+    for command in required_commands:
+      try:
+        cls.shell("which {0}".format(command), is_verbose)
+      except ShellException:
+        raise BadConfigurationException("Couldn't find {0} in your PATH."
+          .format(command))

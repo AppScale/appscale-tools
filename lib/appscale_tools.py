@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import os
 import time
 
 
@@ -39,7 +40,51 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    pass
+    node_layout = NodeLayout(options)
+    LocalState.require_ssh_commands(options.auto, options.verbose)
+    LocalState.make_appscale_directory()
+    """
+    path = File.expand_path("~/.appscale/#{keyname}")
+
+    if options['add_to_existing']
+      pub_key = File.expand_path("~/.appscale/#{keyname}.pub")
+      backup_key = File.expand_path("~/.appscale/#{keyname}.key")
+    else
+      pub_key, backup_key = CommonFunctions.generate_rsa_key(keyname)
+    end
+
+    if auto
+      if options["root_password"].nil?
+        print "\nEnter SSH password of root: "
+        password = CommonFunctions.get_line_from_stdin_no_echo()
+      else
+        puts "Using the provided root password to login to AppScale machines"
+        password = options["root_password"]
+      end
+    end
+
+    if node_layout.valid?
+      ips = node_layout.nodes.collect { |node| node.id }
+    else
+      ips = []
+      ips_yaml.each { |role, ip|
+        ips << ip
+      }
+      ips.flatten!
+      ips.uniq!
+    end
+
+    ips.each { |ip|
+      CommonFunctions.ssh_copy_id(ip, path, auto, password)
+      CommonFunctions.scp_ssh_key_to_ip(ip, path, pub_key)
+    }
+     FileUtils.cp(path, backup_key)
+    Kernel.puts "A new ssh key has been generated for you and placed at" +
+      " #{path}. You can now use this key to log into any of the " +
+      "machines you specified without providing a password."
+    return {'success' => true}
+  end
+    """
 
 
   @classmethod
