@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -559,9 +560,8 @@ class LocalState():
       is_verbose: A bool that indicates if we should print the ssh-keygen
         command to stdout.
     """
-    path = cls.LOCAL_APPSCALE_PATH + keyname
-    public_key = path + ".pub"
-    private_key = path + ".key"
+    private_key = cls.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
 
     if os.path.exists(public_key):
       os.remove(public_key)
@@ -569,8 +569,8 @@ class LocalState():
     if os.path.exists(private_key):
       os.remove(private_key)
 
-    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(path), is_verbose)
-    os.rename(path, private_key)
+    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
     os.chmod(public_key, 0600)
     os.chmod(private_key, 0600)
+    shutil.copy(private_key, private_key + ".key")
     return public_key, private_key

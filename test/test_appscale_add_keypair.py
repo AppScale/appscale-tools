@@ -8,6 +8,7 @@ import httplib
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -131,12 +132,13 @@ appengine:  public3
       .and_return(self.success)
 
     # assume that we can rename the private key
-    flexmock(os)
-    os.should_receive('rename').with_args(path, private_key).and_return()
+    flexmock(shutil)
+    shutil.should_receive('copy').with_args(path, private_key).and_return()
 
     # finally, assume that we can chmod 0600 those files fine
+    flexmock(os)
     os.should_receive('chmod').with_args(public_key, 0600).and_return()
-    os.should_receive('chmod').with_args(private_key, 0600).and_return()
+    os.should_receive('chmod').with_args(path, 0600).and_return()
 
     # and assume that we can ssh-copy-id to each of the three IPs below
     flexmock(subprocess)
