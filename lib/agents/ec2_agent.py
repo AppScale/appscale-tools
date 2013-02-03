@@ -143,6 +143,29 @@ class EC2Agent(BaseAgent):
 
     return params
 
+
+  def get_params_from_yaml(self, keyname):
+    """Searches through the locations.yaml file to build a dict containing the
+    parameters necessary to interact with Amazon EC2.
+
+    Args:
+      keyname: The name of the SSH keypair that uniquely identifies this
+        AppScale deployment.
+    """
+    params = {
+      self.PARAM_CREDENTIALS : {},
+      self.PARAM_GROUP : LocalState.get_group(keyname),
+      self.PARAM_KEYNAME : keyname
+    }
+
+    for credential in self.REQUIRED_CREDENTIALS:
+      if os.environ[credential] and os.environ[credential] != '':
+        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      else:
+        raise AgentConfigurationException("no " + credential)
+
+    return params
+
   def assert_required_parameters(self, parameters, operation):
     """
     Assert that all the parameters required for the EC2 agent are in place.
@@ -335,6 +358,29 @@ class EC2Agent(BaseAgent):
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
       return False
+
+  def cleanup_state(self, parameters):
+    """
+    Removes the keyname and security group created during this AppScale
+    deployment.
+
+    Args:
+      parameters: A dict that contains the keyname and security group to delete.
+    """
+    AppScaleLogger.log("Deleting keyname {0}".format(
+      parameters[self.PARAM_KEYNAME]))
+    conn = self.open_connection(parameters)
+    conn.delete_key_pair(parameters[self.PARAM_KEYNAME])
+
+    AppScaleLogger.log("Deleting security group {0}".format(
+      parameters[self.PARAM_GROUP]))
+    while True:
+      try:
+        conn.delete_security_group(parameters[self.PARAM_GROUP])
+        break
+      except EC2ResponseError:
+        time.sleep(5)
+
 
   def get_optimal_spot_price(self, conn, instance_type):
     """

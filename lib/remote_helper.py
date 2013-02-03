@@ -563,13 +563,29 @@ class RemoteHelper():
 
 
   @classmethod
-  def terminate_cloud_infrastructure(cls, keyname):
+  def terminate_cloud_infrastructure(cls, keyname, is_verbose):
     """Powers off all machines in the currently running AppScale deployment.
 
     Args:
       keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
     """
-    pass
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".format(keyname))
+    time.sleep(2)
+
+    # get all the instance IDs for machines in our deployment
+    agent = InfrastructureAgentFactory.create_agent(
+      LocalState.get_infrastructure(keyname))
+    params = agent.get_params_from_yaml(keyname)
+    _, _, instance_ids = agent.describe_instances(params)
+
+    # terminate all the machines
+    params[agent.PARAM_INSTANCE_IDS] = instance_ids
+    agent.terminate_instances(params)
+
+    # delete the keyname and group
+    agent.cleanup_state(params)
 
 
   @classmethod
@@ -579,6 +595,8 @@ class RemoteHelper():
 
     Args:
       keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
     """
     AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
       "keyname {0}".format(keyname))

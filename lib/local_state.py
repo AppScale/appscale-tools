@@ -363,8 +363,8 @@ class LocalState():
 
     # write our yaml metadata file
     yaml_contents = {
-      'load_balancer' : host,
-      'instance_id' : instance_id,
+      'load_balancer' : str(host),
+      'instance_id' : str(instance_id),
       'table' : options.table,
       'secret' : cls.get_secret_key(options.keyname),
       'db_master' : node_layout.db_master().id,
@@ -514,6 +514,21 @@ class LocalState():
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
       return yaml.safe_load(file_handle.read())["infrastructure"]
+
+
+  @classmethod
+  def get_group(cls, keyname):
+    """Reads the locations.yaml file to see what security group was created for
+    this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the security group used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["group"]
 
 
   @classmethod
