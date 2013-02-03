@@ -110,8 +110,7 @@ class ParseArgs():
       self.parser.add_argument('--group',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname',
-        default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -151,6 +150,14 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-remove-app":
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--appname',
+        help="the name of the application to remove")
+      self.parser.add_argument('--confirm', action='store_true',
+        default=False,
+        help="does not ask user to confirm application removal")
     else:
       raise SystemExit
 
@@ -175,6 +182,9 @@ class ParseArgs():
       pass
     elif function == "appscale-add-keypair":
       pass
+    elif function == "appscale-remove-app":
+      if not 'appname' in self.args:
+        raise SystemExit("Must specify appname")
     else:
       raise SystemExit
 

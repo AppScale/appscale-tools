@@ -9,6 +9,7 @@ import time
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -28,6 +29,54 @@ class AppScaleTools():
   current working directory (as opposed to a dict), but under the hood these
   methods get called anyways.
   """
+
+  
+  @classmethod
+  def remove_app(cls, options):
+    """Instructs AppScale to no longer host the named application.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.confirm:
+      response = raw_input("Are you sure you want to remove this application? ")
+      if response != 'yes' and response != 'y':
+        raise AppScaleException("Cancelled application removal.")
+
+    """
+    result = CommonFunctions.confirm_app_removal(options['confirm'],
+      options['appname'])
+    if result == "NO"
+      raise AppScaleException.new(APP_REMOVAL_CANCELLED)
+    end
+
+    CommonFunctions.remove_app(options['appname'], options['keyname'])
+    secret_key = CommonFunctions.get_secret_key(keyname)
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+    acc = AppControllerClient.new(head_node_ip, secret_key)
+    userappserver_ip = acc.get_userappserver_ip()
+
+    uac = UserAppClient.new(userappserver_ip, secret_key)
+    app_exists = uac.does_app_exist?(app_name, retry_on_except=true)
+
+    if !app_exists
+      raise AppEngineConfigException.new(AppScaleTools::APP_NOT_RUNNING)
+    end
+
+    load_balancer_ip = CommonFunctions.get_load_balancer_ip(keyname)
+    acc.stop_app(app_name)
+
+    Kernel.puts "Please wait for your app to shut down."
+    loop {
+      if !acc.app_is_running?(app_name)
+        break
+      end
+      Kernel.sleep(5)
+    }
+    Kernel.puts "Done shutting down app #{options['appname']}"
+  end
+    """
 
 
   @classmethod
