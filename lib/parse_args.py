@@ -110,8 +110,7 @@ class ParseArgs():
       self.parser.add_argument('--group',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname',
-        default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -147,6 +146,14 @@ class ParseArgs():
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
+      # flags relating to how many VMs we should spawn
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--ips_layout',
+        help="a base64-encoded YAML dictating the placement strategy")
+
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
       self.parser.add_argument('--add_to_existing',
         default=False,
         action='store_true',

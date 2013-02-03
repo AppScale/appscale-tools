@@ -31,6 +31,18 @@ class AppScaleTools():
 
 
   @classmethod
+  def add_keypair(cls, options):
+    """Sets up passwordless SSH login to the machines used in a virtualized
+    cluster deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    pass
+
+
+  @classmethod
   def run_instances(cls, options):
     """Starts a new AppScale deployment with the parameters given.
 
