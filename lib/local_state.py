@@ -569,7 +569,7 @@ class LocalState():
     if os.path.exists(private_key):
       os.remove(private_key)
 
-    RemoteHelper.shell("ssh-keygen -t rsa -N '' -f {0}".format(path), is_verbose)
+    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(path), is_verbose)
     os.chmod(public_key, 0600)
     os.chmod(private_key, 0600)
     return public_key, private_key
