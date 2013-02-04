@@ -110,8 +110,7 @@ class ParseArgs():
       self.parser.add_argument('--group',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname',
-        default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -151,6 +150,14 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-add-instances":
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
     else:
       raise SystemExit
 
@@ -175,6 +182,12 @@ class ParseArgs():
       pass
     elif function == "appscale-add-keypair":
       pass
+    elif function == "appscale-add-instances":
+      if 'ips' in self.args:
+        with open(self.args.ips, 'r') as file_handle:
+          self.args.ips = yaml.safe_load(file_handle.read())
+      else:
+        raise SystemExit
     else:
       raise SystemExit
 

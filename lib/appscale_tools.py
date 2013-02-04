@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import json
 import time
 
 
@@ -28,6 +29,35 @@ class AppScaleTools():
   current working directory (as opposed to a dict), but under the hood these
   methods get called anyways.
   """
+
+
+  @classmethod
+  def add_instances(cls, options):
+    """Adds additional machines to an AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if 'master' in options.ips.keys():
+      raise BadConfigurationException("Cannot add master nodes to an " + \
+        "already running AppScale deployment.")
+
+    # Skip checking for -n (replication) because we don't allow the user
+    # to specify it here (only allowed in run-instances).
+    additional_nodes_layout = NodeLayout(options)
+
+    if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
+      for ip in options.ips.values():
+        # throws a ShellException if the SSH key doesn't work
+        RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    login_ip = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_ip, LocalState.get_secret_key(
+      options.keyname))
+    acc.start_roles_on_nodes(json.dumps(options.ips))
 
 
   @classmethod
