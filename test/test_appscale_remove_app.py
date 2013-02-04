@@ -50,28 +50,12 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
+    AppScaleLogger.should_receive('success').and_return()
 
     # mock out all sleeping
     flexmock(time)
     time.should_receive('sleep').and_return()
     
-    """
-    # throw some default mocks together for when invoking via shell succeeds
-    # and when it fails
-    self.fake_temp_file = flexmock(name='fake_temp_file')
-    self.fake_temp_file.should_receive('read').and_return('boo out')
-    self.fake_temp_file.should_receive('close').and_return()
-
-    flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
-
-    self.success = flexmock(name='success', returncode=0)
-    self.success.should_receive('wait').and_return(0)
-
-    self.failed = flexmock(name='success', returncode=1)
-    self.failed.should_receive('wait').and_return(1)
-    """
-
 
   def test_remove_app_but_user_cancels_it(self):
     # mock out reading from stdin, and assume the user says 'no'
@@ -119,9 +103,9 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
+    # mock out calls to the UserAppServer and presume that the app doesn't
+    # exist
+    fake_userappserver = flexmock(name='fake_uaserver')
     fake_userappserver.should_receive('get_app_data').with_args(
       'blargapp', 'the secret').and_return('Error: app does not exist')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
@@ -133,3 +117,56 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.remove_app, options)
+
+
+  def test_remove_app_and_app_is_running(self):
+    # mock out reading from stdin, and assume the user says 'yes'
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_receive('raw_input').and_return('yes')
+
+    # mock out reading the secret key
+    builtins.should_call('open')  # set the fall-through
+
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # mock out the SOAP call to the AppController and assume it succeeded
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('Database is at public1')
+    fake_appcontroller.should_receive('stop_app').with_args('blargapp',
+      'the secret').and_return('OK')
+    fake_appcontroller.should_receive('is_app_running').with_args('blargapp',
+      'the secret').and_return(True).and_return(True).and_return(False)
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
+
+    # mock out reading the locations.json file, and slip in our own json
+    fake_nodes_json = flexmock(name="fake_nodes_json")
+    fake_nodes_json.should_receive('read').and_return(json.dumps([{
+      "public_ip" : "public1",
+      "private_ip" : "private1",
+      "jobs" : ["shadow", "login"]
+    }]))
+    fake_nodes_json.should_receive('write').and_return()
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location(self.keyname), 'r') \
+      .and_return(fake_nodes_json)
+
+    # mock out calls to the UserAppServer and presume that the app does exist
+    fake_userappserver = flexmock(name='fake_uaserver')
+    fake_userappserver.should_receive('get_app_data').with_args(
+      'blargapp', 'the secret').and_return('\nnum_ports:2\n')
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
+      .and_return(fake_userappserver)
+
+    argv = [
+      "--appname", "blargapp",
+      "--keyname", self.keyname
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.remove_app(options)

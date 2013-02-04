@@ -126,8 +126,8 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(appname, self.secret)
 
-    num_of_ports_regex = re.compile("num_ports:(\d+)")
-    if num_of_ports_regex.match(app_data):
+    num_of_ports_regex = re.compile(".*num_ports:(\d+)")
+    if num_of_ports_regex.search(app_data):
       return True
     else:
       return False

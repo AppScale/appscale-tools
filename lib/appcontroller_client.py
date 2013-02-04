@@ -148,3 +148,26 @@ class AppControllerClient():
       return self.server.is_done_initializing(self.secret)
     except Exception:
       return False
+
+
+  def stop_app(self, app_name):
+    """Tells the AppController to no longer host the named application.
+
+    Args:
+      app_name: A str that indicates which application should be stopped.
+    Returns:
+      The result of telling the AppController to no longer host the app.
+    """
+    return self.server.stop_app(app_name, self.secret)
+
+
+  def is_app_running(self, app_name):
+    """Queries the AppController to see if the named application is running.
+
+    Args:
+      app_name: A str that indicates which application we should be checking
+        for.
+    Returns:
+      True if the application is running, False otherwise.
+    """
+    return self.server.is_app_running(app_name, self.secret)

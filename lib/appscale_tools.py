@@ -53,19 +53,14 @@ class AppScaleTools():
     if not userappclient.does_app_exist(options.appname):
       raise AppScaleException("The given application is not currently running.")
 
-    """
-    acc.stop_app(app_name)
-
-    Kernel.puts "Please wait for your app to shut down."
-    loop {
-      if !acc.app_is_running?(app_name)
+    acc.stop_app(options.appname)
+    AppScaleLogger.log("Please wait for your app to shut down.")
+    while True:
+      if acc.is_app_running(options.appname):
+        time.sleep(5)
+      else:
         break
-      end
-      Kernel.sleep(5)
-    }
-    Kernel.puts "Done shutting down app #{options['appname']}"
-  end
-    """
+    AppScaleLogger.success("Done shutting down {0}".format(options.appname))
 
 
   @classmethod
