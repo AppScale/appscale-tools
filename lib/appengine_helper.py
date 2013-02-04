@@ -32,8 +32,23 @@ class AppEngineHelper():
   ALLOWED_RUNTIMES = ("python", "python27", "java", "go")
 
 
+  # A list of the appids reserved for internal AppScale use.
+  DISALLOWED_APP_IDS = ("none", "auth", "login", "new_user", "load_balancer")
+
+
+  # A regular expression that matches valid application IDs.
+  APP_ID_REGEX = re.compile('\A(\d|[a-z]|[A-Z]|-)+\Z')
+
+
   @classmethod
   def read_file(cls, path):
+    """Reads the file at the given location, returning its contents.
+
+    Args:
+      path: The location on the filesystem that we should read from.
+    Returns:
+      A str containing the contents of the file.
+    """
     with open(path, 'r') as file_handle:
       return file_handle.read()
 
@@ -148,18 +163,24 @@ class AppEngineHelper():
     elif os.path.exists(cls.get_appengine_web_xml_location(app_dir)):
       return cls.get_appengine_web_xml_location(app_dir)
     else:
-      raise AppEngineConfigException
+      raise AppEngineConfigException("Couldn't find an app.yaml or " +
+        "appengine-web.xml file in {0}".format(app_dir))
 
 
   @classmethod
   def validate_app_id(cls, app_id):
-    """Checks the given app_id to make sure that it does not represent an
-    app_id that AppScale reserves for its own applications.
+    """Checks the given app_id to make sure that it represents an app_id that
+    we can run within AppScale.
 
     Args:
       app_id: A str that represents the application ID.
     Raises:
       AppEngineConfigException: If the given application ID is a reserved
-        app_id.
+        app_id, or does not represent an acceptable app_id.
     """
-    pass
+    if app_id in cls.DISALLOWED_APP_IDS:
+      raise AppEngineConfigException("{0} is a reserved appid".format(app_id))
+
+    if not cls.APP_ID_REGEX.match(app_id):
+      raise AppEngineConfigException("Cannot use non-alphanumeric chars in " + \
+        "application ID.")

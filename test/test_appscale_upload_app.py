@@ -224,6 +224,68 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
 
 
+  def test_upload_app_with_bad_runtime(self):
+    # we only support four runtimes - abort if the user gives us an unsupported
+    # one
+
+    # add in mocks so that there is an app.yaml, but with no appid set
+    flexmock(os.path)
+    os.path.should_call('exists')
+    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
+    os.path.should_receive('exists').with_args(app_yaml_location) \
+      .and_return(True)
+
+    # mock out reading the app.yaml file
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_app_yaml = flexmock(name="fake_app_yaml")
+    fake_app_yaml.should_receive('read').and_return(yaml.dump({
+      'application' : 'none',  # a reserved appid
+      'runtime' : 'python'
+    }))
+    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
+      .and_return(fake_app_yaml)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
+
+
+  def test_upload_app_with_non_alpha_appid(self):
+    # we only support four runtimes - abort if the user gives us an unsupported
+    # one
+
+    # add in mocks so that there is an app.yaml, but with no appid set
+    flexmock(os.path)
+    os.path.should_call('exists')
+    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
+    os.path.should_receive('exists').with_args(app_yaml_location) \
+      .and_return(True)
+
+    # mock out reading the app.yaml file
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_app_yaml = flexmock(name="fake_app_yaml")
+    fake_app_yaml.should_receive('read').and_return(yaml.dump({
+      'application' : 'baz*',
+      'runtime' : 'python'
+    }))
+    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
+      .and_return(fake_app_yaml)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
+
+
     """
     # let's say that appscale isn't already running
     flexmock(os.path)
