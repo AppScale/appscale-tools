@@ -51,6 +51,8 @@ class TestAppScaleLogger(unittest.TestCase):
     self.options = ParseArgs(argv, function).args
 
     self.expected = {
+      "appengine" : 1,
+      "autoscale" : True,
       "min" : 1,
       "max" : 1,
       "infrastructure" : "ec2",
@@ -59,10 +61,13 @@ class TestAppScaleLogger(unittest.TestCase):
       "group" : "appscale",
       "instance_type" : "m1.large",
       "ips" : None,
+      "ips_layout" : None,
       "keyname" : "appscale",
       "n" : None,
+      "scp" : None,
       "table" : "cassandra",
       "test" : False,
+      "verbose" : False,
       "version" : False
     }
 

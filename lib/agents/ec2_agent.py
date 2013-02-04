@@ -118,9 +118,9 @@ class EC2Agent(BaseAgent):
       AppScaleLogger.log('Creating security group: ' + group)
       conn.create_security_group(group, 'AppScale security group')
       conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='udp')
+        to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
       conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='tcp')
+        to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
       conn.authorize_security_group(group, ip_protocol='icmp',
         cidr_ip='0.0.0.0/0')
 

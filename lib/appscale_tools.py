@@ -6,47 +6,53 @@
 import time
 
 
+# AppScale-specific imports
+from appcontroller_client import AppControllerClient
+from appscale_logger import AppScaleLogger
+from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
-from custom_exceptions import BadConfigurationException
+from node_layout import NodeLayout
+from remote_helper import RemoteHelper
+from user_app_client import UserAppClient
 
 
 class AppScaleTools():
-  """AppScaleTools provides callers with a way to start,
-  stop, and interact with AppScale deployments, on virtualized
-  clusters or on cloud infrastructures.
+  """AppScaleTools provides callers with a way to start, stop, and interact
+  with AppScale deployments, on virtualized clusters or on cloud
+  infrastructures.
 
-  These methods provide an interface for users who wish to
-  start and control AppScale through a dict of parameters. An
-  alternative to this method is to use the AppScale class,
-  which stores state in an AppScalefile in the current working
-  directory (as opposed to a dict), but under the hood these
+  These methods provide an interface for users who wish to start and control
+  AppScale through a dict of parameters. An alternative to this method is to
+  use the AppScale class, which stores state in an AppScalefile in the
+  current working directory (as opposed to a dict), but under the hood these
   methods get called anyways.
   """
 
 
-  def run_instances(self, options):
+  @classmethod
+  def run_instances(cls, options):
     """Starts a new AppScale deployment with the parameters given.
 
     Args:
-      options: A Namespace that has fields for each parameter that
-        can be passed in via the command-line interface.
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
     Raises:
-      BadConfigurationException: If the user passes in options
-        that are not sufficient to start an AppScale deplyoment
-        (e.g., running on EC2 but not specifying the AMI to use),
-        or if the user provides us contradictory options (e.g.,
-        running on EC2 but not specifying EC2 credentials).
+      BadConfigurationException: If the user passes in options that are not
+        sufficient to start an AppScale deplyoment (e.g., running on EC2 but
+        not specifying the AMI to use), or if the user provides us
+        contradictory options (e.g., running on EC2 but not specifying EC2
+        credentials).
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
-    if args.infrastructure:
+    if options.infrastructure:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
-        " over the " + args.infrastructure + " cloud.")
+        " over the " + options.infrastructure + " cloud.")
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
-        "over a virtualized cluster.")
+        " over a virtualized cluster.")
 
     AppScaleLogger.remote_log_tools_state(options, "started")
     time.sleep(2)
@@ -61,44 +67,57 @@ class AppScaleTools():
         "officially supported.")
       time.sleep(1)
 
-    head_node_params = RemoteHelper.start_head_node(options, node_layout)
+    public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
       "for use.")
 
-    """
-    acc = head_node_result[:acc]
-    secret_key = head_node_result[:secret_key]
-    head_node_ip = head_node_result[:head_node_ip]
-    CommonFunctions.write_and_copy_node_file(options, node_layout,
-      head_node_result)
-    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
-    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
-      head_node_result[:true_key])
+    # Write our metadata as soon as possible to let users SSH into those
+    # machines via 'appscale ssh'
+    LocalState.update_local_metadata(options, node_layout, public_ip,
+      instance_id)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
-    userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
-    CommonFunctions.update_locations_file(options['keyname'], [head_node_ip])
-    CommonFunctions.copy_nodes_json(options['keyname'], head_node_ip,
-      head_node_result[:true_key])
-    CommonFunctions.verbose("Run instances: UserAppServer is at #{userappserver_ip}", options['verbose'])
-    uac = UserAppClient.new(userappserver_ip, secret_key)
-    if options["admin_user"] and options["admin_pass"]:
-      print "Using the provided admin username and password"
-      user, password = options["admin_user"], options["admin_pass"]
+    acc = AppControllerClient(public_ip, LocalState.get_secret_key(
+      options.keyname))
+    uaserver_host = acc.get_uaserver_host(options.verbose)
+    RemoteHelper.sleep_until_port_is_open(public_ip, UserAppClient.PORT,
+      options.verbose)
+
+    # Update our metadata again so that users can SSH into other boxes that
+    # may have been started.
+    LocalState.update_local_metadata(options, node_layout, public_ip,
+      instance_id)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
+
+    AppScaleLogger.log("UserAppServer is at {0}".format(uaserver_host))
+
+    uaserver_client = UserAppClient(uaserver_host,
+      LocalState.get_secret_key(options.keyname))
+
+    if 'admin_user' in options and 'admin_pass' in options:
+      AppScaleLogger.log("Using the provided admin username/password")
+      username, password = options.admin_user, options.admin_pass
+    elif 'test' in options:
+      AppScaleLogger.log("Using default admin username/password")
+      username, password = LocalState.DEFAULT_USER, LocalState.DEFAULT_PASSWORD
     else:
-      user, password = CommonFunctions.get_credentials(options['test'])
+      username, password = LocalState.get_credentials()
 
-    CommonFunctions.create_user(user, options['test'], head_node_ip,
-      secret_key, uac, password)
+    RemoteHelper.create_user_accounts(username, password, uaserver_host,
+      options.keyname)
+    uaserver_client.set_admin_role(username)
 
-    uac.set_cloud_admin_status(user, new_status="true")
-    uac.set_cloud_admin_capabilities(user)
+    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
+    # Finally, update our metadata once we know that all of the machines are
+    # up and have started all their API services.
+    LocalState.update_local_metadata(options, node_layout, public_ip,
+      instance_id)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
 
-    CommonFunctions.wait_for_nodes_to_load(head_node_ip, secret_key)
-    login_ip = CommonFunctions.get_login_ip(head_node_ip, secret_key)
-    print "The status of your AppScale instance is at the following" + \
-      " URL: http://#{login_ip}/status"
-
-    CommonFunctions.write_and_copy_node_file(options, node_layout,
-      head_node_result)
-    RemoteLogging.remote_post(max_images, table, infrastructure, "started", "success")
-"""
+    AppScaleLogger.success("AppScale successfully started!")
+    AppScaleLogger.success("View status information about your AppScale " + \
+      "deployment at http://{0}/status".format(LocalState.get_login_host(
+      options.keyname)))
+    AppScaleLogger.remote_log_tools_state(options, "finished")

@@ -9,7 +9,6 @@ import yaml
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
-from custom_exceptions import BadConfigurationException
 
 
 class NodeLayout():
@@ -93,6 +92,9 @@ class NodeLayout():
         contains the YAML in question. It can also be set to None, for
         deployments when the user specifies how many VMs they wish to use.
     """
+    if not isinstance(options, dict):
+      options = vars(options)
+
     if 'ips' in options:
       input_yaml = options['ips']
     else:
@@ -105,9 +107,6 @@ class NodeLayout():
       self.input_yaml = input_yaml
     else:
       self.input_yaml = None
-
-    if not isinstance(options, dict):
-      options = vars(options)
 
     if 'infrastructure' in options:
       self.infrastructure = options['infrastructure']
@@ -279,7 +278,7 @@ class NodeLayout():
       True if the deployment is simple, False otherwise.
     """
     if self.input_yaml:
-      for key, value in self.input_yaml.iteritems():
+      for key, _ in self.input_yaml.iteritems():
         if key not in self.SIMPLE_FORMAT_KEYS:
           return False
 
@@ -382,7 +381,8 @@ class NodeLayout():
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
           if not self.NODE_ID_REGEX.match(node.id):
-            return self.invalid("{0} is not a valid node ID (must be node-int)".format(node.id))
+            return self.invalid("{0} is not a valid node ID (must be node-int)".
+              format(node.id))
         else:
           # Virtualized cluster deployments use IP addresses as node IDs
           if not self.IP_REGEX.match(node.id):
@@ -497,7 +497,8 @@ class NodeLayout():
 
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
         if not self.NODE_ID_REGEX.match(node.id):
-          return self.invalid("{0} is not a valid node ID (must be node-int)".format(node.id))
+          return self.invalid("{0} is not a valid node ID (must be node-int)".
+            format(node.id))
       else:
         # Virtualized cluster deployments use IP addresses as node IDs
         if not self.IP_REGEX.match(node.id):
@@ -609,7 +610,7 @@ class NodeLayout():
         self.replication = database_node_count
 
     if self.replication > database_node_count:
-      return self.invalid("Replication factor cannot exceed number of databases")
+      return self.invalid("Replication factor cannot exceed # of databases")
 
     # Perform all the database specific checks here
     if self.database_type == 'mysql' and database_node_count % self.replication:
@@ -648,29 +649,6 @@ class NodeLayout():
     else:
       return None
 
-  """
-  def min_vms
-    return nil unless valid? 
-
-    @min_vms
-  end
-
-  def max_vms
-    return nil unless valid?
-    
-    @max_vms
-  end
-
-  def nodes
-    return [] unless valid?
-    
-    # Since the valid? check has succeded @nodes has been initialized
-    @nodes
-  end
-  
-  # head node -> shadow
-  """
-
 
   def head_node(self):
     if not self.is_valid():
@@ -694,23 +672,14 @@ class NodeLayout():
     return other_nodes
 
 
-  """
-  def db_master
-    return nil unless valid?
+  def db_master(self):
+    if not self.is_valid():
+      return None
 
-    db_master = @nodes.select { |n| n.is_db_master? }.compact
-    
-    db_master.empty? ? nil : db_master[0]
-  end
-
-  def login_node
-    return nil unless valid?
-
-    login = @nodes.select { |n| n.is_login? }.compact
-    
-    login.empty? ? nil : login[0]
-  end
-  """
+    for node in self.nodes:
+      if node.is_role('db_master'):
+        return node
+    return None
 
 
   def to_dict_without_head_node(self):

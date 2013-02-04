@@ -16,7 +16,7 @@ from parse_args import ParseArgs
 
 
 if __name__ == "__main__":
-  options = ParseArgs(sys.argv, "appscale-run-instances").args
+  options = ParseArgs(sys.argv[1:], "appscale-run-instances").args
   try:
     AppScaleTools.run_instances(options)
   except Exception as e:

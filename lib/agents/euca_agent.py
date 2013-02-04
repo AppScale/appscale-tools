@@ -1,5 +1,8 @@
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
+from appscale_logger import AppScaleLogger
+from local_state import LocalState
+
 import boto
 import os
 from urlparse import urlparse
@@ -61,3 +64,56 @@ class EucalyptusAgent(EC2Agent):
       path=result.path,
       is_secure=(result.scheme == 'https'),
       api_version=self.EUCA_API_VERSION, debug=2)
+
+
+  def configure_instance_security(self, parameters):
+    """
+    Setup EC2 security keys and groups. Required input values are read from
+    the parameters dictionary. More specifically, this method expects to
+    find a 'keyname' parameter and a 'group' parameter in the parameters
+    dictionary. Using these provided values, this method will create a new
+    EC2 key-pair and a security group. Security group will be granted permissions
+    to access any port on the instantiated VMs. (Also see documentation for the
+    BaseAgent class)
+
+    Args:
+      parameters  A dictionary of parameters
+    """
+    keyname = parameters[self.PARAM_KEYNAME]
+    group = parameters[self.PARAM_GROUP]
+
+    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    AppScaleLogger.log('About to spawn EC2 instances - ' \
+              'Expecting to find a key at {0}'.format(ssh_key))
+    if os.path.exists(ssh_key):
+      self.handle_failure('SSH key found locally - please use a different keyname')
+
+    conn = self.open_connection(parameters)
+    try:
+      key_pair = conn.get_key_pair(keyname)
+    except IndexError:  # in euca, this means the key doesn't exist
+      key_pair = None
+
+    if key_pair is None:
+      AppScaleLogger.log('Creating key pair: ' + keyname)
+      key_pair = conn.create_key_pair(keyname)
+    LocalState.write_key_file(ssh_key, key_pair.material)
+
+    security_groups = conn.get_all_security_groups()
+    group_exists = False
+    for security_group in security_groups:
+      if security_group.name == group:
+        group_exists = True
+        break
+
+    if not group_exists:
+      AppScaleLogger.log('Creating security group: ' + group)
+      conn.create_security_group(group, 'AppScale security group')
+      conn.authorize_security_group_deprecated(group, from_port=1,
+        to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+      conn.authorize_security_group_deprecated(group, from_port=1,
+        to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+      conn.authorize_security_group_deprecated(group, ip_protocol='icmp',
+        cidr_ip='0.0.0.0/0')
+
+    return True

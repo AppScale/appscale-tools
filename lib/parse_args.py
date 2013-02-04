@@ -2,7 +2,9 @@
 
 
 # General-purpose Python library imports
+import base64
 import argparse
+import yaml
 
 
 # AppScale-specific imports
@@ -92,6 +94,8 @@ class ParseArgs():
         help="the maximum number of VMs to use")
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--ips_layout',
+        help="a base64-encoded YAML dictating the placement strategy")
 
       # flags relating to cloud infrastructures
       self.parser.add_argument('--infrastructure',
@@ -118,10 +122,24 @@ class ParseArgs():
       self.parser.add_argument('-n', type=int,
         help="the database replication factor")
 
+      # flags relating to application servers
+      self.parser.add_argument('--appengine', type=int, default=1,
+        help="the number of application servers to use per app")
+      self.parser.add_argument('--autoscale', action='store_true',
+        default=True,
+        help="adds/removes application servers based on incoming traffic")
+
+      # flags relating to how much output we produce
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
+
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,
         help="forces tools to continue if keyname or group exist")
+      self.parser.add_argument('--scp',
+        help="the location to copy a local AppScale branch from")
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
@@ -175,6 +193,8 @@ class ParseArgs():
 
     if self.args.ips:
       pass
+    elif self.args.ips_layout:
+      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
       if self.args.min < 1:
         raise BadConfigurationException("Min cannot be less than 1.")
@@ -208,7 +228,8 @@ class ParseArgs():
     if not self.args.infrastructure:
       return
 
-    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    cloud_agent = InfrastructureAgentFactory.create_agent(
+      self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
     cloud_agent.assert_required_parameters(params, BaseAgent.OPERATION_RUN)
 
@@ -223,10 +244,11 @@ class ParseArgs():
     if not self.args.infrastructure:
       return
 
-    cloud_agent = InfrastructureAgentFactory.create_agent(self.args.infrastructure)
+    cloud_agent = InfrastructureAgentFactory.create_agent(
+      self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
     if not cloud_agent.does_image_exist(params):
-      raise BadConfigurationException("The given machine image does not exist in this cloud.")
+      raise BadConfigurationException("Couldn't find the given machine image.")
 
 
   def validate_database_flags(self):
@@ -238,4 +260,4 @@ class ParseArgs():
         database flags are not valid.
     """
     if self.args.n is not None and self.args.n < 1:
-      raise BadConfigurationException("Replication factor cannot be less than 1.")
+      raise BadConfigurationException("Replication factor must exceed 0.")
