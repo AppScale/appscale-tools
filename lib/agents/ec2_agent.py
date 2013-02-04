@@ -346,10 +346,6 @@ class EC2Agent(BaseAgent):
         break
 
 
-
-
-
-
   def terminate_instances(self, parameters):
     """
     Terminate one of more EC2 instances using. The input instance IDs are
@@ -363,7 +359,29 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     terminated_instances = conn.terminate_instances(instance_ids)
     for instance in terminated_instances:
-      AppScaleLogger.log('Instance {0} was terminated'.format(instance.id))
+      AppScaleLogger.log('Terminating instance {0}'.format(instance.id))
+    # wait for status=stopped
+    actual_terminated_instances=[]
+    wait_count=0
+    while True:
+      time.sleep(10)
+      reservations = conn.get_all_instances(instance_ids)
+      instances = [i for r in reservations for i in r.instances]
+      for i in instances:
+        #print "instance "+i.id+" reports as "+i.state
+        if i.state == 'terminated' and i.key_name == parameters[self.PARAM_KEYNAME]:
+          if i.id not in actual_terminated_instances:
+            actual_terminated_instances.append(i.id)
+      if len(actual_terminated_instances) >= len(instance_ids):
+        break
+      wait_count+=1
+      if wait_count == 6:
+        print "re-terminating instances: "+' '.join(instance_ids)
+        conn.terminate_instances(instance_ids)
+      if wait_count > 12:
+        print "ERROR: could not terminate instances: "+' '.join(instance_ids)
+        break
+
 
 
   def create_image(self,instance_id,name,parameters):
