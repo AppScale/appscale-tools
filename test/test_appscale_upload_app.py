@@ -28,8 +28,10 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appcontroller_client import AppControllerClient
+from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
+from custom_exceptions import AppEngineConfigException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -45,6 +47,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
   def setUp(self):
     self.keyname = "boobazblargfoo"
     self.function = "appscale-upload-app"
+    self.app_dir = "/tmp/baz/gbaz"
 
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
@@ -71,7 +74,103 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.failed.should_receive('wait').and_return(1)
     """
 
-  def test_upload_app(self):
+
+  def test_upload_app_without_file_flag(self):
+    # not specifying the file to upload should abort
+    argv = [
+      "--keyname", self.keyname
+    ]
+    self.assertRaises(SystemExit, ParseArgs, argv, self.function)
+
+
+  def test_upload_app_with_no_app_yaml_or_appengine_web_xml(self):
+    # all app engine apps must have a config file - abort if we can't find one
+
+    # add in mocks so that the config files aren't found
+    flexmock(os.path)
+    os.path.should_call('exists')
+    os.path.should_receive('exists').with_args(
+      AppEngineHelper.get_app_yaml_location(self.app_dir)).and_return(False)
+    os.path.should_receive('exists').with_args(
+      AppEngineHelper.get_appengine_web_xml_location(self.app_dir)) \
+      .and_return(False)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
+
+
+  def test_upload_python25_app_with_no_appid(self):
+    # if the user gives us an app with a reserved appid, we should abort
+
+    # add in mocks so that there is an app.yaml, but with no appid set
+    flexmock(os.path)
+    os.path.should_call('exists')
+    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
+    os.path.should_receive('exists').with_args(app_yaml_location) \
+      .and_return(True)
+
+    # mock out reading the app.yaml file
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_app_yaml = flexmock(name="fake_app_yaml")
+    fake_app_yaml.should_receive('read').and_return(yaml.dump({
+      'appid' : ''
+    }))
+    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
+      .and_return(fake_app_yaml)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
+
+
+  def test_upload_java_app_with_no_appid(self):
+    # if the user gives us an app with a reserved appid, we should abort
+
+    # add in mocks so that there is an appengine-web.xml, but with no appid set
+    flexmock(os.path)
+    os.path.should_call('exists')
+    os.path.should_receive('exists').with_args(
+      AppEngineHelper.get_app_yaml_location(self.app_dir)).and_return(False)
+    appengine_web_xml_location = AppEngineHelper.get_appengine_web_xml_location(
+      self.app_dir)
+    os.path.should_receive('exists').with_args(
+      AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
+
+    # mock out reading the app.yaml file
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_appengine_web_xml = flexmock(name="fake_appengine_web_xml")
+    fake_appengine_web_xml.should_receive('read').and_return("<baz></baz>\n" +
+      "<application></application>")
+    builtins.should_receive('open').with_args(appengine_web_xml_location, 'r') \
+      .and_return(fake_appengine_web_xml)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
+
+
+  def test_upload_app_with_no_runtime(self):
+    # as runtime is a required flag, abort if it is not set
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppEngineConfigException, AppScaleTools.upload_app, options)
     """
     # let's say that appscale isn't already running
     flexmock(os.path)

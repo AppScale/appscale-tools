@@ -110,8 +110,7 @@ class ParseArgs():
       self.parser.add_argument('--group',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname',
-        default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -151,6 +150,17 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-upload-app":
+      self.parser.add_argument('--file',
+        help="a directory containing the Google App Engine app to upload")
+
+       # flags relating to how much output we produce
+      self.parser.add_argument('--verbose', '-v', action='store_true',
+        default=False,
+        help="prints additional output (useful for debugging)")
+
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     else:
       raise SystemExit
 
@@ -175,6 +185,9 @@ class ParseArgs():
       pass
     elif function == "appscale-add-keypair":
       pass
+    elif function == "appscale-upload-app":
+      if not self.args.file:
+        raise SystemExit("Must specify --file.")
     else:
       raise SystemExit
 

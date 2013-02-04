@@ -10,6 +10,14 @@ class AppControllerException(Exception):
   pass
 
 
+class AppEngineConfigException(Exception):
+  """A special Exception class that should be thrown if there is a problem
+  with the user's App Engine application (e.g., it has no app.yaml or web.xml,
+  or has a malformed appid).
+  """
+  pass
+
+
 class AppScaleException(Exception):
   """A special Exception class that should be thrown if the user tries to
   interact with an AppScale deployment, but it's not in the expected

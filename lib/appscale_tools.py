@@ -8,6 +8,7 @@ import time
 
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
+from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -131,23 +132,11 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    pass
+    app_id = AppEngineHelper.get_app_id_from_app_config(options.file)
+    app_language = AppEngineHelper.get_app_runtime_from_app_config(options.file)
+    AppEngineHelper.validate_app_id(app_id)
     """
-  def self.upload_app(options)
-    file_location = options['file_location']
-    if file_location.nil?
-      raise AppScaleException.new(NO_FILE_PROVIDED_MSG)
-    end
-
-    keyname = options['keyname']
-    CommonFunctions.update_locations_file(keyname)
-    secret_key = CommonFunctions.get_secret_key(keyname)
-    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
-    database = CommonFunctions.get_table(keyname)
-
-    app_info = CommonFunctions.get_app_name_from_tar(file_location)
-    app_name, file_location, language = app_info[:app_name], app_info[:file], app_info[:language]
-    CommonFunctions.validate_app_name(app_name, database)
+    CommonFunctions.validate_app_name(app_name)
 
     acc = AppControllerClient.new(head_node_ip, secret_key)
     user = CommonFunctions.get_username_from_options(options)
