@@ -28,6 +28,10 @@ class AppEngineHelper():
   JAVA_APP_ID_REGEX = re.compile('<application>([\w\d-]+)<\/application>')
 
 
+  # A list of language runtimes that App Engine apps can be written in.
+  ALLOWED_RUNTIMES = ("python", "python27", "java", "go")
+
+
   @classmethod
   def read_file(cls, path):
     with open(path, 'r') as file_handle:
@@ -115,7 +119,8 @@ class AppEngineHelper():
     app_config_file = cls.get_config_file_from_dir(app_dir)
     if cls.FILE_IS_YAML.search(app_config_file):
       yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      if 'runtime' in yaml_contents and yaml_contents['runtime'] != '':
+      if 'runtime' in yaml_contents and yaml_contents['runtime'] in \
+        cls.ALLOWED_RUNTIMES:
         return yaml_contents['runtime']
       else:
         raise AppEngineConfigException("No runtime set in your app.yaml")
