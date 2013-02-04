@@ -1,19 +1,20 @@
-#!/usr/bin/env ruby
-# Programmer: Chris Bunch
-
-$VERBOSE = nil # to supress excessive SSL cert warnings
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
 
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'appscale_tools'
+# General-purpose Python library imports
+import os
+import sys
+import unittest
 
 
-if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV, AppScaleTools::GATHER_LOGS_FLAGS,
-    AppScaleTools::GATHER_LOGS_USAGE)
-  result = AppScaleTools.gather_logs(options)
-  if result[:success]
-    Kernel.puts("Successfully copied over logs to " +
-      "#{result[:log_dirs].join(', ')}")
-  end
-end
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-gather-logs").args
+  AppScaleTools.gather_logs(options)
