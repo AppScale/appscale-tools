@@ -5,6 +5,7 @@
 # General-purpose Python libraries
 import os
 import re
+import yaml
 
 
 # AppScale-specific imports
@@ -25,6 +26,12 @@ class AppEngineHelper():
 
   # A regular expression that can be used to find an appid in a XML file.
   JAVA_APP_ID_REGEX = re.compile('<application>([\w\d-]+)<\/application>')
+
+
+  @classmethod
+  def read_file(cls, path):
+    with open(path, 'r') as file_handle:
+      return file_handle.read()
 
 
   @classmethod
@@ -74,22 +81,18 @@ class AppEngineHelper():
     """
     app_config_file = cls.get_config_file_from_dir(app_dir)
     if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = ""
-      with open(app_config_file, 'r') as file_handle:
-        yaml_contents = yaml.safe_load(file_handle.read())
-      if 'appid' in yaml_contents and yaml_contents['appid'] != '':
-        return yaml_contents['appid']
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      if 'application' in yaml_contents and yaml_contents['application'] != '':
+        return yaml_contents['application']
       else:
-        raise AppEngineConfigException("No appid set in your app.yaml")
+        raise AppEngineConfigException("No application id set in your app.yaml")
     else:
-      xml_contents = ""
-      with open(app_config_file, 'r') as file_handle:
-        xml_contents = file_handle.read()
+      xml_contents = cls.read_file(app_config_file)
       app_id_matchdata = cls.JAVA_APP_ID_REGEX.search(xml_contents)
       if app_id_matchdata:
         return app_id_matchdata.group(1)
       else:
-        raise AppEngineConfigException("No appid set in your " + \
+        raise AppEngineConfigException("No application id set in your " + \
           "appengine-web.xml")
 
 
@@ -109,7 +112,15 @@ class AppEngineHelper():
     Raises:
       AppEngineConfigException: If there is no runtime set for this application.
     """
-    pass
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      if 'runtime' in yaml_contents and yaml_contents['runtime'] != '':
+        return yaml_contents['runtime']
+      else:
+        raise AppEngineConfigException("No runtime set in your app.yaml")
+    else:
+      return 'java'
 
 
   @classmethod
