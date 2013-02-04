@@ -121,3 +121,59 @@ class AppScaleTools():
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
     AppScaleLogger.remote_log_tools_state(options, "finished")
+
+
+  @classmethod
+  def upload_app(cls, options):
+    """Uploads the given App Engine application into AppScale.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    pass
+    """
+  def self.upload_app(options)
+    file_location = options['file_location']
+    if file_location.nil?
+      raise AppScaleException.new(NO_FILE_PROVIDED_MSG)
+    end
+
+    keyname = options['keyname']
+    CommonFunctions.update_locations_file(keyname)
+    secret_key = CommonFunctions.get_secret_key(keyname)
+    head_node_ip = CommonFunctions.get_head_node_ip(keyname)
+    database = CommonFunctions.get_table(keyname)
+
+    app_info = CommonFunctions.get_app_name_from_tar(file_location)
+    app_name, file_location, language = app_info[:app_name], app_info[:file], app_info[:language]
+    CommonFunctions.validate_app_name(app_name, database)
+
+    acc = AppControllerClient.new(head_node_ip, secret_key)
+    user = CommonFunctions.get_username_from_options(options)
+    userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
+    uac = UserAppClient.new(userappserver_ip, secret_key)
+    if !uac.does_user_exist?(user)
+      CommonFunctions.create_user(user, options['test'], head_node_ip,
+        secret_key, uac)
+    end
+
+    Kernel.puts ""
+
+    if uac.does_app_exist?(app_name)
+      raise AppScaleException.new(APP_ALREADY_EXISTS)
+    end
+
+    app_admin = uac.get_app_admin(app_name)
+    if !app_admin.empty? and user != app_admin
+      raise AppScaleException.new(USER_NOT_ADMIN)
+    end
+
+    remote_file_path = CommonFunctions.scp_app_to_ip(app_name, user, language,
+      keyname, head_node_ip, file_location, uac)
+    CommonFunctions.update_appcontroller(head_node_ip, secret_key, app_name,
+      remote_file_path)
+    CommonFunctions.wait_for_app_to_start(head_node_ip, secret_key, app_name)
+    CommonFunctions.clear_app(file_location)
+  end
+    """
