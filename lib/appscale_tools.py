@@ -135,10 +135,10 @@ class AppScaleTools():
     app_id = AppEngineHelper.get_app_id_from_app_config(options.file)
     app_language = AppEngineHelper.get_app_runtime_from_app_config(options.file)
     AppEngineHelper.validate_app_id(app_id)
-    """
-    CommonFunctions.validate_app_name(app_name)
 
-    acc = AppControllerClient.new(head_node_ip, secret_key)
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key(options.keyname))
+    """
     user = CommonFunctions.get_username_from_options(options)
     userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
     uac = UserAppClient.new(userappserver_ip, secret_key)
