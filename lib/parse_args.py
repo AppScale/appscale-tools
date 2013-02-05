@@ -86,6 +86,11 @@ class ParseArgs():
       default=False,
       help="shows the tools version and quits")
 
+    # flags relating to how much output we produce
+    self.parser.add_argument('--verbose', '-v', action='store_true',
+      default=False,
+      help="prints additional output (useful for debugging)")
+
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min', type=int,
@@ -128,11 +133,6 @@ class ParseArgs():
         default=True,
         help="adds/removes application servers based on incoming traffic")
 
-      # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
-        default=False,
-        help="prints additional output (useful for debugging)")
-
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,
@@ -150,12 +150,11 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-reset-pwd":
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     elif function == "appscale-describe-instances":
-      # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
-        default=False,
-        help="prints additional output (useful for debugging)")
-
       self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     else:
@@ -181,6 +180,8 @@ class ParseArgs():
     elif function == "appscale-gather-logs":
       pass
     elif function == "appscale-add-keypair":
+      pass
+    elif function == "appscale-reset-pwd":
       pass
     elif function == "appscale-describe-instances":
       pass

@@ -49,7 +49,7 @@ class LocalState():
 
 
   # The username for the cloud administrator if the --test options is used.
-  DEFAULT_USER = "a@a.a"
+  DEFAULT_USER = "a@a.com"
 
 
   # The password to set for the default user.
@@ -434,9 +434,13 @@ class LocalState():
 
 
   @classmethod
-  def get_credentials(cls):
+  def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
+
+    Args:
+      is_admin: A bool that indicates if we should be prompting the user for an
+        admin username/password or not.
 
     Returns:
       A tuple containing the username and password that the user typed in.
@@ -444,7 +448,11 @@ class LocalState():
     username, password = None, None
 
     while True:
-      username = raw_input('Enter your desired admin e-mail address: ')
+      if is_admin:
+        username = raw_input('Enter your desired admin e-mail address: ')
+      else:
+        username = raw_input('Enter your desired e-mail address: ')
+
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         break
