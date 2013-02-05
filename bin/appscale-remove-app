@@ -11,10 +11,17 @@ import unittest
 # AppScale library imports
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
+from custom_exceptions import AppControllerException
+from custom_exceptions import AppScaleException
 from parse_args import ParseArgs
 
 
 if __name__ == "__main__":
   options = ParseArgs(sys.argv[1:], "appscale-remove-app").args
-  AppScaleTools.remove_app(options)
+  try:
+    AppScaleTools.remove_app(options)
+  except (AppControllerException, AppScaleException) as e:
+    AppScaleLogger.warn(str(e))
+    sys.exit(1)

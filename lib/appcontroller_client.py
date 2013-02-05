@@ -114,6 +114,11 @@ class AppControllerClient():
         status = self.get_status()
         AppScaleLogger.verbose('Received status from head node: ' + status,
           is_verbose)
+
+        if status == 'false: bad secret':
+          raise AppControllerException("Could not authenticate successfully" + \
+            " to the AppController. You may need to change the keyname in use.")
+
         match = re.search(r'Database is at (.*)', status)
         if match and match.group(1) != 'not-up-yet':
           return match.group(1)
@@ -126,6 +131,8 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
+      except AppControllerException as exception:
+        raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
