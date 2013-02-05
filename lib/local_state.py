@@ -485,8 +485,7 @@ class LocalState():
 
   @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it up to five times if it
-    initially fails.
+    """Executes a command on this machine, retrying it if it initially fails.
 
     Args:
       command: A str representing the command to execute.
