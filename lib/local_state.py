@@ -439,7 +439,7 @@ class LocalState():
     cloud administrator's account in this AppScale deployment.
 
     Returns:
-      The username and password that the user typed in.
+      A tuple containing the username and password that the user typed in.
     """
     username, password = None, None
 
