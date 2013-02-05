@@ -38,6 +38,11 @@ class AppControllerClient():
   WAIT_TIME = 10
 
 
+  # The message that an AppController can return if callers do not authenticate
+  # themselves correctly.
+  BAD_SECRET_MESSAGE = 'false: bad secret'
+
+
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
 
@@ -115,7 +120,7 @@ class AppControllerClient():
         AppScaleLogger.verbose('Received status from head node: ' + status,
           is_verbose)
 
-        if status == 'false: bad secret':
+        if status == self.BAD_SECRET_MESSAGE:
           raise AppControllerException("Could not authenticate successfully" + \
             " to the AppController. You may need to change the keyname in use.")
 
