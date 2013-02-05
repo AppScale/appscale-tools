@@ -301,7 +301,7 @@ class RemoteHelper():
           the_temp_file.seek(0)
           output = the_temp_file.read()
           the_temp_file.close()
-          raise ShellException("Executing command '{0}' failed:\n{1}".format(command),output)
+          raise ShellException("Executing command '{0}' failed:\n{1}".format(command,output))
         time.sleep(1)
     except OSError as e:
       raise ShellException('Error executing command: {0}:{1}'.format(command,str(e)))
