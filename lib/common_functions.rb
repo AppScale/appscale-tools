@@ -759,6 +759,10 @@ module CommonFunctions
 
     value = tree[tag]
 
+    if value.nil?
+      value = tree[tag.to_s]
+    end
+
     if value.nil? and required
       raise AppScaleException.new("The location file did not contain a #{tag} tag.")
     end
@@ -1585,7 +1589,7 @@ module CommonFunctions
       "keyname '#{keyname}'..."
     Kernel.sleep(2)
 
-    ssh_key_location = "~/.appscale/#{keyname}"
+    ssh_key_location = "~/.appscale/#{keyname}.key"
     live_ips = CommonFunctions.stop_appcontrollers(keyname, ssh_key_location,
       verbose)
     CommonFunctions.wait_for_appcontrollers_to_stop(live_ips, ssh_key_location)
