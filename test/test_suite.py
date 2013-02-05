@@ -8,6 +8,8 @@ import unittest
 # imports for appscale executable tests
 from test_appscale import TestAppScale
 from test_appscale_remove_app import TestAppScaleRemoveApp
+from test_appscale_reset_pwd import TestAppScaleResetPassword
+from test_appscale_describe_instances import TestAppScaleDescribeInstances
 from test_appscale_run_instances import TestAppScaleRunInstances
 
 
@@ -19,7 +21,8 @@ from test_parse_args import TestParseArgs
 from test_remote_helper import TestRemoteHelper
 
 
-test_cases = [TestAppScale, TestAppScaleRemoveApp, TestAppScaleRunInstances,
+test_cases = [TestAppScale, TestAppScaleDescribeInstances,
+  TestAppScaleRemoveApp, TestAppScaleResetPassword, TestAppScaleRunInstances,
   TestAppScaleLogger, TestLocalState, TestNodeLayout, TestParseArgs,
   TestRemoteHelper]
 appscale_test_suite = unittest.TestSuite()

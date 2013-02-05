@@ -33,6 +33,11 @@ class AppControllerClient():
   PORT = 17443
 
 
+  # The number of seconds we should wait for when waiting for the UserAppServer
+  # to start up.
+  WAIT_TIME = 10
+
+
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
 
@@ -124,7 +129,7 @@ class AppControllerClient():
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
-      time.sleep(10)
+      time.sleep(self.WAIT_TIME)
 
 
   def get_status(self):

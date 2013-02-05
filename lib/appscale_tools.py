@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import sys
 import time
 
 
@@ -64,6 +65,51 @@ class AppScaleTools():
 
 
   @classmethod
+  def describe_instances(cls, options):
+    """Queries each node in the currently running AppScale deployment and
+    reports on their status.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    login_host = LocalState.get_login_host(options.keyname)
+    login_acc = AppControllerClient(login_host,
+      LocalState.get_secret_key(options.keyname))
+
+    for ip in login_acc.get_all_public_ips():
+      acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
+      AppScaleLogger.log(acc.get_status())
+
+
+  @classmethod
+  def reset_password(cls, options):
+    """Resets a user's password the currently running AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    secret = LocalState.get_secret_key(options.keyname)
+    username, password = LocalState.get_credentials(is_admin=False)
+    encrypted_password = LocalState.encrypt_password(username, password)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      secret)
+    userappserver_ip = acc.get_uaserver_host(options.verbose)
+    uac = UserAppClient(userappserver_ip, secret)
+
+    try:
+      uac.change_password(username, encrypted_password)
+      AppScaleLogger.success("The password was successfully changed for the " + \
+        "given user.")
+    except Exception as e:
+      AppScaleLogger.warn("Could not change the user's password for the " + \
+        "following reason: {0}".format(str(e)))
+      sys.exit(1)
+
+
+  @classmethod
   def run_instances(cls, options):
     """Starts a new AppScale deployment with the parameters given.
 
@@ -86,9 +132,7 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-
     AppScaleLogger.remote_log_tools_state(options, "started")
-    time.sleep(2)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
@@ -98,7 +142,6 @@ class AppScaleTools():
     if not node_layout.is_supported():
       AppScaleLogger.warn("Warning: This deployment strategy is not " + \
         "officially supported.")
-      time.sleep(1)
 
     public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
