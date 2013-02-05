@@ -60,7 +60,7 @@ class AppScaleTools():
     """
     if not options.confirm:
       response = raw_input("Are you sure you want to remove this application? ")
-      if response != 'yes' and response != 'y':
+      if response not in ['y', 'yes']:
         raise AppScaleException("Cancelled application removal.")
 
     login_host = LocalState.get_login_host(options.keyname)
