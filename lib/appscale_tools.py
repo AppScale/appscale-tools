@@ -31,7 +31,25 @@ class AppScaleTools():
   methods get called anyways.
   """
 
-  
+
+  @classmethod
+  def describe_instances(cls, options):
+    """Queries each node in the currently running AppScale deployment and
+    reports on their status.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    login_host = LocalState.get_login_host(options.keyname)
+    login_acc = AppControllerClient(login_host,
+      LocalState.get_secret_key(options.keyname))
+
+    for ip in login_acc.get_all_public_ips():
+      acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
+      AppScaleLogger.log(acc.get_status())
+
+
   @classmethod
   def remove_app(cls, options):
     """Instructs AppScale to no longer host the named application.
@@ -62,24 +80,6 @@ class AppScaleTools():
       else:
         break
     AppScaleLogger.success("Done shutting down {0}".format(options.appname))
-
-
-  @classmethod
-  def describe_instances(cls, options):
-    """Queries each node in the currently running AppScale deployment and
-    reports on their status.
-
-    Args:
-      options: A Namespace that has fields for each parameter that can be
-        passed in via the command-line interface.
-    """
-    login_host = LocalState.get_login_host(options.keyname)
-    login_acc = AppControllerClient(login_host,
-      LocalState.get_secret_key(options.keyname))
-
-    for ip in login_acc.get_all_public_ips():
-      acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
-      AppScaleLogger.log(acc.get_status())
 
 
   @classmethod
