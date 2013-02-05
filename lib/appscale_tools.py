@@ -53,9 +53,7 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-
     AppScaleLogger.remote_log_tools_state(options, "started")
-    time.sleep(2)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
