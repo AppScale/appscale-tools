@@ -216,7 +216,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def ssh(cls, host, keyname, command, is_verbose, user='root'):
+  def ssh(cls, host, keyname, command, is_verbose, user='root',num_retries=DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
     Args:
@@ -232,11 +232,11 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return cls.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-      cls.SSH_OPTIONS, user, host, command), is_verbose)
+      cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
 
 
   @classmethod
-  def scp(cls, host, keyname, source, dest, is_verbose, user='root'):
+  def scp(cls, host, keyname, source, dest, is_verbose, user='root',num_retries=DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
@@ -255,7 +255,7 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
-      cls.SSH_OPTIONS, source, user, host, dest), is_verbose)
+      cls.SSH_OPTIONS, source, user, host, dest), is_verbose, num_retries)
 
 
   @classmethod
@@ -276,21 +276,33 @@ class RemoteHelper():
       failed.
     """
     tries_left = num_retries
-    while tries_left:
-      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-      the_temp_file = tempfile.TemporaryFile()
-      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-        stderr=sys.stdout)
-      result.wait()
-      if result.returncode == 0:
-        output = the_temp_file.read()
-        the_temp_file.close()
-        return output
-      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-        .format(command), is_verbose)
-      tries_left -= 1
-      time.sleep(1)
-    raise ShellException('Could not execute command: {0}'.format(command))
+    try:
+      while tries_left:
+        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+        the_temp_file = tempfile.NamedTemporaryFile()
+        result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+          stderr=subprocess.STDOUT)
+        AppScaleLogger.verbose("       using temp file {0}".format(the_temp_file.name),is_verbose)
+        result.wait()
+        if result.returncode == 0:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          return output
+        tries_left -= 1
+        if tries_left:
+          the_temp_file.close()
+          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+            .format(command), is_verbose)
+        else:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          raise ShellException("Executing command '{0}' failed:\n{1}".format(command),output)
+        time.sleep(1)
+    except OSError as e:
+      raise ShellException('Error executing command: {0}:{1}'.format(command,str(e)))
+      
 
 
   @classmethod
