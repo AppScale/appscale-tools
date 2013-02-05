@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import getpass
 import os
 import sys
 import time
@@ -38,6 +39,11 @@ class AppScaleTools():
   SLEEP_TIME = 5
 
 
+  # The location of the expect script, used to interact with ssh-copy-id
+  EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
+    "templates" + os.sep + "sshcopyid"
+
+
   @classmethod
   def add_keypair(cls, options):
     """Sets up passwordless SSH login to the machines used in a virtualized
@@ -53,7 +59,7 @@ class AppScaleTools():
     path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
     if options.add_to_existing:
       public_key = path + ".pub"
-      private_key = path + ".key"
+      private_key = path
     else:
       public_key, private_key = LocalState.generate_rsa_key(options.keyname,
         options.verbose)
