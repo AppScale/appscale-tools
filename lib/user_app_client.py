@@ -110,3 +110,15 @@ class UserAppClient():
     AppScaleLogger.log('Granting admin privileges to %s' % username)
     self.server.set_cloud_admin_status(username, 'true', self.secret)
     self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)
+
+
+  def does_user_exist(self, username):
+    """Queries the UserAppServer to see if the given user exists.
+
+    Returns:
+      True if the given user exists, False otherwise.
+    """
+    if self.server.does_user_exist(username, self.secret) == "true":
+      return True
+    else:
+      return False

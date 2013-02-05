@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import base64
+import getpass
 import httplib
 import json
 import os
@@ -31,6 +32,7 @@ from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
+from custom_exceptions import AppScaleException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -308,6 +310,52 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # mock out the SOAP call to the AppController and assume it succeeded
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('Database is at public1')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
+
+    # mock out reading the locations.json file, and slip in our own json
+    fake_nodes_json = flexmock(name="fake_nodes_json")
+    fake_nodes_json.should_receive('read').and_return(json.dumps([{
+      "public_ip" : "public1",
+      "private_ip" : "private1",
+      "jobs" : ["shadow", "login"]
+    }]))
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location(self.keyname), 'r') \
+      .and_return(fake_nodes_json)
+
+    # mock out reading the secret key from ~/.appscale
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # mock out calls to the UserAppServer and presume that calls to create new
+    # users succeed
+    fake_userappserver = flexmock(name='fake_userappserver')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
+    fake_userappserver.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return('')
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
+      .and_return(fake_userappserver)
+
+    # mock out asking the user for the admin on the new app, and slip in an
+    # answer for them
+    builtins.should_receive('raw_input').and_return("a@a.com")
+    flexmock(getpass)
+    getpass.should_receive('getpass').and_return('aaaaaa')
+
     argv = [
       "--keyname", self.keyname,
       "--file", self.app_dir
@@ -425,67 +473,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['1.2.3.4']))
-    role_info = [{
-      'public_ip' : '1.2.3.4',
-      'private_ip' : '1.2.3.4',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at 1.2.3.4')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_raise(Exception) \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
-      .and_return(fake_appcontroller)
-
-    # mock out reading the locations.json file, and slip in our own json
-    fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "1.2.3.4",
-      "private_ip" : "1.2.3.4",
-      "jobs" : ["shadow", "login"]
-    }]))
-    fake_nodes_json.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_json_location(self.keyname), 'r') \
-      .and_return(fake_nodes_json)
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_json_location(self.keyname), 'w') \
-      .and_return(fake_nodes_json)
-
     # copying over the locations yaml and json files should be fine
     subprocess.should_receive('Popen').with_args(re.compile(
       'locations-{0}.[yaml|json]'.format(self.keyname)),
       shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.a', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.a', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.a', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
-      .and_return(fake_userappserver)
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),

@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import re
 import time
 
 
@@ -138,21 +139,27 @@ class AppScaleTools():
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+
+    if 'test' in options:
+      username = options.test
+    elif 'email' in options:
+      username = options.email
+    else:
+      username = LocalState.get_username_from_stdin()
+
+    if not userappclient.does_user_exist(username):
+      password = LocalState.get_password_from_stdin()
+      RemoteHelper.create_user_accounts(username, password, userappserver_host,
+        options.keyname)
+
+    if userappclient.does_app_exist(app_id):
+      raise AppScaleException("The given application is already running in " + \
+        "AppScale. Please choose a different application ID or use " + \
+        "appscale-remove-app to take down the existing application.")
     """
-    user = CommonFunctions.get_username_from_options(options)
-    userappserver_ip = acc.get_userappserver_ip(LOGS_VERBOSE)
-    uac = UserAppClient.new(userappserver_ip, secret_key)
-    if !uac.does_user_exist?(user)
-      CommonFunctions.create_user(user, options['test'], head_node_ip,
-        secret_key, uac)
-    end
-
-    Kernel.puts ""
-
-    if uac.does_app_exist?(app_name)
-      raise AppScaleException.new(APP_ALREADY_EXISTS)
-    end
-
     app_admin = uac.get_app_admin(app_name)
     if !app_admin.empty? and user != app_admin
       raise AppScaleException.new(USER_NOT_ADMIN)
