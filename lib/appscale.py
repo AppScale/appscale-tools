@@ -17,6 +17,7 @@ import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
+from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -521,4 +522,7 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
-    AppScaleTools.terminate_instances(options)
+    try:
+      AppScaleTools.terminate_instances(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))

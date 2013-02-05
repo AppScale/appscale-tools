@@ -6,6 +6,7 @@
 # General-purpose Python library imports
 import json
 import re
+import socket
 import time
 
 
@@ -88,7 +89,17 @@ class AppControllerClient():
       A list of the public IP addresses of each machine in this AppScale
       deployment.
     """
-    return json.loads(self.server.get_all_public_ips(self.secret))
+    try:
+      all_ips = self.server.get_all_public_ips(self.secret)
+    except socket.error:
+      raise AppControllerException("The remote AppController is down. Is " + \
+        "AppScale running?")
+
+    if all_ips == self.BAD_SECRET_MESSAGE:
+      raise AppControllerException("Could not authenticate successfully" + \
+        " to the AppController. You may need to change the keyname in use.")
+
+    return json.loads(all_ips)
 
 
   def get_role_info(self):
