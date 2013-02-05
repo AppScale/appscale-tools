@@ -110,3 +110,17 @@ class UserAppClient():
     AppScaleLogger.log('Granting admin privileges to %s' % username)
     self.server.set_cloud_admin_status(username, 'true', self.secret)
     self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)
+
+
+  def change_password(self, username, password):
+    """Sets the given user's password to the specified (hashed) value.
+
+    Args:
+      username: The e-mail address for the user whose password will be
+        changed.
+      password: The SHA1-hashed password that will be set as the user's
+        password.
+    """
+    result = self.server.change_password(username, password, self.secret)
+    if result != 'true':
+      raise Exception(result)
