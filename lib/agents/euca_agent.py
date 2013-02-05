@@ -68,11 +68,11 @@ class EucalyptusAgent(EC2Agent):
 
   def configure_instance_security(self, parameters):
     """
-    Setup EC2 security keys and groups. Required input values are read from
+    Setup Euca security keys and groups. Required input values are read from
     the parameters dictionary. More specifically, this method expects to
     find a 'keyname' parameter and a 'group' parameter in the parameters
     dictionary. Using these provided values, this method will create a new
-    EC2 key-pair and a security group. Security group will be granted permissions
+    Euca key-pair and a security group. Security group will be granted permissions
     to access any port on the instantiated VMs. (Also see documentation for the
     BaseAgent class)
 
@@ -83,7 +83,7 @@ class EucalyptusAgent(EC2Agent):
     group = parameters[self.PARAM_GROUP]
 
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    AppScaleLogger.log('About to spawn EC2 instances - ' \
+    AppScaleLogger.log('About to spawn Euca instances - ' \
               'Expecting to find a key at {0}'.format(ssh_key))
     if os.path.exists(ssh_key):
       self.handle_failure('SSH key found locally - please use a different keyname')
