@@ -5,9 +5,26 @@
 import unittest
 
 
+# imports for appscale executable tests
 from test_appscale import TestAppScale
+from test_appscale_run_instances import TestAppScaleRunInstances
 
 
-suite_appscale = unittest.TestLoader().loadTestsFromTestCase(TestAppScale)
-all_tests = unittest.TestSuite([suite_appscale])
+# imports for appscale library tests
+from test_appscale_logger import TestAppScaleLogger
+from test_local_state import TestLocalState
+from test_node_layout import TestNodeLayout
+from test_parse_args import TestParseArgs
+from test_remote_helper import TestRemoteHelper
+
+
+test_cases = [TestAppScale, TestAppScaleRunInstances,
+  TestAppScaleLogger, TestLocalState, TestNodeLayout, TestParseArgs,
+  TestRemoteHelper]
+appscale_test_suite = unittest.TestSuite()
+for test_class in test_cases:
+  tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
+  appscale_test_suite.addTests(tests)
+
+all_tests = unittest.TestSuite([appscale_test_suite])
 unittest.TextTestRunner(verbosity=2).run(all_tests)

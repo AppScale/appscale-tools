@@ -1,21 +1,26 @@
-#!/usr/bin/env ruby
-# Programmer: Chris Bunch
-
-$VERBOSE = nil # to surpress excessive SSL cert warnings
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
 
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'appscale_tools'
+# General-purpose Python library imports
+import os
+import sys
+import unittest
 
 
-if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV, 
-    AppScaleTools::RUN_INSTANCES_FLAGS, AppScaleTools::RUN_INSTANCES_USAGE)
-  begin
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-run-instances").args
+  try:
     AppScaleTools.run_instances(options)
-  rescue Exception => e
+  except Exception as e:
     # collect all of the logs that could be useful in debugging
     # why the above Exception was thrown
-    CommonFunctions.collect_and_send_logs(options, e)
-  end
-end
+    #CommonFunctions.collect_and_send_logs(options, e)
+    pass

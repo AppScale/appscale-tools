@@ -14,13 +14,16 @@ import yaml
 
 
 # Third party testing libraries
+import boto
 from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from agents.ec2_agent import EC2Agent
 from appscale import AppScale
+from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -132,6 +135,7 @@ class TestAppScale(unittest.TestCase):
     # and the case where we have a key but it doesn't work
     flexmock(os.path)
     key_path = os.path.expanduser('~/.appscale/boobazblarg.key')
+    os.path.should_call('exists')
     os.path.should_receive('exists').with_args(key_path).and_return(False).once()
 
 
@@ -144,12 +148,10 @@ class TestAppScale(unittest.TestCase):
                                                  "boobazblarg",
                                                  "--ips_layout",
                                                  base64_ips_layout]).and_return().once()
-    subprocess.should_receive('call').with_args(["appscale-run-instances",
-                                                 "--ips_layout",
-                                                 base64_ips_layout,
-                                                 "--keyname",
-                                                 "boobazblarg",
-                                                 ]).and_return().once()
+
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
+
     appscale.up()
 
 
@@ -167,17 +169,26 @@ class TestAppScale(unittest.TestCase):
       'machine' : 'ami-ABCDEFG',
       'keyname' : 'bookey',
       'group' : 'boogroup',
-      'verbose' : True,
       'min' : 1,
       'max' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
+    # throw in some mocks for the argument parsing
+    for credential in EC2Agent.REQUIRED_CREDENTIALS:
+      os.environ[credential] = "baz"
+
+    # finally, pretend that our ec2 image to use exists
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_return()
+    flexmock(boto)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+
     # finally, mock out the actual appscale-run-instances call
-    # TODO(cgb): find a better way to do this
-    flexmock(subprocess)
-    subprocess.should_receive('call').and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
     appscale.up()
 
 
