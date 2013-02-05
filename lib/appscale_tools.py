@@ -65,7 +65,6 @@ class AppScaleTools():
     if not node_layout.is_supported():
       AppScaleLogger.warn("Warning: This deployment strategy is not " + \
         "officially supported.")
-      time.sleep(1)
 
     public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
