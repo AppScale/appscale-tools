@@ -34,7 +34,6 @@ class AppScaleLogger():
       message: A str representing the message to log.
     """
     print message
-    cls.append_to_log(message)
 
 
   @classmethod
@@ -45,7 +44,6 @@ class AppScaleLogger():
       message: A str representing the message to warn the user with.
     """
     cprint(message, 'red')
-    cls.append_to_log(message)
 
 
   @classmethod
@@ -56,7 +54,6 @@ class AppScaleLogger():
       message: A str representing the message to log.
     """
     cprint(message, 'green')
-    cls.append_to_log(message)
 
 
   @classmethod
@@ -71,12 +68,6 @@ class AppScaleLogger():
     """
     if is_verbose:
       print message
-    cls.append_to_log(message)
-
-
-  @classmethod
-  def append_to_log(cls,message):
-    return
 
 
   @classmethod
