@@ -3,11 +3,13 @@
 
 
 # General-purpose Python library imports
+import os
 import sys
 import time
 
 
 # AppScale-specific imports
+from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
@@ -202,3 +204,29 @@ class AppScaleTools():
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
     AppScaleLogger.remote_log_tools_state(options, "finished")
+
+
+  @classmethod
+  def terminate_instances(cls, options):
+    """Stops all services running in an AppScale deployment, and in cloud
+    deployments, also powers off the instances previously spawned.
+
+    Raises:
+      AppScaleException: If AppScale is not running, and thus can't be
+      terminated.
+    """
+    if not os.path.exists(LocalState.get_locations_yaml_location(
+      options.keyname)):
+      raise AppScaleException("AppScale is not running with the keyname {0}".
+        format(options.keyname))
+
+    if LocalState.get_infrastructure(options.keyname) in \
+      InfrastructureAgentFactory.VALID_AGENTS:
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+        options.verbose)
+    else:
+      RemoteHelper.terminate_virtualized_cluster(options.keyname,
+        options.verbose)
+
+    LocalState.cleanup_appscale_files(options.keyname)
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")

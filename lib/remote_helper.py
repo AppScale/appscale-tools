@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 
@@ -572,3 +573,95 @@ class RemoteHelper():
           break
         else:
           time.sleep(cls.WAIT_TIME)
+
+
+  @classmethod
+  def terminate_cloud_infrastructure(cls, keyname, is_verbose):
+    """Powers off all machines in the currently running AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".format(keyname))
+    time.sleep(2)
+
+    # get all the instance IDs for machines in our deployment
+    agent = InfrastructureAgentFactory.create_agent(
+      LocalState.get_infrastructure(keyname))
+    params = agent.get_params_from_yaml(keyname)
+    _, _, instance_ids = agent.describe_instances(params)
+
+    # terminate all the machines
+    params[agent.PARAM_INSTANCE_IDS] = instance_ids
+    agent.terminate_instances(params)
+
+    # delete the keyname and group
+    agent.cleanup_state(params)
+
+
+  @classmethod
+  def terminate_virtualized_cluster(cls, keyname, is_verbose):
+    """Stops all API services running on all nodes in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
+      "keyname {0}".format(keyname))
+    time.sleep(2)
+
+    shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    all_ips = acc.get_all_public_ips()
+
+    threads = []
+    for ip in all_ips:
+      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
+        keyname, is_verbose))
+      thread.start()
+      threads.append(thread)
+
+    for thread in threads:
+      thread.join()
+
+    boxes_shut_down = 0
+    is_running_regex = re.compile("appscale-controller stop")
+    for ip in all_ips:
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+      while True:
+        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
+        AppScaleLogger.log(remote_output)
+        if not is_running_regex.match(remote_output):
+          break
+        time.sleep(0.3)
+      boxes_shut_down += 1
+
+    if boxes_shut_down != len(all_ips):
+      raise AppScaleException("Couldn't terminate your AppScale deployment " + \
+        "on all machines - please do so manually.")
+
+    AppScaleLogger.log("Terminated AppScale on {0} machines."
+      .format(boxes_shut_down))
+
+  
+  @classmethod
+  def stop_remote_appcontroller(cls, host, keyname, is_verbose):
+    """Stops the AppController daemon on the specified host.
+
+    Tries the stop command twice, just to make sure that the AppController gets
+    the message.
+
+    Args:
+      host: The location of the AppController to stop.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the stop commands we
+        exec to stdout.
+    """
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
+    time.sleep(5)
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)

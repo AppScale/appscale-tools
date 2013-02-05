@@ -67,7 +67,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
 
-    self.failed = flexmock(name='success', returncode=1)
+    self.failed = flexmock(name='failed', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
 

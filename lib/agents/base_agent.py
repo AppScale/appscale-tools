@@ -96,6 +96,16 @@ class BaseAgent:
     """
     raise NotImplementedError
 
+  def cleanup_state(self, parameters):
+    """
+    Removes any remote state that was created to run AppScale instances
+    during this deployment.
+    Args:
+      parameters: A dict that includes a key indicating the remote state
+        that should be deleted.
+    """
+    raise NotImplementedError
+
   def get_params_from_args(self, args):
     """
     Converts a Namespace of arguments to a dict, the internal format used

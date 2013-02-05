@@ -17,6 +17,7 @@ import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
+from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -508,13 +509,20 @@ Available commands:
     """
     contents = self.read_appscalefile()
 
-    # Construct an upload-app command from the file's contents
-    command = ["appscale-terminate-instances"]
+    # Construct a terminate-instances command from the file's contents
+    command = []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
+    if 'verbose' in contents_as_yaml:
+      command.append("--verbose")
+
     # Finally, exec the command. Don't worry about validating it -
-    # appscale-terminate-app will do that for us.
-    subprocess.call(command)
+    # appscale-terminate-instances will do that for us.
+    options = ParseArgs(command, "appscale-terminate-instances").args
+    try:
+      AppScaleTools.terminate_instances(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))
