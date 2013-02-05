@@ -10,6 +10,7 @@ import time
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -31,6 +32,11 @@ class AppScaleTools():
   """
 
 
+  # The number of seconds to wait to give services time to start up or shut
+  # down.
+  SLEEP_TIME = 5
+
+
   @classmethod
   def describe_instances(cls, options):
     """Queries each node in the currently running AppScale deployment and
@@ -47,6 +53,38 @@ class AppScaleTools():
     for ip in login_acc.get_all_public_ips():
       acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
       AppScaleLogger.log(acc.get_status())
+
+
+  @classmethod
+  def remove_app(cls, options):
+    """Instructs AppScale to no longer host the named application.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.confirm:
+      response = raw_input("Are you sure you want to remove this application? ")
+      if response not in ['y', 'yes']:
+        raise AppScaleException("Cancelled application removal.")
+
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+    if not userappclient.does_app_exist(options.appname):
+      raise AppScaleException("The given application is not currently running.")
+
+    acc.stop_app(options.appname)
+    AppScaleLogger.log("Please wait for your app to shut down.")
+    while True:
+      if acc.is_app_running(options.appname):
+        time.sleep(cls.SLEEP_TIME)
+      else:
+        break
+    AppScaleLogger.success("Done shutting down {0}".format(options.appname))
 
 
   @classmethod
