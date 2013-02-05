@@ -251,8 +251,8 @@ class LocalState():
     cur_time.set_time(int(time.time()) - 60*60*24)
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+    # Expire certs in 10 years.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
@@ -439,7 +439,7 @@ class LocalState():
     cloud administrator's account in this AppScale deployment.
 
     Returns:
-      The username and password that the user typed in.
+      A tuple containing the username and password that the user typed in.
     """
     username, password = None, None
 
@@ -485,8 +485,7 @@ class LocalState():
 
   @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it up to five times if it
-    initially fails.
+    """Executes a command on this machine, retrying it if it initially fails.
 
     Args:
       command: A str representing the command to execute.
