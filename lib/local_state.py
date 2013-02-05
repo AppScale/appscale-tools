@@ -251,8 +251,8 @@ class LocalState():
     cur_time.set_time(int(time.time()) - 60*60*24)
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+    # Expire certs in 10 years.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
