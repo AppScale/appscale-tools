@@ -368,8 +368,8 @@ class LocalState():
 
     # write our yaml metadata file
     yaml_contents = {
-      'load_balancer' : host,
-      'instance_id' : instance_id,
+      'load_balancer' : str(host),
+      'instance_id' : str(instance_id),
       'table' : options.table,
       'secret' : cls.get_secret_key(options.keyname),
       'db_master' : node_layout.db_master().id,
@@ -402,6 +402,13 @@ class LocalState():
 
 
   @classmethod
+  def get_host_for_role(cls, keyname, role):
+    for node in cls.get_local_nodes_info(keyname):
+      if role in node["jobs"]:
+          return node["public_ip"]
+
+
+  @classmethod
   def encrypt_password(cls, username, password):
     """Salts the given password with the provided username and encrypts it.
 
@@ -426,11 +433,26 @@ class LocalState():
     Returns:
       A str containing the host that runs the login service.
     """
+    return cls.get_host_with_role(keyname, 'login')
+
+
+  @classmethod
+  def get_host_with_role(cls, keyname, role):
+    """Searches through the local metadata to see which virtual machine runs the
+    specified role.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      role: A str indicating the role to search for.
+    Returns:
+      A str containing the host that runs the specified service.
+    """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if 'login' in node['jobs']:
+      if role in node['jobs']:
         return node['public_ip']
-    raise AppScaleException("Couldn't find a login node.")
+    raise AppScaleException("Couldn't find a {0} node.".format(role))
 
 
   @classmethod
@@ -492,6 +514,49 @@ class LocalState():
 
 
   @classmethod
+  def get_infrastructure(cls, keyname):
+    """Reads the locations.yaml file to see if this AppScale deployment is
+    running over a cloud infrastructure or a virtualized cluster.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the cloud infrastructure that AppScale is running over, or
+      'xen' if running over a virtualized cluster.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["infrastructure"]
+
+
+  @classmethod
+  def get_group(cls, keyname):
+    """Reads the locations.yaml file to see what security group was created for
+    this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the security group used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["group"]
+
+
+  @classmethod
+  def cleanup_appscale_files(cls, keyname):
+    """Removes all AppScale metadata files from this machine.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    """
+    os.remove(LocalState.get_locations_yaml_location(keyname))
+    os.remove(LocalState.get_locations_json_location(keyname))
+    os.remove(LocalState.get_secret_key_location(keyname))
+
+
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
     """Executes a command on this machine, retrying it if it initially fails.
 
