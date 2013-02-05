@@ -257,7 +257,6 @@ class EC2Agent(BaseAgent):
       instance_ids = []
       public_ips = []
       private_ips = []
-      time.sleep(10)
       end_time = datetime.datetime.now() + datetime.timedelta(0,
         self.MAX_VM_CREATION_TIME)
       now = datetime.datetime.now()

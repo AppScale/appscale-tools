@@ -54,7 +54,7 @@ class LocalState():
 
 
   # The username for the cloud administrator if the --test options is used.
-  DEFAULT_USER = "a@a.a"
+  DEFAULT_USER = "a@a.com"
 
 
   # The password to set for the default user.
@@ -256,8 +256,8 @@ class LocalState():
     cur_time.set_time(int(time.time()) - 60*60*24)
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+    # Expire certs in 10 years.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
@@ -439,17 +439,25 @@ class LocalState():
 
 
   @classmethod
-  def get_credentials(cls):
+  def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
 
+    Args:
+      is_admin: A bool that indicates if we should be prompting the user for an
+        admin username/password or not.
+
     Returns:
-      The username and password that the user typed in.
+      A tuple containing the username and password that the user typed in.
     """
     username, password = None, None
 
     while True:
-      username = raw_input('Enter your desired admin e-mail address: ')
+      if is_admin:
+        username = raw_input('Enter your desired admin e-mail address: ')
+      else:
+        username = raw_input('Enter your desired e-mail address: ')
+
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         break
@@ -490,8 +498,7 @@ class LocalState():
 
   @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it up to five times if it
-    initially fails.
+    """Executes a command on this machine, retrying it if it initially fails.
 
     Args:
       command: A str representing the command to execute.

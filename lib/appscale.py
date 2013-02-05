@@ -369,7 +369,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     # Construct a describe-instances command from the file's contents
-    command = ["appscale-describe-instances"]
+    command = []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
@@ -377,7 +377,8 @@ Available commands:
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-describe-instances will do that for us.
-    subprocess.call(command)
+    options = ParseArgs(command, "appscale-describe-instances").args
+    AppScaleTools.describe_instances(options)
 
 
   def deploy(self, app):

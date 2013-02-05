@@ -46,6 +46,11 @@ class RemoteHelper():
     os.sep + "templates" + os.sep + "appcontroller.god"
 
 
+  # The amount of time to wait when waiting for all API services to start on
+  # a machine.
+  WAIT_TIME = 10
+
+
   @classmethod
   def start_head_node(cls, options, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -134,9 +139,8 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    time.sleep(10)
-
-    cls.enable_root_login(public_ips[0], options.keyname, options.verbose)
+    cls.enable_root_login(public_ips[0], options.keyname, options.infrastructure,
+      options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -184,18 +188,27 @@ class RemoteHelper():
 
 
   @classmethod
-  def enable_root_login(cls, host, keyname, is_verbose):
+  def enable_root_login(cls, host, keyname, infrastructure, is_verbose):
     """Logs into the named host and alters its ssh configuration to enable the
     root user to directly log in.
 
     Args:
       host: A str representing the host to enable root logins on.
       keyname: A str representing the name of the SSH keypair to login with.
+      infrastructure: A str representing the name of the cloud infrastructure
+        we're running on.
       is_verbose: A bool indicating if we should print the command we execute to
         enable root login to stdout.
     """
-    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
-      is_verbose, user='ubuntu')
+    try:
+      cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+        is_verbose, user='ubuntu')
+    except ShellException as exception:
+      if infrastructure == 'euca':
+        AppScaleLogger.warn("Couldn't enable root login - it may already " + \
+          "be enabled")
+      else:
+        raise exception
 
 
   @classmethod
@@ -516,4 +529,4 @@ class RemoteHelper():
         if acc.is_initialized():
           break
         else:
-          time.sleep(10)
+          time.sleep(cls.WAIT_TIME)

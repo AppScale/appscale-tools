@@ -33,6 +33,16 @@ class AppControllerClient():
   PORT = 17443
 
 
+  # The number of seconds we should wait for when waiting for the UserAppServer
+  # to start up.
+  WAIT_TIME = 10
+
+
+  # The message that an AppController can return if callers do not authenticate
+  # themselves correctly.
+  BAD_SECRET_MESSAGE = 'false: bad secret'
+
+
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
 
@@ -109,6 +119,11 @@ class AppControllerClient():
         status = self.get_status()
         AppScaleLogger.verbose('Received status from head node: ' + status,
           is_verbose)
+
+        if status == self.BAD_SECRET_MESSAGE:
+          raise AppControllerException("Could not authenticate successfully" + \
+            " to the AppController. You may need to change the keyname in use.")
+
         match = re.search(r'Database is at (.*)', status)
         if match and match.group(1) != 'not-up-yet':
           return match.group(1)
@@ -121,10 +136,12 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
+      except AppControllerException as exception:
+        raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
-      time.sleep(10)
+      time.sleep(self.WAIT_TIME)
 
 
   def get_status(self):
@@ -148,3 +165,26 @@ class AppControllerClient():
       return self.server.is_done_initializing(self.secret)
     except Exception:
       return False
+
+
+  def stop_app(self, app_name):
+    """Tells the AppController to no longer host the named application.
+
+    Args:
+      app_name: A str that indicates which application should be stopped.
+    Returns:
+      The result of telling the AppController to no longer host the app.
+    """
+    return self.server.stop_app(app_name, self.secret)
+
+
+  def is_app_running(self, app_name):
+    """Queries the AppController to see if the named application is running.
+
+    Args:
+      app_name: A str that indicates which application we should be checking
+        for.
+    Returns:
+      True if the application is running, False otherwise.
+    """
+    return self.server.is_app_running(app_name, self.secret)
