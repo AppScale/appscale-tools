@@ -86,6 +86,11 @@ class ParseArgs():
       default=False,
       help="shows the tools version and quits")
 
+    # flags relating to how much output we produce
+    self.parser.add_argument('--verbose', '-v', action='store_true',
+      default=False,
+      help="prints additional output (useful for debugging)")
+
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min', type=int,
@@ -110,8 +115,7 @@ class ParseArgs():
       self.parser.add_argument('--group',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname',
-        default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -128,11 +132,6 @@ class ParseArgs():
       self.parser.add_argument('--autoscale', action='store_true',
         default=True,
         help="adds/removes application servers based on incoming traffic")
-
-      # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
-        default=False,
-        help="prints additional output (useful for debugging)")
 
       # developer flags
       self.parser.add_argument('--force', action='store_true',
@@ -155,11 +154,9 @@ class ParseArgs():
       self.parser.add_argument('--keyname',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
-
-      # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
-        default=False,
-        help="prints additional output (useful for debugging)")
+    elif function == "appscale-describe-instances":
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     else:
       raise SystemExit
 
@@ -185,6 +182,8 @@ class ParseArgs():
     elif function == "appscale-add-keypair":
       pass
     elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-describe-instances":
       pass
     else:
       raise SystemExit
