@@ -230,15 +230,15 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
     fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.a', str, 'xmpp_user', 'the secret') \
+      'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
       .and_return('true')
     fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.a', 'true', 'the secret').and_return()
+      'a@a.com', 'true', 'the secret').and_return()
     fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.a', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
+      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
     SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
       .and_return(fake_userappserver)
 
