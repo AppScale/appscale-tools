@@ -1,16 +1,20 @@
-#!/usr/bin/env ruby
-# Programmer: Chris Bunch
-
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'appscale_tools'
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
 
 
-if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV,
-    AppScaleTools::DESCRIBE_INSTANCES_FLAGS, 
-    AppScaleTools::DESCRIBE_INSTANCES_USAGE)
-  instance_info = AppScaleTools.describe_instances(options)
-  instance_info[:result].each { |instance|
-    puts instance
-  }
-end
+# General-purpose Python library imports
+import os
+import sys
+import unittest
+
+
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-describe-instances").args
+  AppScaleTools.describe_instances(options)
