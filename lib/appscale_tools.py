@@ -32,6 +32,11 @@ class AppScaleTools():
   """
 
 
+  # The number of seconds to wait to give services time to start up or shut
+  # down.
+  SLEEP_TIME = 5
+
+
   @classmethod
   def describe_instances(cls, options):
     """Queries each node in the currently running AppScale deployment and
@@ -76,7 +81,7 @@ class AppScaleTools():
     AppScaleLogger.log("Please wait for your app to shut down.")
     while True:
       if acc.is_app_running(options.appname):
-        time.sleep(5)
+        time.sleep(cls.SLEEP_TIME)
       else:
         break
     AppScaleLogger.success("Done shutting down {0}".format(options.appname))
