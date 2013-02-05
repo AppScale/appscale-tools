@@ -33,6 +33,11 @@ class LocalState():
   configuration files on the machine that executes the AppScale Tools.
   """
 
+
+  # The number of times to execute shell commands before aborting, by default.
+  DEFAULT_NUM_RETRIES = 5
+
+
   # The path on the local filesystem where we can read and write
   # AppScale deployment metadata.
   LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
@@ -246,8 +251,8 @@ class LocalState():
     cur_time.set_time(int(time.time()) - 60*60*24)
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+    # Expire certs in 10 years.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
@@ -434,7 +439,7 @@ class LocalState():
     cloud administrator's account in this AppScale deployment.
 
     Returns:
-      The username and password that the user typed in.
+      A tuple containing the username and password that the user typed in.
     """
     username, password = None, None
 
@@ -476,3 +481,37 @@ class LocalState():
       the_list.append(key)
       the_list.append(value)
     return the_list
+
+
+  @classmethod
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
+    """Executes a command on this machine, retrying it if it initially fails.
+
+    Args:
+      command: A str representing the command to execute.
+      is_verbose: A bool that indicates if we should print the command we are
+        executing to stdout.
+      num_retries: The number of times we should try to execute the given
+        command before aborting.
+    Returns:
+      The standard output and standard error produced when the command executes.
+    Raises:
+      ShellException: If, after five attempts, executing the named command
+      failed.
+    """
+    tries_left = num_retries
+    while tries_left:
+      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+      the_temp_file = tempfile.TemporaryFile()
+      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+        stderr=sys.stdout)
+      result.wait()
+      if result.returncode == 0:
+        output = the_temp_file.read()
+        the_temp_file.close()
+        return output
+      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+        .format(command), is_verbose)
+      tries_left -= 1
+      time.sleep(1)
+    raise ShellException('Could not execute command: {0}'.format(command))
