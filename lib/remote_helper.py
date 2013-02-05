@@ -53,6 +53,11 @@ class RemoteHelper():
     os.sep + "templates" + os.sep + "appcontroller.god"
 
 
+  # The amount of time to wait when waiting for all API services to start on
+  # a machine.
+  WAIT_TIME = 10
+
+
   @classmethod
   def start_head_node(cls, options, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -141,8 +146,6 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    time.sleep(10)
-
     cls.enable_root_login(public_ips[0], options.keyname, options.infrastructure,
       options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
@@ -568,4 +571,4 @@ class RemoteHelper():
         if acc.is_initialized():
           break
         else:
-          time.sleep(10)
+          time.sleep(cls.WAIT_TIME)
