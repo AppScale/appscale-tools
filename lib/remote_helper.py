@@ -258,8 +258,32 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+    return cls.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
       cls.SSH_OPTIONS, source, user, host, dest), is_verbose)
+
+
+  @classmethod
+  def scp_remote_to_local(cls, host, keyname, source, dest, is_verbose,
+    user='root'):
+    """Securely copies a file from a remote machine to this machine.
+
+    Args:
+      host: A str representing the machine that we should log into.
+      keyname: A str representing the name of the SSH keypair to log in with.
+      source: A str representing the path on the remote machine where the
+        file should be copied from.
+      dest: A str representing the path on the local machine where the file
+        should be copied to.
+      is_verbose: A bool that indicates if we should print the scp command to
+        stdout.
+      user: A str representing the user to log in as.
+    Returns:
+      A str representing the standard output of the secure copy and a str
+        representing the standard error of the secure copy.
+    """
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    return cls.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
+      cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
 
   @classmethod

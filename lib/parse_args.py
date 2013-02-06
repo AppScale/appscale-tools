@@ -143,6 +143,8 @@ class ParseArgs():
         default=False,
         help="uses a default username and password for cloud admin")
     elif function == "appscale-gather-logs":
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
@@ -193,6 +195,9 @@ class ParseArgs():
       pass
     elif function == "appscale-add-keypair":
       pass
+    elif function == "appscale-gather-logs":
+      if not 'location' in self.args:
+        self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
       pass
     elif function == "appscale-remove-app":
