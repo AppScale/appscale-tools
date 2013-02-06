@@ -1,4 +1,8 @@
-from agents.base_agent import BaseAgent, AgentConfigurationException, AgentRuntimeException
+"""
+Helper library for EC2 interaction
+"""
+from agents.base_agent import AgentRuntimeException
+from agents.base_agent import BaseAgent, AgentConfigurationException
 import boto
 from boto.exception import EC2ResponseError
 import datetime
@@ -6,9 +10,10 @@ import os
 import time
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
+# pylint: disable-msg=W0511
+#    don't bother about todo's
 
-__author__ = 'hiranya,Brian'
-__email__ = 'hiranya@appscale.com,brian@appscale.com'
+
 
 class EC2Agent(BaseAgent):
   """
@@ -75,7 +80,7 @@ class EC2Agent(BaseAgent):
     the parameters dictionary. More specifically, this method expects to
     find a 'keyname' parameter and a 'group' parameter in the parameters
     dictionary. Using these provided values, this method will create a new
-    EC2 key-pair and a security group. Security group will be granted permissions
+    EC2 key-pair and a security group. Security group will be granted permission
     to access any port on the instantiated VMs. (Also see documentation for the
     BaseAgent class)
 
@@ -91,10 +96,6 @@ class EC2Agent(BaseAgent):
 
     conn = self.open_connection(parameters)
     if os.path.exists(ssh_key):
-      #TODO: why is this a failure, if the key exists, we don't need to write 
-      #      a new one
-      #self.handle_failure('SSH key found locally - please use a different keyname')
-      #TODO: this should validate that the SSH correctly formatted
       print "SSH key found locally: "+ssh_key
     else:
       print "SSH not key found, fetching from cloud"
@@ -102,9 +103,10 @@ class EC2Agent(BaseAgent):
       if key_pair is None:
         AppScaleLogger.log('Creating key pair: ' + keyname)
         key_pair = conn.create_key_pair(keyname)
-      print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+");"
-      key_pair.save(os.environ['HOME']+'/.appscale');
-      print "calling: LocalState.write_key_file("+ssh_key+", "+key_pair.material+")"
+      print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+")"
+      key_pair.save(os.environ['HOME']+'/.appscale')
+      print "calling: LocalState.write_key_file("+ssh_key+", "+\
+        key_pair.material+")"
       LocalState.write_key_file(ssh_key, key_pair.material)
 
     security_groups = conn.get_all_security_groups()
@@ -137,8 +139,8 @@ class EC2Agent(BaseAgent):
         invoked an AppScale Tool with.
     """
     #need to convert this to a dict if it is not already
-    if not isinstance(args,dict):
-     args = vars(args)
+    if not isinstance(args, dict):
+      args = vars(args)
 
     params = {
       self.PARAM_CREDENTIALS : {},
@@ -219,8 +221,9 @@ class EC2Agent(BaseAgent):
 
     Args:
       count               No. of VMs to spawned
-      parameters          A dictionary of parameters. This must contain 'keyname',
-                          'group', 'image_id' and 'instance_type' parameters.
+      parameters          A dictionary of parameters. This must contain 
+                          'keyname', 'group', 'image_id' and 'instance_type'
+                          parameters.
       security_configured Uses this boolean value as an heuristic to
                           detect brand new AppScale deployments.
 
@@ -297,8 +300,8 @@ class EC2Agent(BaseAgent):
         for index in range(0, len(public_ips)):
           if public_ips[index] == '0.0.0.0':
             instance_to_term = instance_ids[index]
-            AppScaleLogger.log('Instance {0} failed to get a public IP address and' \
-                      ' is being terminated'.format(instance_to_term))
+            AppScaleLogger.log('Instance {0} failed to get a public IP address'\
+                    'and is being terminated'.format(instance_to_term))
             conn.terminate_instances([instance_to_term])
 
       end_time = datetime.datetime.now()
@@ -325,10 +328,8 @@ class EC2Agent(BaseAgent):
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
-    #print "EC2Agent.stop_instances(instance_ids="+str(instance_ids)+")"
-    #print "       parameters="+str(dir(parameters))
     stoppped_instances = conn.stop_instances(instance_ids)
-    actual_stopped_instances=[]
+    actual_stopped_instances = []
     for instance in stoppped_instances:
       AppScaleLogger.log('Stopping instance {0}'.format(instance.id))
     # wait for status=stopped
@@ -337,8 +338,9 @@ class EC2Agent(BaseAgent):
       reservations = conn.get_all_instances(instance_ids)
       instances = [i for r in reservations for i in r.instances]
       for i in instances:
-        #print "instance "+i.id+" reports as "+i.state
-        if i.state == 'stopped' and i.key_name == parameters[self.PARAM_KEYNAME]:
+        # instance i.id reports status = i.state
+        if i.state == 'stopped' \
+           and i.key_name == parameters[self.PARAM_KEYNAME]:
           if i.id not in actual_stopped_instances:
             actual_stopped_instances.append(i.id)
       if len(actual_stopped_instances) >= len(instance_ids):
@@ -360,20 +362,21 @@ class EC2Agent(BaseAgent):
     for instance in terminated_instances:
       AppScaleLogger.log('Terminating instance {0}'.format(instance.id))
     # wait for status=stopped
-    actual_terminated_instances=[]
-    wait_count=0
+    actual_terminated_instances = []
+    wait_count = 0
     while True:
       time.sleep(10)
       reservations = conn.get_all_instances(instance_ids)
       instances = [i for r in reservations for i in r.instances]
       for i in instances:
-        #print "instance "+i.id+" reports as "+i.state
-        if i.state == 'terminated' and i.key_name == parameters[self.PARAM_KEYNAME]:
+        # instance i.id reports status = i.state
+        if i.state == 'terminated' and \
+           i.key_name == parameters[self.PARAM_KEYNAME]:
           if i.id not in actual_terminated_instances:
             actual_terminated_instances.append(i.id)
       if len(actual_terminated_instances) >= len(instance_ids):
         break
-      wait_count+=1
+      wait_count += 1
       if wait_count == 6:
         print "re-terminating instances: "+' '.join(instance_ids)
         conn.terminate_instances(instance_ids)
@@ -383,7 +386,7 @@ class EC2Agent(BaseAgent):
 
 
 
-  def create_image(self,instance_id,name,parameters):
+  def create_image(self, instance_id, name, parameters):
     """
     Take the instance id and name, and creates a cloud image
     
@@ -394,8 +397,7 @@ class EC2Agent(BaseAgent):
       string contain the id of the new image
      """
     conn = self.open_connection(parameters)
-    id_str = conn.create_image(instance_id,name)
-    #print "create_image(): new image id="+str(id_str)
+    id_str = conn.create_image(instance_id, name)
     return id_str
 
 
@@ -421,8 +423,9 @@ class EC2Agent(BaseAgent):
   def get_optimal_spot_price(self, conn, instance_type):
     """
     Returns the spot price for an EC2 instance of the specified instance type.
-    The returned value is computed by averaging all the spot price history values
-    returned by the back-end EC2 APIs and incrementing the average by extra 20%.
+    The returned value is computed by averaging all the spot price history
+    values returned by the back-end EC2 APIs and incrementing the average by
+    extra 20%.
 
     Args:
       instance_type An EC2 instance type
@@ -432,13 +435,13 @@ class EC2Agent(BaseAgent):
     """
     history = conn.get_spot_price_history(product_description='Linux/UNIX',
       instance_type=instance_type)
-    sum = 0.0
+    var_sum = 0.0
     for entry in history:
-      sum += entry.price
-    average = sum / len(history)
+      var_sum += entry.price
+    average = var_sum / len(history)
     plus_twenty = average * 1.20
-    AppScaleLogger.log('The average spot instance price for a {0} machine is {1}, '\
-              'and 20% more is {2}'.format(instance_type, average, plus_twenty))
+    AppScaleLogger.log('The average spot instance price for a {0} machine is'\
+        ' {1}, and 20% more is {2}'.format(instance_type, average, plus_twenty))
     return plus_twenty
 
   def open_connection(self, parameters):
