@@ -271,12 +271,14 @@ class AppScaleTools():
       raise AppScaleException("The given application is already running in " + \
         "AppScale. Please choose a different application ID or use " + \
         "appscale-remove-app to take down the existing application.")
-    """
-    app_admin = uac.get_app_admin(app_name)
-    if !app_admin.empty? and user != app_admin
-      raise AppScaleException.new(USER_NOT_ADMIN)
-    end
 
+    app_admin = userappclient.get_app_admin(app_id)
+    if app_admin is not None and username != app_admin:
+      raise AppScaleException("The given user doesn't own this application" + \
+        ", so they can't upload an app with that application ID. Please " + \
+        "change the application ID and try again.")
+
+    """
     remote_file_path = CommonFunctions.scp_app_to_ip(app_name, user, language,
       keyname, head_node_ip, file_location, uac)
     CommonFunctions.update_appcontroller(head_node_ip, secret_key, app_name,
