@@ -302,9 +302,9 @@ class TestAppScale(unittest.TestCase):
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
-    # finally, mock out the actual appscale-run-instances call
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-describe-instances", "--keyname", "bookey"]).and_return().once()
+    # finally, mock out the actual appscale-describe-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('describe_instances')
     appscale.status()
 
 
@@ -524,6 +524,6 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-terminate-instances call
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-terminate-instances", "--keyname", "bookey"]).and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('terminate_instances')
     appscale.destroy()
