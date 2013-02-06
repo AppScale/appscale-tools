@@ -258,7 +258,7 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+    return cls.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
       cls.SSH_OPTIONS, source, user, host, dest), is_verbose)
 
 
@@ -282,7 +282,7 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
+    return cls.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
 
