@@ -3,14 +3,18 @@
 
 
 # General-purpose Python library imports
+import os
 import re
+import sys
 import time
 
 
 # AppScale-specific imports
+from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
@@ -30,6 +34,117 @@ class AppScaleTools():
   current working directory (as opposed to a dict), but under the hood these
   methods get called anyways.
   """
+
+
+  # The number of seconds to wait to give services time to start up or shut
+  # down.
+  SLEEP_TIME = 5
+
+
+  @classmethod
+  def describe_instances(cls, options):
+    """Queries each node in the currently running AppScale deployment and
+    reports on their status.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    login_host = LocalState.get_login_host(options.keyname)
+    login_acc = AppControllerClient(login_host,
+      LocalState.get_secret_key(options.keyname))
+
+    for ip in login_acc.get_all_public_ips():
+      acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
+      AppScaleLogger.log(acc.get_status())
+
+
+  @classmethod
+  def gather_logs(cls, options):
+    """Collects logs from each machine in the currently running AppScale
+    deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    # First, make sure that the place we want to store logs doesn't
+    # already exist.
+    if os.path.exists(options.location):
+      raise AppScaleException("Can't gather logs, as the location you " + \
+        "specified, {0}, already exists.".format(options.location))
+    else:
+      os.mkdir(options.location)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key(options.keyname))
+    for ip in acc.get_all_public_ips():
+      # Get the logs from each node, and store them in our local directory
+      local_dir = "{0}/{1}".format(options.location, ip)
+      os.mkdir(local_dir)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
+        local_dir, options.verbose)
+    AppScaleLogger.success("Successfully copied logs to {0}".format(
+      options.location))
+
+
+  @classmethod
+  def remove_app(cls, options):
+    """Instructs AppScale to no longer host the named application.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.confirm:
+      response = raw_input("Are you sure you want to remove this application? ")
+      if response not in ['y', 'yes']:
+        raise AppScaleException("Cancelled application removal.")
+
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+    if not userappclient.does_app_exist(options.appname):
+      raise AppScaleException("The given application is not currently running.")
+
+    acc.stop_app(options.appname)
+    AppScaleLogger.log("Please wait for your app to shut down.")
+    while True:
+      if acc.is_app_running(options.appname):
+        time.sleep(cls.SLEEP_TIME)
+      else:
+        break
+    AppScaleLogger.success("Done shutting down {0}".format(options.appname))
+
+
+  @classmethod
+  def reset_password(cls, options):
+    """Resets a user's password the currently running AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    secret = LocalState.get_secret_key(options.keyname)
+    username, password = LocalState.get_credentials(is_admin=False)
+    encrypted_password = LocalState.encrypt_password(username, password)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      secret)
+    userappserver_ip = acc.get_uaserver_host(options.verbose)
+    uac = UserAppClient(userappserver_ip, secret)
+
+    try:
+      uac.change_password(username, encrypted_password)
+      AppScaleLogger.success("The password was successfully changed for the " + \
+        "given user.")
+    except Exception as e:
+      AppScaleLogger.warn("Could not change the user's password for the " + \
+        "following reason: {0}".format(str(e)))
+      sys.exit(1)
 
 
   @classmethod
@@ -55,9 +170,7 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-
     AppScaleLogger.remote_log_tools_state(options, "started")
-    time.sleep(2)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
@@ -67,7 +180,6 @@ class AppScaleTools():
     if not node_layout.is_supported():
       AppScaleLogger.warn("Warning: This deployment strategy is not " + \
         "officially supported.")
-      time.sleep(1)
 
     public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
@@ -148,7 +260,7 @@ class AppScaleTools():
     elif 'email' in options:
       username = options.email
     else:
-      username = LocalState.get_username_from_stdin()
+      username = LocalState.get_username_from_stdin(is_admin=False)
 
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
@@ -173,3 +285,29 @@ class AppScaleTools():
     CommonFunctions.clear_app(file_location)
   end
     """
+
+
+  @classmethod
+  def terminate_instances(cls, options):
+    """Stops all services running in an AppScale deployment, and in cloud
+    deployments, also powers off the instances previously spawned.
+
+    Raises:
+      AppScaleException: If AppScale is not running, and thus can't be
+      terminated.
+    """
+    if not os.path.exists(LocalState.get_locations_yaml_location(
+      options.keyname)):
+      raise AppScaleException("AppScale is not running with the keyname {0}".
+        format(options.keyname))
+
+    if LocalState.get_infrastructure(options.keyname) in \
+      InfrastructureAgentFactory.VALID_AGENTS:
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+        options.verbose)
+    else:
+      RemoteHelper.terminate_virtualized_cluster(options.keyname,
+        options.verbose)
+
+    LocalState.cleanup_appscale_files(options.keyname)
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")

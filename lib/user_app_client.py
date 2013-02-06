@@ -3,6 +3,10 @@
 # Adapted from Hiranya's version
 
 
+# General-purpose Python libraries
+import re
+
+
 # Third-party imports
 import SOAPpy
 
@@ -122,3 +126,39 @@ class UserAppClient():
       return True
     else:
       return False
+
+
+  def does_app_exist(self, appname):
+    """Queries the UserAppServer to see if the named application exists.
+
+    Args:
+      appname: The name of the app that we should check for existence.
+    Returns:
+      True if the app does exist, False otherwise.
+    """
+    app_data = self.server.get_app_data(appname, self.secret)
+
+    num_of_ports_regex = re.compile(".*num_ports:(\d+)")
+    search_data = num_of_ports_regex.search(app_data)
+    if search_data:
+      num_ports = int(search_data.group(1))
+      if num_ports > 0:
+        return True
+      else:
+        return False
+    else:
+      return False
+
+
+  def change_password(self, username, password):
+    """Sets the given user's password to the specified (hashed) value.
+
+    Args:
+      username: The e-mail address for the user whose password will be
+        changed.
+      password: The SHA1-hashed password that will be set as the user's
+        password.
+    """
+    result = self.server.change_password(username, password, self.secret)
+    if result != 'true':
+      raise Exception(result)

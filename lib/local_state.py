@@ -49,7 +49,7 @@ class LocalState():
 
 
   # The username for the cloud administrator if the --test options is used.
-  DEFAULT_USER = "a@a.a"
+  DEFAULT_USER = "a@a.com"
 
 
   # The password to set for the default user.
@@ -251,8 +251,8 @@ class LocalState():
     cur_time.set_time(int(time.time()) - 60*60*24)
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24)
+    # Expire certs in 10 years.
+    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
@@ -368,8 +368,8 @@ class LocalState():
 
     # write our yaml metadata file
     yaml_contents = {
-      'load_balancer' : host,
-      'instance_id' : instance_id,
+      'load_balancer' : str(host),
+      'instance_id' : str(instance_id),
       'table' : options.table,
       'secret' : cls.get_secret_key(options.keyname),
       'db_master' : node_layout.db_master().id,
@@ -402,6 +402,13 @@ class LocalState():
 
 
   @classmethod
+  def get_host_for_role(cls, keyname, role):
+    for node in cls.get_local_nodes_info(keyname):
+      if role in node["jobs"]:
+          return node["public_ip"]
+
+
+  @classmethod
   def encrypt_password(cls, username, password):
     """Salts the given password with the provided username and encrypts it.
 
@@ -426,30 +433,49 @@ class LocalState():
     Returns:
       A str containing the host that runs the login service.
     """
-    nodes = cls.get_local_nodes_info(keyname)
-    for node in nodes:
-      if 'login' in node['jobs']:
-        return node['public_ip']
-    raise AppScaleException("Couldn't find a login node.")
+    return cls.get_host_with_role(keyname, 'login')
 
 
   @classmethod
-  def get_credentials(cls):
+  def get_host_with_role(cls, keyname, role):
+    """Searches through the local metadata to see which virtual machine runs the
+    specified role.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      role: A str indicating the role to search for.
+    Returns:
+      A str containing the host that runs the specified service.
+    """
+    nodes = cls.get_local_nodes_info(keyname)
+    for node in nodes:
+      if role in node['jobs']:
+        return node['public_ip']
+    raise AppScaleException("Couldn't find a {0} node.".format(role))
+
+
+  @classmethod
+  def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
 
+    Args:
+      is_admin: A bool that indicates if we should be prompting the user for an
+        admin username/password or not.
+
     Returns:
-      The username and password that the user typed in.
+      A tuple containing the username and password that the user typed in.
     """
     username, password = None, None
 
-    username = cls.get_username_from_stdin()
-    password = cls.get_password_from_stdin(username)
+    username = cls.get_username_from_stdin(is_admin)
+    password = cls.get_password_from_stdin()
     return username, password
 
   
   @classmethod
-  def get_username_from_stdin(cls):
+  def get_username_from_stdin(cls, is_admin):
     """Asks the user for the name of the e-mail address that should be made an
     administrator on their AppScale cloud or App Engine application.
 
@@ -457,7 +483,11 @@ class LocalState():
       A str containing the e-mail address the user typed in.
     """
     while True:
-      username = raw_input('Enter your desired admin e-mail address: ')
+      if is_admin:
+        username = raw_input('Enter your desired admin e-mail address: ')
+      else:
+        username = raw_input('Enter your desired e-mail address: ')
+
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         return username
@@ -507,9 +537,51 @@ class LocalState():
 
 
   @classmethod
+  def get_infrastructure(cls, keyname):
+    """Reads the locations.yaml file to see if this AppScale deployment is
+    running over a cloud infrastructure or a virtualized cluster.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the cloud infrastructure that AppScale is running over, or
+      'xen' if running over a virtualized cluster.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["infrastructure"]
+
+
+  @classmethod
+  def get_group(cls, keyname):
+    """Reads the locations.yaml file to see what security group was created for
+    this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the security group used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["group"]
+
+
+  @classmethod
+  def cleanup_appscale_files(cls, keyname):
+    """Removes all AppScale metadata files from this machine.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    """
+    os.remove(LocalState.get_locations_yaml_location(keyname))
+    os.remove(LocalState.get_locations_json_location(keyname))
+    os.remove(LocalState.get_secret_key_location(keyname))
+
+
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it up to five times if it
-    initially fails.
+    """Executes a command on this machine, retrying it if it initially fails.
 
     Args:
       command: A str representing the command to execute.

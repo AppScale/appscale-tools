@@ -17,6 +17,7 @@ import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
+from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -370,7 +371,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     # Construct a describe-instances command from the file's contents
-    command = ["appscale-describe-instances"]
+    command = []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
@@ -378,7 +379,8 @@ Available commands:
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-describe-instances will do that for us.
-    subprocess.call(command)
+    options = ParseArgs(command, "appscale-describe-instances").args
+    AppScaleTools.describe_instances(options)
 
 
   def deploy(self, app):
@@ -484,7 +486,7 @@ Available commands:
     contents_as_yaml = yaml.safe_load(contents)
 
     # construct the appscale-gather-logs command
-    command = ["appscale-gather-logs"]
+    command = []
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml["keyname"])
@@ -493,7 +495,11 @@ Available commands:
     command.append(location)
 
     # and exec it
-    subprocess.call(command)
+    options = ParseArgs(command, "appscale-gather-logs").args
+    try:
+      AppScaleTools.gather_logs(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))
 
 
   def destroy(self):
@@ -507,13 +513,20 @@ Available commands:
     """
     contents = self.read_appscalefile()
 
-    # Construct an upload-app command from the file's contents
-    command = ["appscale-terminate-instances"]
+    # Construct a terminate-instances command from the file's contents
+    command = []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
+    if 'verbose' in contents_as_yaml:
+      command.append("--verbose")
+
     # Finally, exec the command. Don't worry about validating it -
-    # appscale-terminate-app will do that for us.
-    subprocess.call(command)
+    # appscale-terminate-instances will do that for us.
+    options = ParseArgs(command, "appscale-terminate-instances").args
+    try:
+      AppScaleTools.terminate_instances(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))

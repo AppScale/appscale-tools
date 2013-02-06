@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 
@@ -51,6 +52,11 @@ class RemoteHelper():
 
   TEMPLATE_GOD_CONFIG_FILE = os.path.dirname(__file__) + os.sep + ".." + \
     os.sep + "templates" + os.sep + "appcontroller.god"
+
+
+  # The amount of time to wait when waiting for all API services to start on
+  # a machine.
+  WAIT_TIME = 10
 
 
   @classmethod
@@ -141,9 +147,8 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    time.sleep(10)
-
-    cls.enable_root_login(public_ips[0], options.keyname, options.verbose)
+    cls.enable_root_login(public_ips[0], options.keyname, options.infrastructure,
+      options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -191,18 +196,27 @@ class RemoteHelper():
 
 
   @classmethod
-  def enable_root_login(cls, host, keyname, is_verbose):
+  def enable_root_login(cls, host, keyname, infrastructure, is_verbose):
     """Logs into the named host and alters its ssh configuration to enable the
     root user to directly log in.
 
     Args:
       host: A str representing the host to enable root logins on.
       keyname: A str representing the name of the SSH keypair to login with.
+      infrastructure: A str representing the name of the cloud infrastructure
+        we're running on.
       is_verbose: A bool indicating if we should print the command we execute to
         enable root login to stdout.
     """
-    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
-      is_verbose, user='ubuntu')
+    try:
+      cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+        is_verbose, user='ubuntu')
+    except ShellException as exception:
+      if infrastructure == 'euca':
+        AppScaleLogger.warn("Couldn't enable root login - it may already " + \
+          "be enabled")
+      else:
+        raise exception
 
 
   @classmethod
@@ -244,8 +258,32 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+    return cls.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
       cls.SSH_OPTIONS, source, user, host, dest), is_verbose)
+
+
+  @classmethod
+  def scp_remote_to_local(cls, host, keyname, source, dest, is_verbose,
+    user='root'):
+    """Securely copies a file from a remote machine to this machine.
+
+    Args:
+      host: A str representing the machine that we should log into.
+      keyname: A str representing the name of the SSH keypair to log in with.
+      source: A str representing the path on the remote machine where the
+        file should be copied from.
+      dest: A str representing the path on the local machine where the file
+        should be copied to.
+      is_verbose: A bool that indicates if we should print the scp command to
+        stdout.
+      user: A str representing the user to log in as.
+    Returns:
+      A str representing the standard output of the secure copy and a str
+        representing the standard error of the secure copy.
+    """
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    return cls.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
+      cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
 
   @classmethod
@@ -558,4 +596,96 @@ class RemoteHelper():
         if acc.is_initialized():
           break
         else:
-          time.sleep(10)
+          time.sleep(cls.WAIT_TIME)
+
+
+  @classmethod
+  def terminate_cloud_infrastructure(cls, keyname, is_verbose):
+    """Powers off all machines in the currently running AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".format(keyname))
+    time.sleep(2)
+
+    # get all the instance IDs for machines in our deployment
+    agent = InfrastructureAgentFactory.create_agent(
+      LocalState.get_infrastructure(keyname))
+    params = agent.get_params_from_yaml(keyname)
+    _, _, instance_ids = agent.describe_instances(params)
+
+    # terminate all the machines
+    params[agent.PARAM_INSTANCE_IDS] = instance_ids
+    agent.terminate_instances(params)
+
+    # delete the keyname and group
+    agent.cleanup_state(params)
+
+
+  @classmethod
+  def terminate_virtualized_cluster(cls, keyname, is_verbose):
+    """Stops all API services running on all nodes in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
+      "keyname {0}".format(keyname))
+    time.sleep(2)
+
+    shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    all_ips = acc.get_all_public_ips()
+
+    threads = []
+    for ip in all_ips:
+      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
+        keyname, is_verbose))
+      thread.start()
+      threads.append(thread)
+
+    for thread in threads:
+      thread.join()
+
+    boxes_shut_down = 0
+    is_running_regex = re.compile("appscale-controller stop")
+    for ip in all_ips:
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+      while True:
+        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
+        AppScaleLogger.log(remote_output)
+        if not is_running_regex.match(remote_output):
+          break
+        time.sleep(0.3)
+      boxes_shut_down += 1
+
+    if boxes_shut_down != len(all_ips):
+      raise AppScaleException("Couldn't terminate your AppScale deployment " + \
+        "on all machines - please do so manually.")
+
+    AppScaleLogger.log("Terminated AppScale on {0} machines."
+      .format(boxes_shut_down))
+
+  
+  @classmethod
+  def stop_remote_appcontroller(cls, host, keyname, is_verbose):
+    """Stops the AppController daemon on the specified host.
+
+    Tries the stop command twice, just to make sure that the AppController gets
+    the message.
+
+    Args:
+      host: The location of the AppController to stop.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the stop commands we
+        exec to stdout.
+    """
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
+    time.sleep(5)
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)

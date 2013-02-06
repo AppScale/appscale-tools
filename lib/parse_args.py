@@ -86,6 +86,11 @@ class ParseArgs():
       default=False,
       help="shows the tools version and quits")
 
+    # flags relating to how much output we produce
+    self.parser.add_argument('--verbose', '-v', action='store_true',
+      default=False,
+      help="prints additional output (useful for debugging)")
+
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min', type=int,
@@ -128,11 +133,6 @@ class ParseArgs():
         default=True,
         help="adds/removes application servers based on incoming traffic")
 
-      # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
-        default=False,
-        help="prints additional output (useful for debugging)")
-
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,
@@ -143,6 +143,8 @@ class ParseArgs():
         default=False,
         help="uses a default username and password for cloud admin")
     elif function == "appscale-gather-logs":
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
@@ -153,12 +155,26 @@ class ParseArgs():
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
-
-       # flags relating to how much output we produce
-      self.parser.add_argument('--verbose', '-v', action='store_true',
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-terminate-instances":
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-remove-app":
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--appname',
+        help="the name of the application to remove")
+      self.parser.add_argument('--confirm', action='store_true',
         default=False,
-        help="prints additional output (useful for debugging)")
-
+        help="does not ask user to confirm application removal")
+    elif function == "appscale-reset-pwd":
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-describe-instances":
       self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     else:
@@ -188,6 +204,18 @@ class ParseArgs():
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
+    elif function == "appscale-gather-logs":
+      if not 'location' in self.args:
+        self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
+    elif function == "appscale-terminate-instances":
+      pass
+    elif function == "appscale-remove-app":
+      if not 'appname' in self.args:
+        raise SystemExit("Must specify appname")
+    elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-describe-instances":
+      pass
     else:
       raise SystemExit
 
