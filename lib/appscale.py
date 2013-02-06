@@ -486,7 +486,7 @@ Available commands:
     contents_as_yaml = yaml.safe_load(contents)
 
     # construct the appscale-gather-logs command
-    command = ["appscale-gather-logs"]
+    command = []
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml["keyname"])
@@ -495,7 +495,11 @@ Available commands:
     command.append(location)
 
     # and exec it
-    subprocess.call(command)
+    options = ParseArgs(command, "appscale-gather-logs").args
+    try:
+      AppScaleTools.gather_logs(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))
 
 
   def destroy(self):

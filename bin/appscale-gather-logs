@@ -11,10 +11,14 @@ import unittest
 # AppScale library imports
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
 
 
 if __name__ == "__main__":
   options = ParseArgs(sys.argv[1:], "appscale-gather-logs").args
-  AppScaleTools.gather_logs(options)
+  try:
+    AppScaleTools.gather_logs(options)
+  except Exception as e:
+    AppScaleLogger.warn(str(e))
