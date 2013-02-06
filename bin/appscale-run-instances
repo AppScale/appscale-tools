@@ -11,6 +11,7 @@ import unittest
 # AppScale library imports
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
 
@@ -20,7 +21,5 @@ if __name__ == "__main__":
   try:
     AppScaleTools.run_instances(options)
   except Exception as e:
-    # collect all of the logs that could be useful in debugging
-    # why the above Exception was thrown
-    #CommonFunctions.collect_and_send_logs(options, e)
-    pass
+    AppScaleLogger.warn(str(e))
+    sys.exit(1)
