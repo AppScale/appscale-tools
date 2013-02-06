@@ -58,6 +58,35 @@ class AppScaleTools():
 
 
   @classmethod
+  def gather_logs(cls, options):
+    """Collects logs from each machine in the currently running AppScale
+    deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    # First, make sure that the place we want to store logs doesn't
+    # already exist.
+    if os.path.exists(options.location):
+      raise AppScaleException("Can't gather logs, as the location you " + \
+        "specified, {0}, already exists.".format(options.location))
+    else:
+      os.mkdir(options.location)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key(options.keyname))
+    for ip in acc.get_all_public_ips():
+      # Get the logs from each node, and store them in our local directory
+      local_dir = "{0}/{1}".format(options.location, ip)
+      os.mkdir(local_dir)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
+        local_dir, options.verbose)
+    AppScaleLogger.success("Successfully copied logs to {0}".format(
+      options.location))
+
+
+  @classmethod
   def remove_app(cls, options):
     """Instructs AppScale to no longer host the named application.
 

@@ -468,10 +468,8 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # mock out the actual call to appscale-gather-logs
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-gather-logs",
-                                                 "--location",
-                                                 "/baz"]).and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
     appscale.logs('/baz')
 
 
@@ -486,12 +484,8 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # mock out the actual call to appscale-gather-logs
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-gather-logs",
-                                                 "--keyname",
-                                                 "boo",
-                                                 "--location",
-                                                 "/baz"]).and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
     appscale.logs('/baz')
 
 
