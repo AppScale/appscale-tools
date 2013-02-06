@@ -2,8 +2,12 @@
 
 
 # General-purpose Python library imports
+import os
 import base64
 import argparse
+
+
+# Third-party imports
 import yaml
 
 
@@ -224,7 +228,8 @@ class ParseArgs():
       self.args.min = self.args.max
 
     if self.args.ips:
-      pass
+      if not os.path.exists(self.args.ips):
+        raise BadConfigurationException("The given ips.yaml file did not exist.")
     elif self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
