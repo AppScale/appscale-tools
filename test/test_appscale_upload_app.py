@@ -318,6 +318,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",
@@ -395,6 +398,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",
@@ -475,6 +481,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",
