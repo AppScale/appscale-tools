@@ -332,11 +332,13 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     conn.stop_instances(instance_ids)
     AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'stopped'):
+    if not self.wait_for_status_change(parameters, conn, 'stopped',\
+           max_wait_time=120):
       AppScaleLogger.log("re-stopping instances: "+' '.join(instance_ids))
       conn.stop_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'stopped'):
-        AppScaleLogger.log("ERROR: could not stop instances: "+\
+      if not self.wait_for_status_change(parameters, conn, 'stopped',\
+            max_wait_time=120):
+        self.handle_failure("ERROR: could not stop instances: "+\
             ' '.join(instance_ids))
 
 
@@ -353,11 +355,13 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     conn.terminate_instances(instance_ids)
     AppScaleLogger.log('Terminating instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'terminated'):
+    if not self.wait_for_status_change(parameters, conn, 'terminated',\
+            max_wait_time=120):
       AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
       conn.terminate_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'terminated'):
-        AppScaleLogger.log("ERROR: could not terminate instances: "+\
+      if not self.wait_for_status_change(parameters, conn, 'terminated',\
+                max_wait_time=120):
+        self.handle_failure("ERROR: could not terminate instances: "+\
             ' '.join(instance_ids))
 
 
