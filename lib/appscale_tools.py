@@ -282,7 +282,7 @@ class AppScaleTools():
       options.keyname))
 
     if options.test:
-      username = options.test
+      username = LocalState.DEFAULT_USER
     elif options.email:
       username = options.email
     else:

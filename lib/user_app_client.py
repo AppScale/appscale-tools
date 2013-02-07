@@ -13,6 +13,7 @@ import SOAPpy
 
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 
 
 class UserAppClient():
