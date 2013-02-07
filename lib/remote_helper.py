@@ -718,7 +718,7 @@ class RemoteHelper():
     AppScaleLogger.log("Tarring application")
     local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
     cls.shell("cd {0} && tar -czf {1} *".format(app_location, local_tarred_app),
-      keyname, is_verbose)
+      is_verbose)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)

@@ -54,6 +54,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
+    AppScaleLogger.should_receive('success').and_return()
 
     # mock out all sleeping
     flexmock(time)
@@ -464,7 +465,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app', 'the secret').and_return()
+      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
@@ -528,7 +529,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(self.success)
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('/tmp/baz/gbaz'),
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/tmp/appscale-app-baz.tar.gz'),
       shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
