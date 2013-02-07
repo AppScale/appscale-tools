@@ -177,6 +177,11 @@ class TestAppScaleRunInstances(unittest.TestCase):
       UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
+    # as well as for the AppLoadBalancer
+    fake_socket.should_receive('connect').with_args(('1.2.3.4',
+      RemoteHelper.APP_LOAD_BALANCER_PORT)).and_raise(Exception) \
+      .and_raise(Exception).and_return(None)
+
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
