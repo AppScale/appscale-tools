@@ -339,6 +339,11 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_secret)
 
     # mock out reading the locations.json file, and slip in our own json
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location('bookey')).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",

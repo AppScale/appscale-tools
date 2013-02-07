@@ -396,7 +396,14 @@ class LocalState():
     Returns:
       A list of dicts, where each dict contains information on a single machine
       in this AppScale deployment.
+    Raises:
+      BadConfigurationException: If there is no JSON-encoded metadata file
+        named after the given keyname.
     """
+    if not os.path.exists(cls.get_locations_json_location(keyname)):
+      raise BadConfigurationException("AppScale does not appear to be " + \
+        "running with keyname {0}".format(keyname))
+
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
       return json.loads(file_handle.read())
 
