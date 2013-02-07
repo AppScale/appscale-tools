@@ -85,18 +85,12 @@ class EC2Agent(BaseAgent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
 
-    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    AppScaleLogger.log('About to spawn EC2 instances - ' \
-              'Expecting to find a key at {0}'.format(ssh_key))
-    if os.path.exists(ssh_key):
-      self.handle_failure('SSH key found locally - please use a different keyname')
-
+    AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
+      " is not already registered.")
     conn = self.open_connection(parameters)
-    key_pair = conn.get_key_pair(keyname)
-    if key_pair is None:
-      AppScaleLogger.log('Creating key pair: ' + keyname)
-      key_pair = conn.create_key_pair(keyname)
-    LocalState.write_key_file(ssh_key, key_pair.material)
+    if conn.get_key_pair(keyname):
+      self.handle_failure("SSH key already registered - please use a " + \
+        "different keyname")
 
     security_groups = conn.get_all_security_groups()
     group_exists = False
@@ -105,15 +99,23 @@ class EC2Agent(BaseAgent):
         group_exists = True
         break
 
-    if not group_exists:
-      AppScaleLogger.log('Creating security group: ' + group)
-      conn.create_security_group(group, 'AppScale security group')
-      conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group(group, ip_protocol='icmp',
-        cidr_ip='0.0.0.0/0')
+    if group_exists:
+      self.handle_failure("Security group already exists - please use a " + \
+        "different group name")
+
+    AppScaleLogger.log("Creating key pair: {0}".format(keyname))
+    key_pair = conn.create_key_pair(keyname)
+    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    LocalState.write_key_file(ssh_key, key_pair.material)
+
+    AppScaleLogger.log('Creating security group: {0}'.format(group))
+    conn.create_security_group(group, 'AppScale security group')
+    conn.authorize_security_group(group, from_port=1,
+      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group(group, from_port=1,
+      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group(group, ip_protocol='icmp',
+      cidr_ip='0.0.0.0/0')
 
     return True
 
