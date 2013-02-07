@@ -244,6 +244,6 @@ class UserAppClient():
 
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
-    host = re.search(".*\shosts:([\w|\.|\d]+)\s", app_data).group(1)
+    host = re.search(".*\shosts:([\w|\.|\d\-]+)\s", app_data).group(1)
     port = int(re.search(".*\sports: (\d+)\s", app_data).group(1))
     return host, port
