@@ -104,9 +104,9 @@ class EC2Agent(BaseAgent):
       if key_pair is None:
         AppScaleLogger.log('Creating key pair: ' + keyname)
         key_pair = conn.create_key_pair(keyname)
-      # TODO(brian): this does not always work.  Need to investigate why
-      # print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+")"
-      # key_pair.save(os.environ['HOME']+'/.appscale')
+      # TODO(brian): this does not always work.  Need to investigate why.
+      # print "calling: key_pair.save(LocalState.LOCAL_APPSCALE_PATH)"
+      # key_pair.save(LocalState.LOCAL_APPSCALE_PATH)
       AppScaleLogger.log("calling: LocalState.write_key_file("+ssh_key+", "+\
         key_pair.material+")")
       LocalState.write_key_file(ssh_key, key_pair.material)
@@ -339,19 +339,6 @@ class EC2Agent(BaseAgent):
       if not self.wait_for_status_change(parameters, conn, 'stopped'):
         AppScaleLogger.log("ERROR: could not stop instances: "+\
             ' '.join(instance_ids))
-#    # wait for status=stopped
-#    while True:
-#      time.sleep(10)
-#      reservations = conn.get_all_instances(instance_ids)
-#      instances = [i for r in reservations for i in r.instances]
-#      for i in instances:
-#        # instance i.id reports status = i.state
-#        if i.state == 'stopped' \
-#           and i.key_name == parameters[self.PARAM_KEYNAME]:
-#          if i.id not in actual_stopped_instances:
-#            actual_stopped_instances.append(i.id)
-#      if len(actual_stopped_instances) >= len(instance_ids):
-#        break
 
 
   def terminate_instances(self, parameters):
@@ -375,30 +362,6 @@ class EC2Agent(BaseAgent):
         AppScaleLogger.log("ERROR: could not terminate instances: "+\
             ' '.join(instance_ids))
 
-
-#    # wait for status=stopped
-#    actual_terminated_instances = []
-#    wait_count = 0
-#    while True:
-#      time.sleep(10)
-#      reservations = conn.get_all_instances(instance_ids)
-#      instances = [i for r in reservations for i in r.instances]
-#      for i in instances:
-#        # instance i.id reports status = i.state
-#        if i.state == 'terminated' and \
-#           i.key_name == parameters[self.PARAM_KEYNAME]:
-#          if i.id not in actual_terminated_instances:
-#            actual_terminated_instances.append(i.id)
-#      if len(actual_terminated_instances) >= len(instance_ids):
-#        break
-#      wait_count += 1
-#      if wait_count == 6:
-#        AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
-#        conn.terminate_instances(instance_ids)
-#      if wait_count > 12:
-#        AppScaleLogger.log("ERROR: could not terminate instances: "+\
-#            ' '.join(instance_ids))
-#        break
 
   def wait_for_status_change(self, parameters, conn, state_requested, \
                               max_wait_time=60,poll_interval=10):

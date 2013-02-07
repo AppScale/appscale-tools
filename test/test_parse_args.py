@@ -56,7 +56,8 @@ class TestParseArgs(unittest.TestCase):
       .and_return()
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
+      .and_return(fake_ec2)
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
@@ -77,10 +78,6 @@ class TestParseArgs(unittest.TestCase):
       raise
     except SystemExit:
       pass
-    #with self.assertRaises(SystemExit) as context_manager:
-    #  ParseArgs(argv_2, self.function)
-    #self.assertEquals(local_state.APPSCALE_VERSION,
-    #  context_manager.exception.message)
 
 
   def test_get_min_and_max(self):
@@ -156,12 +153,14 @@ class TestParseArgs(unittest.TestCase):
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABCDEFG']
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', \
+        'emi-ABCDEFG']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',\
+      'boo']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
 
@@ -170,7 +169,8 @@ class TestParseArgs(unittest.TestCase):
     # value.
     argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, actual.args.instance_type)
+    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, \
+      actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
@@ -206,17 +206,21 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", \
+        "ami-ABCDEFG"]
     for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+      self.function)
 
 
   def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",\
+      "emi-ABCDEFG"]
     for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+      self.function)
 
 
   def test_failure_when_ami_doesnt_exist(self):
@@ -226,9 +230,11 @@ class TestParseArgs(unittest.TestCase):
       .and_raise(boto.exception.EC2ResponseError, '', '')
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
+      .and_return(fake_ec2)
 
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",\
+      "ami-ABCDEFG"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
 

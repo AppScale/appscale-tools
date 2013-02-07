@@ -219,7 +219,8 @@ class RemoteHelper():
 
 
   @classmethod
-  def ssh(cls, host, keyname, command, is_verbose, user='root',num_retries=DEFAULT_NUM_RETRIES):
+  def ssh(cls, host, keyname, command, is_verbose, user='root', \
+            num_retries=DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
     Args:
@@ -239,7 +240,8 @@ class RemoteHelper():
 
 
   @classmethod
-  def scp(cls, host, keyname, source, dest, is_verbose, user='root',num_retries=DEFAULT_NUM_RETRIES):
+  def scp(cls, host, keyname, source, dest, is_verbose, user='root', 
+            num_retries=DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
