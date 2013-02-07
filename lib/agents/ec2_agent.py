@@ -2,7 +2,8 @@
 Helper library for EC2 interaction
 """
 from agents.base_agent import AgentRuntimeException
-from agents.base_agent import BaseAgent, AgentConfigurationException
+from agents.base_agent import BaseAgent 
+from agents.base_agent import AgentConfigurationException
 import boto
 from boto.exception import EC2ResponseError
 import datetime
@@ -96,17 +97,18 @@ class EC2Agent(BaseAgent):
 
     conn = self.open_connection(parameters)
     if os.path.exists(ssh_key):
-      print "SSH key found locally: "+ssh_key
+      AppScaleLogger.log("SSH key found locally: "+ssh_key)
     else:
-      print "SSH not key found, fetching from cloud"
+      AppScaleLogger.log("SSH not key found, fetching from cloud")
       key_pair = conn.get_key_pair(keyname)
       if key_pair is None:
         AppScaleLogger.log('Creating key pair: ' + keyname)
         key_pair = conn.create_key_pair(keyname)
-      print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+")"
-      key_pair.save(os.environ['HOME']+'/.appscale')
-      print "calling: LocalState.write_key_file("+ssh_key+", "+\
-        key_pair.material+")"
+      # TODO(brian): this does not always work.  Need to investigate why
+      # print "calling: key_pair.save("+os.environ['HOME']+'/.appscale'+")"
+      # key_pair.save(os.environ['HOME']+'/.appscale')
+      AppScaleLogger.log("calling: LocalState.write_key_file("+ssh_key+", "+\
+        key_pair.material+")")
       LocalState.write_key_file(ssh_key, key_pair.material)
 
     security_groups = conn.get_all_security_groups()
@@ -138,7 +140,7 @@ class EC2Agent(BaseAgent):
       args: A Namespace containing the arguments that the user has
         invoked an AppScale Tool with.
     """
-    #need to convert this to a dict if it is not already
+    # need to convert this to a dict if it is not already
     if not isinstance(args, dict):
       args = vars(args)
 
@@ -319,7 +321,7 @@ class EC2Agent(BaseAgent):
 
   def stop_instances(self, parameters):
     """
-    Stop one of more EC2 instances using. The input instance IDs are
+    Stop one of more EC2 instances. The input instance IDs are
     fetched from the 'instance_ids' parameters in the input map. (Also
     see documentation for the BaseAgent class)
 
@@ -328,61 +330,110 @@ class EC2Agent(BaseAgent):
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
-    stoppped_instances = conn.stop_instances(instance_ids)
-    actual_stopped_instances = []
+    conn.stop_instances(instance_ids)
     for instance in stoppped_instances:
-      AppScaleLogger.log('Stopping instance {0}'.format(instance.id))
-    # wait for status=stopped
-    while True:
-      time.sleep(10)
-      reservations = conn.get_all_instances(instance_ids)
-      instances = [i for r in reservations for i in r.instances]
-      for i in instances:
-        # instance i.id reports status = i.state
-        if i.state == 'stopped' \
-           and i.key_name == parameters[self.PARAM_KEYNAME]:
-          if i.id not in actual_stopped_instances:
-            actual_stopped_instances.append(i.id)
-      if len(actual_stopped_instances) >= len(instance_ids):
-        break
+      AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
+    if not self.wait_for_status_change(parameters, conn, 'stopped'):
+      AppScaleLogger.log("re-stopping instances: "+' '.join(instance_ids))
+      conn.stop_instances(instance_ids)
+      if not self.wait_for_status_change(parameters, conn, 'stopped'):
+        AppScaleLogger.log("ERROR: could not stop instances: "+\
+            ' '.join(instance_ids))
+#    # wait for status=stopped
+#    while True:
+#      time.sleep(10)
+#      reservations = conn.get_all_instances(instance_ids)
+#      instances = [i for r in reservations for i in r.instances]
+#      for i in instances:
+#        # instance i.id reports status = i.state
+#        if i.state == 'stopped' \
+#           and i.key_name == parameters[self.PARAM_KEYNAME]:
+#          if i.id not in actual_stopped_instances:
+#            actual_stopped_instances.append(i.id)
+#      if len(actual_stopped_instances) >= len(instance_ids):
+#        break
 
 
   def terminate_instances(self, parameters):
     """
-    Terminate one of more EC2 instances using. The input instance IDs are
+    Terminate one of more EC2 instances. The input instance IDs are
     fetched from the 'instance_ids' parameters in the input map. (Also
     see documentation for the BaseAgent class)
 
     Args:
-      parameters  A dictionary of parameters
+      parameters:  A dictionary of parameters
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
     terminated_instances = conn.terminate_instances(instance_ids)
     for instance in terminated_instances:
       AppScaleLogger.log('Terminating instance {0}'.format(instance.id))
-    # wait for status=stopped
-    actual_terminated_instances = []
-    wait_count = 0
+    if not self.wait_for_status_change(parameters, conn, 'terminated'):
+      AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
+      conn.terminate_instances(instance_ids)
+      if not self.wait_for_status_change(parameters, conn, 'terminated'):
+        AppScaleLogger.log("ERROR: could not terminate instances: "+\
+            ' '.join(instance_ids))
+
+
+#    # wait for status=stopped
+#    actual_terminated_instances = []
+#    wait_count = 0
+#    while True:
+#      time.sleep(10)
+#      reservations = conn.get_all_instances(instance_ids)
+#      instances = [i for r in reservations for i in r.instances]
+#      for i in instances:
+#        # instance i.id reports status = i.state
+#        if i.state == 'terminated' and \
+#           i.key_name == parameters[self.PARAM_KEYNAME]:
+#          if i.id not in actual_terminated_instances:
+#            actual_terminated_instances.append(i.id)
+#      if len(actual_terminated_instances) >= len(instance_ids):
+#        break
+#      wait_count += 1
+#      if wait_count == 6:
+#        AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
+#        conn.terminate_instances(instance_ids)
+#      if wait_count > 12:
+#        AppScaleLogger.log("ERROR: could not terminate instances: "+\
+#            ' '.join(instance_ids))
+#        break
+
+  def wait_for_status_change(self, parameters, conn, state_requested, \
+                              max_wait_time=60,poll_interval=10):
+    """
+    After we have sent a signal to the cloud infrastructure to change the state
+      of the instances (unsually from runnning to either stoppped or 
+      terminated), wait for the status to change.  If all the instances change
+      successfully, return true, if not return false
+    Args:
+      parameters: A dictionary of parameters
+      conn:       A connection object returned from self.open_connection()
+      state_requrested: string of the requested final state of the instances
+      max_wait_time: int of maximum amount of time (in seconds)  to wait for the
+                        state change
+      poll_interval: int of the number of seconds to wait between checking of
+                        the state
+    """
+    time_start = time.time()
+    instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+    instances_in_state = {}
     while True:
-      time.sleep(10)
+      time.sleep(poll_interval)
       reservations = conn.get_all_instances(instance_ids)
       instances = [i for r in reservations for i in r.instances]
       for i in instances:
         # instance i.id reports status = i.state
-        if i.state == 'terminated' and \
+        if i.state == state_requested and \
            i.key_name == parameters[self.PARAM_KEYNAME]:
-          if i.id not in actual_terminated_instances:
-            actual_terminated_instances.append(i.id)
-      if len(actual_terminated_instances) >= len(instance_ids):
-        break
-      wait_count += 1
-      if wait_count == 6:
-        print "re-terminating instances: "+' '.join(instance_ids)
-        conn.terminate_instances(instance_ids)
-      if wait_count > 12:
-        print "ERROR: could not terminate instances: "+' '.join(instance_ids)
-        break
+          if i.id not in instances_in_state.keys():
+            instances_in_state[i.id] = 1 #mark instance done
+      if len(instances_in_state.keys()) >= len(instance_ids):
+        return True
+      if time.time()-time_start > max_wait_time:
+        return False
+
 
 
 
@@ -394,7 +445,7 @@ class EC2Agent(BaseAgent):
       instance_id: id of the (stopped) instance to create an image of
       name: human readable name for the image
     Return:
-      string contain the id of the new image
+      str containing the id of the new image
      """
     conn = self.open_connection(parameters)
     id_str = conn.create_image(instance_id, name)
