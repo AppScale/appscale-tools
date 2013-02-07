@@ -60,7 +60,8 @@ class TestRemoteHelper(unittest.TestCase):
     fake_key = flexmock(name="fake_key", material=key_contents)
 
     fake_ec2 = flexmock(name="fake_ec2")
-    fake_ec2.should_receive('get_key_pair').with_args('bookey').and_return(None)
+    fake_ec2.should_receive('get_key_pair').with_args('bookey') \
+      .and_return(None)
     fake_ec2.should_receive('create_key_pair').with_args('bookey') \
       .and_return(fake_key)
 
