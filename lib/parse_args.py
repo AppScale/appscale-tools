@@ -206,15 +206,13 @@ class ParseArgs():
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
-    elif function == "appscale-gather-logs":
-      pass
     elif function == "appscale-add-keypair":
       pass
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
     elif function == "appscale-gather-logs":
-      if not 'location' in self.args:
+      if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
       pass

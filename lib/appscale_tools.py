@@ -73,11 +73,14 @@ class AppScaleTools():
     if os.path.exists(options.location):
       raise AppScaleException("Can't gather logs, as the location you " + \
         "specified, {0}, already exists.".format(options.location))
-    else:
-      os.mkdir(options.location)
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
+
+    # do the mkdir after we get the secret key, so that a bad keyname will
+    # cause the tool to crash and not create this directory
+    os.mkdir(options.location)
+
     for ip in acc.get_all_public_ips():
       # Get the logs from each node, and store them in our local directory
       local_dir = "{0}/{1}".format(options.location, ip)
