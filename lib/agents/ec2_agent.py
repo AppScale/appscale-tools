@@ -331,8 +331,7 @@ class EC2Agent(BaseAgent):
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
     conn.stop_instances(instance_ids)
-    for instance in stoppped_instances:
-      AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
+    AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
     if not self.wait_for_status_change(parameters, conn, 'stopped'):
       AppScaleLogger.log("re-stopping instances: "+' '.join(instance_ids))
       conn.stop_instances(instance_ids)
@@ -352,9 +351,8 @@ class EC2Agent(BaseAgent):
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
-    terminated_instances = conn.terminate_instances(instance_ids)
-    for instance in terminated_instances:
-      AppScaleLogger.log('Terminating instance {0}'.format(instance.id))
+    conn.terminate_instances(instance_ids)
+    AppScaleLogger.log('Terminating instances: '+' '.join(instance_ids))
     if not self.wait_for_status_change(parameters, conn, 'terminated'):
       AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
       conn.terminate_instances(instance_ids)
