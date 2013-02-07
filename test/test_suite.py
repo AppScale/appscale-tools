@@ -12,6 +12,7 @@ from test_appscale_remove_app import TestAppScaleRemoveApp
 from test_appscale_reset_pwd import TestAppScaleResetPassword
 from test_appscale_describe_instances import TestAppScaleDescribeInstances
 from test_appscale_run_instances import TestAppScaleRunInstances
+from test_appscale_upload_app import TestAppScaleUploadApp
 from test_appscale_terminate_instances import TestAppScaleTerminateInstances
 
 
@@ -25,8 +26,9 @@ from test_remote_helper import TestRemoteHelper
 
 test_cases = [TestAppScale, TestAppScaleDescribeInstances,
   TestAppScaleGatherLogs, TestAppScaleRemoveApp, TestAppScaleResetPassword,
-  TestAppScaleRunInstances, TestAppScaleTerminateInstances, TestAppScaleLogger,
-  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper]
+  TestAppScaleRunInstances, TestAppScaleTerminateInstances,
+  TestAppScaleUploadApp, TestAppScaleLogger, TestLocalState, TestNodeLayout,
+  TestParseArgs, TestRemoteHelper]
 appscale_test_suite = unittest.TestSuite()
 for test_class in test_cases:
   tests = unittest.TestLoader().loadTestsFromTestCase(test_class)

@@ -4,6 +4,7 @@
 
 # General-purpose Python library imports
 import os
+import re
 import sys
 import time
 
@@ -11,6 +12,7 @@ import time
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
+from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
@@ -261,3 +263,62 @@ class AppScaleTools():
 
     LocalState.cleanup_appscale_files(options.keyname)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+
+
+  @classmethod
+  def upload_app(cls, options):
+    """Uploads the given App Engine application into AppScale.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    app_id = AppEngineHelper.get_app_id_from_app_config(options.file)
+    app_language = AppEngineHelper.get_app_runtime_from_app_config(options.file)
+    AppEngineHelper.validate_app_id(app_id)
+
+    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key(options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+
+    if options.test:
+      username = LocalState.DEFAULT_USER
+    elif options.email:
+      username = options.email
+    else:
+      username = LocalState.get_username_from_stdin(is_admin=False)
+
+    if not userappclient.does_user_exist(username):
+      password = LocalState.get_password_from_stdin()
+      RemoteHelper.create_user_accounts(username, password, userappserver_host,
+        options.keyname)
+
+    if userappclient.does_app_exist(app_id):
+      raise AppScaleException("The given application is already running in " + \
+        "AppScale. Please choose a different application ID or use " + \
+        "appscale-remove-app to take down the existing application.")
+
+    app_admin = userappclient.get_app_admin(app_id)
+    if app_admin is not None and username != app_admin:
+      raise AppScaleException("The given user doesn't own this application" + \
+        ", so they can't upload an app with that application ID. Please " + \
+        "change the application ID and try again.")
+
+    AppScaleLogger.log("Uploading {0}".format(app_id))
+    userappclient.reserve_app_id(username, app_id, app_language)
+
+    remote_file_path = RemoteHelper.copy_app_to_host(options.file,
+      options.keyname, options.verbose)
+    acc.done_uploading(app_id, remote_file_path)
+    acc.update([app_id])
+
+    # now that we've told the AppController to start our app, find out what port
+    # the app is running on and wait for it to start serving
+    AppScaleLogger.log("Please wait for your app to start serving.")
+    serving_host, serving_port = userappclient.get_serving_info(app_id)
+    RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
+      options.verbose)
+    AppScaleLogger.success("Your app can be reached at the following URL: " +
+      "http://{0}:{1}".format(serving_host, serving_port))

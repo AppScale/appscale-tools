@@ -469,6 +469,19 @@ class LocalState():
     """
     username, password = None, None
 
+    username = cls.get_username_from_stdin(is_admin)
+    password = cls.get_password_from_stdin()
+    return username, password
+
+  
+  @classmethod
+  def get_username_from_stdin(cls, is_admin):
+    """Asks the user for the name of the e-mail address that should be made an
+    administrator on their AppScale cloud or App Engine application.
+
+    Returns:
+      A str containing the e-mail address the user typed in.
+    """
     while True:
       if is_admin:
         username = raw_input('Enter your desired admin e-mail address: ')
@@ -477,10 +490,22 @@ class LocalState():
 
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
-        break
+        return username
       else:
         AppScaleLogger.warn('Invalid e-mail address. Please try again.')
 
+
+  @classmethod
+  def get_password_from_stdin(cls):
+    """Asks the user for the password that should be used for their user
+    account.
+
+    Args:
+      username: A str representing the email address associated with the user's
+        account.
+    Returns:
+      The SHA1-hashed version of the password the user typed in.
+    """
     while True:
       password = getpass.getpass('Enter new password: ')
       if len(password) < 6:
@@ -488,11 +513,9 @@ class LocalState():
         continue
       password_confirmation = getpass.getpass('Confirm password: ')
       if password == password_confirmation:
-        break
+        return password
       else:
         AppScaleLogger.warn('Passwords entered do not match. Please try again.')
-
-    return username, password
 
 
   @classmethod
