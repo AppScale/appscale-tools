@@ -97,8 +97,9 @@ class AppScaleTools():
         passed in via the command-line interface.
     """
     if not options.confirm:
-      response = raw_input("Are you sure you want to remove this application? ")
-      if response not in ['y', 'yes']:
+      response = raw_input("Are you sure you want to remove this " + \
+        "application? (Y/N) ")
+      if response not in ['y', 'yes', 'Y', 'YES']:
         raise AppScaleException("Cancelled application removal.")
 
     login_host = LocalState.get_login_host(options.keyname)
