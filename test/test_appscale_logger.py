@@ -51,6 +51,8 @@ class TestAppScaleLogger(unittest.TestCase):
     self.options = ParseArgs(argv, function).args
 
     self.expected = {
+      "admin_pass" : None,
+      "admin_user" : None,
       "appengine" : 1,
       "autoscale" : True,
       "min" : 1,
