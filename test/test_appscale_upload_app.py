@@ -59,7 +59,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
-    """
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
@@ -74,7 +73,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
-    """
 
 
   def test_upload_app_without_file_flag(self):
@@ -439,3 +437,95 @@ class TestAppScaleUploadApp(unittest.TestCase):
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.upload_app, options)
+
+  def test_upload_app_successfully(self):
+    # add in mocks so that there is an app.yaml, but with no appid set
+    flexmock(os.path)
+    os.path.should_call('exists')
+    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
+    os.path.should_receive('exists').with_args(app_yaml_location) \
+      .and_return(True)
+
+    # mock out reading the app.yaml file
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_app_yaml = flexmock(name="fake_app_yaml")
+    fake_app_yaml.should_receive('read').and_return(yaml.dump({
+      'application' : 'baz',
+      'runtime' : 'python'
+    }))
+    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
+      .and_return(fake_app_yaml)
+
+    # mock out the SOAP call to the AppController and assume it succeeded
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('Database is at public1')
+    fake_appcontroller.should_receive('done_uploading').with_args('baz',
+      '/var/apps/baz/app', 'the secret').and_return()
+    fake_appcontroller.should_receive('update').with_args(['baz'],
+      'the secret').and_return()
+    fake_appcontroller.should_receive('is_app_running').with_args('baz',
+      'the secret').and_return(False).and_return(True)
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
+
+    # mock out reading the locations.json file, and slip in our own json
+    fake_nodes_json = flexmock(name="fake_nodes_json")
+    fake_nodes_json.should_receive('read').and_return(json.dumps([{
+      "public_ip" : "public1",
+      "private_ip" : "private1",
+      "jobs" : ["shadow", "login"]
+    }]))
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location(self.keyname), 'r') \
+      .and_return(fake_nodes_json)
+
+    # mock out reading the secret key from ~/.appscale
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # mock out calls to the UserAppServer and presume that calls to create new
+    # users succeed
+    fake_userappserver = flexmock(name='fake_userappserver')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
+    fake_userappserver.should_receive('get_app_data').with_args(
+      'baz', 'the secret').and_return('\n\nnum_ports:0\n\n')
+    fake_userappserver.should_receive('commit_new_app').with_args(
+      'a@a.com', 'baz', 'python', 'the secret').and_return('true')
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
+      .and_return(fake_userappserver)
+
+    # mock out asking the user for the admin on the new app, and slip in an
+    # answer for them
+    builtins.should_receive('raw_input').and_return("a@a.com")
+    flexmock(getpass)
+    getpass.should_receive('getpass').and_return('aaaaaa')
+
+    # mock out making the remote app directory
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
+    # and mock out copying the app
+    subprocess.should_receive('Popen').with_args(re.compile('/tmp/baz/gbaz'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
+    argv = [
+      "--keyname", self.keyname,
+      "--file", self.app_dir
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.upload_app(options)

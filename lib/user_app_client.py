@@ -181,3 +181,26 @@ class UserAppClient():
     result = self.server.change_password(username, password, self.secret)
     if result != 'true':
       raise Exception(result)
+
+
+  def reserve_app_id(self, username, app_id, app_language):
+    """Tells the UserAppServer to reserve the given app_id for a particular
+    user.
+
+    Args:
+      username: A str representing the app administrator's e-mail address.
+      app_id: A str representing the application ID to reserve.
+      app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
+        over.
+    """
+    result = self.server.commit_new_app(username, app_id, app_language,
+      self.secret)
+    if result == "true":
+      AppScaleLogger.log("We have reserved {0} for your app".format(app_id))
+    elif result == "Error: appname already exist":
+      AppScaleLogger.log("We are uploading a new version of your app.")
+    elif result == "Error: User not found":
+      raise AppScaleException("No information found about user {0}" \
+        .format(username))
+    else:
+      raise AppScaleException(result)

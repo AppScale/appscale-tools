@@ -238,6 +238,32 @@ class AppScaleTools():
 
 
   @classmethod
+  def terminate_instances(cls, options):
+    """Stops all services running in an AppScale deployment, and in cloud
+    deployments, also powers off the instances previously spawned.
+
+    Raises:
+      AppScaleException: If AppScale is not running, and thus can't be
+      terminated.
+    """
+    if not os.path.exists(LocalState.get_locations_yaml_location(
+      options.keyname)):
+      raise AppScaleException("AppScale is not running with the keyname {0}".
+        format(options.keyname))
+
+    if LocalState.get_infrastructure(options.keyname) in \
+      InfrastructureAgentFactory.VALID_AGENTS:
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+        options.verbose)
+    else:
+      RemoteHelper.terminate_virtualized_cluster(options.keyname,
+        options.verbose)
+
+    LocalState.cleanup_appscale_files(options.keyname)
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+
+
+  @classmethod
   def upload_app(cls, options):
     """Uploads the given App Engine application into AppScale.
 
@@ -278,38 +304,21 @@ class AppScaleTools():
         ", so they can't upload an app with that application ID. Please " + \
         "change the application ID and try again.")
 
-    """
-    remote_file_path = CommonFunctions.scp_app_to_ip(app_name, user, language,
-      keyname, head_node_ip, file_location, uac)
-    CommonFunctions.update_appcontroller(head_node_ip, secret_key, app_name,
-      remote_file_path)
-    CommonFunctions.wait_for_app_to_start(head_node_ip, secret_key, app_name)
-    CommonFunctions.clear_app(file_location)
-  end
-    """
+    AppScaleLogger.log("Uploading {0}".format(app_id))
+    userappclient.reserve_app_id(username, app_id, app_language)
 
+    remote_file_path = RemoteHelper.copy_app_to_host(options.file,
+      options.keyname, options.verbose)
+    acc.done_uploading(app_id, remote_file_path)
+    acc.update([app_id])
 
-  @classmethod
-  def terminate_instances(cls, options):
-    """Stops all services running in an AppScale deployment, and in cloud
-    deployments, also powers off the instances previously spawned.
+    AppScaleLogger.log("Please wait for your app to start up.")
+    while True:
+      if acc.is_app_running(app_id):
+        break
+      else:
+        time.sleep(cls.SLEEP_TIME)
 
-    Raises:
-      AppScaleException: If AppScale is not running, and thus can't be
-      terminated.
-    """
-    if not os.path.exists(LocalState.get_locations_yaml_location(
-      options.keyname)):
-      raise AppScaleException("AppScale is not running with the keyname {0}".
-        format(options.keyname))
-
-    if LocalState.get_infrastructure(options.keyname) in \
-      InfrastructureAgentFactory.VALID_AGENTS:
-      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-        options.verbose)
-    else:
-      RemoteHelper.terminate_virtualized_cluster(options.keyname,
-        options.verbose)
-
-    LocalState.cleanup_appscale_files(options.keyname)
-    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+    AppScaleLogger.success("Your app can be reached at the following URL: " +
+      "http://{0}/apps/{1}".format(LocalState.get_login_host(options.keyname),
+      app_id))
