@@ -131,10 +131,10 @@ class ParseArgs():
         help="the database replication factor")
 
       # flags relating to application servers
-      self.parser.add_argument('--appengine', type=int, default=1,
+      group = self.parser.add_mutually_exclusive_group()
+      group.add_argument('--appengine', type=int,
         help="the number of application servers to use per app")
-      self.parser.add_argument('--autoscale', action='store_true',
-        default=True,
+      group.add_argument('--autoscale', action='store_true',
         help="adds/removes application servers based on incoming traffic")
 
       # developer flags
@@ -206,6 +206,7 @@ class ParseArgs():
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
+      self.validate_appengine_flags()
     elif function == "appscale-add-keypair":
       pass
     elif function == "appscale-upload-app":
@@ -310,3 +311,24 @@ class ParseArgs():
     """
     if self.args.n is not None and self.args.n < 1:
       raise BadConfigurationException("Replication factor must exceed 0.")
+
+
+  def validate_appengine_flags(self):
+    """Validates the values given to us by the user for any flag relating to
+    the number of AppServers to launch per App Engine app.
+
+    Raises:
+      BadConfigurationException: If the value for the --appengine flag is
+        invalid.
+    """
+    if self.args.appengine:
+      if self.args.appengine < 1:
+        raise BadConfigurationException("Number of application servers " + \
+          "must exceed zero.")
+
+      self.args.autoscale = False
+    elif self.args.autoscale:
+      self.args.appengine = 1
+    else:  # neither are set
+      self.args.appengine = 1
+      self.args.autoscale = True
