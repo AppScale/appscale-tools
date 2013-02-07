@@ -399,7 +399,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     # Construct an upload-app command from the file's contents
-    command = ["appscale-upload-app"]
+    command = []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
@@ -413,7 +413,11 @@ Available commands:
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
-    subprocess.call(command)
+    options = ParseArgs(command, "appscale-upload-app").args
+    try:
+      AppScaleTools.upload_app(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))
 
 
   def tail(self, node, file_regex):
