@@ -338,8 +338,8 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-upload-app", "--keyname", "bookey", "--file", "/bar/app"]).and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('upload_app')
     app = '/bar/app'
     appscale.deploy(app)
 
@@ -364,8 +364,8 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-upload-app", "--keyname", "bookey", "--test", "--file", "/bar/app"]).and_return().once()
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('upload_app')
     app = '/bar/app'
     appscale.deploy(app)
 

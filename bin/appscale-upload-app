@@ -1,13 +1,25 @@
-#!/usr/bin/env ruby
-# Programmer: Chris Bunch
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
 
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'appscale_tools'
+# General-purpose Python library imports
+import os
+import sys
+import unittest
 
 
-if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV, AppScaleTools::UPLOAD_APP_FLAGS,
-    AppScaleTools::UPLOAD_APP_USAGE)
-  AppScaleTools.upload_app(options)
-end
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale_logger import AppScaleLogger
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-upload-app").args
+  try:
+    AppScaleTools.upload_app(options)
+  except Exception as e:
+    AppScaleLogger.warn(str(e))
+    sys.exit(1)

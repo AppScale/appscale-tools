@@ -156,6 +156,17 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-upload-app":
+      self.parser.add_argument('--file',
+        help="a directory containing the Google App Engine app to upload")
+      self.parser.add_argument('--keyname',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--test', action='store_true',
+        default=False,
+        help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--email',
+        help="the e-mail address to use as the app's admin")
     elif function == "appscale-terminate-instances":
       self.parser.add_argument('--keyname',
         default=self.DEFAULT_KEYNAME,
@@ -199,6 +210,9 @@ class ParseArgs():
       pass
     elif function == "appscale-add-keypair":
       pass
+    elif function == "appscale-upload-app":
+      if not self.args.file:
+        raise SystemExit("Must specify --file.")
     elif function == "appscale-gather-logs":
       if not 'location' in self.args:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
