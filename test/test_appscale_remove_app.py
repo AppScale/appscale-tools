@@ -120,9 +120,9 @@ class TestAppScaleRemoveApp(unittest.TestCase):
 
 
   def test_remove_app_and_app_is_running(self):
-    # mock out reading from stdin, and assume the user says 'yes'
+    # mock out reading from stdin, and assume the user says 'YES'
     builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_receive('raw_input').and_return('yes')
+    builtins.should_receive('raw_input').and_return('YES')
 
     # mock out reading the secret key
     builtins.should_call('open')  # set the fall-through
