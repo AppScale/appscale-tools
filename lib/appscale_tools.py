@@ -228,6 +228,8 @@ class AppScaleTools():
       instance_id)
     RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
 
+    RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
+      options.keyname), RemoteHelper.APP_LOAD_BALANCER_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(

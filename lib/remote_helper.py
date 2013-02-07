@@ -41,6 +41,10 @@ class RemoteHelper():
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
+  # The port the AppLoadBalancer runs on, by default.
+  APP_LOAD_BALANCER_PORT = 80
+
+
   # The default port that the ssh daemon runs on.
   SSH_PORT = 22
 
