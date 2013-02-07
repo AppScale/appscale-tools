@@ -205,7 +205,7 @@ class ParseArgs():
     elif function == "appscale-terminate-instances":
       pass
     elif function == "appscale-remove-app":
-      if not 'appname' in self.args:
+      if not self.args.appname:
         raise SystemExit("Must specify appname")
     elif function == "appscale-reset-pwd":
       pass
