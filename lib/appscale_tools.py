@@ -281,9 +281,9 @@ class AppScaleTools():
     userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
       options.keyname))
 
-    if 'test' in options:
+    if options.test:
       username = options.test
-    elif 'email' in options:
+    elif options.email:
       username = options.email
     else:
       username = LocalState.get_username_from_stdin(is_admin=False)

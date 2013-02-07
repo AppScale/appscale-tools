@@ -158,6 +158,11 @@ class ParseArgs():
       self.parser.add_argument('--keyname',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+      self.parser.add_argument('--test', action='store_true',
+        default=False,
+        help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--email',
+        help="the e-mail address to use as the app's admin")
     elif function == "appscale-terminate-instances":
       self.parser.add_argument('--keyname',
         default=self.DEFAULT_KEYNAME,
