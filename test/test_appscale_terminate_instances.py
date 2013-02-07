@@ -105,6 +105,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_json_file = flexmock(name='fake_file')
     fake_json_file.should_receive('read').and_return(json.dumps([
       {
