@@ -194,7 +194,7 @@ class UserAppClient():
       app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
         over.
     """
-    result = self.server.commit_new_app(username, app_id, app_language,
+    result = self.server.commit_new_app(app_id, username, app_language,
       self.secret)
     if result == "true":
       AppScaleLogger.log("We have reserved {0} for your app".format(app_id))

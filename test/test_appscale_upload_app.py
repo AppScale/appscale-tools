@@ -438,6 +438,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.upload_app, options)
 
+
   def test_upload_app_successfully(self):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
@@ -502,7 +503,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return('\n\nnum_ports:0\n\n')
     fake_userappserver.should_receive('commit_new_app').with_args(
-      'a@a.com', 'baz', 'python', 'the secret').and_return('true')
+      'baz', 'a@a.com', 'python', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
