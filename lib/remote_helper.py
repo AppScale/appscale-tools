@@ -710,11 +710,20 @@ class RemoteHelper():
         application was copied to.
     """
     AppScaleLogger.log("Creating remote directory to copy app into")
-    remote_app_dir = "/var/apps/{0}/app".format(
-      AppEngineHelper.get_app_id_from_app_config(app_location))
+    app_id = AppEngineHelper.get_app_id_from_app_config(app_location)
+    remote_app_dir = "/var/apps/{0}/app".format(app_id)
     cls.ssh(LocalState.get_login_host(keyname), keyname,
       'mkdir -p {0}'.format(remote_app_dir), is_verbose)
+
+    AppScaleLogger.log("Tarring application")
+    local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
+    cls.shell("cd {0} && tar -czf {1} *".format(app_location, local_tarred_app),
+      keyname, is_verbose)
+
     AppScaleLogger.log("Copying over application")
-    cls.scp(LocalState.get_login_host(keyname), keyname, app_location,
-      remote_app_dir, is_verbose)
-    return remote_app_dir
+    remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)
+    cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
+      remote_app_tar, is_verbose)
+
+    os.remove(local_tarred_app)
+    return remote_app_tar

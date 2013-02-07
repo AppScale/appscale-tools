@@ -312,13 +312,11 @@ class AppScaleTools():
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])
 
-    AppScaleLogger.log("Please wait for your app to start up.")
-    while True:
-      if acc.is_app_running(app_id):
-        break
-      else:
-        time.sleep(cls.SLEEP_TIME)
-
+    # now that we've told the AppController to start our app, find out what port
+    # the app is running on and wait for it to start serving
+    AppScaleLogger.log("Please wait for your app to start serving.")
+    serving_host, serving_port = userappclient.get_serving_info(app_id)
+    RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
+      options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
-      "http://{0}/apps/{1}".format(LocalState.get_login_host(options.keyname),
-      app_id))
+      "http://{0}:{1}".format(serving_host, serving_port))

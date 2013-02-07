@@ -5,6 +5,7 @@
 
 # General-purpose Python libraries
 import re
+import time
 
 
 # Third-party imports
@@ -34,6 +35,21 @@ class UserAppClient():
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
+
+
+  # A regular expression that indicates how many load balancers provide access
+  # for an application.
+  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+
+
+  # The initial amount of time we should sleep when waiting for UserAppServer
+  # metadata to change state.
+  STARTING_SLEEP_TIME = 1
+
+
+  # The maximum amount of time we should sleep when waiting for UserAppServer
+  # metadata to change state.
+  MAX_SLEEP_TIME = 30
 
 
   def __init__(self, host, secret):
@@ -139,8 +155,8 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(appname, self.secret)
 
-    num_of_ports_regex = re.compile(".*num_ports:(\d+)")
-    search_data = num_of_ports_regex.search(app_data)
+    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
     if search_data:
       num_ports = int(search_data.group(1))
       if num_ports > 0:
@@ -162,8 +178,8 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(app_id, self.secret)
 
-    num_of_ports_regex = re.compile(".*app_owner:([\w|\d@\.]+)")
-    search_data = num_of_ports_regex.search(app_data)
+    self.NUM_OF_PORTS_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
+    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
     if search_data:
       return search_data.group(1)
     else:
@@ -205,3 +221,29 @@ class UserAppClient():
         .format(username))
     else:
       raise AppScaleException(result)
+
+
+  def get_serving_info(self, app_id):
+    """Finds out what host and port are used to host the named application.
+
+    Args:
+      app_id: The application that we should find a serving URL for.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
+    """
+
+    # first, wait for the app to start serving
+    sleep_time = self.STARTING_SLEEP_TIME
+    while True:
+      if self.does_app_exist(app_id):
+        break
+      else:
+        time.sleep(sleep_time)
+        sleep_time = min(sleep_time * 2, self.MAX_SLEEP_TIME)
+
+    # next, get the serving host and port
+    app_data = self.server.get_app_data(app_id, self.secret)
+    host = re.search(".*\shosts:([\w|\.|\d]+)\s", app_data).group(1)
+    port = int(re.search(".*\sports: (\d+)\s", app_data).group(1))
+    return host, port
