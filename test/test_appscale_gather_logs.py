@@ -73,7 +73,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
   def test_appscale_in_two_node_virt_deployment(self):
     # pretend that the place we're going to put logs into doesn't exist
     flexmock(os.path)
-    os.path.should_call('exists')
+    os.path.should_call('exists')  # set the fall-through
     os.path.should_receive('exists').with_args('/tmp/foobaz').and_return(False)
 
     # and mock out the mkdir operation
@@ -81,6 +81,9 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     os.should_receive('mkdir').with_args('/tmp/foobaz').and_return()
 
     # next, mock out finding the login ip address
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",
