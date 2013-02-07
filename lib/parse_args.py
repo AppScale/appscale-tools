@@ -146,6 +146,10 @@ class ParseArgs():
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--admin_user',
+        help="uses the given e-mail instead of prompting for one")
+      self.parser.add_argument('--admin_pass',
+        help="uses the given password instead of prompting for one")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -207,6 +211,7 @@ class ParseArgs():
       self.validate_machine_image()
       self.validate_database_flags()
       self.validate_appengine_flags()
+      self.validate_admin_flags()
     elif function == "appscale-add-keypair":
       pass
     elif function == "appscale-upload-app":
@@ -332,3 +337,22 @@ class ParseArgs():
     else:  # neither are set
       self.args.appengine = 1
       self.args.autoscale = True
+
+
+  def validate_admin_flags(self):
+    """Validates the flags that correspond to setting administrator e-mails
+    and passwords.
+
+    Raises:
+      BadConfigurationException: If admin_user, admin_pass, and test are all
+        set, or if admin_user (or admin_pass) is set but the other isn't.
+    """
+    if self.args.admin_user and not self.args.admin_pass:
+      raise BadConfigurationException("If admin_user is set, admin_pass " + \
+        "must also be set.")
+    if self.args.admin_pass and not self.args.admin_user:
+      raise BadConfigurationException("If admin_pass is set, admin_user " + \
+        "must also be set.")
+    if self.args.admin_user and self.args.admin_pass and self.test:
+      raise BadConfigurationException("Cannot set admin_user, " + \
+        "admin_pass, and test.")
