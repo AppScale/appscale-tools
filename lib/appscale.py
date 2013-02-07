@@ -228,7 +228,10 @@ Available commands:
 
     # Finally, call AppScaleTools.run_instances
     options = ParseArgs(command, "appscale-run-instances").args
-    AppScaleTools.run_instances(options)
+    try:
+      AppScaleTools.run_instances(options)
+    except Exception as e:
+      AppScaleLogger.warn(str(e))
 
 
   def valid_ssh_key(self, config):
