@@ -107,19 +107,19 @@ class ParseArgs():
         help="a base64-encoded YAML dictating the placement strategy")
 
       # flags relating to cloud infrastructures
-      self.parser.add_argument('--infrastructure',
+      self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
-      self.parser.add_argument('--machine',
+      self.parser.add_argument('--machine', '-m',
         help="the ami/emi that has AppScale installed")
-      self.parser.add_argument('--instance_type',
+      self.parser.add_argument('--instance_type', '-t',
         default=self.DEFAULT_INSTANCE_TYPE,
         choices=self.ALLOWED_INSTANCE_TYPES,
         help="the instance type to use")
-      self.parser.add_argument('--group',
+      self.parser.add_argument('--group', '-g',
         default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -147,7 +147,7 @@ class ParseArgs():
         default=False,
         help="uses a default username and password for cloud admin")
     elif function == "appscale-gather-logs":
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
@@ -159,7 +159,7 @@ class ParseArgs():
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
-      self.parser.add_argument('--keyname',
+      self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
       self.parser.add_argument('--test', action='store_true',
@@ -168,11 +168,11 @@ class ParseArgs():
       self.parser.add_argument('--email',
         help="the e-mail address to use as the app's admin")
     elif function == "appscale-terminate-instances":
-      self.parser.add_argument('--keyname',
+      self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     elif function == "appscale-remove-app":
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
       self.parser.add_argument('--appname',
         help="the name of the application to remove")
@@ -180,11 +180,11 @@ class ParseArgs():
         default=False,
         help="does not ask user to confirm application removal")
     elif function == "appscale-reset-pwd":
-      self.parser.add_argument('--keyname',
+      self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     elif function == "appscale-describe-instances":
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     else:
       raise SystemExit
