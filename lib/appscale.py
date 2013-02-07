@@ -9,11 +9,10 @@ import os
 import shutil
 import socket
 import subprocess
+
+
+# Third-party Python libraries
 import yaml
-
-
-# Third party Python libraries
-import paramiko
 
 
 # Custom exceptions that can be thrown by Python AppScale code
@@ -21,12 +20,14 @@ from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 from custom_exceptions import UsageException
 
 
 # AppScale-specific imports
 from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
+from remote_helper import RemoteHelper
 
 
 class AppScale():
@@ -252,6 +253,11 @@ Available commands:
     else:
       keyname = "appscale"
 
+    if "verbose" in config:
+      verbose = True
+    else:
+      verbose = False
+
     ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
     if not os.path.exists(ssh_key_location):
       return False
@@ -267,47 +273,32 @@ Available commands:
             all_ips.append(ip)
 
     for ip in all_ips:
-      if not self.can_ssh_to_ip(ip, ssh_key_location):
+      if not self.can_ssh_to_ip(ip, keyname, verbose):
         return False
 
     return True
 
 
-  def can_ssh_to_ip(self, ip, ssh_key_location):
+  def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
 
     Args:
       ip: The IP address to attempt to SSH into.
-      ssh_key_location: The location on the local filesystem where the SSH key
-        to use is located.
+      keyname: The name of the SSH key that uniquely identifies this AppScale
+        deployment.
+      is_verbose: A bool that indicates if we should print the SSH command we
+        execute to stdout.
 
     Returns:
       A bool that indicates whether or not the given SSH key can log in without
       a password to the given machine.
     """
     try:
-      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      sock.connect((ip, 22))
-    except Exception:
+      RemoteHelper.ssh(ip, keyname, 'ls', is_verbose, user='root')
+      return True
+    except ShellException:
       return False
-
-    t = paramiko.Transport(sock)
-    try:
-      t.start_client()
-    except paramiko.SSHException:
-      return False
-
-    key = paramiko.RSAKey.from_private_key_file(ssh_key_location)
-
-    try:
-      t.auth_publickey('root', key)
-    except paramiko.AuthenticationException:
-      return False
-
-    success = t.is_authenticated()
-    t.close()
-    return success
 
 
   def ssh(self, node):
