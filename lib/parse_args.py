@@ -146,6 +146,10 @@ class ParseArgs():
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--admin_user',
+        help="uses the given e-mail instead of prompting for one")
+      self.parser.add_argument('--admin_pass',
+        help="uses the given password instead of prompting for one")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")

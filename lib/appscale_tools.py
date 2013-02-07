@@ -214,10 +214,10 @@ class AppScaleTools():
     uaserver_client = UserAppClient(uaserver_host,
       LocalState.get_secret_key(options.keyname))
 
-    if 'admin_user' in options and 'admin_pass' in options:
+    if options.admin_user and options.admin_pass:
       AppScaleLogger.log("Using the provided admin username/password")
       username, password = options.admin_user, options.admin_pass
-    elif 'test' in options:
+    elif options.test:
       AppScaleLogger.log("Using default admin username/password")
       username, password = LocalState.DEFAULT_USER, LocalState.DEFAULT_PASSWORD
     else:
