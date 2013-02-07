@@ -386,13 +386,16 @@ class EC2Agent(BaseAgent):
       instances = [i for r in reservations for i in r.instances]
       for i in instances:
         # instance i.id reports status = i.state
+        print "    "+i.id+" reports status="+i.state+" (looking for "+state_requested+")"
         if i.state == state_requested and \
            i.key_name == parameters[self.PARAM_KEYNAME]:
           if i.id not in instances_in_state.keys():
             instances_in_state[i.id] = 1 #mark instance done
       if len(instances_in_state.keys()) >= len(instance_ids):
+        print "    wait_for_status_change(): all instances in state "+state_requested
         return True
       if time.time()-time_start > max_wait_time:
+        print "    wait_for_status_change(): timed out after "+str(max_wait_time)+"s"
         return False
 
 
