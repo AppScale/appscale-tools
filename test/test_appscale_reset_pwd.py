@@ -75,6 +75,11 @@ class TestAppScaleResetPassword(unittest.TestCase):
     getpass.should_receive('getpass').and_return('the password')
 
     # mock out finding the login node's IP address from the json file
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_secret")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       'public_ip' : 'public1',
@@ -127,6 +132,11 @@ class TestAppScaleResetPassword(unittest.TestCase):
     getpass.should_receive('getpass').and_return('the password')
 
     # mock out finding the login node's IP address from the json file
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_secret")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       'public_ip' : 'public1',

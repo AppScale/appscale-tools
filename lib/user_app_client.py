@@ -5,6 +5,7 @@
 
 # General-purpose Python libraries
 import re
+import time
 
 
 # Third-party imports
@@ -13,6 +14,7 @@ import SOAPpy
 
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 
 
 class UserAppClient():
@@ -33,6 +35,21 @@ class UserAppClient():
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
+
+
+  # A regular expression that indicates how many load balancers provide access
+  # for an application.
+  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+
+
+  # The initial amount of time we should sleep when waiting for UserAppServer
+  # metadata to change state.
+  STARTING_SLEEP_TIME = 1
+
+
+  # The maximum amount of time we should sleep when waiting for UserAppServer
+  # metadata to change state.
+  MAX_SLEEP_TIME = 30
 
 
   def __init__(self, host, secret):
@@ -116,6 +133,18 @@ class UserAppClient():
     self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)
 
 
+  def does_user_exist(self, username):
+    """Queries the UserAppServer to see if the given user exists.
+
+    Returns:
+      True if the given user exists, False otherwise.
+    """
+    if self.server.does_user_exist(username, self.secret) == "true":
+      return True
+    else:
+      return False
+
+
   def does_app_exist(self, appname):
     """Queries the UserAppServer to see if the named application exists.
 
@@ -126,8 +155,8 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(appname, self.secret)
 
-    num_of_ports_regex = re.compile(".*num_ports:(\d+)")
-    search_data = num_of_ports_regex.search(app_data)
+    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
     if search_data:
       num_ports = int(search_data.group(1))
       if num_ports > 0:
@@ -136,6 +165,25 @@ class UserAppClient():
         return False
     else:
       return False
+
+
+  def get_app_admin(self, app_id):
+    """Queries the UserAppServer to see which user owns the given application.
+
+    Args:
+      app_id: The name of the app that we should see the administrator on.
+    Returns:
+      A str containing the name of the application's administrator, or None
+        if there is none.
+    """
+    app_data = self.server.get_app_data(app_id, self.secret)
+
+    self.NUM_OF_PORTS_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
+    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
+    if search_data:
+      return search_data.group(1)
+    else:
+      return None
 
 
   def change_password(self, username, password):
@@ -150,3 +198,52 @@ class UserAppClient():
     result = self.server.change_password(username, password, self.secret)
     if result != 'true':
       raise Exception(result)
+
+
+  def reserve_app_id(self, username, app_id, app_language):
+    """Tells the UserAppServer to reserve the given app_id for a particular
+    user.
+
+    Args:
+      username: A str representing the app administrator's e-mail address.
+      app_id: A str representing the application ID to reserve.
+      app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
+        over.
+    """
+    result = self.server.commit_new_app(app_id, username, app_language,
+      self.secret)
+    if result == "true":
+      AppScaleLogger.log("We have reserved {0} for your app".format(app_id))
+    elif result == "Error: appname already exist":
+      AppScaleLogger.log("We are uploading a new version of your app.")
+    elif result == "Error: User not found":
+      raise AppScaleException("No information found about user {0}" \
+        .format(username))
+    else:
+      raise AppScaleException(result)
+
+
+  def get_serving_info(self, app_id):
+    """Finds out what host and port are used to host the named application.
+
+    Args:
+      app_id: The application that we should find a serving URL for.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
+    """
+
+    # first, wait for the app to start serving
+    sleep_time = self.STARTING_SLEEP_TIME
+    while True:
+      if self.does_app_exist(app_id):
+        break
+      else:
+        time.sleep(sleep_time)
+        sleep_time = min(sleep_time * 2, self.MAX_SLEEP_TIME)
+
+    # next, get the serving host and port
+    app_data = self.server.get_app_data(app_id, self.secret)
+    host = re.search(".*\shosts:([\w|\.|\d\-]+)\s", app_data).group(1)
+    port = int(re.search(".*\sports: (\d+)\s", app_data).group(1))
+    return host, port

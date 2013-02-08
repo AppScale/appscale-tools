@@ -32,7 +32,8 @@ class TestParseArgs(unittest.TestCase):
   
 
   def setUp(self):
-    self.cloud_argv = ['--min', '1', '--max', '1']
+    self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
+      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
@@ -100,6 +101,11 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_table_flags(self):
+    # throw in a mock that says our ips.yaml file exists
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args('ips.yaml').and_return(True)
+
     # Specifying a table that isn't accepted should abort
     argv_1 = self.cluster_argv[:] + ['--table', 'non-existent-database']
     self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
@@ -159,6 +165,18 @@ class TestParseArgs(unittest.TestCase):
     argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
+    # Specifying --machine when we're not running in a cloud is not acceptable.
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args("ips.yaml").and_return(True)
+
+    argv_4 = self.cluster_argv[:] + ['--machine', 'boo']
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_4, self.function)
+
+    # Specifying --group when we're not running in a cloud is not acceptable.
+    argv_5 = self.cluster_argv[:] + ['--group', 'boo']
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_5, self.function)
+
 
   def test_instance_types(self):
     # Not specifying an instance type should default to a predetermined
@@ -183,7 +201,7 @@ class TestParseArgs(unittest.TestCase):
   def test_machine_not_set_in_cloud_deployments(self):
     # when running in a cloud infrastructure, we need to know what
     # machine image to use
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca"]
+    argv = ['--min', '1', '--max', '1', "--infrastructure", "euca"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv,
       "appscale-run-instances")
 
@@ -228,7 +246,7 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_failure_when_user_doesnt_specify_ips_or_machine(self):
-    argv = self.cloud_argv[:] + ['--infrastructure', 'ec2']
+    argv = ['--min', '1', '--max', '1', '--infrastructure', 'ec2']
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
 

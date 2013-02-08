@@ -180,7 +180,6 @@ class LocalState():
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
-      "group" : options.group
     }
     creds.update(additional_creds)
 
@@ -189,6 +188,7 @@ class LocalState():
         'machine' : options.machine,
         'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
+        'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms
       }
@@ -373,8 +373,8 @@ class LocalState():
 
     # write our yaml metadata file
     yaml_contents = {
-      'load_balancer' : host,
-      'instance_id' : instance_id,
+      'load_balancer' : str(host),
+      'instance_id' : str(instance_id),
       'table' : options.table,
       'secret' : cls.get_secret_key(options.keyname),
       'db_master' : node_layout.db_master().id,
@@ -388,8 +388,23 @@ class LocalState():
     # and now we can write the json metadata file
     with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
       file_handle.write(json.dumps(role_info))
-
   
+
+  @classmethod
+  def get_from_yaml(cls, keyname, tag):
+    """Reads the YAML-encoded metadata on disk and returns the value associated
+    with the given tag.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+      tag: A str that indicates what we should look for in the YAML file.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      locations_yaml = yaml.safe_load(file_handle.read())
+      return locations_yaml[tag]
+
+
   @classmethod
   def get_local_nodes_info(cls, keyname):
     """Reads the JSON-encoded metadata on disk and returns a list that indicates
@@ -401,9 +416,23 @@ class LocalState():
     Returns:
       A list of dicts, where each dict contains information on a single machine
       in this AppScale deployment.
+    Raises:
+      BadConfigurationException: If there is no JSON-encoded metadata file
+        named after the given keyname.
     """
+    if not os.path.exists(cls.get_locations_json_location(keyname)):
+      raise BadConfigurationException("AppScale does not appear to be " + \
+        "running with keyname {0}".format(keyname))
+
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
       return json.loads(file_handle.read())
+
+
+  @classmethod
+  def get_host_for_role(cls, keyname, role):
+    for node in cls.get_local_nodes_info(keyname):
+      if role in node["jobs"]:
+          return node["public_ip"]
 
 
   @classmethod
@@ -431,11 +460,26 @@ class LocalState():
     Returns:
       A str containing the host that runs the login service.
     """
+    return cls.get_host_with_role(keyname, 'login')
+
+
+  @classmethod
+  def get_host_with_role(cls, keyname, role):
+    """Searches through the local metadata to see which virtual machine runs the
+    specified role.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      role: A str indicating the role to search for.
+    Returns:
+      A str containing the host that runs the specified service.
+    """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if 'login' in node['jobs']:
+      if role in node['jobs']:
         return node['public_ip']
-    raise AppScaleException("Couldn't find a login node.")
+    raise AppScaleException("Couldn't find a {0} node.".format(role))
 
 
   @classmethod
@@ -452,6 +496,19 @@ class LocalState():
     """
     username, password = None, None
 
+    username = cls.get_username_from_stdin(is_admin)
+    password = cls.get_password_from_stdin()
+    return username, password
+
+  
+  @classmethod
+  def get_username_from_stdin(cls, is_admin):
+    """Asks the user for the name of the e-mail address that should be made an
+    administrator on their AppScale cloud or App Engine application.
+
+    Returns:
+      A str containing the e-mail address the user typed in.
+    """
     while True:
       if is_admin:
         username = raw_input('Enter your desired admin e-mail address: ')
@@ -460,10 +517,22 @@ class LocalState():
 
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
-        break
+        return username
       else:
         AppScaleLogger.warn('Invalid e-mail address. Please try again.')
 
+
+  @classmethod
+  def get_password_from_stdin(cls):
+    """Asks the user for the password that should be used for their user
+    account.
+
+    Args:
+      username: A str representing the email address associated with the user's
+        account.
+    Returns:
+      The SHA1-hashed version of the password the user typed in.
+    """
     while True:
       password = getpass.getpass('Enter new password: ')
       if len(password) < 6:
@@ -471,11 +540,9 @@ class LocalState():
         continue
       password_confirmation = getpass.getpass('Confirm password: ')
       if password == password_confirmation:
-        break
+        return password
       else:
         AppScaleLogger.warn('Passwords entered do not match. Please try again.')
-
-    return username, password
 
 
   @classmethod
@@ -494,6 +561,50 @@ class LocalState():
       the_list.append(key)
       the_list.append(value)
     return the_list
+
+
+  @classmethod
+  def get_infrastructure(cls, keyname):
+    """Reads the locations.yaml file to see if this AppScale deployment is
+    running over a cloud infrastructure or a virtualized cluster.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the cloud infrastructure that AppScale is running over, or
+      'xen' if running over a virtualized cluster.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["infrastructure"]
+
+
+  @classmethod
+  def get_group(cls, keyname):
+    """Reads the locations.yaml file to see what security group was created for
+    this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      The name of the security group used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["group"]
+
+
+  @classmethod
+  def cleanup_appscale_files(cls, keyname):
+    """Removes all AppScale metadata files from this machine.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    """
+    os.remove(LocalState.get_locations_yaml_location(keyname))
+    os.remove(LocalState.get_locations_json_location(keyname))
+    os.remove(LocalState.get_secret_key_location(keyname))
 
 
   @classmethod

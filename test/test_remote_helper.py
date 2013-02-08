@@ -60,7 +60,8 @@ class TestRemoteHelper(unittest.TestCase):
     fake_key = flexmock(name="fake_key", material=key_contents)
 
     fake_ec2 = flexmock(name="fake_ec2")
-    fake_ec2.should_receive('get_key_pair').with_args('bookey').and_return(None)
+    fake_ec2.should_receive('get_key_pair').with_args('bookey') \
+      .and_return(None)
     fake_ec2.should_receive('create_key_pair').with_args('bookey') \
       .and_return(fake_key)
 
@@ -339,6 +340,11 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_secret)
 
     # mock out reading the locations.json file, and slip in our own json
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location('bookey')).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",

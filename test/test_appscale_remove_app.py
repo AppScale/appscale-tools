@@ -92,6 +92,11 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",
@@ -120,9 +125,9 @@ class TestAppScaleRemoveApp(unittest.TestCase):
 
 
   def test_remove_app_and_app_is_running(self):
-    # mock out reading from stdin, and assume the user says 'yes'
+    # mock out reading from stdin, and assume the user says 'YES'
     builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_receive('raw_input').and_return('yes')
+    builtins.should_receive('raw_input').and_return('YES')
 
     # mock out reading the secret key
     builtins.should_call('open')  # set the fall-through
@@ -146,6 +151,11 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "public1",

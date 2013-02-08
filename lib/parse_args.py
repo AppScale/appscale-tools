@@ -2,8 +2,12 @@
 
 
 # General-purpose Python library imports
+import os
 import base64
 import argparse
+
+
+# Third-party imports
 import yaml
 
 
@@ -103,19 +107,18 @@ class ParseArgs():
         help="a base64-encoded YAML dictating the placement strategy")
 
       # flags relating to cloud infrastructures
-      self.parser.add_argument('--infrastructure',
+      self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
-      self.parser.add_argument('--machine',
+      self.parser.add_argument('--machine', '-m',
         help="the ami/emi that has AppScale installed")
-      self.parser.add_argument('--instance_type',
+      self.parser.add_argument('--instance_type', '-t',
         default=self.DEFAULT_INSTANCE_TYPE,
         choices=self.ALLOWED_INSTANCE_TYPES,
         help="the instance type to use")
-      self.parser.add_argument('--group',
-        default=self.DEFAULT_SECURITY_GROUP,
+      self.parser.add_argument('--group', '-g',
         help="the security group to use")
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
 
       # flags relating to the datastore used
@@ -127,10 +130,10 @@ class ParseArgs():
         help="the database replication factor")
 
       # flags relating to application servers
-      self.parser.add_argument('--appengine', type=int, default=1,
+      group = self.parser.add_mutually_exclusive_group()
+      group.add_argument('--appengine', type=int,
         help="the number of application servers to use per app")
-      self.parser.add_argument('--autoscale', action='store_true',
-        default=True,
+      group.add_argument('--autoscale', action='store_true',
         help="adds/removes application servers based on incoming traffic")
 
       # developer flags
@@ -142,7 +145,13 @@ class ParseArgs():
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--admin_user',
+        help="uses the given e-mail instead of prompting for one")
+      self.parser.add_argument('--admin_pass',
+        help="uses the given password instead of prompting for one")
     elif function == "appscale-gather-logs":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
@@ -163,8 +172,28 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
-    elif function == "appscale-remove-app":
+    elif function == "appscale-add-instances":
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
       self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-upload-app":
+      self.parser.add_argument('--file',
+        help="a directory containing the Google App Engine app to upload")
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--test', action='store_true',
+        default=False,
+        help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--email',
+        help="the e-mail address to use as the app's admin")
+    elif function == "appscale-terminate-instances":
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-remove-app":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
       self.parser.add_argument('--appname',
         help="the name of the application to remove")
@@ -172,11 +201,11 @@ class ParseArgs():
         default=False,
         help="does not ask user to confirm application removal")
     elif function == "appscale-reset-pwd":
-      self.parser.add_argument('--keyname',
+      self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     elif function == "appscale-describe-instances":
-      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
     else:
       raise SystemExit
@@ -199,17 +228,32 @@ class ParseArgs():
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
-    elif function == "appscale-gather-logs":
-      pass
+      self.validate_appengine_flags()
+      self.validate_admin_flags()
     elif function == "appscale-add-keypair":
       self.validate_ips_flags()
+      pass
+    elif function == "appscale-upload-app":
+      if not self.args.file:
+        raise SystemExit("Must specify --file.")
+    elif function == "appscale-gather-logs":
+      if not self.args.location:
+        self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
+    elif function == "appscale-terminate-instances":
+      pass
     elif function == "appscale-remove-app":
-      if not 'appname' in self.args:
+      if not self.args.appname:
         raise SystemExit("Must specify appname")
     elif function == "appscale-reset-pwd":
       pass
     elif function == "appscale-describe-instances":
       pass
+    elif function == "appscale-add-instances":
+      if 'ips' in self.args:
+        with open(self.args.ips, 'r') as file_handle:
+          self.args.ips = yaml.safe_load(file_handle.read())
+      else:
+        raise SystemExit
     else:
       raise SystemExit
 
@@ -228,6 +272,12 @@ class ParseArgs():
     # if min is not set and max is, set min == max
     if self.args.min is None and self.args.max:
       self.args.min = self.args.max
+
+    if self.args.ips:
+      if not os.path.exists(self.args.ips):
+        raise BadConfigurationException("The given ips.yaml file did not exist.")
+    elif self.args.ips_layout:
+      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
       if self.args.min < 1:
         raise BadConfigurationException("Min cannot be less than 1.")
@@ -254,6 +304,16 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
+      # make sure we didn't get a group or machine flag, since those are
+      # infrastructure-only
+      if self.args.group:
+        raise BadConfigurationException("Cannot specify a security group " + \
+          "when --infrastructure is not specified.")
+
+      if self.args.machine:
+        raise BadConfigurationException("Cannot specify a machine image " + \
+          "when --infrastructure is not specified.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
@@ -299,3 +359,43 @@ class ParseArgs():
     """
     if self.args.n is not None and self.args.n < 1:
       raise BadConfigurationException("Replication factor must exceed 0.")
+
+
+  def validate_appengine_flags(self):
+    """Validates the values given to us by the user for any flag relating to
+    the number of AppServers to launch per App Engine app.
+
+    Raises:
+      BadConfigurationException: If the value for the --appengine flag is
+        invalid.
+    """
+    if self.args.appengine:
+      if self.args.appengine < 1:
+        raise BadConfigurationException("Number of application servers " + \
+          "must exceed zero.")
+
+      self.args.autoscale = False
+    elif self.args.autoscale:
+      self.args.appengine = 1
+    else:  # neither are set
+      self.args.appengine = 1
+      self.args.autoscale = True
+
+
+  def validate_admin_flags(self):
+    """Validates the flags that correspond to setting administrator e-mails
+    and passwords.
+
+    Raises:
+      BadConfigurationException: If admin_user, admin_pass, and test are all
+        set, or if admin_user (or admin_pass) is set but the other isn't.
+    """
+    if self.args.admin_user and not self.args.admin_pass:
+      raise BadConfigurationException("If admin_user is set, admin_pass " + \
+        "must also be set.")
+    if self.args.admin_pass and not self.args.admin_user:
+      raise BadConfigurationException("If admin_pass is set, admin_user " + \
+        "must also be set.")
+    if self.args.admin_user and self.args.admin_pass and self.test:
+      raise BadConfigurationException("Cannot set admin_user, " + \
+        "admin_pass, and test.")

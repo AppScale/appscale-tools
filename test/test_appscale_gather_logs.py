@@ -39,12 +39,12 @@ from remote_helper import RemoteHelper
 from user_app_client import UserAppClient
 
 
-class TestAppScaleDescribeInstances(unittest.TestCase):
+class TestAppScaleGatherLogs(unittest.TestCase):
 
 
   def setUp(self):
     self.keyname = "boobazblargfoo"
-    self.function = "appscale-describe-instances"
+    self.function = "appscale-gather-logs"
 
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
@@ -70,36 +70,17 @@ class TestAppScaleDescribeInstances(unittest.TestCase):
     self.failed.should_receive('wait').and_return(1)
 
 
-  def test_describe_instances_with_two_nodes(self):
-    # mock out writing the secret key to ~/.appscale, as well as reading it
-    # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
-    secret_key_location = LocalState.get_secret_key_location(self.keyname)
-    fake_secret = flexmock(name="fake_secret")
-    fake_secret.should_receive('read').and_return('the secret')
-    fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
-      .and_return(fake_secret)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1', 'public2']))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at 1.2.3.4')
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public2:17443') \
-      .and_return(fake_appcontroller)
-
-    # mock out reading the locations.json file, and slip in our own json
+  def test_appscale_in_two_node_virt_deployment(self):
+    # pretend that the place we're going to put logs into doesn't exist
     flexmock(os.path)
     os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args('/tmp/foobaz').and_return(False)
+
+    # and mock out the mkdir operation
+    flexmock(os)
+    os.should_receive('mkdir').with_args('/tmp/foobaz').and_return()
+
+    # next, mock out finding the login ip address
     os.path.should_receive('exists').with_args(
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
@@ -108,21 +89,42 @@ class TestAppScaleDescribeInstances(unittest.TestCase):
       "public_ip" : "public1",
       "private_ip" : "private1",
       "jobs" : ["shadow", "login"]
-    },
-    {
-      "public_ip" : "public2",
-      "private_ip" : "private2",
-      "jobs" : ["appengine"]
-    },
-    ]))
-    fake_nodes_json.should_receive('write').and_return()
+    }]))
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
-    # assume that there are two machines running in our deployment
+
+    # mock out writing the secret key to ~/.appscale, as well as reading it
+    # later
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+    # and slip in a fake appcontroller to report on the two IP addrs
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('get_all_public_ips').with_args(
+      'the secret').and_return(json.dumps(['public1', 'public2']))
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
+
+    # fake the creation of the log directories locally
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public1').and_return()
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public2').and_return()
+
+    # finally, fake the copying of the log files
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('/var/log/appscale'),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
 
     argv = [
-      "--keyname", self.keyname
+      "--keyname", self.keyname,
+      "--location", "/tmp/foobaz"
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.describe_instances(options)
+    AppScaleTools.gather_logs(options)

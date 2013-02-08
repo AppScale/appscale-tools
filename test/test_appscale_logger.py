@@ -46,11 +46,13 @@ class TestAppScaleLogger(unittest.TestCase):
     # do argument parsing here, since the below tests do it the
     # same way every time
     argv = ["--min", "1", "--max", "1", "--infrastructure",
-      "ec2", "--machine", "ami-ABCDEFG"]
+      "ec2", "--machine", "ami-ABCDEFG", "--group", "blargscale"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
 
     self.expected = {
+      "admin_pass" : None,
+      "admin_user" : None,
       "appengine" : 1,
       "autoscale" : True,
       "min" : 1,
@@ -58,7 +60,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "infrastructure" : "ec2",
       "machine" : "ami-ABCDEFG",
       "force" : False,
-      "group" : "appscale",
+      "group" : "blargscale",
       "instance_type" : "m1.large",
       "ips" : None,
       "ips_layout" : None,
