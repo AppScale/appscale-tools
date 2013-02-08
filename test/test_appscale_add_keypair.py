@@ -72,12 +72,12 @@ class TestAppScaleAddKeypair(unittest.TestCase):
   def test_appscale_with_ips_layout_flag_but_no_copy_id(self):
     # assume that we have ssh-keygen but not ssh-copy-id
     flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('which ssh-keygen'),
+    subprocess.should_receive('Popen').with_args(re.compile('hash ssh-keygen'),
       shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.success)
 
     flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('which ssh-copy-id'),
+    subprocess.should_receive('Popen').with_args(re.compile('hash ssh-copy-id'),
       shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
       .and_return(self.failed)
 

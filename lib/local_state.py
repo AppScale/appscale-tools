@@ -661,7 +661,7 @@ class LocalState():
 
     for command in required_commands:
       try:
-        cls.shell("which {0}".format(command), is_verbose)
+        cls.shell("hash {0}".format(command), is_verbose)
       except ShellException:
         raise BadConfigurationException("Couldn't find {0} in your PATH."
           .format(command))
