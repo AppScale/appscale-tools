@@ -6,6 +6,7 @@
 # General-purpose Python library imports
 import json
 import re
+import socket
 import time
 
 
@@ -31,6 +32,16 @@ class AppControllerClient():
 
   # The port that the AppController runs on by default.
   PORT = 17443
+
+
+  # The number of seconds we should wait for when waiting for the UserAppServer
+  # to start up.
+  WAIT_TIME = 10
+
+
+  # The message that an AppController can return if callers do not authenticate
+  # themselves correctly.
+  BAD_SECRET_MESSAGE = 'false: bad secret'
 
 
   def __init__(self, host, secret):
@@ -78,7 +89,17 @@ class AppControllerClient():
       A list of the public IP addresses of each machine in this AppScale
       deployment.
     """
-    return json.loads(self.server.get_all_public_ips(self.secret))
+    try:
+      all_ips = self.server.get_all_public_ips(self.secret)
+    except socket.error:
+      raise AppControllerException("The remote AppController is down. Is " + \
+        "AppScale running?")
+
+    if all_ips == self.BAD_SECRET_MESSAGE:
+      raise AppControllerException("Could not authenticate successfully" + \
+        " to the AppController. You may need to change the keyname in use.")
+
+    return json.loads(all_ips)
 
 
   def get_role_info(self):
@@ -109,6 +130,11 @@ class AppControllerClient():
         status = self.get_status()
         AppScaleLogger.verbose('Received status from head node: ' + status,
           is_verbose)
+
+        if status == self.BAD_SECRET_MESSAGE:
+          raise AppControllerException("Could not authenticate successfully" + \
+            " to the AppController. You may need to change the keyname in use.")
+
         match = re.search(r'Database is at (.*)', status)
         if match and match.group(1) != 'not-up-yet':
           return match.group(1)
@@ -121,10 +147,12 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
+      except AppControllerException as exception:
+        raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
-      time.sleep(10)
+      time.sleep(self.WAIT_TIME)
 
 
   def get_status(self):
@@ -159,4 +187,60 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.server.start_roles_on_nodes
+    return self.server.start_roles_on_nodes(roles_to_nodes, self.secret)
+
+
+  def stop_app(self, app_name):
+    """Tells the AppController to no longer host the named application.
+
+    Args:
+      app_name: A str that indicates which application should be stopped.
+    Returns:
+      The result of telling the AppController to no longer host the app.
+    """
+    return self.server.stop_app(app_name, self.secret)
+
+
+  def is_app_running(self, app_name):
+    """Queries the AppController to see if the named application is running.
+
+    Args:
+      app_name: A str that indicates which application we should be checking
+        for.
+    Returns:
+      True if the application is running, False otherwise.
+    """
+    return self.server.is_app_running(app_name, self.secret)
+
+
+  def done_uploading(self, app_id, remote_app_location):
+    """Tells the AppController that an application has been uploaded to its
+    machine, and where to find it.
+
+    Args:
+      app_id: A str that indicates which application we have copied over.
+      remote_app_location: The location on the remote machine where the App
+        Engine application can be found.
+    """
+    return self.server.done_uploading(app_id, remote_app_location, self.secret)
+
+
+  def update(self, apps_to_run):
+    """Tells the AppController which applications to run, which we assume have
+    already been uploaded to that machine.
+
+    Args:
+      apps_to_run: A list of apps to start running on nodes running the App
+        Engine service.
+    """
+    return self.server.update(apps_to_run, self.secret)
+
+
+  def is_app_running(self, app_id):
+    """Queries the AppController to see if the named application is running in
+    the AppScale deployment.
+
+    Returns:
+      True if the app is running, False otherwise.
+    """
+    return self.server.is_app_running(app_id, self.secret)

@@ -85,18 +85,12 @@ class EC2Agent(BaseAgent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
 
-    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    AppScaleLogger.log('About to spawn EC2 instances - ' \
-              'Expecting to find a key at {0}'.format(ssh_key))
-    if os.path.exists(ssh_key):
-      self.handle_failure('SSH key found locally - please use a different keyname')
-
+    AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
+      " is not already registered.")
     conn = self.open_connection(parameters)
-    key_pair = conn.get_key_pair(keyname)
-    if key_pair is None:
-      AppScaleLogger.log('Creating key pair: ' + keyname)
-      key_pair = conn.create_key_pair(keyname)
-    LocalState.write_key_file(ssh_key, key_pair.material)
+    if conn.get_key_pair(keyname):
+      self.handle_failure("SSH key already registered - please use a " + \
+        "different keyname")
 
     security_groups = conn.get_all_security_groups()
     group_exists = False
@@ -105,15 +99,23 @@ class EC2Agent(BaseAgent):
         group_exists = True
         break
 
-    if not group_exists:
-      AppScaleLogger.log('Creating security group: ' + group)
-      conn.create_security_group(group, 'AppScale security group')
-      conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group(group, from_port=1,
-        to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group(group, ip_protocol='icmp',
-        cidr_ip='0.0.0.0/0')
+    if group_exists:
+      self.handle_failure("Security group already exists - please use a " + \
+        "different group name")
+
+    AppScaleLogger.log("Creating key pair: {0}".format(keyname))
+    key_pair = conn.create_key_pair(keyname)
+    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    LocalState.write_key_file(ssh_key, key_pair.material)
+
+    AppScaleLogger.log('Creating security group: {0}'.format(group))
+    conn.create_security_group(group, 'AppScale security group')
+    conn.authorize_security_group(group, from_port=1,
+      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group(group, from_port=1,
+      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group(group, ip_protocol='icmp',
+      cidr_ip='0.0.0.0/0')
 
     return True
 
@@ -133,6 +135,29 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args.machine,
       self.PARAM_INSTANCE_TYPE : args.instance_type,
       self.PARAM_KEYNAME : args.keyname,
+    }
+
+    for credential in self.REQUIRED_CREDENTIALS:
+      if os.environ[credential] and os.environ[credential] != '':
+        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      else:
+        raise AgentConfigurationException("no " + credential)
+
+    return params
+
+
+  def get_params_from_yaml(self, keyname):
+    """Searches through the locations.yaml file to build a dict containing the
+    parameters necessary to interact with Amazon EC2.
+
+    Args:
+      keyname: The name of the SSH keypair that uniquely identifies this
+        AppScale deployment.
+    """
+    params = {
+      self.PARAM_CREDENTIALS : {},
+      self.PARAM_GROUP : LocalState.get_group(keyname),
+      self.PARAM_KEYNAME : keyname
     }
 
     for credential in self.REQUIRED_CREDENTIALS:
@@ -257,7 +282,6 @@ class EC2Agent(BaseAgent):
       instance_ids = []
       public_ips = []
       private_ips = []
-      time.sleep(10)
       end_time = datetime.datetime.now() + datetime.timedelta(0,
         self.MAX_VM_CREATION_TIME)
       now = datetime.datetime.now()
@@ -335,6 +359,29 @@ class EC2Agent(BaseAgent):
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
       return False
+
+  def cleanup_state(self, parameters):
+    """
+    Removes the keyname and security group created during this AppScale
+    deployment.
+
+    Args:
+      parameters: A dict that contains the keyname and security group to delete.
+    """
+    AppScaleLogger.log("Deleting keyname {0}".format(
+      parameters[self.PARAM_KEYNAME]))
+    conn = self.open_connection(parameters)
+    conn.delete_key_pair(parameters[self.PARAM_KEYNAME])
+
+    AppScaleLogger.log("Deleting security group {0}".format(
+      parameters[self.PARAM_GROUP]))
+    while True:
+      try:
+        conn.delete_security_group(parameters[self.PARAM_GROUP])
+        break
+      except EC2ResponseError:
+        time.sleep(5)
+
 
   def get_optimal_spot_price(self, conn, instance_type):
     """
