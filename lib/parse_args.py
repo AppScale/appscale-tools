@@ -159,6 +159,11 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-add-instances":
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
@@ -228,6 +233,12 @@ class ParseArgs():
       pass
     elif function == "appscale-describe-instances":
       pass
+    elif function == "appscale-add-instances":
+      if 'ips' in self.args:
+        with open(self.args.ips, 'r') as file_handle:
+          self.args.ips = yaml.safe_load(file_handle.read())
+      else:
+        raise SystemExit
     else:
       raise SystemExit
 

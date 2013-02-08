@@ -7,6 +7,7 @@ import unittest
 
 # imports for appscale executable tests
 from test_appscale import TestAppScale
+from test_appscale_add_instances import TestAppScaleAddInstances
 from test_appscale_gather_logs import TestAppScaleGatherLogs
 from test_appscale_remove_app import TestAppScaleRemoveApp
 from test_appscale_reset_pwd import TestAppScaleResetPassword
@@ -24,7 +25,7 @@ from test_parse_args import TestParseArgs
 from test_remote_helper import TestRemoteHelper
 
 
-test_cases = [TestAppScale, TestAppScaleDescribeInstances,
+test_cases = [TestAppScale, TestAppScaleAddInstances, TestAppScaleDescribeInstances,
   TestAppScaleGatherLogs, TestAppScaleRemoveApp, TestAppScaleResetPassword,
   TestAppScaleRunInstances, TestAppScaleTerminateInstances,
   TestAppScaleUploadApp, TestAppScaleLogger, TestLocalState, TestNodeLayout,

@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import json
 import os
 import re
 import sys
@@ -39,6 +40,43 @@ class AppScaleTools():
   # The number of seconds to wait to give services time to start up or shut
   # down.
   SLEEP_TIME = 5
+
+
+  @classmethod
+  def add_instances(cls, options):
+    """Adds additional machines to an AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if 'master' in options.ips.keys():
+      raise BadConfigurationException("Cannot add master nodes to an " + \
+        "already running AppScale deployment.")
+
+    # Skip checking for -n (replication) because we don't allow the user
+    # to specify it here (only allowed in run-instances).
+    additional_nodes_layout = NodeLayout(options)
+
+    # In virtualized cluster deployments, we need to make sure that the user
+    # has already set up SSH keys.
+    if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
+      for ip in options.ips.values():
+        # throws a ShellException if the SSH key doesn't work
+        RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    AppScaleLogger.log("Sending request to add instances")
+    login_ip = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_ip, LocalState.get_secret_key(
+      options.keyname))
+    acc.start_roles_on_nodes(json.dumps(options.ips))
+
+    # TODO(cgb): Should we wait for the new instances to come up and get
+    # initialized?
+    AppScaleLogger.success("Successfully sent request to add instances " + \
+      "to this AppScale deployment.")
 
 
   @classmethod
