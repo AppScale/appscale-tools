@@ -175,7 +175,6 @@ class LocalState():
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
-      "group" : options.group
     }
     creds.update(additional_creds)
 
@@ -184,6 +183,7 @@ class LocalState():
         'machine' : options.machine,
         'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
+        'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms
       }
