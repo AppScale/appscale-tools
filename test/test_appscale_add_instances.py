@@ -153,6 +153,15 @@ appengine: 1.2.3.4
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
 
+    # mock out the SOAP call to the AppController and assume it succeeded
+    json_node_info = json.dumps(yaml.safe_load(ips_yaml))
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('start_roles_on_nodes') \
+      .with_args(json_node_info, 'the secret').and_return('OK')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
+
     argv = [
       "--ips", "/tmp/boo.yaml",
       "--keyname", self.keyname
