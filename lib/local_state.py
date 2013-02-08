@@ -383,8 +383,23 @@ class LocalState():
     # and now we can write the json metadata file
     with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
       file_handle.write(json.dumps(role_info))
-
   
+
+  @classmethod
+  def get_from_yaml(cls, keyname, tag):
+    """Reads the YAML-encoded metadata on disk and returns the value associated
+    with the given tag.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+      tag: A str that indicates what we should look for in the YAML file.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      locations_yaml = yaml.safe_load(file_handle.read())
+      return locations_yaml[tag]
+
+
   @classmethod
   def get_local_nodes_info(cls, keyname):
     """Reads the JSON-encoded metadata on disk and returns a list that indicates

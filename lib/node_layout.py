@@ -128,7 +128,11 @@ class NodeLayout():
     else:
       self.replication = None
 
-    self.database_type = options['table']
+    if 'table' in options:
+      self.database_type = options['table']
+    else:
+      self.database_type = 'cassandra'
+
     self.nodes = []
 
 

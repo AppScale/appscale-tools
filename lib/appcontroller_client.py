@@ -178,6 +178,18 @@ class AppControllerClient():
       return False
 
 
+  def start_roles_on_nodes(self, roles_to_nodes):
+    """Dynamically adds the given machines to an AppScale deployment, with the
+    specified roles.
+
+    Args:
+      A JSON-dumped dict that maps roles to IP addresses.
+    Returns:
+      The result of executing the SOAP call on the remote AppController.
+    """
+    return self.server.start_roles_on_nodes(roles_to_nodes, self.secret)
+
+
   def stop_app(self, app_name):
     """Tells the AppController to no longer host the named application.
 
