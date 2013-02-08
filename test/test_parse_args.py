@@ -128,7 +128,7 @@ class TestParseArgs(unittest.TestCase):
     # Specifying a positive integer for n should be ok
     argv_5 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '2']
     actual_5 = ParseArgs(argv_5, self.function)
-    self.assertEquals(2, actual_5.args.n)
+    self.assertEquals(2, actual_5.args.replication)
 
 
   def test_gather_logs_flags(self):

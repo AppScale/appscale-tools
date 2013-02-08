@@ -156,7 +156,7 @@ class ParseArgs():
         default=self.DEFAULT_DATASTORE,
         choices=self.ALLOWED_DATASTORES,
         help="the datastore to use")
-      self.parser.add_argument('-n', type=int,
+      self.parser.add_argument('--replication', '-n', type=int,
         help="the database replication factor")
 
       # flags relating to application servers
@@ -387,7 +387,7 @@ class ParseArgs():
       BadConfigurationException: If the values for any of the
         database flags are not valid.
     """
-    if self.args.n is not None and self.args.n < 1:
+    if self.args.replication is not None and self.args.replication < 1:
       raise BadConfigurationException("Replication factor must exceed 0.")
 
 
