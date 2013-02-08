@@ -41,6 +41,9 @@ class ParseArgs():
 
 
   # A list of the instance types we allow users to run AppScale over.
+  # TODO(cgb): Change this to a map that maps to the number of each type that
+  # users can spawn without having to contact Amazon, and enforce this
+  # limitation.
   ALLOWED_INSTANCE_TYPES = [
     # Standard Instances (First Generation)
     "m1.small", "m1.medium", "m1.large", "m1.xlarge",
@@ -53,6 +56,21 @@ class ParseArgs():
 
     # High-CPU Instances
     "c1.medium", "c1.xlarge",
+
+    # Cluster Compute Instances
+    "cc2.8xlarge",
+
+    # High Memory Cluster Instances
+    "cr1.8xlarge",
+
+    # Cluster GPU Instances
+    "cg1.4xlarge",
+
+    # High I/O Instances
+    "hi1.4xlarge",
+
+    # High Storage Instances
+    "hs1.8xlarge",
     ]
 
 
