@@ -41,7 +41,19 @@ class ParseArgs():
 
 
   # A list of the instance types we allow users to run AppScale over.
-  ALLOWED_INSTANCE_TYPES = ["m1.large"]
+  ALLOWED_INSTANCE_TYPES = [
+    # Standard Instances (First Generation)
+    "m1.small", "m1.medium", "m1.large", "m1.xlarge",
+
+    # Standard Instances (Second Generation)
+    "m3.xlarge", "m3.2xlarge",
+
+    # High-Memory Instances
+    "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
+
+    # High-CPU Instances
+    "c1.medium", "c1.xlarge",
+    ]
 
 
   # The default security group to create and use for AppScale cloud deployments.
