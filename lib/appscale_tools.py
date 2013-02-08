@@ -160,7 +160,7 @@ class AppScaleTools():
       try:
         AppScaleLogger.log(acc.get_status())
       except Exception as e:
-        AppScaleLogger.warn("Unable to contact machine: " + str(e))
+        AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
 
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(login_host))
