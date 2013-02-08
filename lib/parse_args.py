@@ -426,6 +426,6 @@ class ParseArgs():
     if self.args.admin_pass and not self.args.admin_user:
       raise BadConfigurationException("If admin_pass is set, admin_user " + \
         "must also be set.")
-    if self.args.admin_user and self.args.admin_pass and self.test:
+    if self.args.admin_user and self.args.admin_pass and self.args.test:
       raise BadConfigurationException("Cannot set admin_user, " + \
         "admin_pass, and test.")
