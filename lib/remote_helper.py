@@ -9,12 +9,14 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
+from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
@@ -38,6 +40,10 @@ class RemoteHelper():
 
 
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
+
+
+  # The port the AppLoadBalancer runs on, by default.
+  APP_LOAD_BALANCER_PORT = 80
 
 
   # The default port that the ssh daemon runs on.
@@ -259,8 +265,32 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+    return cls.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
       cls.SSH_OPTIONS, source, user, host, dest), is_verbose, num_retries)
+
+
+  @classmethod
+  def scp_remote_to_local(cls, host, keyname, source, dest, is_verbose,
+    user='root'):
+    """Securely copies a file from a remote machine to this machine.
+
+    Args:
+      host: A str representing the machine that we should log into.
+      keyname: A str representing the name of the SSH keypair to log in with.
+      source: A str representing the path on the remote machine where the
+        file should be copied from.
+      dest: A str representing the path on the local machine where the file
+        should be copied to.
+      is_verbose: A bool that indicates if we should print the scp command to
+        stdout.
+      user: A str representing the user to log in as.
+    Returns:
+      A str representing the standard output of the secure copy and a str
+        representing the standard error of the secure copy.
+    """
+    ssh_key = LocalState.get_key_path_from_name(keyname)
+    return cls.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
+      cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
 
   @classmethod
@@ -586,3 +616,132 @@ class RemoteHelper():
           break
         else:
           time.sleep(cls.WAIT_TIME)
+
+
+  @classmethod
+  def terminate_cloud_infrastructure(cls, keyname, is_verbose):
+    """Powers off all machines in the currently running AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".format(keyname))
+    time.sleep(2)
+
+    # get all the instance IDs for machines in our deployment
+    agent = InfrastructureAgentFactory.create_agent(
+      LocalState.get_infrastructure(keyname))
+    params = agent.get_params_from_yaml(keyname)
+    _, _, instance_ids = agent.describe_instances(params)
+
+    # terminate all the machines
+    params[agent.PARAM_INSTANCE_IDS] = instance_ids
+    agent.terminate_instances(params)
+
+    # delete the keyname and group
+    agent.cleanup_state(params)
+
+
+  @classmethod
+  def terminate_virtualized_cluster(cls, keyname, is_verbose):
+    """Stops all API services running on all nodes in the currently running
+    AppScale deployment.
+
+    Args:
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
+      "keyname {0}".format(keyname))
+    time.sleep(2)
+
+    shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    all_ips = acc.get_all_public_ips()
+
+    threads = []
+    for ip in all_ips:
+      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
+        keyname, is_verbose))
+      thread.start()
+      threads.append(thread)
+
+    for thread in threads:
+      thread.join()
+
+    boxes_shut_down = 0
+    is_running_regex = re.compile("appscale-controller stop")
+    for ip in all_ips:
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+      while True:
+        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
+        AppScaleLogger.log(remote_output)
+        if not is_running_regex.match(remote_output):
+          break
+        time.sleep(0.3)
+      boxes_shut_down += 1
+
+    if boxes_shut_down != len(all_ips):
+      raise AppScaleException("Couldn't terminate your AppScale deployment " + \
+        "on all machines - please do so manually.")
+
+    AppScaleLogger.log("Terminated AppScale on {0} machines."
+      .format(boxes_shut_down))
+
+  
+  @classmethod
+  def stop_remote_appcontroller(cls, host, keyname, is_verbose):
+    """Stops the AppController daemon on the specified host.
+
+    Tries the stop command twice, just to make sure that the AppController gets
+    the message.
+
+    Args:
+      host: The location of the AppController to stop.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the stop commands we
+        exec to stdout.
+    """
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
+    time.sleep(5)
+    cls.ssh(host, keyname, 'service appscale-controller stop', is_verbose)
+
+
+  @classmethod
+  def copy_app_to_host(cls, app_location, keyname, is_verbose):
+    """Copies the given application to a machine running the Login service within
+    an AppScale deployment.
+
+    Args:
+      app_location: The location on the local filesystem where the application
+        can be found.
+      keyname: The name of the SSH keypair that uniquely identifies this
+        AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands we exec
+        to copy the app to the remote host to stdout.
+
+    Returns:
+      A str corresponding to the location on the remote filesystem where the
+        application was copied to.
+    """
+    AppScaleLogger.log("Creating remote directory to copy app into")
+    app_id = AppEngineHelper.get_app_id_from_app_config(app_location)
+    remote_app_dir = "/var/apps/{0}/app".format(app_id)
+    cls.ssh(LocalState.get_login_host(keyname), keyname,
+      'mkdir -p {0}'.format(remote_app_dir), is_verbose)
+
+    AppScaleLogger.log("Tarring application")
+    local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
+    cls.shell("cd {0} && tar -czf {1} *".format(app_location, local_tarred_app),
+      is_verbose)
+
+    AppScaleLogger.log("Copying over application")
+    remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)
+    cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
+      remote_app_tar, is_verbose)
+
+    os.remove(local_tarred_app)
+    return remote_app_tar

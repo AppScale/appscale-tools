@@ -49,6 +49,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
+    AppScaleLogger.should_receive('success').and_return()
 
     # mock out all sleeping
     flexmock(time)
@@ -67,7 +68,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
 
-    self.failed = flexmock(name='success', returncode=1)
+    self.failed = flexmock(name='failed', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
 
@@ -177,6 +178,11 @@ class TestAppScaleRunInstances(unittest.TestCase):
       UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
+    # as well as for the AppLoadBalancer
+    fake_socket.should_receive('connect').with_args(('1.2.3.4',
+      RemoteHelper.APP_LOAD_BALANCER_PORT)).and_raise(Exception) \
+      .and_raise(Exception).and_return(None)
+
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
@@ -206,6 +212,9 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(json.dumps([{
       "public_ip" : "1.2.3.4",
@@ -230,15 +239,15 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
     fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.a', str, 'xmpp_user', 'the secret') \
+      'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
       .and_return('true')
     fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.a', 'true', 'the secret').and_return()
+      'a@a.com', 'true', 'the secret').and_return()
     fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.a', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
+      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
     SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
       .and_return(fake_userappserver)
 

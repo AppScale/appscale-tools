@@ -102,6 +102,11 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_table_flags(self):
+    # throw in a mock that says our ips.yaml file exists
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args('ips.yaml').and_return(True)
+
     # Specifying a table that isn't accepted should abort
     argv_1 = self.cluster_argv[:] + ['--table', 'non-existent-database']
     self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
