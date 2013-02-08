@@ -117,7 +117,6 @@ class ParseArgs():
         choices=self.ALLOWED_INSTANCE_TYPES,
         help="the instance type to use")
       self.parser.add_argument('--group', '-g',
-        default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -271,6 +270,16 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
+      # make sure we didn't get a group or machine flag, since those are
+      # infrastructure-only
+      if self.args.group:
+        raise BadConfigurationException("Cannot specify a security group " + \
+          "when --infrastructure is not specified.")
+
+      if self.args.machine:
+        raise BadConfigurationException("Cannot specify a machine image " + \
+          "when --infrastructure is not specified.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
