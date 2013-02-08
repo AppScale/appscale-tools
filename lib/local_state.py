@@ -8,6 +8,10 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import time
 import uuid
 import yaml
@@ -22,6 +26,7 @@ from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
@@ -602,6 +607,7 @@ class LocalState():
     os.remove(LocalState.get_secret_key_location(keyname))
 
 
+  @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
     """Executes a command on this machine, retrying it if it initially fails.
 
@@ -633,3 +639,56 @@ class LocalState():
       tries_left -= 1
       time.sleep(1)
     raise ShellException('Could not execute command: {0}'.format(command))
+
+
+  @classmethod
+  def require_ssh_commands(cls, needs_expect, is_verbose):
+    """Checks to make sure the commands needed to set up passwordless SSH
+    access are installed on this machine.
+
+    Args:
+      needs_expect: A bool that indicates if we should also check for the
+        'expect' command.
+      is_verbose: A bool that indicates if we should print how we check for
+        each command to stdout.
+    Raises:
+      BadConfigurationException: If any of the required commands aren't present
+        on this machine.
+    """
+    required_commands = ['ssh-keygen', 'ssh-copy-id']
+    if needs_expect:
+      required_commands.append('expect')
+
+    for command in required_commands:
+      try:
+        cls.shell("which {0}".format(command), is_verbose)
+      except ShellException:
+        raise BadConfigurationException("Couldn't find {0} in your PATH."
+          .format(command))
+
+
+  @classmethod
+  def generate_rsa_key(cls, keyname, is_verbose):
+    """Generates a new RSA public and private keypair, and saves it to the
+    local filesystem.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      is_verbose: A bool that indicates if we should print the ssh-keygen
+        command to stdout.
+    """
+    private_key = cls.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
+
+    if os.path.exists(public_key):
+      os.remove(public_key)
+
+    if os.path.exists(private_key):
+      os.remove(private_key)
+
+    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
+    os.chmod(public_key, 0600)
+    os.chmod(private_key, 0600)
+    shutil.copy(private_key, private_key + ".key")
+    return public_key, private_key

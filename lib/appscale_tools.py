@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import getpass
 import json
 import os
 import re
@@ -42,6 +43,11 @@ class AppScaleTools():
   SLEEP_TIME = 5
 
 
+  # The location of the expect script, used to interact with ssh-copy-id
+  EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
+    "templates" + os.sep + "sshcopyid"
+
+
   @classmethod
   def add_instances(cls, options):
     """Adds additional machines to an AppScale deployment.
@@ -77,6 +83,62 @@ class AppScaleTools():
     # initialized?
     AppScaleLogger.success("Successfully sent request to add instances " + \
       "to this AppScale deployment.")
+
+
+  @classmethod
+  def add_keypair(cls, options):
+    """Sets up passwordless SSH login to the machines used in a virtualized
+    cluster deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    LocalState.require_ssh_commands(options.auto, options.verbose)
+    LocalState.make_appscale_directory()
+
+    path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
+    if options.add_to_existing:
+      public_key = path + ".pub"
+      private_key = path
+    else:
+      public_key, private_key = LocalState.generate_rsa_key(options.keyname,
+        options.verbose)
+
+    if options.auto:
+      if 'root_password' in options:
+        AppScaleLogger.log("Using the provided root password to log into " + \
+          "your VMs.")
+        password = options.root_password
+      else:
+        AppScaleLogger.log("Please enter the password for the root user on" + \
+          " your VMs:")
+        password = getpass.getpass()
+
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException("There were problems with your " + \
+        "placement strategy: " + str(node_layout.errors()))
+
+    all_ips = [node.id for node in node_layout.nodes]
+    for ip in all_ips:
+      # first, set up passwordless ssh
+      AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
+      if options.auto:
+        LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
+          private_key, password), options.verbose)
+      else:
+        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
+          options.verbose)
+
+      # next, copy over the ssh keypair we generate
+      RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
+        options.verbose)
+      RemoteHelper.scp(ip, options.keyname, private_key, '/root/.ssh/id_rsa',
+        options.verbose)
+
+    AppScaleLogger.success("Generated a new SSH key for this deployment " + \
+      "at {0}".format(private_key))
 
 
   @classmethod

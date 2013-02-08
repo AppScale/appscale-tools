@@ -185,6 +185,19 @@ class ParseArgs():
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
+      # flags relating to how many VMs we should spawn
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--ips_layout',
+        help="a base64-encoded YAML dictating the placement strategy")
+
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+
+      self.parser.add_argument('--auto', action='store_true',
+        default=False,
+        help="don't prompt the user for the password for each machine")
+
       self.parser.add_argument('--add_to_existing',
         default=False,
         action='store_true',
@@ -239,6 +252,7 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
+      self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
       self.validate_credentials()
@@ -247,6 +261,7 @@ class ParseArgs():
       self.validate_appengine_flags()
       self.validate_admin_flags()
     elif function == "appscale-add-keypair":
+      self.validate_ips_flags()
       pass
     elif function == "appscale-upload-app":
       if not self.args.file:
@@ -281,6 +296,9 @@ class ParseArgs():
       BadConfigurationException: If the values for the min or max
         flags are invalid.
     """
+    if self.args.ips:
+      return
+
     # if min is not set and max is, set min == max
     if self.args.min is None and self.args.max:
       self.args.min = self.args.max
@@ -300,7 +318,12 @@ class ParseArgs():
       if self.args.min > self.args.max:
         raise BadConfigurationException("Min cannot exceed max.")
 
-    return
+
+  def validate_ips_flags(self):
+    """Sets up the ips flag if the ips_layout flag is given.
+    """
+    if self.args.ips_layout:
+      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
 
 
   def validate_infrastructure_flags(self):
