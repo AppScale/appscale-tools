@@ -48,6 +48,10 @@ class AppScaleTools():
     "templates" + os.sep + "sshcopyid"
 
 
+  # A regular expression that matches compressed App Engine apps.
+  TAR_GZ_REGEX = re.compile('.tar.gz\Z')
+
+
   @classmethod
   def add_instances(cls, options):
     """Adds additional machines to an AppScale deployment.
@@ -377,8 +381,14 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    app_id = AppEngineHelper.get_app_id_from_app_config(options.file)
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(options.file)
+    if cls.TAR_GZ_REGEX.search(options.file):
+      file_location = LocalState.extract_app_to_dir(options.file)
+    else:
+      file_location = options.file
+
+    app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    app_language = AppEngineHelper.get_app_runtime_from_app_config(
+      file_location)
     AppEngineHelper.validate_app_id(app_id)
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
@@ -413,7 +423,7 @@ class AppScaleTools():
     AppScaleLogger.log("Uploading {0}".format(app_id))
     userappclient.reserve_app_id(username, app_id, app_language)
 
-    remote_file_path = RemoteHelper.copy_app_to_host(options.file,
+    remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])

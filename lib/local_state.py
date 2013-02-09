@@ -692,3 +692,18 @@ class LocalState():
     os.chmod(private_key, 0600)
     shutil.copy(private_key, private_key + ".key")
     return public_key, private_key
+
+
+  @classmethod
+  def extract_app_to_dir(cls, tar_location):
+    """Extracts the given tar.gz file to a randomly generated location and
+    returns that location.
+
+    Args:
+      tar_location: The location on the local filesystem where the tar.gz file
+        to extract can be found.
+    Returns:
+      The location on the local filesystem where the tar.gz file was extracted
+        to.
+    """
+    pass
