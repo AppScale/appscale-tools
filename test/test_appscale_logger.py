@@ -65,7 +65,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "ips" : None,
       "ips_layout" : None,
       "keyname" : "appscale",
-      "n" : None,
+      "replication" : None,
       "scp" : None,
       "table" : "cassandra",
       "test" : False,
