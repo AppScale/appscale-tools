@@ -162,6 +162,11 @@ installappscaletools()
 export TOOLS_PATH=/usr/local/appscale-tools
 export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF
+
+    cat >> ~/.bashrc <<EOF
+export TOOLS_PATH=/usr/local/appscale-tools
+export PATH=\${PATH}:\${TOOLS_PATH}/bin
+EOF
 }
 
 keygen()
