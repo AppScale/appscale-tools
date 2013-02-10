@@ -9,6 +9,7 @@ import httplib
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -858,9 +859,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_dir = '/tmp/appscale-app-12345678'
 
     # add in mocks so that the gzip'ed file gets extracted to /tmp
+    # as well as for removing it later
     flexmock(os)
     os.should_receive('mkdir').with_args(app_dir) \
       .and_return(True)
+    flexmock(shutil)
+    shutil.should_receive('rmtree').with_args(app_dir).and_return()
 
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(

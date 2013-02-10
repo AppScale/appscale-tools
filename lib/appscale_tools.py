@@ -7,6 +7,7 @@ import getpass
 import json
 import os
 import re
+import shutil
 import sys
 import time
 
@@ -384,8 +385,10 @@ class AppScaleTools():
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_app_to_dir(options.file,
         options.verbose)
+      created_dir = True
     else:
       file_location = options.file
+      created_dir = False
 
     app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
@@ -437,3 +440,6 @@ class AppScaleTools():
       options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
       "http://{0}:{1}".format(serving_host, serving_port))
+
+    if created_dir:
+      shutil.rmtree(file_location)
