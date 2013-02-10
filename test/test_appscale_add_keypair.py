@@ -73,12 +73,12 @@ class TestAppScaleAddKeypair(unittest.TestCase):
     # assume that we have ssh-keygen but not ssh-copy-id
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('hash ssh-keygen'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('hash ssh-copy-id'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed)
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
@@ -103,12 +103,12 @@ appengine:  public3
     # assume that we have ssh-keygen and ssh-copy-id
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('which ssh-keygen'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('which ssh-copy-id'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # assume that we have a ~/.appscale
@@ -128,7 +128,7 @@ appengine:  public3
     # next, assume that ssh-keygen ran fine
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ssh-keygen'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # assume that we can rename the private key
@@ -143,13 +143,13 @@ appengine:  public3
     # and assume that we can ssh-copy-id to each of the three IPs below
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ssh-copy-id'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # also, we should be able to copy over our new public and private keys fine
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('id_rsa[.pub]?'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
