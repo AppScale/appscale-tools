@@ -382,7 +382,8 @@ class AppScaleTools():
         passed in via the command-line interface.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
-      file_location = LocalState.extract_app_to_dir(options.file)
+      file_location = LocalState.extract_app_to_dir(options.file,
+        options.verbose)
     else:
       file_location = options.file
 

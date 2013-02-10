@@ -852,10 +852,26 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
 
   def test_upload_tar_gz_app_successfully(self):
+    # mock out generating a random app dir, for later mocks
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return('12345678')
+    app_dir = '/tmp/appscale-app-12345678'
+
+    # add in mocks so that the gzip'ed file gets extracted to /tmp
+    flexmock(os)
+    os.should_receive('mkdir').with_args(app_dir) \
+      .and_return(True)
+
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(
+      re.compile('tar zxvf '),
+      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      .and_return(self.success)
+
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
+    app_yaml_location = AppEngineHelper.get_app_yaml_location(app_dir)
     os.path.should_receive('exists').with_args(app_yaml_location) \
       .and_return(True)
 
