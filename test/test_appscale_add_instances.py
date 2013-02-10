@@ -126,7 +126,7 @@ appengine: 1.2.3.4
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile(
       'ls'.format(self.keyname)),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # mock out reading the locations.json file, and slip in our own json

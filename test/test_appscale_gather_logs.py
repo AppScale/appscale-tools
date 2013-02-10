@@ -119,7 +119,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     # finally, fake the copying of the log files
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     argv = [

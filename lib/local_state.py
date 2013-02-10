@@ -628,7 +628,7 @@ class LocalState():
       AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
       the_temp_file = tempfile.TemporaryFile()
       result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-        stderr=sys.stdout)
+        stderr=subprocess.STDOUT)
       result.wait()
       if result.returncode == 0:
         output = the_temp_file.read()
