@@ -56,8 +56,8 @@ class TestLocalState(unittest.TestCase):
   def test_ensure_appscale_isnt_running_but_it_is(self):
     # if there is a locations.yaml file and force isn't set,
     # we should abort
-    os.path.should_receive('exists').with_args(self.locations_yaml) \
-      .and_return(True)
+    os.path.should_receive('exists').with_args(
+      LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
     self.assertRaises(BadConfigurationException,
       LocalState.ensure_appscale_isnt_running, self.keyname,
