@@ -57,13 +57,18 @@ class EucalyptusAgent(EC2Agent):
       self.handle_failure('Unknown scheme in EC2_URL: ' + result.scheme)
       return None
 
+    if parameters['IS_VERBOSE']:
+      debug_level = 2  # extremely verbose
+    else:
+      debug_level = 0  # the silent treatment
+
     return boto.connect_euca(host=result.hostname,
       aws_access_key_id=access_key,
       aws_secret_access_key=secret_key,
       port=port,
       path=result.path,
       is_secure=(result.scheme == 'https'),
-      api_version=self.EUCA_API_VERSION, debug=2)
+      api_version=self.EUCA_API_VERSION, debug=debug_level)
 
 
   def configure_instance_security(self, parameters):
@@ -82,39 +87,35 @@ class EucalyptusAgent(EC2Agent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
 
-    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    AppScaleLogger.log('About to spawn Euca instances - ' \
-              'Expecting to find a key at {0}'.format(ssh_key))
-    if os.path.exists(ssh_key):
-      self.handle_failure('SSH key found locally - please use a different keyname')
-
+    AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
+      " is not already registered.")
     conn = self.open_connection(parameters)
     try:
-      key_pair = conn.get_key_pair(keyname)
+      conn.get_key_pair(keyname)
+      self.handle_failure('SSH key found locally - please use a different keyname')
     except IndexError:  # in euca, this means the key doesn't exist
-      key_pair = None
-
-    if key_pair is None:
-      AppScaleLogger.log('Creating key pair: ' + keyname)
-      key_pair = conn.create_key_pair(keyname)
-    LocalState.write_key_file(ssh_key, key_pair.material)
+      pass
 
     security_groups = conn.get_all_security_groups()
     group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
-        group_exists = True
-        break
+        self.handle_failure("Security group already exists - please use a " + \
+          "different group name")
 
-    if not group_exists:
-      AppScaleLogger.log('Creating security group: ' + group)
-      conn.create_security_group(group, 'AppScale security group')
-      conn.authorize_security_group_deprecated(group, from_port=1,
-        to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group_deprecated(group, from_port=1,
-        to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-      conn.authorize_security_group_deprecated(group, ip_protocol='icmp',
-        cidr_ip='0.0.0.0/0')
+    AppScaleLogger.log('Creating key pair: ' + keyname)
+    key_pair = conn.create_key_pair(keyname)
+    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    LocalState.write_key_file(ssh_key, key_pair.material)
+
+    AppScaleLogger.log('Creating security group: {0}'.format(group))
+    conn.create_security_group(group, 'AppScale security group')
+    conn.authorize_security_group_deprecated(group, from_port=1,
+      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, from_port=1,
+      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, ip_protocol='icmp',
+      cidr_ip='0.0.0.0/0')
 
     return True
 
