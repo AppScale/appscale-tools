@@ -56,6 +56,7 @@ class TestAppScaleAddKeypair(unittest.TestCase):
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
