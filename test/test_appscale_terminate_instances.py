@@ -144,14 +144,14 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # it fails the first time and passes the second
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('controller stop'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed).and_return(self.success)
 
     # next, mock out our checks to see how the stopping process is going and
     # assume that it has stopped
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ps x'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # finally, mock out removing the yaml file, json file, and secret key from

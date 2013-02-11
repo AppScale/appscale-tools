@@ -143,25 +143,25 @@ class TestRemoteHelper(unittest.TestCase):
     # it fails the first time
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ubuntu'), \
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed).and_return(self.success)
 
     # also assume that we can scp over our ssh keys, but that it fails the first
     # time
     subprocess.should_receive('Popen').with_args(re.compile('/root/.ssh/id_'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed).and_return(self.success)
 
     subprocess.should_receive('Popen').with_args(re.compile(
       '/root/.appscale/bookey.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed).and_return(self.success)
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
@@ -171,14 +171,14 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
     subprocess.should_receive('Popen').with_args(re.compile(
       '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
@@ -188,21 +188,21 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
     subprocess.should_receive('Popen').with_args(re.compile(
       '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
     subprocess.should_receive('Popen').with_args(re.compile(
       '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, 'cassandra')),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
@@ -227,7 +227,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume the rsyncs succeed
     subprocess.should_receive('Popen').with_args(re.compile('rsync'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local',
@@ -237,11 +237,11 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_deployment_credentials_in_cloud(self):
     # mock out the scp'ing to public1 and assume they succeed
     subprocess.should_receive('Popen').with_args(re.compile('secret.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     subprocess.should_receive('Popen').with_args(re.compile('ssh.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # mock out generating the private key
@@ -271,15 +271,15 @@ class TestRemoteHelper(unittest.TestCase):
 
     # next, mock out copying the private key and certificate
     subprocess.should_receive('Popen').with_args(re.compile('mycert.pem'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     subprocess.should_receive('Popen').with_args(re.compile('mykey.pem'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     options = flexmock(name='options', keyname='bookey', infrastructure='ec2',
@@ -290,22 +290,22 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_remote_appcontroller(self):
     # mock out removing the old json file
     subprocess.should_receive('Popen').with_args(re.compile('rm -rf'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # assume we started god on public1 fine
     subprocess.should_receive('Popen').with_args(re.compile('god &'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # also assume that we scp'ed over the god config file fine
     subprocess.should_receive('Popen').with_args(re.compile('appcontroller'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # and assume we started the AppController on public1 fine
     subprocess.should_receive('Popen').with_args(re.compile('god load'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
     # finally, assume the appcontroller comes up after a few tries
@@ -323,7 +323,7 @@ class TestRemoteHelper(unittest.TestCase):
     # mock out the copying of the two files
     subprocess.should_receive('Popen').with_args(re.compile(
       'locations-bookey.[yaml|json]'),
-      shell=True, stdout=self.fake_temp_file, stderr=sys.stdout) \
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
