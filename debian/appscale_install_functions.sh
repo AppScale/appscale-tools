@@ -167,6 +167,7 @@ EOF
 export TOOLS_PATH=/usr/local/appscale-tools
 export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF
+    source ~/.bashrc
 }
 
 keygen()
