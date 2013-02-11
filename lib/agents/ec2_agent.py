@@ -141,8 +141,11 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
-      'IS_VERBOSE' : args['verbose']
     }
+    if 'verbose' in args:
+      params['IS_VERBOSE'] = args['verbose']
+    else:
+      params['IS_VERBOSE'] = False
 
     for credential in self.REQUIRED_CREDENTIALS:
       if os.environ[credential] and os.environ[credential] != '':
