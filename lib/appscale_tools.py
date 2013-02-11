@@ -3,8 +3,11 @@
 
 
 # General-purpose Python library imports
+import getpass
+import json
 import os
 import re
+import shutil
 import sys
 import time
 
@@ -41,6 +44,108 @@ class AppScaleTools():
   SLEEP_TIME = 5
 
 
+  # The location of the expect script, used to interact with ssh-copy-id
+  EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
+    "templates" + os.sep + "sshcopyid"
+
+
+  # A regular expression that matches compressed App Engine apps.
+  TAR_GZ_REGEX = re.compile('.tar.gz\Z')
+
+
+  @classmethod
+  def add_instances(cls, options):
+    """Adds additional machines to an AppScale deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if 'master' in options.ips.keys():
+      raise BadConfigurationException("Cannot add master nodes to an " + \
+        "already running AppScale deployment.")
+
+    # Skip checking for -n (replication) because we don't allow the user
+    # to specify it here (only allowed in run-instances).
+    additional_nodes_layout = NodeLayout(options)
+
+    # In virtualized cluster deployments, we need to make sure that the user
+    # has already set up SSH keys.
+    if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
+      for ip in options.ips.values():
+        # throws a ShellException if the SSH key doesn't work
+        RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
+
+    # Finally, find an AppController and send it a message to add
+    # the given nodes with the new roles.
+    AppScaleLogger.log("Sending request to add instances")
+    login_ip = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_ip, LocalState.get_secret_key(
+      options.keyname))
+    acc.start_roles_on_nodes(json.dumps(options.ips))
+
+    # TODO(cgb): Should we wait for the new instances to come up and get
+    # initialized?
+    AppScaleLogger.success("Successfully sent request to add instances " + \
+      "to this AppScale deployment.")
+
+
+  @classmethod
+  def add_keypair(cls, options):
+    """Sets up passwordless SSH login to the machines used in a virtualized
+    cluster deployment.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    LocalState.require_ssh_commands(options.auto, options.verbose)
+    LocalState.make_appscale_directory()
+
+    path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
+    if options.add_to_existing:
+      public_key = path + ".pub"
+      private_key = path
+    else:
+      public_key, private_key = LocalState.generate_rsa_key(options.keyname,
+        options.verbose)
+
+    if options.auto:
+      if 'root_password' in options:
+        AppScaleLogger.log("Using the provided root password to log into " + \
+          "your VMs.")
+        password = options.root_password
+      else:
+        AppScaleLogger.log("Please enter the password for the root user on" + \
+          " your VMs:")
+        password = getpass.getpass()
+
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException("There were problems with your " + \
+        "placement strategy: " + str(node_layout.errors()))
+
+    all_ips = [node.id for node in node_layout.nodes]
+    for ip in all_ips:
+      # first, set up passwordless ssh
+      AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
+      if options.auto:
+        LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
+          private_key, password), options.verbose)
+      else:
+        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
+          options.verbose)
+
+      # next, copy over the ssh keypair we generate
+      RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
+        options.verbose)
+      RemoteHelper.scp(ip, options.keyname, private_key, '/root/.ssh/id_rsa',
+        options.verbose)
+
+    AppScaleLogger.success("Generated a new SSH key for this deployment " + \
+      "at {0}".format(private_key))
+
+
   @classmethod
   def describe_instances(cls, options):
     """Queries each node in the currently running AppScale deployment and
@@ -56,7 +161,14 @@ class AppScaleTools():
 
     for ip in login_acc.get_all_public_ips():
       acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
-      AppScaleLogger.log(acc.get_status())
+      AppScaleLogger.log("Status of node at {0}:".format(ip))
+      try:
+        AppScaleLogger.log(acc.get_status())
+      except Exception as e:
+        AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
+
+    AppScaleLogger.success("View status information about your AppScale " + \
+      "deployment at http://{0}/status".format(login_host))
 
 
   @classmethod
@@ -277,8 +389,17 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    app_id = AppEngineHelper.get_app_id_from_app_config(options.file)
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(options.file)
+    if cls.TAR_GZ_REGEX.search(options.file):
+      file_location = LocalState.extract_app_to_dir(options.file,
+        options.verbose)
+      created_dir = True
+    else:
+      file_location = options.file
+      created_dir = False
+
+    app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    app_language = AppEngineHelper.get_app_runtime_from_app_config(
+      file_location)
     AppEngineHelper.validate_app_id(app_id)
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
@@ -313,7 +434,7 @@ class AppScaleTools():
     AppScaleLogger.log("Uploading {0}".format(app_id))
     userappclient.reserve_app_id(username, app_id, app_language)
 
-    remote_file_path = RemoteHelper.copy_app_to_host(options.file,
+    remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])
@@ -326,3 +447,6 @@ class AppScaleTools():
       options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
       "http://{0}:{1}".format(serving_host, serving_port))
+
+    if created_dir:
+      shutil.rmtree(file_location)

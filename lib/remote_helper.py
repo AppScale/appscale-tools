@@ -35,10 +35,6 @@ class RemoteHelper():
   """
 
 
-  # The number of times to execute shell commands before aborting, by default.
-  DEFAULT_NUM_RETRIES = 5
-
-
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
@@ -226,7 +222,7 @@ class RemoteHelper():
 
   @classmethod
   def ssh(cls, host, keyname, command, is_verbose, user='root', \
-            num_retries=DEFAULT_NUM_RETRIES):
+            num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
     Args:
@@ -241,13 +237,13 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
+    return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
       cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
 
 
   @classmethod
   def scp(cls, host, keyname, source, dest, is_verbose, user='root', 
-            num_retries=DEFAULT_NUM_RETRIES):
+            num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
@@ -265,7 +261,7 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+    return LocalState.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
       cls.SSH_OPTIONS, source, user, host, dest), is_verbose, num_retries)
 
 
@@ -289,54 +285,10 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return cls.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
+    return LocalState.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
 
-  @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it up to five times if it
-    initially fails.
-
-    Args:
-      command: A str representing the command to execute.
-      is_verbose: A bool that indicates if we should print the command we are
-        executing to stdout.
-      num_retries: The number of times we should try to execute the given
-        command before aborting.
-    Returns:
-      The standard output and standard error produced when the command executes.
-    Raises:
-      ShellException: If, after five attempts, executing the named command
-      failed.
-    """
-    tries_left = num_retries
-    try:
-      while tries_left:
-        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-        the_temp_file = tempfile.NamedTemporaryFile()
-        result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-          stderr=subprocess.STDOUT)
-        AppScaleLogger.verbose("       using temp file {0}".format(the_temp_file.name),is_verbose)
-        result.wait()
-        if result.returncode == 0:
-          the_temp_file.seek(0)
-          output = the_temp_file.read()
-          the_temp_file.close()
-          return output
-        tries_left -= 1
-        if tries_left:
-          the_temp_file.close()
-          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-            .format(command), is_verbose)
-        else:
-          the_temp_file.seek(0)
-          output = the_temp_file.read()
-          the_temp_file.close()
-          raise ShellException("Executing command '{0}' failed:\n{1}".format(command,output))
-        time.sleep(1)
-    except OSError as e:
-      raise ShellException('Error executing command: {0}:{1}'.format(command,str(e)))
       
 
 
@@ -454,13 +406,13 @@ class RemoteHelper():
         raise BadConfigurationException("The location you specified to copy " +
           "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
           local_path))
-      cls.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:/root/appscale/{4}" \
+      LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:/root/appscale/{4}" \
         .format(ssh_key, cls.SSH_OPTIONS, local_path, host, dir_name), is_verbose)
 
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
     # (e.g., built database binaries).
     local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
-    cls.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
 
 
   @classmethod
@@ -558,6 +510,10 @@ class RemoteHelper():
     # and copy the json file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
       '/root/.appscale/locations-{0}.json'.format(keyname), is_verbose)
+
+    # and copy the secret file if the tools on that box wants to use it
+    cls.scp(host, keyname, LocalState.get_secret_key_location(keyname),
+      '/root/.appscale/', is_verbose)
 
   
   @classmethod
@@ -735,8 +691,8 @@ class RemoteHelper():
 
     AppScaleLogger.log("Tarring application")
     local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
-    cls.shell("cd {0} && tar -czf {1} *".format(app_location, local_tarred_app),
-      is_verbose)
+    LocalState.shell("cd {0} && tar -czf {1} *".format(app_location,
+      local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)

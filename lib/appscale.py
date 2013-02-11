@@ -203,16 +203,15 @@ Available commands:
       # Only run add-keypair if there is no ssh key present,
       # or if it doesn't log into all the machines specified.
       if not self.valid_ssh_key(contents_as_yaml):
-        add_keypair_command = ["appscale-add-keypair"]
+        add_keypair_command = []
         if "keyname" in contents_as_yaml:
           add_keypair_command.append("--keyname")
           add_keypair_command.append(str(contents_as_yaml["keyname"]))
 
         add_keypair_command.append("--ips_layout")
         add_keypair_command.append(ips_layout)
-        # TODO(cgb): Check the return value of running add-keypair. If
-        # it fails, abort execution here.
-        subprocess.call(add_keypair_command)
+        options = ParseArgs(add_keypair_command, "appscale-add-keypair").args
+        AppScaleTools.add_keypair(options)
 
     # Construct a run-instances command from the file's contents
     command = []

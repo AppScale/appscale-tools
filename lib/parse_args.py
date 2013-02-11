@@ -41,7 +41,37 @@ class ParseArgs():
 
 
   # A list of the instance types we allow users to run AppScale over.
-  ALLOWED_INSTANCE_TYPES = ["m1.large"]
+  # TODO(cgb): Change this to a map that maps to the number of each type that
+  # users can spawn without having to contact Amazon, and enforce this
+  # limitation.
+  ALLOWED_INSTANCE_TYPES = [
+    # Standard Instances (First Generation)
+    "m1.small", "m1.medium", "m1.large", "m1.xlarge",
+
+    # Standard Instances (Second Generation)
+    "m3.xlarge", "m3.2xlarge",
+
+    # High-Memory Instances
+    "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
+
+    # High-CPU Instances
+    "c1.medium", "c1.xlarge",
+
+    # Cluster Compute Instances
+    "cc2.8xlarge",
+
+    # High Memory Cluster Instances
+    "cr1.8xlarge",
+
+    # Cluster GPU Instances
+    "cg1.4xlarge",
+
+    # High I/O Instances
+    "hi1.4xlarge",
+
+    # High Storage Instances
+    "hs1.8xlarge",
+    ]
 
 
   # The default security group to create and use for AppScale cloud deployments.
@@ -117,7 +147,6 @@ class ParseArgs():
         choices=self.ALLOWED_INSTANCE_TYPES,
         help="the instance type to use")
       self.parser.add_argument('--group', '-g',
-        default=self.DEFAULT_SECURITY_GROUP,
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -127,7 +156,7 @@ class ParseArgs():
         default=self.DEFAULT_DATASTORE,
         choices=self.ALLOWED_DATASTORES,
         help="the datastore to use")
-      self.parser.add_argument('-n', type=int,
+      self.parser.add_argument('--replication', '-n', type=int,
         help="the database replication factor")
 
       # flags relating to application servers
@@ -156,10 +185,28 @@ class ParseArgs():
       self.parser.add_argument('--location',
         help="the location to store the collected logs")
     elif function == "appscale-add-keypair":
+      # flags relating to how many VMs we should spawn
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--ips_layout',
+        help="a base64-encoded YAML dictating the placement strategy")
+
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+
+      self.parser.add_argument('--auto', action='store_true',
+        default=False,
+        help="don't prompt the user for the password for each machine")
+
       self.parser.add_argument('--add_to_existing',
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+    elif function == "appscale-add-instances":
+      self.parser.add_argument('--ips',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--keyname', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
@@ -205,6 +252,7 @@ class ParseArgs():
       SystemExit: If function is not a supported function.
     """
     if function == "appscale-run-instances":
+      self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
       self.validate_credentials()
@@ -213,6 +261,7 @@ class ParseArgs():
       self.validate_appengine_flags()
       self.validate_admin_flags()
     elif function == "appscale-add-keypair":
+      self.validate_ips_flags()
       pass
     elif function == "appscale-upload-app":
       if not self.args.file:
@@ -229,6 +278,12 @@ class ParseArgs():
       pass
     elif function == "appscale-describe-instances":
       pass
+    elif function == "appscale-add-instances":
+      if 'ips' in self.args:
+        with open(self.args.ips, 'r') as file_handle:
+          self.args.ips = yaml.safe_load(file_handle.read())
+      else:
+        raise SystemExit
     else:
       raise SystemExit
 
@@ -241,6 +296,9 @@ class ParseArgs():
       BadConfigurationException: If the values for the min or max
         flags are invalid.
     """
+    if self.args.ips:
+      return
+
     # if min is not set and max is, set min == max
     if self.args.min is None and self.args.max:
       self.args.min = self.args.max
@@ -260,7 +318,12 @@ class ParseArgs():
       if self.args.min > self.args.max:
         raise BadConfigurationException("Min cannot exceed max.")
 
-    return
+
+  def validate_ips_flags(self):
+    """Sets up the ips flag if the ips_layout flag is given.
+    """
+    if self.args.ips_layout:
+      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
 
 
   def validate_infrastructure_flags(self):
@@ -271,6 +334,16 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
+      # make sure we didn't get a group or machine flag, since those are
+      # infrastructure-only
+      if self.args.group:
+        raise BadConfigurationException("Cannot specify a security group " + \
+          "when --infrastructure is not specified.")
+
+      if self.args.machine:
+        raise BadConfigurationException("Cannot specify a machine image " + \
+          "when --infrastructure is not specified.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
@@ -314,7 +387,7 @@ class ParseArgs():
       BadConfigurationException: If the values for any of the
         database flags are not valid.
     """
-    if self.args.n is not None and self.args.n < 1:
+    if self.args.replication is not None and self.args.replication < 1:
       raise BadConfigurationException("Replication factor must exceed 0.")
 
 
@@ -353,6 +426,6 @@ class ParseArgs():
     if self.args.admin_pass and not self.args.admin_user:
       raise BadConfigurationException("If admin_pass is set, admin_user " + \
         "must also be set.")
-    if self.args.admin_user and self.args.admin_pass and self.test:
+    if self.args.admin_user and self.args.admin_pass and self.args.test:
       raise BadConfigurationException("Cannot set admin_user, " + \
         "admin_pass, and test.")

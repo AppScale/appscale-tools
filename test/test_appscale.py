@@ -142,14 +142,8 @@ class TestAppScale(unittest.TestCase):
     # finally, mock out the actual appscale tools calls. since we're running
     # via a cluster, this means we call add-keypair to set up SSH keys, then
     # run-instances to start appscale
-    flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["appscale-add-keypair",
-                                                 "--keyname",
-                                                 "boobazblarg",
-                                                 "--ips_layout",
-                                                 base64_ips_layout]).and_return().once()
-
     flexmock(AppScaleTools)
+    AppScaleTools.should_receive('add_keypair')
     AppScaleTools.should_receive('run_instances')
 
     appscale.up()

@@ -8,6 +8,10 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import time
 import uuid
 import yaml
@@ -22,6 +26,7 @@ from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
@@ -175,7 +180,6 @@ class LocalState():
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
-      "group" : options.group
     }
     creds.update(additional_creds)
 
@@ -184,6 +188,7 @@ class LocalState():
         'machine' : options.machine,
         'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
+        'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms
       }
@@ -383,8 +388,23 @@ class LocalState():
     # and now we can write the json metadata file
     with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
       file_handle.write(json.dumps(role_info))
-
   
+
+  @classmethod
+  def get_from_yaml(cls, keyname, tag):
+    """Reads the YAML-encoded metadata on disk and returns the value associated
+    with the given tag.
+
+    Args:
+      keyname: A str that indicates the name of the SSH keypair that
+        uniquely identifies this AppScale deployment.
+      tag: A str that indicates what we should look for in the YAML file.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      locations_yaml = yaml.safe_load(file_handle.read())
+      return locations_yaml[tag]
+
+
   @classmethod
   def get_local_nodes_info(cls, keyname):
     """Reads the JSON-encoded metadata on disk and returns a list that indicates
@@ -587,8 +607,41 @@ class LocalState():
     os.remove(LocalState.get_secret_key_location(keyname))
 
 
+#  @classmethod
+#  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
+#    """Executes a command on this machine, retrying it if it initially fails.
+#
+#    Args:
+#      command: A str representing the command to execute.
+#      is_verbose: A bool that indicates if we should print the command we are
+#        executing to stdout.
+#      num_retries: The number of times we should try to execute the given
+#        command before aborting.
+#    Returns:
+#      The standard output and standard error produced when the command executes.
+#    Raises:
+#      ShellException: If, after five attempts, executing the named command
+#      failed.
+#    """
+#    tries_left = num_retries
+#    while tries_left:
+#      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+#      the_temp_file = tempfile.TemporaryFile()
+#      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+#        stderr=subprocess.STDOUT)
+#      result.wait()
+#      if result.returncode == 0:
+#        output = the_temp_file.read()
+#        the_temp_file.close()
+#        return output
+#      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+#        .format(command), is_verbose)
+#      tries_left -= 1
+#      time.sleep(1)
+#    raise ShellException('Could not execute command: {0}'.format(command))
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it if it initially fails.
+    """Executes a command on this machine, retrying it up to five times if it
+    initially fails.
 
     Args:
       command: A str representing the command to execute.
@@ -603,18 +656,109 @@ class LocalState():
       failed.
     """
     tries_left = num_retries
-    while tries_left:
-      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-      the_temp_file = tempfile.TemporaryFile()
-      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-        stderr=sys.stdout)
-      result.wait()
-      if result.returncode == 0:
-        output = the_temp_file.read()
-        the_temp_file.close()
-        return output
-      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-        .format(command), is_verbose)
-      tries_left -= 1
-      time.sleep(1)
-    raise ShellException('Could not execute command: {0}'.format(command))
+    try:
+      while tries_left:
+        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+        the_temp_file = tempfile.NamedTemporaryFile()
+        result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+          stderr=subprocess.STDOUT)
+        AppScaleLogger.verbose("       using temp file {0}"\
+                    .format(the_temp_file.name),is_verbose)
+        result.wait()
+        if result.returncode == 0:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          return output
+        tries_left -= 1
+        if tries_left:
+          the_temp_file.close()
+          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+            .format(command), is_verbose)
+        else:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command,output))
+        time.sleep(1)
+    except OSError as e:
+      raise ShellException('Error executing command: {0}:{1}'\
+                .format(command,str(e)))
+
+
+  @classmethod
+  def require_ssh_commands(cls, needs_expect, is_verbose):
+    """Checks to make sure the commands needed to set up passwordless SSH
+    access are installed on this machine.
+
+    Args:
+      needs_expect: A bool that indicates if we should also check for the
+        'expect' command.
+      is_verbose: A bool that indicates if we should print how we check for
+        each command to stdout.
+    Raises:
+      BadConfigurationException: If any of the required commands aren't present
+        on this machine.
+    """
+    required_commands = ['ssh-keygen', 'ssh-copy-id']
+    if needs_expect:
+      required_commands.append('expect')
+
+    for command in required_commands:
+      try:
+        cls.shell("hash {0}".format(command), is_verbose)
+      except ShellException:
+        raise BadConfigurationException("Couldn't find {0} in your PATH."
+          .format(command))
+
+
+  @classmethod
+  def generate_rsa_key(cls, keyname, is_verbose):
+    """Generates a new RSA public and private keypair, and saves it to the
+    local filesystem.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      is_verbose: A bool that indicates if we should print the ssh-keygen
+        command to stdout.
+    """
+    private_key = cls.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
+
+    if os.path.exists(public_key):
+      os.remove(public_key)
+
+    if os.path.exists(private_key):
+      os.remove(private_key)
+
+    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
+    os.chmod(public_key, 0600)
+    os.chmod(private_key, 0600)
+    shutil.copy(private_key, private_key + ".key")
+    return public_key, private_key
+
+
+  @classmethod
+  def extract_app_to_dir(cls, tar_location, is_verbose):
+    """Extracts the given tar.gz file to a randomly generated location and
+    returns that location.
+
+    Args:
+      tar_location: The location on the local filesystem where the tar.gz file
+        to extract can be found.
+      is_verbose: A bool that indicates if we should print the tar command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the tar.gz file was extracted
+        to.
+    """
+    extracted_location = "/tmp/appscale-app-{0}".format(str(uuid.uuid4()) \
+      .replace('-', '')[:8])
+
+    os.mkdir(extracted_location)
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+      is_verbose)
+
+    return extracted_location
