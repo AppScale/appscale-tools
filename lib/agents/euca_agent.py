@@ -117,3 +117,25 @@ class EucalyptusAgent(EC2Agent):
         cidr_ip='0.0.0.0/0')
 
     return True
+
+
+  def does_image_exist(self, parameters):
+    """
+    Queries Eucalyptus to see if the specified image exists.
+
+    Args:
+      parameters A dict that contains the machine ID to check for existence.
+    Returns:
+      True if the machine ID exists, False otherwise.
+    """
+    # note that we can't use does_image_exist in EC2Agent. There, if the image
+    # doesn't exist, it throws an EC2ResponseError, but in Eucalyptus, it
+    # doesn't (and returns None instead).
+    conn = self.open_connection(parameters)
+    image_id = parameters[self.PARAM_IMAGE_ID]
+    if conn.get_image(image_id):
+      AppScaleLogger.log('Machine image {0} does exist'.format(image_id))
+      return True
+    else:
+      AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
+      return False
