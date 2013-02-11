@@ -325,6 +325,13 @@ class TestRemoteHelper(unittest.TestCase):
       'locations-bookey.[yaml|json]'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+
+    # and mock out copying the secret file
+    subprocess.should_receive('Popen').with_args(re.compile(
+      'bookey.secret'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
 
