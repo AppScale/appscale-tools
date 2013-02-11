@@ -607,38 +607,6 @@ class LocalState():
     os.remove(LocalState.get_secret_key_location(keyname))
 
 
-#  @classmethod
-#  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-#    """Executes a command on this machine, retrying it if it initially fails.
-#
-#    Args:
-#      command: A str representing the command to execute.
-#      is_verbose: A bool that indicates if we should print the command we are
-#        executing to stdout.
-#      num_retries: The number of times we should try to execute the given
-#        command before aborting.
-#    Returns:
-#      The standard output and standard error produced when the command executes.
-#    Raises:
-#      ShellException: If, after five attempts, executing the named command
-#      failed.
-#    """
-#    tries_left = num_retries
-#    while tries_left:
-#      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-#      the_temp_file = tempfile.TemporaryFile()
-#      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-#        stderr=subprocess.STDOUT)
-#      result.wait()
-#      if result.returncode == 0:
-#        output = the_temp_file.read()
-#        the_temp_file.close()
-#        return output
-#      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-#        .format(command), is_verbose)
-#      tries_left -= 1
-#      time.sleep(1)
-#    raise ShellException('Could not execute command: {0}'.format(command))
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
