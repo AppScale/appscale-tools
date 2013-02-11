@@ -692,3 +692,27 @@ class LocalState():
     os.chmod(private_key, 0600)
     shutil.copy(private_key, private_key + ".key")
     return public_key, private_key
+
+
+  @classmethod
+  def extract_app_to_dir(cls, tar_location, is_verbose):
+    """Extracts the given tar.gz file to a randomly generated location and
+    returns that location.
+
+    Args:
+      tar_location: The location on the local filesystem where the tar.gz file
+        to extract can be found.
+      is_verbose: A bool that indicates if we should print the tar command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the tar.gz file was extracted
+        to.
+    """
+    extracted_location = "/tmp/appscale-app-{0}".format(str(uuid.uuid4()) \
+      .replace('-', '')[:8])
+
+    os.mkdir(extracted_location)
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+      is_verbose)
+
+    return extracted_location
