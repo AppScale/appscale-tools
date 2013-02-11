@@ -54,7 +54,7 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
-      .and_return()
+      .and_return('anything')
 
     flexmock(boto)
     boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
