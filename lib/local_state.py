@@ -73,12 +73,12 @@ class LocalState():
 
   @classmethod
   def ensure_appscale_isnt_running(cls, keyname, force):
-    """Checks the locations.yaml file to see if AppScale is running, and
+    """Checks the secret key file to see if AppScale is running, and
     aborts if it is.
 
     Args:
       keyname: The keypair name that is used to identify AppScale deployments.
-      force: A bool that is used to run AppScale even if the locations file
+      force: A bool that is used to run AppScale even if the secret key file
         is present.
     Raises:
       BadConfigurationException: If AppScale is already running.
@@ -86,7 +86,7 @@ class LocalState():
     if force:
       return
 
-    if os.path.exists(cls.get_locations_yaml_location(keyname)):
+    if os.path.exists(cls.get_secret_key_location(keyname)):
       raise BadConfigurationException("AppScale is already running. Terminate" +
         " it or use the --force flag to run anyways.")
 
