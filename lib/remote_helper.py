@@ -506,6 +506,10 @@ class RemoteHelper():
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
       '/root/.appscale/locations-{0}.json'.format(keyname), is_verbose)
 
+    # and copy the secret file if the tools on that box wants to use it
+    cls.scp(host, keyname, LocalState.get_secret_key_location(keyname),
+      '/root/.appscale/', is_verbose)
+
   
   @classmethod
   def create_user_accounts(cls, email, password, uaserver_host, keyname):
