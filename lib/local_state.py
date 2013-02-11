@@ -607,6 +607,7 @@ class LocalState():
     os.remove(LocalState.get_secret_key_location(keyname))
 
 
+  @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.

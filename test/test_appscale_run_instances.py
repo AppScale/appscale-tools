@@ -235,10 +235,16 @@ class TestAppScaleRunInstances(unittest.TestCase):
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
+    self.success.should_receive('wait').and_return(0)
+
+
     # same for the secret key
     subprocess.should_receive('Popen').with_args(re.compile(
       '{0}.secret'.format(self.keyname)),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+
+    self.success.should_receive('wait').and_return(0)
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed

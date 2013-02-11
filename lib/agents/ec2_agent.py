@@ -102,12 +102,8 @@ class EC2Agent(BaseAgent):
     group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
-        group_exists = True
-        break
-
-    if group_exists:
-      self.handle_failure("Security group already exists - please use a " + \
-        "different group name")
+        self.handle_failure("Security group already exists - please use a " + \
+          "different group name")
 
     AppScaleLogger.log("Creating key pair: {0}".format(keyname))
     key_pair = conn.create_key_pair(keyname)
@@ -145,6 +141,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
+      'IS_VERBOSE' : args['verbose']
     }
 
     for credential in self.REQUIRED_CREDENTIALS:
