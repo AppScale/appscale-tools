@@ -253,26 +253,32 @@ class LocalState():
     pkey.assign_rsa(key)
 
     cur_time = M2Crypto.ASN1.ASN1_UTCTIME()
-    cur_time.set_time(int(time.time()) - 60*60*24)
+    cur_time.set_time(int(time.time()))
     expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
 
-    # Expire certs in 10 years.
-    expire_time.set_time(int(time.time()) + 60 * 60 * 24 * 365 * 10)
+    # Expire certs in 1 hour.
+    expire_time.set_time(int(time.time()) + 3600)
 
     # creating a certificate
     cert = M2Crypto.X509.X509()
     cert.set_pubkey(pkey)
     cs_name = M2Crypto.X509.X509_Name()
     cs_name.C = "US"
+    cs_name.ST = "Foo"
+    cs_name.L = "Bar"
+    cs_name.O = "AppScale"
+    cs_name.OU = "User"
     cs_name.CN = "appscale.com"
-    cs_name.Email = "support@appscale.com"
+    cs_name.emailAddress = "support@appscale.com"
+    cert.set_version(2)
+    cert.set_serial_number(int(time.time()))
     cert.set_subject(cs_name)
     cert.set_issuer_name(cs_name)
     cert.set_not_before(cur_time)
     cert.set_not_after(expire_time)
 
     # self signing a certificate
-    cert.sign(pkey, md="sha256")
+    cert.sign(pkey, md="sha1")
 
     key.save_key(LocalState.get_private_key_location(keyname), None)
     cert.save_pem(LocalState.get_certificate_location(keyname))
