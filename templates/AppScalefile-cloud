@@ -27,9 +27,9 @@ keyname : 'appscalekey'
 group : 'appscalegroup'
 
 # Whether or not increased output should be presented to standard output.
-# We recommend setting this to True in all cases, as it produces much
-# more useful logging information.
-verbose : True
+# We recommend setting this to True if you are encountering issues with
+# AppScale and wish to see precisely where they are coming from.
+#verbose : True
 
 # The minimum number of machines that should be used for your AppScale
 # deployment.

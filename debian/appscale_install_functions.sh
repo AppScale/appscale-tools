@@ -115,8 +115,11 @@ EOF
 installpylibs()
 {
   easy_install termcolor
-  easy_install paramiko
+  easy_install M2Crypto
+  easy_install SOAPpy
+  easy_install pyyaml
   easy_install boto==2.6
+  easy_install argparse
 }
 
 installgem()
@@ -156,6 +159,11 @@ installappscaletools()
     # add to path
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/appscale-tools.sh <<EOF
+export TOOLS_PATH=/usr/local/appscale-tools
+export PATH=\${PATH}:\${TOOLS_PATH}/bin
+EOF
+
+    cat >> ~/.bashrc <<EOF
 export TOOLS_PATH=/usr/local/appscale-tools
 export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF
