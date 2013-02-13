@@ -311,7 +311,7 @@ class AppScaleTools():
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
     uaserver_host = acc.get_uaserver_host(options.verbose)
-    RemoteHelper.sleep_until_port_is_open(public_ip, UserAppClient.PORT,
+    RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
 
     # Update our metadata again so that users can SSH into other boxes that
@@ -442,7 +442,8 @@ class AppScaleTools():
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
-    serving_host, serving_port = userappclient.get_serving_info(app_id)
+    serving_host, serving_port = userappclient.get_serving_info(app_id,
+      options.keyname)
     RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
       options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
