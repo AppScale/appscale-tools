@@ -15,6 +15,7 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from local_state import LocalState
 
 
 class UserAppClient():
@@ -223,7 +224,7 @@ class UserAppClient():
       raise AppScaleException(result)
 
 
-  def get_serving_info(self, app_id):
+  def get_serving_info(self, app_id, keyname):
     """Finds out what host and port are used to host the named application.
 
     Args:
@@ -244,6 +245,6 @@ class UserAppClient():
 
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
-    host = re.search(".*\shosts:([\w|\.|\d\-]+)\s", app_data).group(1)
-    port = int(re.search(".*\sports: (\d+)\s", app_data).group(1))
+    host = LocalState.get_login_host(keyname)
+    port = int(re.search(".*\sports: (\d+)[\s|:]", app_data).group(1))
     return host, port
