@@ -58,11 +58,12 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -236,11 +237,16 @@ class TestAppScaleRunInstances(unittest.TestCase):
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
+    self.success.should_receive('wait').and_return(0)
+
+
     # same for the secret key
     subprocess.should_receive('Popen').with_args(re.compile(
       '{0}.secret'.format(self.keyname)),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+
+    self.success.should_receive('wait').and_return(0)
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed

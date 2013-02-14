@@ -615,7 +615,8 @@ class LocalState():
 
   @classmethod
   def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it if it initially fails.
+    """Executes a command on this machine, retrying it up to five times if it
+    initially fails.
 
     Args:
       command: A str representing the command to execute.
@@ -630,21 +631,35 @@ class LocalState():
       failed.
     """
     tries_left = num_retries
-    while tries_left:
-      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-      the_temp_file = tempfile.TemporaryFile()
-      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-        stderr=subprocess.STDOUT)
-      result.wait()
-      if result.returncode == 0:
-        output = the_temp_file.read()
-        the_temp_file.close()
-        return output
-      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-        .format(command), is_verbose)
-      tries_left -= 1
-      time.sleep(1)
-    raise ShellException('Could not execute command: {0}'.format(command))
+    try:
+      while tries_left:
+        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+        the_temp_file = tempfile.NamedTemporaryFile()
+        result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+          stderr=subprocess.STDOUT)
+        AppScaleLogger.verbose("       using temp file {0}"\
+                    .format(the_temp_file.name),is_verbose)
+        result.wait()
+        if result.returncode == 0:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          return output
+        tries_left -= 1
+        if tries_left:
+          the_temp_file.close()
+          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+            .format(command), is_verbose)
+        else:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command,output))
+        time.sleep(1)
+    except OSError as e:
+      raise ShellException('Error executing command: {0}:{1}'\
+                .format(command,str(e)))
 
 
   @classmethod

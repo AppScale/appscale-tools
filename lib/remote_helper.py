@@ -221,7 +221,8 @@ class RemoteHelper():
 
 
   @classmethod
-  def ssh(cls, host, keyname, command, is_verbose, user='root'):
+  def ssh(cls, host, keyname, command, is_verbose, user='root', \
+            num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
     Args:
@@ -237,11 +238,12 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-      cls.SSH_OPTIONS, user, host, command), is_verbose)
+      cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
 
 
   @classmethod
-  def scp(cls, host, keyname, source, dest, is_verbose, user='root'):
+  def scp(cls, host, keyname, source, dest, is_verbose, user='root', 
+            num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
@@ -259,8 +261,8 @@ class RemoteHelper():
         representing the standard error of the secure copy.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return LocalState.shell("scp -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
-      cls.SSH_OPTIONS, source, user, host, dest), is_verbose)
+    return LocalState.shell("scp -r -i {0} {1} {2} {3}@{4}:{5}".format(ssh_key,
+      cls.SSH_OPTIONS, source, user, host, dest), is_verbose, num_retries)
 
 
   @classmethod
@@ -285,6 +287,9 @@ class RemoteHelper():
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return LocalState.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
+
+
+      
 
 
   @classmethod
