@@ -590,6 +590,7 @@ class RemoteHelper():
     agent = InfrastructureAgentFactory.create_agent(
       LocalState.get_infrastructure(keyname))
     params = agent.get_params_from_yaml(keyname)
+    params['IS_VERBOSE'] = is_verbose
     _, _, instance_ids = agent.describe_instances(params)
 
     # terminate all the machines

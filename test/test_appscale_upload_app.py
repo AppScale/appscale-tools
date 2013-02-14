@@ -790,7 +790,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_data = """
     num_hosts:1
     num_ports:1
-    hosts:public-1
+    hosts:public1
     ports: 8080
     """
 
@@ -839,7 +839,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # and slap in a mock that says the app comes up after waiting for it
     # three times
     fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public-1',
+    fake_socket.should_receive('connect').with_args(('public1',
       8080)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
     flexmock(socket)
@@ -932,7 +932,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_data = """
     num_hosts:1
     num_ports:1
-    hosts:public-1
+    hosts:public1
     ports: 8080
     """
 
@@ -981,7 +981,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # and slap in a mock that says the app comes up after waiting for it
     # three times
     fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public-1',
+    fake_socket.should_receive('connect').with_args(('public1',
       8080)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
     flexmock(socket)
