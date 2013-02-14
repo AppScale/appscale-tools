@@ -264,7 +264,9 @@ class TestRemoteHelper(unittest.TestCase):
     fake_cert.should_receive('set_issuer_name')
     fake_cert.should_receive('set_not_before')
     fake_cert.should_receive('set_not_after')
-    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha256")
+    fake_cert.should_receive('set_version')
+    fake_cert.should_receive('set_serial_number')
+    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha1")
     fake_cert.should_receive('save_pem').with_args(
       LocalState.get_certificate_location('bookey'))
     M2Crypto.X509.should_receive('X509').and_return(fake_cert)
