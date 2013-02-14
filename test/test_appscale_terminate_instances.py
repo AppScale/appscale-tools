@@ -55,9 +55,10 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     self.fake_temp_file = flexmock(name='fake_temp_file')
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
 
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -222,17 +223,28 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     # let's say that three instances are running, and that two of them are in
     # our deployment
-    fake_one = flexmock(name='fake_one', key_name=self.keyname, state='running',
+    fake_one_running = flexmock(name='fake_one', key_name=self.keyname, state='running',
       id='i-ONE', public_dns_name='public1', private_dns_name='private1')
-    fake_two = flexmock(name='fake_two', key_name=self.keyname, state='running',
+    fake_two_running = flexmock(name='fake_two', key_name=self.keyname, state='running',
       id='i-TWO', public_dns_name='public2', private_dns_name='private2')
-    fake_three = flexmock(name='fake_three', key_name='abcdefg',
+    fake_three_running = flexmock(name='fake_three', key_name='abcdefg',
       state='running', id='i-THREE', public_dns_name='public3',
       private_dns_name='private3')
+    fake_reservation_running = flexmock(name='fake_reservation', instances=[fake_one_running,
+      fake_two_running, fake_three_running])
 
-    fake_reservation = flexmock(name='fake_reservation', instances=[fake_one,
-      fake_two, fake_three])
-    fake_ec2.should_receive('get_all_instances').and_return(fake_reservation)
+    fake_one_terminated = flexmock(name='fake_one', key_name=self.keyname, state='terminated',
+      id='i-ONE', public_dns_name='public1', private_dns_name='private1')
+    fake_two_terminated = flexmock(name='fake_two', key_name=self.keyname, state='terminated',
+      id='i-TWO', public_dns_name='public2', private_dns_name='private2')
+    fake_three_terminated = flexmock(name='fake_three', key_name='abcdefg',
+      state='terminated', id='i-THREE', public_dns_name='public3',
+      private_dns_name='private3')
+    fake_reservation_terminated = flexmock(name='fake_reservation', instances=[fake_one_terminated,
+      fake_two_terminated, fake_three_terminated])
+
+    fake_ec2.should_receive('get_all_instances').and_return(fake_reservation_running) \
+      .and_return(fake_reservation_terminated)
 
     flexmock(boto)
     boto.should_receive('connect_ec2').with_args('baz', 'baz') \
@@ -240,7 +252,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     # and mock out the call to kill the instances
     fake_ec2.should_receive('terminate_instances').with_args(['i-ONE',
-      'i-TWO']).and_return([fake_one, fake_two])
+      'i-TWO']).and_return([fake_one_terminated, fake_two_terminated])
 
     # mock out the call to delete the keypair
     fake_ec2.should_receive('delete_key_pair').and_return()
