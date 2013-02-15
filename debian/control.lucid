@@ -10,18 +10,11 @@ Package: appscale-tools
 Architecture: any
 Depends:
 # tools
- openssh-client,
- ruby1.8, libopenssl-ruby, curl, unzip
- ruby, rdoc1.8, libzlib-ruby, libzip-ruby1.8,
- libopenssl-ruby1.8, libruby1.8, ruby1.8-dev
-# euca2ools
- euca2ools, cloud-utils
-# ec2 tools
- openjdk-6-jdk, wget
+ openssh-client, curl,
 # Unknown
  make
-# pycrypto, used by paramiko
- python-dev
+# m2crypto
+ python-dev, swig
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
