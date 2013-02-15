@@ -13,8 +13,8 @@ Depends:
  openssh-client, curl,
 # Unknown
  make
-# pycrypto
- python-dev
+# m2crypto
+ python-dev, swig
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
