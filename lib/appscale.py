@@ -228,10 +228,7 @@ Available commands:
 
     # Finally, call AppScaleTools.run_instances
     options = ParseArgs(command, "appscale-run-instances").args
-    try:
-      AppScaleTools.run_instances(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.run_instances(options)
 
 
   def valid_ssh_key(self, config):
@@ -410,10 +407,7 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    try:
-      AppScaleTools.upload_app(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.upload_app(options)
 
 
   def tail(self, node, file_regex):
@@ -465,7 +459,8 @@ Available commands:
 
     # construct the ssh command to exec with that IP address
     tail = "tail -f /var/log/appscale/" + str(file_regex)
-    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip, tail]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",\
+        self.get_key_location(keyname), "root@" + ip, tail]
 
     # exec the ssh command
     subprocess.call(command)
@@ -496,10 +491,7 @@ Available commands:
 
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args
-    try:
-      AppScaleTools.gather_logs(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.gather_logs(options)
 
 
   def destroy(self):
@@ -526,7 +518,4 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
-    try:
-      AppScaleTools.terminate_instances(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.terminate_instances(options)

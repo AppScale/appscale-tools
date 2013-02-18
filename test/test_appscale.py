@@ -440,7 +440,9 @@ class TestAppScale(unittest.TestCase):
       .and_return(flexmock(read=lambda: nodes_contents)))
 
     flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["ssh", "-o", "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'), "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
+    subprocess.should_receive('call').with_args(["ssh", "-o",\
+      "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'),\
+      "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
     appscale.tail(1, "c*")
 
 
@@ -464,7 +466,7 @@ class TestAppScale(unittest.TestCase):
     # mock out the actual call to appscale-gather-logs
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('run_instances')
-    appscale.logs('/baz')
+    self.assertRaises(BadConfigurationException, appscale.logs, '/baz')
 
 
   def testGetLogsWithKeyname(self):
@@ -480,7 +482,7 @@ class TestAppScale(unittest.TestCase):
     # mock out the actual call to appscale-gather-logs
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('run_instances')
-    appscale.logs('/baz')
+    self.assertRaises(BadConfigurationException, appscale.logs, '/baz')
 
 
   def testDestroyWithNoAppScalefile(self):
