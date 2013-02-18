@@ -71,7 +71,7 @@ class AppScaleLogger():
 
 
   @classmethod
-  def remote_log_tools_state(cls, options, state):
+  def remote_log_tools_state(cls, options, state, version):
     """Converts the given debugging information to a message that we can
     remotely log, and then logs it.
 
@@ -80,6 +80,8 @@ class AppScaleLogger():
         tool.
       state: A str that indicates if the given AppScale deployment is starting,
         has started successfully, or has failed to start.
+      version: A str that indicates which version of AppScale we are deploying
+        over.
     Returns:
       A dict containing the debugging information that was logged.
     """
@@ -87,7 +89,7 @@ class AppScaleLogger():
     params = vars(options)
 
     # next, turn it into a string that we can send over the wire
-    payload = "?boo=baz"
+    payload = "?state={0}&version={1}".format(state, version)
     for key, value in enumerate(params):
       payload += "&{0}={1}".format(key, value)
 

@@ -286,7 +286,7 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-    AppScaleLogger.remote_log_tools_state(options, "started")
+    AppScaleLogger.remote_log_tools_state(options, "started", APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
@@ -352,7 +352,7 @@ class AppScaleTools():
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
-    AppScaleLogger.remote_log_tools_state(options, "finished")
+    AppScaleLogger.remote_log_tools_state(options, "finished", APPSCALE_VERSION)
 
 
   @classmethod

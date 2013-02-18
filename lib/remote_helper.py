@@ -112,7 +112,8 @@ class RemoteHelper():
       options.verbose)
     AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
 
-    AppScaleLogger.remote_log_tools_state(options, "started head node")
+    AppScaleLogger.remote_log_tools_state(options, "started head node",
+      APPSCALE_VERSION)
     time.sleep(10)  # gives machines in cloud extra time to boot up
 
     cls.copy_deployment_credentials(public_ip, options)

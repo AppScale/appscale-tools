@@ -90,7 +90,8 @@ class TestAppScaleLogger(unittest.TestCase):
     flexmock(httplib).should_receive('HTTPSConnection') \
       .and_return(fake_connection)
 
-    actual = AppScaleLogger.remote_log_tools_state(self.options, "started")
+    actual = AppScaleLogger.remote_log_tools_state(self.options, "started",
+      "X.Y.Z")
     self.assertEquals(self.expected, actual)
 
 
@@ -104,5 +105,6 @@ class TestAppScaleLogger(unittest.TestCase):
     flexmock(httplib).should_receive('HTTPSConnection') \
       .and_return(fake_connection)
 
-    actual = AppScaleLogger.remote_log_tools_state(self.options, "started")
+    actual = AppScaleLogger.remote_log_tools_state(self.options, "started",
+      "X.Y.Z")
     self.assertEquals(self.expected, actual)
