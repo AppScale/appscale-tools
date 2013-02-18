@@ -55,7 +55,7 @@ elif command == "ssh":
 
   try:
     appscale.ssh(index)
-  except (TypeError, Exception) as e:
+  except Exception as e:
     cprint(e, 'red')
     sys.exit(1)
   except KeyboardInterrupt:
@@ -91,12 +91,12 @@ elif command == "tail":
 
   try:
     appscale.tail(index, regex)
-  except (TypeError, Exception) as e:
-    cprint(e, 'red')
-    sys.exit(1)
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
+  except Exception as e:
+    cprint(e, 'red')
+    sys.exit(1)
 elif command == "logs":
   if len(sys.argv) < 3:
     cprint("Usage: appscale logs <location to copy logs to>", 'red')

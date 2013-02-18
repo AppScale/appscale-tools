@@ -191,7 +191,7 @@ Available commands:
     Raises:
       AppScalefileException: If there is no AppScalefile in the current
       directory.
-      BadConfigurationException: If there is a problem with the configureation.
+      BadConfigurationException: If there is a problem with the configuration.
     """
     contents = self.read_appscalefile()
 
