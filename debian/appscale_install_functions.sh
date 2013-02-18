@@ -68,87 +68,14 @@ installsetuptools()
    set -e
 }
 
-installec2ools()
-{
-  echo "Installing EC2 tools if needed."
-  set +e
-  hash ec2-describe-instances > /dev/null 2>&1
-  if [ $? -ne 0 ] && [ ! -f ${DESTDIR}/usr/local/bin/ec2-run-instances ]; then
-    set -e
-    echo "EC2 tools not found - installing."
-    mkdir -p ${APPSCALE_TOOLS_HOME}/downloads
-    cd ${APPSCALE_TOOLS_HOME}/downloads
-
-    curl -o ec2-api-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip
-    curl -o ec2-ami-tools.zip http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip
-
-    unzip ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*.zip
-    unzip ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*.zip
-    rm -rf ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*.zip
-    rm -rf ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*.zip
-
-    mkdir -p ${DESTDIR}/usr/local/bin
-    mkdir -p  ${DESTDIR}/usr/local/ec2-api-tools
-    mkdir -p  ${DESTDIR}/usr/local/ec2-ami-tools
-
-    rm -fr ${DESTDIR}/usr/local/ec2-ami-tools/*
-    rm -fr ${DESTDIR}/usr/local/ec2-api-tools/*
-
-    mv -f ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*/* ${DESTDIR}/usr/local/ec2-ami-tools
-    mv -f ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*/* ${DESTDIR}/usr/local/ec2-api-tools
-
-    rm -fr  ${APPSCALE_TOOLS_HOME}/downloads/ec2-ami-tools*/
-    rm -fr  ${APPSCALE_TOOLS_HOME}/downloads/ec2-api-tools*/
-
-    mkdir -p ${DESTDIR}/etc/profile.d
-    cat > ${DESTDIR}/etc/profile.d/ec2.sh <<EOF
-export PATH=/usr/local/ec2-api-tools/bin:\$PATH
-export PATH=/usr/local/ec2-ami-tools/bin:\$PATH
-export EC2_HOME=/usr/local/ec2-api-tools
-EOF
-    cp /usr/local/ec2-api-tools/bin/* ${DESTDIR}/usr/local/bin 
-    cp /usr/local/ec2-ami-tools/bin/* ${DESTDIR}/usr/local/bin 
- fi
- set -e
-}
-
 installpylibs()
 {
   easy_install termcolor
-  easy_install paramiko
+  easy_install M2Crypto
+  easy_install SOAPpy
+  easy_install pyyaml
   easy_install boto==2.6
-}
-
-installgem()
-{
-  echo "Installing gem if needed."
-  set +e
-  hash gem > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    set -e
-    echo "gem not found - installing."
-    cd
-    wget http://appscale.cs.ucsb.edu/appscale_files/rubygems-1.3.7.tgz
-    tar zxvf rubygems-1.3.7.tgz
-    cd rubygems-1.3.7
-    ruby setup.rb
-    cd
-    ln -sf /usr/bin/gem1.8 /usr/bin/gem
-    rm -rf rubygems-1.3.7.tgz
-    rm -rf rubygems-1.3.7
-  fi
-  set -e
-}
-
-installrubylibs()
-{
-  echo "Installing specific Ruby gems."
-  GEMDEST=${DESTDIR}/var/lib/gems/1.8
-  GEMOPT="--no-rdoc --no-ri"
-  gem install json flexmock ${GEMOPT}
-
-  # Rake 10.0 depecates rake/rdoctask - upgrade later
-  gem install -v=0.9.2.2 rake ${GEMOPT}
+  easy_install argparse
 }
 
 installappscaletools()
@@ -156,6 +83,11 @@ installappscaletools()
     # add to path
     mkdir -p ${DESTDIR}/etc/profile.d
     cat > ${DESTDIR}/etc/profile.d/appscale-tools.sh <<EOF
+export TOOLS_PATH=/usr/local/appscale-tools
+export PATH=\${PATH}:\${TOOLS_PATH}/bin
+EOF
+
+    cat >> ~/.bashrc <<EOF
 export TOOLS_PATH=/usr/local/appscale-tools
 export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF

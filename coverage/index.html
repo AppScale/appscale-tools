@@ -1,702 +1,225 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'>
-  <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-    <title>Appscale Tools C0 Coverage Information - RCov</title>
-    <link href="screen.css" media="all" rel="stylesheet" type="text/css" />
-    <link href="print.css" media="print" rel="stylesheet" type="text/css" />
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>Coverage report</title>
+    <link rel='stylesheet' href='style.css' type='text/css'>
     
-    <script type="text/javascript" src="jquery-1.3.2.min.js"></script>
-    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
-    <script type="text/javascript" src="rcov.js"></script>
-  </head>
-  <body>
-    <h1>Appscale Tools C0 Coverage Information - RCov</h1>
-    
+    <script type='text/javascript' src='jquery-1.4.3.min.js'></script>
+    <script type='text/javascript' src='jquery.tablesorter.min.js'></script>
+    <script type='text/javascript' src='jquery.hotkeys.js'></script>
+    <script type='text/javascript' src='coverage_html.js'></script>
+    <script type='text/javascript' charset='utf-8'>
+        jQuery(document).ready(coverage.index_ready);
+    </script>
+</head>
+<body id='indexfile'>
 
-    <noscript><style type="text/css">.if_js { display:none; }</style></noscript>
-
-    <div class="filters if_js">
-      <fieldset>
-        <label>File Filter:</label>
-        <select id="file_filter" class="filter">
-          <option value="all_files">Show All</option>
-          <option value="">/</option><option value=".rvm">.rvm/</option><option value="cgb">cgb/</option><option value="flexmock">flexmock/</option><option value="flexmock-0.9.0">flexmock-0.9.0/</option><option value="gems">gems/</option><option value="home">home/</option><option value="json">json/</option><option value="json-1.7.0">json-1.7.0/</option><option value="lib">lib/</option><option value="rcov">rcov/</option><option value="rcov-1.0.0">rcov-1.0.0/</option><option value="ruby-1.8.7-head">ruby-1.8.7-head/</option>
-        </select>
-      </fieldset>
-      <fieldset>
-        <label>Code Coverage Threshold:</label>
-        <select id="coverage_filter" class="filter">
-          <option value="all_coverage">Show All</option>
-          <option value="_10">&lt; 10% Coverage</option><option value="_20">&lt; 20% Coverage</option><option value="_30">&lt; 30% Coverage</option><option value="_40">&lt; 40% Coverage</option><option value="_50">&lt; 50% Coverage</option><option value="_60">&lt; 60% Coverage</option><option value="_70">&lt; 70% Coverage</option><option value="_80">&lt; 80% Coverage</option><option value="_90">&lt; 90% Coverage</option><option value="_100">&lt; 100% Coverage</option>
-          <option value="_110">= 100% Coverage</option>
-        </select>
-      </fieldset>
+<div id='header'>
+    <div class='content'>
+        <h1>Coverage report:
+            <span class='pc_cov'>87%</span>
+        </h1>
+        <img id='keyboard_icon' src='keybd_closed.png'>
     </div>
+</div>
 
-    <div class="report_table_wrapper">
-      <table class='report' id='report_table'>
+<div class='help_panel'>
+    <img id='panel_icon' src='keybd_open.png'>
+    <p class='legend'>Hot-keys on this page</p>
+    <div>
+    <p class='keyhelp'>
+        <span class='key'>n</span>
+        <span class='key'>s</span>
+        <span class='key'>m</span>
+        <span class='key'>x</span>
+        
+        <span class='key'>c</span> &nbsp; change column sorting
+    </p>
+    </div>
+</div>
+
+<div id='index'>
+    <table class='index'>
         <thead>
-          <tr>
-            <th class="left_align">Name</th>
-            <th class="right_align">Total Lines</th>
-            <th class="right_align">Lines of Code</th>
-            <th class="left_align">Total Coverage</th>
-            <th class="left_align">Code Coverage</th>
-          </tr>
+            
+            <tr class='tablehead' title='Click to sort'>
+                <th class='name left headerSortDown shortkey_n'>Module</th>
+                <th class='shortkey_s'>statements</th>
+                <th class='shortkey_m'>missing</th>
+                <th class='shortkey_x'>excluded</th>
+                
+                <th class='right shortkey_c'>coverage</th>
+            </tr>
         </thead>
+        
         <tfoot>
-          <tr>
-            <td class="left_align">TOTAL</td>
-            <td class='right_align'><tt>7502</tt></td>
-            <td class='right_align'><tt>4868</tt></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class=''>59.18%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:59px"></div>
-            <div class="uncovered" style="width:41px"></div>
-          </div></td>
-            <td class="left_align"><div class="percent_graph_legend"><tt class='coverage_total'>46.67%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:47px"></div>
-            <div class="uncovered" style="width:53px"></div>
-          </div></td>
-          </tr>
+            <tr class='total'>
+                <td class='name left'>Total</td>
+                <td>1949</td>
+                <td>248</td>
+                <td>0</td>
+                
+                <td class='right'>87%</td>
+            </tr>
         </tfoot>
         <tbody>
-          
-            <tr class="all_files all_coverage _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-argument_matchers_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/argument_matchers.rb</a></td>
-              <td class='right_align'><tt>85</tt></td>
-              <td class='right_align'><tt>56</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>57.65%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:58px"></div>
-            <div class="uncovered" style="width:42px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>39.29%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:39px"></div>
-            <div class="uncovered" style="width:61px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_agents___init__.html'>lib/agents/__init__</a></td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class='right'>100%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-argument_types_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/argument_types.rb</a></td>
-              <td class='right_align'><tt>54</tt></td>
-              <td class='right_align'><tt>21</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>79.63%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:80px"></div>
-            <div class="uncovered" style="width:20px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>47.62%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:48px"></div>
-            <div class="uncovered" style="width:52px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_agents_base_agent.html'>lib/agents/base_agent</a></td>
+                <td>31</td>
+                <td>9</td>
+                <td>0</td>
+                
+                <td class='right'>71%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _110  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-base_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/base.rb</a></td>
-              <td class='right_align'><tt>24</tt></td>
-              <td class='right_align'><tt>12</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_agents_ec2_agent.html'>lib/agents/ec2_agent</a></td>
+                <td>193</td>
+                <td>36</td>
+                <td>0</td>
+                
+                <td class='right'>81%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _110  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-composite_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/composite.rb</a></td>
-              <td class='right_align'><tt>10</tt></td>
-              <td class='right_align'><tt>3</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_agents_euca_agent.html'>lib/agents/euca_agent</a></td>
+                <td>57</td>
+                <td>33</td>
+                <td>0</td>
+                
+                <td class='right'>42%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-core_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/core.rb</a></td>
-              <td class='right_align'><tt>218</tt></td>
-              <td class='right_align'><tt>102</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>81.65%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:82px"></div>
-            <div class="uncovered" style="width:18px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>60.78%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:61px"></div>
-            <div class="uncovered" style="width:39px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_agents_factory.html'>lib/agents/factory</a></td>
+                <td>11</td>
+                <td>1</td>
+                <td>0</td>
+                
+                <td class='right'>91%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-core_class_methods_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/core_class_methods.rb</a></td>
-              <td class='right_align'><tt>83</tt></td>
-              <td class='right_align'><tt>38</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.90%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:76px"></div>
-            <div class="uncovered" style="width:24px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>47.37%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:47px"></div>
-            <div class="uncovered" style="width:53px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_appcontroller_client.html'>lib/appcontroller_client</a></td>
+                <td>72</td>
+                <td>13</td>
+                <td>0</td>
+                
+                <td class='right'>82%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-default_framework_adapter_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/default_framework_adapter.rb</a></td>
-              <td class='right_align'><tt>31</tt></td>
-              <td class='right_align'><tt>17</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>80.65%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:81px"></div>
-            <div class="uncovered" style="width:19px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>64.71%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:65px"></div>
-            <div class="uncovered" style="width:35px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_appengine_helper.html'>lib/appengine_helper</a></td>
+                <td>48</td>
+                <td>2</td>
+                <td>0</td>
+                
+                <td class='right'>96%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-deprecated_methods_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/deprecated_methods.rb</a></td>
-              <td class='right_align'><tt>62</tt></td>
-              <td class='right_align'><tt>30</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>83.87%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:84px"></div>
-            <div class="uncovered" style="width:16px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>66.67%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:67px"></div>
-            <div class="uncovered" style="width:33px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_appscale.html'>lib/appscale</a></td>
+                <td>210</td>
+                <td>32</td>
+                <td>0</td>
+                
+                <td class='right'>85%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _110  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-errors_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/errors.rb</a></td>
-              <td class='right_align'><tt>23</tt></td>
-              <td class='right_align'><tt>7</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_appscale_logger.html'>lib/appscale_logger</a></td>
+                <td>25</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class='right'>100%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-expectation_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/expectation.rb</a></td>
-              <td class='right_align'><tt>476</tt></td>
-              <td class='right_align'><tt>226</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.57%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:79px"></div>
-            <div class="uncovered" style="width:21px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>55.31%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:55px"></div>
-            <div class="uncovered" style="width:45px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_appscale_tools.html'>lib/appscale_tools</a></td>
+                <td>195</td>
+                <td>20</td>
+                <td>0</td>
+                
+                <td class='right'>90%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-expectation_director_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/expectation_director.rb</a></td>
-              <td class='right_align'><tt>87</tt></td>
-              <td class='right_align'><tt>47</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>89.66%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:90px"></div>
-            <div class="uncovered" style="width:10px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>80.85%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:81px"></div>
-            <div class="uncovered" style="width:19px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_custom_exceptions.html'>lib/custom_exceptions</a></td>
+                <td>14</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class='right'>100%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-mock_container_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/mock_container.rb</a></td>
-              <td class='right_align'><tt>341</tt></td>
-              <td class='right_align'><tt>166</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>84.75%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:85px"></div>
-            <div class="uncovered" style="width:15px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>71.69%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:72px"></div>
-            <div class="uncovered" style="width:28px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_local_state.html'>lib/local_state</a></td>
+                <td>215</td>
+                <td>13</td>
+                <td>0</td>
+                
+                <td class='right'>94%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _30 _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-ordering_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/ordering.rb</a></td>
-              <td class='right_align'><tt>51</tt></td>
-              <td class='right_align'><tt>24</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>66.67%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:67px"></div>
-            <div class="uncovered" style="width:33px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>29.17%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:29px"></div>
-            <div class="uncovered" style="width:71px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_node_layout.html'>lib/node_layout</a></td>
+                <td>405</td>
+                <td>47</td>
+                <td>0</td>
+                
+                <td class='right'>88%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-partial_mock_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/partial_mock.rb</a></td>
-              <td class='right_align'><tt>302</tt></td>
-              <td class='right_align'><tt>175</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>94.04%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:94px"></div>
-            <div class="uncovered" style="width:6px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>89.71%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:90px"></div>
-            <div class="uncovered" style="width:10px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_parse_args.html'>lib/parse_args</a></td>
+                <td>167</td>
+                <td>15</td>
+                <td>0</td>
+                
+                <td class='right'>91%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-recorder_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/recorder.rb</a></td>
-              <td class='right_align'><tt>71</tt></td>
-              <td class='right_align'><tt>26</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>73.24%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:73px"></div>
-            <div class="uncovered" style="width:27px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>30.77%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:31px"></div>
-            <div class="uncovered" style="width:69px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_remote_helper.html'>lib/remote_helper</a></td>
+                <td>226</td>
+                <td>11</td>
+                <td>0</td>
+                
+                <td class='right'>95%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _110  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-test_unit_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/test_unit.rb</a></td>
-              <td class='right_align'><tt>32</tt></td>
-              <td class='right_align'><tt>14</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
+            
+            <tr class='file'>
+                <td class='name left'><a href='lib_user_app_client.html'>lib/user_app_client</a></td>
+                <td>78</td>
+                <td>16</td>
+                <td>0</td>
+                
+                <td class='right'>79%</td>
             </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-test_unit_integration_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/test_unit_integration.rb</a></td>
-              <td class='right_align'><tt>53</tt></td>
-              <td class='right_align'><tt>19</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>90.57%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:91px"></div>
-            <div class="uncovered" style="width:9px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.95%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:79px"></div>
-            <div class="uncovered" style="width:21px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-undefined_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/undefined.rb</a></td>
-              <td class='right_align'><tt>54</tt></td>
-              <td class='right_align'><tt>29</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>72.22%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:72px"></div>
-            <div class="uncovered" style="width:28px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>48.28%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:48px"></div>
-            <div class="uncovered" style="width:52px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems flexmock-0.9.0 lib flexmock even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-flexmock-0_9_0-lib-flexmock-validators_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/flexmock-0.9.0/lib/flexmock/validators.rb</a></td>
-              <td class='right_align'><tt>77</tt></td>
-              <td class='right_align'><tt>35</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>70.13%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:70px"></div>
-            <div class="uncovered" style="width:30px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>34.29%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:34px"></div>
-            <div class="uncovered" style="width:66px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems json-1.7.0 lib odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-json-1_7_0-lib-json_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/json-1.7.0/lib/json.rb</a></td>
-              <td class='right_align'><tt>62</tt></td>
-              <td class='right_align'><tt>9</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>93.55%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:94px"></div>
-            <div class="uncovered" style="width:6px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>55.56%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:56px"></div>
-            <div class="uncovered" style="width:44px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems json-1.7.0 lib json even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-json-1_7_0-lib-json-common_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/json-1.7.0/lib/json/common.rb</a></td>
-              <td class='right_align'><tt>471</tt></td>
-              <td class='right_align'><tt>270</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>73.25%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:73px"></div>
-            <div class="uncovered" style="width:27px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>53.70%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:54px"></div>
-            <div class="uncovered" style="width:46px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems json-1.7.0 lib json odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-json-1_7_0-lib-json-ext_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/json-1.7.0/lib/json/ext.rb</a></td>
-              <td class='right_align'><tt>21</tt></td>
-              <td class='right_align'><tt>17</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>76.19%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:76px"></div>
-            <div class="uncovered" style="width:24px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>70.59%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:71px"></div>
-            <div class="uncovered" style="width:29px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems json-1.7.0 lib json even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-json-1_7_0-lib-json-generic_object_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/json-1.7.0/lib/json/generic_object.rb</a></td>
-              <td class='right_align'><tt>39</tt></td>
-              <td class='right_align'><tt>31</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>51.28%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:51px"></div>
-            <div class="uncovered" style="width:49px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>38.71%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:39px"></div>
-            <div class="uncovered" style="width:61px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _110  home cgb .rvm gems ruby-1.8.7-head gems json-1.7.0 lib json odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-json-1_7_0-lib-json-version_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/json-1.7.0/lib/json/version.rb</a></td>
-              <td class='right_align'><tt>8</tt></td>
-              <td class='right_align'><tt>7</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _10 _20 _30 _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems rcov-1.0.0 lib rcov even">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-rcov-1_0_0-lib-rcov-code_coverage_analyzer_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/rcov-1.0.0/lib/rcov/code_coverage_analyzer.rb</a></td>
-              <td class='right_align'><tt>284</tt></td>
-              <td class='right_align'><tt>168</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>6.69%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:7px"></div>
-            <div class="uncovered" style="width:93px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>4.76%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:5px"></div>
-            <div class="uncovered" style="width:95px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _10 _20 _30 _40 _50 _60 _70 _80 _90 _100  home cgb .rvm gems ruby-1.8.7-head gems rcov-1.0.0 lib rcov odd">
-              <td class="left_align"><a href="-home-cgb-_rvm-gems-ruby-1_8_7-head-gems-rcov-1_0_0-lib-rcov-differential_analyzer_rb.html">/home/cgb/.rvm/gems/ruby-1.8.7-head/gems/rcov-1.0.0/lib/rcov/differential_analyzer.rb</a></td>
-              <td class='right_align'><tt>116</tt></td>
-              <td class='right_align'><tt>82</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>10.34%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:10px"></div>
-            <div class="uncovered" style="width:90px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>9.76%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:10px"></div>
-            <div class="uncovered" style="width:90px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _20 _30 _40 _50 _60 _70 _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-app_controller_client_rb.html">lib/app_controller_client.rb</a></td>
-              <td class='right_align'><tt>181</tt></td>
-              <td class='right_align'><tt>141</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>32.04%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:32px"></div>
-            <div class="uncovered" style="width:68px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>19.86%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:20px"></div>
-            <div class="uncovered" style="width:80px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100 lib odd">
-              <td class="left_align"><a href="lib-appscale_tools_rb.html">lib/appscale_tools.rb</a></td>
-              <td class='right_align'><tt>403</tt></td>
-              <td class='right_align'><tt>269</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.43%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:75px"></div>
-            <div class="uncovered" style="width:25px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>71.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:71px"></div>
-            <div class="uncovered" style="width:29px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _30 _40 _50 _60 _70 _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-common_functions_rb.html">lib/common_functions.rb</a></td>
-              <td class='right_align'><tt>1467</tt></td>
-              <td class='right_align'><tt>1076</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>39.67%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:40px"></div>
-            <div class="uncovered" style="width:60px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>29.55%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:30px"></div>
-            <div class="uncovered" style="width:70px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _110 lib odd">
-              <td class="left_align"><a href="lib-custom_exceptions_rb.html">lib/custom_exceptions.rb</a></td>
-              <td class='right_align'><tt>25</tt></td>
-              <td class='right_align'><tt>10</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>100.00%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:100px"></div>
-            <div class="uncovered" style="width:0px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _20 _30 _40 _50 _60 _70 _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-encryption_helper_rb.html">lib/encryption_helper.rb</a></td>
-              <td class='right_align'><tt>86</tt></td>
-              <td class='right_align'><tt>66</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>16.28%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:16px"></div>
-            <div class="uncovered" style="width:84px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>12.12%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:12px"></div>
-            <div class="uncovered" style="width:88px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _30 _40 _50 _60 _70 _80 _90 _100 lib odd">
-              <td class="left_align"><a href="lib-godinterface_rb.html">lib/godinterface.rb</a></td>
-              <td class='right_align'><tt>152</tt></td>
-              <td class='right_align'><tt>109</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>21.05%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:21px"></div>
-            <div class="uncovered" style="width:79px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>20.18%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:20px"></div>
-            <div class="uncovered" style="width:80px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-node_layout_rb.html">lib/node_layout.rb</a></td>
-              <td class='right_align'><tt>665</tt></td>
-              <td class='right_align'><tt>487</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.65%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:79px"></div>
-            <div class="uncovered" style="width:21px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>76.39%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:76px"></div>
-            <div class="uncovered" style="width:24px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _80 _90 _100 lib odd">
-              <td class="left_align"><a href="lib-parse_args_rb.html">lib/parse_args.rb</a></td>
-              <td class='right_align'><tt>415</tt></td>
-              <td class='right_align'><tt>325</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>78.55%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:79px"></div>
-            <div class="uncovered" style="width:21px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>75.38%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:75px"></div>
-            <div class="uncovered" style="width:25px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _30 _40 _50 _60 _70 _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-remote_log_rb.html">lib/remote_log.rb</a></td>
-              <td class='right_align'><tt>46</tt></td>
-              <td class='right_align'><tt>22</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>60.87%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:61px"></div>
-            <div class="uncovered" style="width:39px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>27.27%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:27px"></div>
-            <div class="uncovered" style="width:73px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _100 lib odd">
-              <td class="left_align"><a href="lib-usage_text_rb.html">lib/usage_text.rb</a></td>
-              <td class='right_align'><tt>144</tt></td>
-              <td class='right_align'><tt>108</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>98.61%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:99px"></div>
-            <div class="uncovered" style="width:1px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>98.15%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:98px"></div>
-            <div class="uncovered" style="width:2px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _30 _40 _50 _60 _70 _80 _90 _100 lib even">
-              <td class="left_align"><a href="lib-user_app_client_rb.html">lib/user_app_client.rb</a></td>
-              <td class='right_align'><tt>245</tt></td>
-              <td class='right_align'><tt>204</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>27.76%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:28px"></div>
-            <div class="uncovered" style="width:72px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>21.08%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:21px"></div>
-            <div class="uncovered" style="width:79px"></div>
-          </div></td>
-            </tr>
-          
-            <tr class="all_files all_coverage _20 _30 _40 _50 _60 _70 _80 _90 _100 lib odd">
-              <td class="left_align"><a href="lib-vm_tools_rb.html">lib/vm_tools.rb</a></td>
-              <td class='right_align'><tt>538</tt></td>
-              <td class='right_align'><tt>420</tt></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>20.26%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:20px"></div>
-            <div class="uncovered" style="width:80px"></div>
-          </div></td>
-              <td class="left_align"><div class="percent_graph_legend"><tt class=''>12.38%</tt></div>
-          <div class="percent_graph">
-            <div class="covered" style="width:12px"></div>
-            <div class="uncovered" style="width:88px"></div>
-          </div></td>
-            </tr>
-          
+            
         </tbody>
-      </table>
+    </table>
+</div>
+
+<div id='footer'>
+    <div class='content'>
+        <p>
+            <a class='nav' href='http://nedbatchelder.com/code/coverage'>coverage.py v3.5.3</a>
+        </p>
     </div>
+</div>
 
-    <p>Generated on Wed May 16 23:29:48 -0700 2012 with <a href="http://github.com/relevance/rcov">rcov 1.0.0</a></p>
-
-    <script type="text/javascript">
-      $(document).ready(function(){
-          $("#report_table").tablesorter({widgets: ['zebra'], textExtraction: 'complex'});
-        }
-      );
-      $('.filter').change(function(){
-        ff = '.' + $('#file_filter').val();
-        cf = '.' + $('#coverage_filter').val();
-        rows = 'table#report_table tbody tr';
-        // Hide all rows that don't match the filters
-        $(rows).not(cf).map(function() { $(this).hide(); });
-        $(rows).not(ff).map(function() { $(this).hide(); });
-        // Show and restripe all rows that match both filters
-        $(rows).filter(cf).filter(ff).each(function() {
-          $(this).show();
-          restripe();
-        });
-      })
-    </script>
-
-  </body>
+</body>
 </html>

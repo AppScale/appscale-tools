@@ -1,20 +1,24 @@
-#!/usr/bin/env ruby
-# Programmer: Chris Bunch
-
-$VERBOSE = nil # to supress excessive SSL cert warnings
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
 
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-require 'appscale_tools'
+# General-purpose Python library imports
+import os
+import sys
+import unittest
 
 
-if __FILE__ == $0
-  options = ParseArgs.get_vals_from_args(ARGV, 
-    AppScaleTools::ADD_INSTANCES_FLAGS, AppScaleTools::ADD_INSTANCES_USAGE)
-  ips_to_roles = AppScaleTools.add_instances(options)
-  if ips_to_roles.class == Hash
-    puts "Started AppScale successfully on the new machines given."
-  else
-    puts "Unable to add additional nodes: #{ips_to_roles}"
-  end
-end
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+from appscale_logger import AppScaleLogger
+from appscale_tools import AppScaleTools
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-add-instances").args
+  try:
+    AppScaleTools.add_instances(options)
+  except Exception as e:
+    AppScaleLogger.warn(str(e))
