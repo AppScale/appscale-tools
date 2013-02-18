@@ -86,8 +86,8 @@ class RemoteHelper():
       instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
       instance_id = cls.DUMMY_INSTANCE_ID
-      public_ip = node_layout.head_node().id
-      private_ip = node_layout.head_node().id
+      public_ip = node_layout.head_node().public_ip
+      private_ip = node_layout.head_node().private_ip
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
       LocalState.get_key_path_from_name(options.keyname), public_ip))
