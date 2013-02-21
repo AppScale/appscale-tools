@@ -432,9 +432,6 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'test' in contents_as_yaml:
-      command.append("--test")
-
     if 'verbose' in contents_as_yaml:
       command.append("--verbose")
 
