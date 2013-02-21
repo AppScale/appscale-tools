@@ -125,7 +125,7 @@ class AppScaleTools():
       raise BadConfigurationException("There were problems with your " + \
         "placement strategy: " + str(node_layout.errors()))
 
-    all_ips = [node.id for node in node_layout.nodes]
+    all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
       # first, set up passwordless ssh
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
@@ -311,6 +311,7 @@ class AppScaleTools():
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
     uaserver_host = acc.get_uaserver_host(options.verbose)
+
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
 

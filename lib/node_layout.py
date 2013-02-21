@@ -133,6 +133,11 @@ class NodeLayout():
     else:
       self.database_type = 'cassandra'
 
+    if 'login_host' in options and options['login_host'] is not None:
+      self.login_host = options['login_host']
+    else:
+      self.login_host = None
+
     self.nodes = []
 
 
@@ -325,16 +330,11 @@ class NodeLayout():
       cloud: A str that indicates if we believe that machine is in a virtualized
         cluster or in a cloud.
     """
-    id, cloud = None, None
-
     match = self.NODE_ID_REGEX.match(ip)
     if not match:
-      id = ip
-      cloud = "not-cloud"
+      return ip, "not-cloud"
     else:
-      id = match.group(0)
-      cloud = match.group(1)
-    return id, cloud
+      return match.group(0), match.group(1)
 
 
   def is_valid_simple_format(self):
@@ -370,8 +370,8 @@ class NodeLayout():
       if isinstance(ips, str):
         ips = [ips]
       for ip in ips:
-        id, cloud = self.parse_ip(ip)
-        node = SimpleNode(id, cloud, [role])
+        ip, cloud = self.parse_ip(ip)
+        node = SimpleNode(ip, cloud, [role])
 
         # In simple deployments the db master and rabbitmq master is always on
         # the shadow node, and db slave / rabbitmq slave is always on the other
@@ -384,13 +384,13 @@ class NodeLayout():
           return self.invalid(node.errors().join(","))
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-          if not self.NODE_ID_REGEX.match(node.id):
+          if not self.NODE_ID_REGEX.match(node.public_ip):
             return self.invalid("{0} is not a valid node ID (must be node-int)".
-              format(node.id))
+              format(node.public_ip))
         else:
           # Virtualized cluster deployments use IP addresses as node IDs
-          if not self.IP_REGEX.match(node.id):
-            return self.invalid("{0} must be an IP address".format(node.id))
+          if not self.IP_REGEX.match(node.public_ip):
+            return self.invalid("{0} must be an IP address".format(node.public_ip))
 
         nodes.append(node)
 
@@ -430,10 +430,12 @@ class NodeLayout():
       if node.is_role('database'):
         database_count += 1
 
-    # TODO(cgb): Revisit this later and see if it's necessary.
-    #if self.skip_replication:
-    #  self.nodes = nodes
-    #  return self.valid()
+    # by this point, somebody has a login role, so now's the time to see if we
+    # need to override their ip address with --login_host
+    if self.login_host is not None:
+      for node in nodes:
+        if node.is_role('login'):
+          node.public_ip = self.login_host
 
     rep = self.is_database_replication_valid(nodes)
 
@@ -466,8 +468,8 @@ class NodeLayout():
         if ip in node_hash:
           node = node_hash[ip]
         else:
-          id, cloud = self.parse_ip(ip)
-          node = AdvancedNode(id, cloud)
+          ip, cloud = self.parse_ip(ip)
+          node = AdvancedNode(ip, cloud)
 
         if role == 'database':
           # The first database node is the master
@@ -500,13 +502,13 @@ class NodeLayout():
         return self.invalid(",".join(node.errors()))
 
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.NODE_ID_REGEX.match(node.id):
+        if not self.NODE_ID_REGEX.match(node.public_ip):
           return self.invalid("{0} is not a valid node ID (must be node-int)".
-            format(node.id))
+            format(node.public_ip))
       else:
         # Virtualized cluster deployments use IP addresses as node IDs
-        if not self.IP_REGEX.match(node.id):
-          return self.invalid("{0} must be an IP address".format(node.id))
+        if not self.IP_REGEX.match(node.public_ip):
+          return self.invalid("{0} must be an IP address".format(node.public_ip))
 
     master_nodes = []
     for node in nodes:
@@ -529,6 +531,13 @@ class NodeLayout():
     # If a login node was not specified, make the master into the login node
     if not login_nodes:
       master_node.add_role('login')
+
+    # by this point, somebody has a login role, so now's the time to see if we
+    # need to override their ip address with --login_host
+    if self.login_host is not None:
+      for node in nodes:
+        if node.is_role('login'):
+          node.public_ip = self.login_host
 
     appengine_count = 0
     for node in nodes:
@@ -690,7 +699,7 @@ class NodeLayout():
     result = {}
     # Put all nodes except the head node in the hash
     for node in self.other_nodes():
-      result[node.id] = node.roles
+      result[node.public_ip] = node.roles
     return result
 
 
@@ -721,7 +730,7 @@ class Node():
   """
 
 
-  def __init__(self, id, cloud, roles=[]):
+  def __init__(self, public_ip, cloud, roles=[]):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -732,7 +741,8 @@ class Node():
       cloud: The cloud that this Node belongs to.
       roles: A list of roles that this Node will run in an AppScale deployment.
     """
-    self.id = id
+    self.public_ip = public_ip
+    self.private_ip = public_ip
     self.cloud = cloud
     self.roles = roles
     self.expand_roles()
