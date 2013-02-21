@@ -10,6 +10,7 @@ import re
 import shutil
 import sys
 import time
+import uuid
 
 
 # AppScale-specific imports
@@ -286,7 +287,9 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-    AppScaleLogger.remote_log_tools_state(options, "started", APPSCALE_VERSION)
+    my_id = str(uuid.uuid4())
+    AppScaleLogger.remote_log_tools_state(options, my_id, "started",
+      APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
@@ -297,7 +300,8 @@ class AppScaleTools():
       AppScaleLogger.warn("Warning: This deployment strategy is not " + \
         "officially supported.")
 
-    public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
+    public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
+      node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
       "for use.")
 
@@ -352,7 +356,8 @@ class AppScaleTools():
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
-    AppScaleLogger.remote_log_tools_state(options, "finished", APPSCALE_VERSION)
+    AppScaleLogger.remote_log_tools_state(options, my_id,
+      "finished", APPSCALE_VERSION)
 
 
   @classmethod

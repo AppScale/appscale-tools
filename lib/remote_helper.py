@@ -61,7 +61,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def start_head_node(cls, options, node_layout):
+  def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
     API services on its own node, as well as the other nodes in the deployment.
 
@@ -72,6 +72,8 @@ class RemoteHelper():
       options: A Namespace that includes parameters passed in by the user that
         define non-placement-strategy-related deployment options (e.g., keypair
         names, security group names).
+      my_id: A str that is used to uniquely identify this AppScale deployment
+        with the remote start application.
       node_layout: A NodeLayout that describes the placement strategy that
         should be used for this AppScale deployment.
     Returns:
@@ -112,7 +114,7 @@ class RemoteHelper():
       options.verbose)
     AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
 
-    AppScaleLogger.remote_log_tools_state(options, "started head node",
+    AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
       APPSCALE_VERSION)
     time.sleep(10)  # gives machines in cloud extra time to boot up
 

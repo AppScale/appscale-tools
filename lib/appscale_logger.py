@@ -71,7 +71,7 @@ class AppScaleLogger():
 
 
   @classmethod
-  def remote_log_tools_state(cls, options, state, version):
+  def remote_log_tools_state(cls, options, my_id, state, version):
     """Converts the given debugging information to a message that we can
     remotely log, and then logs it.
 
@@ -89,14 +89,16 @@ class AppScaleLogger():
     params = vars(options)
 
     # next, turn it into a string that we can send over the wire
-    payload = "?state={0}&version={1}".format(state, version)
-    for key, value in enumerate(params):
+    payload = "?boo=baz&my_id={0}&state={1}&version={2}".format(my_id, state,
+      version)
+    for key, value in params.iteritems():
       payload += "&{0}={1}".format(key, value)
 
     # http post the result
     try:
-      conn = httplib.HTTPSConnection(cls.LOGS_HOST)
+      conn = httplib.HTTPConnection(cls.LOGS_HOST)
       conn.request('POST', '/upload', payload, cls.HEADERS)
+      conn.close()
     except Exception:
       cls.verbose("Unable to log {0} state".format(state), options.verbose)
 
