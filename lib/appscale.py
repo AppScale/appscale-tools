@@ -68,6 +68,7 @@ Available commands:
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
   undeploy: Removes a Google App Engine app from AppScale.
+  remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
   destroy: Terminates the currently running AppScale deployment.

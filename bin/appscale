@@ -74,7 +74,7 @@ elif command == "deploy":
   except Exception as e:
     cprint(e, 'red')
     sys.exit(1)
-elif command == "undeploy":
+elif command == "undeploy" or command == "remove":
   try:
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.undeploy(sys.argv[2])
