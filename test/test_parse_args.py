@@ -284,3 +284,15 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = self.cloud_argv[:] + ['--scp', '/tmp/booscale']
     actual = ParseArgs(argv_2, self.function).args
     self.assertEquals('/tmp/booscale', actual.scp)
+
+
+  def test_login_flag(self):
+    # if the user wants to override the URL where we log in at, make sure it
+    # fails if they don't give us a URL to log in to
+    argv_1 = self.cloud_argv[:] + ['--login_host']
+    self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
+
+    # and it should succeed if they do give us the URL
+    argv_2 = self.cloud_argv[:] + ['--login_host', 'www.booscale.com']
+    actual = ParseArgs(argv_2, self.function).args
+    self.assertEquals('www.booscale.com', actual.login_host)

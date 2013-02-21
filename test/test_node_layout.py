@@ -254,3 +254,22 @@ class TestNodeLayout(unittest.TestCase):
     advanced_layout_3 = NodeLayout(options_3)
     self.assertEquals(True, advanced_layout_3.is_valid())
     self.assertEquals(False, advanced_layout_3.is_supported())
+
+
+  def test_with_login_override(self):
+    # if the user wants to set a login host, make sure that gets set as the
+    # login node's public IP address instead of what we'd normally put in
+
+    # use a simple deployment so we can get the login node with .head_node()
+    input_yaml_1 = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    options_1['login_host'] = "www.booscale.com"
+    layout_1 = NodeLayout(options_1)
+    self.assertEquals(True, layout_1.is_valid())
+
+    head_node = layout_1.head_node()
+    self.assertEquals(options_1['login_host'], head_node.public_ip)
