@@ -49,6 +49,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "ec2", "--machine", "ami-ABCDEFG", "--group", "blargscale"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
+    self.my_id = "12345"
 
     self.expected = {
       "admin_pass" : None,
@@ -87,11 +88,11 @@ class TestAppScaleLogger(unittest.TestCase):
     fake_connection.should_receive('request').with_args('POST',
       '/upload', self.payload, AppScaleLogger.HEADERS) \
       .and_return()
-    flexmock(httplib).should_receive('HTTPSConnection') \
+    flexmock(httplib).should_receive('HTTPConnection') \
       .and_return(fake_connection)
 
-    actual = AppScaleLogger.remote_log_tools_state(self.options, "started",
-      "X.Y.Z")
+    actual = AppScaleLogger.remote_log_tools_state(self.options, self.my_id,
+      "started", "X.Y.Z")
     self.assertEquals(self.expected, actual)
 
 
@@ -102,9 +103,9 @@ class TestAppScaleLogger(unittest.TestCase):
     fake_connection.should_receive('request').with_args('POST',
       '/upload', self.payload, AppScaleLogger.HEADERS) \
       .and_raise(Exception)
-    flexmock(httplib).should_receive('HTTPSConnection') \
+    flexmock(httplib).should_receive('HTTPConnection') \
       .and_return(fake_connection)
 
-    actual = AppScaleLogger.remote_log_tools_state(self.options, "started",
-      "X.Y.Z")
+    actual = AppScaleLogger.remote_log_tools_state(self.options, self.my_id,
+    "started", "X.Y.Z")
     self.assertEquals(self.expected, actual)

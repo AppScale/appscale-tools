@@ -51,6 +51,7 @@ class TestRemoteHelper(unittest.TestCase):
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
       table='cassandra', verbose=False)
+    self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
     # mock out calls to EC2
@@ -167,7 +168,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
@@ -184,7 +185,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
@@ -208,7 +209,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(self.failed)
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
