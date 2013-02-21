@@ -490,21 +490,6 @@ class TestAppScale(unittest.TestCase):
     self.assertRaises(AppScalefileException, appscale.logs, '')
 
 
-  def testGetLogsWithNoKeyname(self):
-    # calling 'appscale logs dir' with no keyname should produce
-    # a command to exec without the --keyname flag
-    appscale = AppScale()
-    contents = {
-    }
-    yaml_dumped_contents = yaml.dump(contents)
-    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-
-    # mock out the actual call to appscale-gather-logs
-    flexmock(AppScaleTools)
-    AppScaleTools.should_receive('run_instances')
-    self.assertRaises(BadConfigurationException, appscale.logs, '/baz')
-
-
   def testGetLogsWithKeyname(self):
     # calling 'appscale logs dir' with a keyname should produce
     # a command to exec with the --keyname flag
