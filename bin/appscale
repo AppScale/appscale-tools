@@ -74,6 +74,10 @@ elif command == "deploy":
   except Exception as e:
     cprint(e, 'red')
     sys.exit(1)
+elif command == "undeploy":
+  try:
+    # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
+    appscale.undeploy(sys.argv[2])
 elif command == "tail":
   if len(sys.argv) < 3:
     # by default, tail the first node's logs, since that node is

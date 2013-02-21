@@ -338,6 +338,42 @@ class TestAppScale(unittest.TestCase):
     appscale.deploy(app)
 
 
+  def testUndeployWithNoAppScalefile(self):
+    # calling 'appscale undeploy' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    appid = "barapp"
+    self.assertRaises(AppScalefileException, appscale.undeploy, appid)
+
+
+  def testUndeployWithCloudAppScalefile(self):
+    # calling 'appscale undeploy app' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-remove-app' command and then exec it
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-run-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('remove_app')
+    app = 'barapp'
+    appscale.undeploy(app)
+
+
   def testDeployWithCloudAppScalefileAndTestFlag(self):
     # same as before, but with the 'test' flag in our AppScalefile
     appscale = AppScale()
