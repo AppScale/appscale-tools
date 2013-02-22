@@ -3,3 +3,4 @@
 *.py[c|o]
 ips
 .idea
+*.iml

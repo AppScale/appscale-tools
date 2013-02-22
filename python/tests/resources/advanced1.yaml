@@ -1,0 +1,5 @@
+---
+:master: 10.0.0.1
+:database: 10.0.0.1
+:appengine: 10.0.0.1
+:open: 10.0.0.2
