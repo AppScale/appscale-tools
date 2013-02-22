@@ -81,6 +81,11 @@ class NodeLayout():
   INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
 
 
+  # The message to display if the user mixes advanced and simple tags 
+  # in their deployment
+  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not to mix simple and advance deployment methods"
+  
+
   def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
 
