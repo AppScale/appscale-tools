@@ -98,6 +98,7 @@ class AppScaleLogger():
     try:
       conn = httplib.HTTPConnection(cls.LOGS_HOST)
       conn.request('POST', '/upload', payload, cls.HEADERS)
+      response = conn.getresponse()
       conn.close()
     except Exception:
       cls.verbose("Unable to log {0} state".format(state), options.verbose)
