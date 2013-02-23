@@ -240,8 +240,10 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-      cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
+    #return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
+    #  cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
+    return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
+      cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
 
 
   @classmethod
