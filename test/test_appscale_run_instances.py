@@ -295,7 +295,7 @@ appengine:  1.2.3.4
       AppScaleLogger.HEADERS).and_return()
 
     flexmock(httplib)
-    httplib.should_receive('HTTPSConnection').with_args('logs.appscale.com') \
+    httplib.should_receive('HTTPConnection').with_args('logs.appscale.com') \
       .and_return(fake_connection)
 
     # mock out generating the secret key
