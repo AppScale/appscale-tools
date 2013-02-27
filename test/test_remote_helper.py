@@ -133,6 +133,7 @@ class TestRemoteHelper(unittest.TestCase):
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
+
     flexmock(tempfile)
     tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
 
@@ -291,35 +292,83 @@ class TestRemoteHelper(unittest.TestCase):
       verbose=True)
     RemoteHelper.copy_deployment_credentials('public1', options)
 
+#  def make_fake_stdin_file(self, cmd):
+#    # fake temp file for stdin to Popen
+#    fake_stdin_file = flexmock(name='fake_stdin_file')
+#    fake_stdin_file.should_receive('write').with_args(re.compile(cmd))\
+#        .and_return()
+#    fake_stdin_file.should_receive('seek').with_args(0).and_return()
+#    fake_stdin_file.should_receive('close').and_return()
+#    return fake_stdin_file
 
   def test_start_remote_appcontroller(self):
-    # mock out removing the old json file
-    subprocess.should_receive('Popen').with_args(re.compile('rm -rf'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+#    # mock out removing the old json file
+#    #subprocess.should_receive('Popen').with_args(re.compile('rm -rf'),
+#    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
+#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
+#      stdin=self.make_fake_stdin_file('rm -rf') ) \
+#      .and_return(self.success)
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
+      .and_return().ordered()
+#
+#    # assume we started god on public1 fine
+#    #subprocess.should_receive('Popen').with_args(re.compile('god &'),
+#    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
+#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
+#      stdin=self.make_fake_stdin_file('god &') ) \
+#      .and_return(self.success)
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .and_return().ordered()
+#
+#    # also assume that we scp'ed over the god config file fine
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
+      .and_return().ordered()
 
-    # assume we started god on public1 fine
-    subprocess.should_receive('Popen').with_args(re.compile('god &'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+#    #subprocess.should_receive('Popen').with_args(re.compile('appcontroller'),
+#    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
+#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
+#      stdin=self.make_fake_stdin_file('appcontroller') ) \
+#      .and_return(self.success)
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('^god load .*appcontroller\.god'))\
+      .and_return().ordered()
 
-    # also assume that we scp'ed over the god config file fine
-    subprocess.should_receive('Popen').with_args(re.compile('appcontroller'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    #sleep_until_port_is_open (which call is_port_open in a loop)
+    t=flexmock(time)
+    t.should_receive('sleep').and_return()  #a
+    sock = flexmock(socket)
+    sockobj1 = flexmock(socket)
+    sockobj2 = flexmock(socket)
+    sock.should_receive('socket').and_return(sockobj1).and_return(sockobj2)
+    sockobj1.should_receive('connect').and_raise(Exception)
+    sockobj2.should_receive('connect').and_return()
 
-    # and assume we started the AppController on public1 fine
-    subprocess.should_receive('Popen').with_args(re.compile('god load'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
 
-    # finally, assume the appcontroller comes up after a few tries
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-    socket.should_receive('socket').and_return(fake_socket)
+#
+#    # and assume we started the AppController on public1 fine
+#    #subprocess.should_receive('Popen').with_args(re.compile('god load'),
+#    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
+#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
+#      stdin=self.make_fake_stdin_file('got load') ) \
+#      .and_return(self.success)
+#
+#    # finally, assume the appcontroller comes up after a few tries
+#    # assume that ssh comes up on the third attempt
+#    fake_socket = flexmock(name='fake_socket')
+#    fake_socket.should_receive('connect').with_args(('public1',
+#      AppControllerClient.PORT)).and_raise(Exception) \
+#      .and_raise(Exception).and_return(None)
+#    socket.should_receive('socket').and_return(fake_socket)
+
+    
 
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 
