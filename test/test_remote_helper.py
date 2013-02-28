@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
+# Programmer: Chris Bunch, Brian Drawert
 
 
 # General-purpose Python library imports
@@ -117,8 +117,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # finally, inject our mocked EC2
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('AKIAIM52ZZKITH5N3ZMQ',\
-        'jxRgKlaIIXPrmhNggmvXd3o6sndn7msu5JyOcbH8').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').and_return(fake_ec2)
 
     # assume that ssh comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')
@@ -147,19 +146,17 @@ class TestRemoteHelper(unittest.TestCase):
 
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh .*ubuntu'),False,5)\
       .and_return()
 
     # also assume that we can scp over our ssh keys, but that it fails the first
     # time
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*/root/.ssh/id_'),False,5)\
       .and_return()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*/root/.appscale/bookey.key'),False,5)\
       .and_return()
@@ -167,12 +164,11 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
@@ -185,15 +181,11 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
-#    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-#      .and_return(self.success)
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
@@ -201,11 +193,6 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
-#    subprocess.should_receive('Popen').with_args(re.compile(
-#      '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-#      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-#      .and_return(self.failed)
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
@@ -217,12 +204,11 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
@@ -230,7 +216,6 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
@@ -238,7 +223,6 @@ class TestRemoteHelper(unittest.TestCase):
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale/{0}/{1}'\
@@ -267,7 +251,7 @@ class TestRemoteHelper(unittest.TestCase):
       '/tmp/booscale-local/')).and_return(True)
 
     # assume the rsyncs succeed
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^rsync'),False)\
       .and_return().ordered()
@@ -278,7 +262,7 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_copy_deployment_credentials_in_cloud(self):
     # mock out the scp'ing to public1 and assume they succeed
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*secret.key'),True,5)\
       .and_return().ordered()
@@ -314,28 +298,24 @@ class TestRemoteHelper(unittest.TestCase):
       LocalState.get_certificate_location('bookey'))
     M2Crypto.X509.should_receive('X509').and_return(fake_cert)
 
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*mycert.pem'),True,5)\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*mykey.pem'),True,5)\
       .and_return().ordered()
 
     # next, mock out copying the private key and certificate
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),True,5,stdin=re.compile('^mkdir -p'))\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*cloud1/mycert.pem'),True,5)\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*cloud1/mykey.pem'),True,5)\
       .and_return().ordered()
@@ -347,25 +327,22 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_remote_appcontroller(self):
     # mock out removing the old json file
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
       .and_return().ordered()
 
     # assume we started god on public1 fine
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
       .and_return().ordered()
 
     # also assume that we scp'ed over the god config file fine
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
       .and_return().ordered()
 
     # and assume we started the AppController on public1 fine
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('^god load .*appcontroller\.god'))\
@@ -386,26 +363,23 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
-    local_state=flexmock(LocalState)
+    local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
         False,5)\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
         False,5)\
       .and_return().ordered()
 
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
         False,5)\
       .and_return().ordered()
 	
     # and mock out copying the secret file
-    local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*bookey.secret'),False,5)\
       .and_return().ordered()
