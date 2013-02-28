@@ -651,6 +651,8 @@ class LocalState():
         AppScaleLogger.verbose("       stdout buffer: {0}"\
                     .format(the_temp_file.name),is_verbose)
         result.wait()
+        if stdin is not None:
+          stdin_strio.close()
         if result.returncode == 0:
           the_temp_file.seek(0)
           output = the_temp_file.read()
