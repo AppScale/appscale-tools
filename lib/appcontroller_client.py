@@ -7,6 +7,8 @@
 import json
 import re
 import socket
+import signal
+import sys
 import time
 
 
@@ -17,6 +19,7 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -56,6 +59,33 @@ class AppControllerClient():
     self.server = SOAPpy.SOAPProxy('https://%s:%s' % (host,
       self.PORT))
     self.secret = secret
+
+
+  def run_with_timeout(self, timeout_time, default, f, *args):
+    """Runs the given function, aborting it if it runs too long.
+
+    Args:
+      timeout_time: The number of seconds that we should allow f to execute
+        for.
+      default: The value that should be returned if the timeout is exceeded.
+      f: The function that should be executed.
+      *args: The arguments that will be passed to f.
+    Returns:
+      Whatever f(*args) returns if it runs within the timeout window, and
+        default otherwise.
+    """
+    def timeout_handler(signum, frame):
+      raise TimeoutException()
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout_time) # trigger alarm in timeout_time seconds
+    try:
+      retval = f(*args)
+    except TimeoutException:
+      return default
+    finally:
+      signal.alarm(0)
+    return retval
 
 
   def set_parameters(self, locations, credentials, app=None):
@@ -161,7 +191,7 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.server.status(self.secret)
+    return self.run_with_timeout(10, "", self.server.status, self.secret)
 
 
   def is_initialized(self):
