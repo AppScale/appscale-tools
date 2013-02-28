@@ -34,20 +34,6 @@ from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
 
-class FakeSocket_err:
-  @classmethod
-  def socket(cls):
-    return FakeSocked_err()
-  def connect(self):
-    raise Exception
-
-class FakeSocket_good:
-  @classmethod
-  def socket(cls):
-    return FakeSocked_err()
-  def connect(self):
-    pass
-
 
 class TestRemoteHelper(unittest.TestCase):
 
@@ -131,7 +117,8 @@ class TestRemoteHelper(unittest.TestCase):
 
     # finally, inject our mocked EC2
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('AKIAIM52ZZKITH5N3ZMQ',\
+        'jxRgKlaIIXPrmhNggmvXd3o6sndn7msu5JyOcbH8').and_return(fake_ec2)
 
     # assume that ssh comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')
@@ -196,8 +183,14 @@ class TestRemoteHelper(unittest.TestCase):
 #      .and_return(self.failed)
     local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
+
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
@@ -208,6 +201,11 @@ class TestRemoteHelper(unittest.TestCase):
 #    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
 #      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
 #      .and_return(self.success)
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
     local_state=flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('ls /etc/appscale'))\
@@ -231,6 +229,11 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
+    local_state=flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
 #    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
 #      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
 #      .and_return(self.success)
@@ -249,7 +252,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_returns().ordered()
+      .and_return().ordered()
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
