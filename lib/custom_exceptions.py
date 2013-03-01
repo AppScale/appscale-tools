@@ -50,6 +50,13 @@ class ShellException(Exception):
   pass
 
 
+class TimeoutException(Exception):
+  """A special Exception class that should be thrown if a function is executed
+  but takes longer to run than the caller expects.
+  """
+  pass
+
+
 class UsageException(Exception):
   """A special Exception class that should be thrown if the user attempts
   to run the 'help' directive, which reports on the usage of this tool.
