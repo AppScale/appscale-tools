@@ -8,7 +8,6 @@ import json
 import re
 import socket
 import signal
-import sys
 import time
 
 
@@ -61,26 +60,32 @@ class AppControllerClient():
     self.secret = secret
 
 
-  def run_with_timeout(self, timeout_time, default, f, *args):
+  def run_with_timeout(self, timeout_time, default, function, *args):
     """Runs the given function, aborting it if it runs too long.
 
     Args:
-      timeout_time: The number of seconds that we should allow f to execute
-        for.
+      timeout_time: The number of seconds that we should allow function to
+        execute for.
       default: The value that should be returned if the timeout is exceeded.
-      f: The function that should be executed.
-      *args: The arguments that will be passed to f.
+      function: The function that should be executed.
+      *args: The arguments that will be passed to function.
     Returns:
-      Whatever f(*args) returns if it runs within the timeout window, and
+      Whatever function(*args) returns if it runs within the timeout window, and
         default otherwise.
     """
-    def timeout_handler(signum, frame):
+    def timeout_handler(_, __):
+      """Raises a TimeoutException if the function we want to execute takes
+      too long to run.
+
+      Raises:
+        TimeoutException: If a SIGALRM is raised.
+      """
       raise TimeoutException()
 
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(timeout_time) # trigger alarm in timeout_time seconds
     try:
-      retval = f(*args)
+      retval = function(*args)
     except TimeoutException:
       return default
     finally:
@@ -231,16 +236,16 @@ class AppControllerClient():
     return self.server.stop_app(app_name, self.secret)
 
 
-  def is_app_running(self, app_name):
+  def is_app_running(self, app_id):
     """Queries the AppController to see if the named application is running.
 
     Args:
-      app_name: A str that indicates which application we should be checking
+      app_id: A str that indicates which application we should be checking
         for.
     Returns:
       True if the application is running, False otherwise.
     """
-    return self.server.is_app_running(app_name, self.secret)
+    return self.server.is_app_running(app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -264,13 +269,3 @@ class AppControllerClient():
         Engine service.
     """
     return self.server.update(apps_to_run, self.secret)
-
-
-  def is_app_running(self, app_id):
-    """Queries the AppController to see if the named application is running in
-    the AppScale deployment.
-
-    Returns:
-      True if the app is running, False otherwise.
-    """
-    return self.server.is_app_running(app_id, self.secret)
