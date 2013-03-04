@@ -345,77 +345,19 @@ appengine:  1.2.3.4
 
 
     flexmock(RemoteHelper)
-    RemoteHelper.should_receive('start_head_node').and_return(('1.2.3.4','i-ABCDEFG'))
+    RemoteHelper.should_receive('start_head_node')\
+        .and_return(('1.2.3.4','i-ABCDEFG'))
     RemoteHelper.should_receive('sleep_until_port_is_open').and_return()
     RemoteHelper.should_receive('copy_local_metadata').and_return()
     RemoteHelper.should_receive('create_user_accounts').and_return()
-    RemoteHelper.should_receive('wait_for_machines_to_finish_loading').and_return()
+    RemoteHelper.should_receive('wait_for_machines_to_finish_loading')\
+        .and_return()
 
     acc = flexmock(AppControllerClient)
     acc.should_receive('get_uaserver_host').and_return('host')
 
-
-    #uaci = flexmock(name='fake_UserAppClient').should_receive('set_admin_role').and_return()
-    #uaci.should_receive('set_admin_role').and_return()
-    #flexmock(user_app_client).should_receive('UserAppClient').and_return(uaci)
-    #flexmock(UserAppClient).should_receive('UserAppClient').and_return(uaci)
-    #flexmock(UserAppClient).new_instances(uaci)
-    #flexmock(UserAppClient).should_receive('__init__').and_return(uaci)
-    #class FakeUserAppClient:
-    #  def set_admin_role(username):
-    #    pass
-    #flexmock(user_app_client).should_receive('UserAppClient').and_return(FakeUserAppClient())
     flexmock(UserAppClient).should_receive('set_admin_role').and_return()
 
-
-
-
-#
-#
-#    # mock out the SOAP call to the AppController and assume it succeeded
-#    fake_appcontroller = flexmock(name='fake_appcontroller')
-#    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-#      ['none'], 'the secret').and_return('OK')
-#    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-#      .and_return(json.dumps(['1.2.3.4']))
-#    role_info = [{
-#      'public_ip' : '1.2.3.4',
-#      'private_ip' : '1.2.3.4',
-#      'jobs' : ['shadow', 'login']
-#    }]
-#    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-#      .and_return(json.dumps(role_info))
-#    fake_appcontroller.should_receive('status').with_args('the secret') \
-#      .and_return('nothing interesting here') \
-#      .and_return('Database is at not-up-yet') \
-#      .and_return('Database is at 1.2.3.4')
-#    fake_appcontroller.should_receive('is_done_initializing') \
-#      .and_raise(Exception) \
-#      .and_return(False) \
-#      .and_return(True)
-#    flexmock(SOAPpy)
-#    SOAPpy.should_receive('SOAPProxy').with_args('https://www.booscale.com:17443') \
-#      .and_return(fake_appcontroller)
-#    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
-#      .and_return(fake_appcontroller)
-#
-#
-#
-#    # mock out calls to the UserAppServer and presume that calls to create new
-#    # users succeed
-#    fake_userappserver = flexmock(name='fake_appcontroller')
-#    fake_userappserver.should_receive('commit_new_user').with_args(
-#      'a@a.com', str, 'xmpp_user', 'the secret') \
-#      .and_return('true')
-#    fake_userappserver.should_receive('commit_new_user').with_args(
-#      'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
-#      .and_return('true')
-#    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-#      'a@a.com', 'true', 'the secret').and_return()
-#    fake_userappserver.should_receive('set_capabilities').with_args(
-#      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-#    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
-#      .and_return(fake_userappserver)
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
