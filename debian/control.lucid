@@ -14,7 +14,7 @@ Depends:
 # Unknown
  make
 # m2crypto
- python-dev, swig
+ libssl-dev, python-dev, swig
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
