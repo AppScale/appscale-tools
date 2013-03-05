@@ -7,6 +7,7 @@
 import json
 import re
 import socket
+import signal
 import time
 
 
@@ -17,6 +18,7 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -56,6 +58,39 @@ class AppControllerClient():
     self.server = SOAPpy.SOAPProxy('https://%s:%s' % (host,
       self.PORT))
     self.secret = secret
+
+
+  def run_with_timeout(self, timeout_time, default, function, *args):
+    """Runs the given function, aborting it if it runs too long.
+
+    Args:
+      timeout_time: The number of seconds that we should allow function to
+        execute for.
+      default: The value that should be returned if the timeout is exceeded.
+      function: The function that should be executed.
+      *args: The arguments that will be passed to function.
+    Returns:
+      Whatever function(*args) returns if it runs within the timeout window, and
+        default otherwise.
+    """
+    def timeout_handler(_, __):
+      """Raises a TimeoutException if the function we want to execute takes
+      too long to run.
+
+      Raises:
+        TimeoutException: If a SIGALRM is raised.
+      """
+      raise TimeoutException()
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout_time) # trigger alarm in timeout_time seconds
+    try:
+      retval = function(*args)
+    except TimeoutException:
+      return default
+    finally:
+      signal.alarm(0)
+    return retval
 
 
   def set_parameters(self, locations, credentials, app=None):
@@ -143,7 +178,7 @@ class AppControllerClient():
           if match:
             if last_known_state != match.group(1):
               last_known_state = match.group(1)
-            AppScaleLogger.log(last_known_state)
+              AppScaleLogger.log(last_known_state)
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
@@ -161,7 +196,7 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.server.status(self.secret)
+    return self.run_with_timeout(10, "", self.server.status, self.secret)
 
 
   def is_initialized(self):
@@ -201,16 +236,16 @@ class AppControllerClient():
     return self.server.stop_app(app_name, self.secret)
 
 
-  def is_app_running(self, app_name):
+  def is_app_running(self, app_id):
     """Queries the AppController to see if the named application is running.
 
     Args:
-      app_name: A str that indicates which application we should be checking
+      app_id: A str that indicates which application we should be checking
         for.
     Returns:
       True if the application is running, False otherwise.
     """
-    return self.server.is_app_running(app_name, self.secret)
+    return self.server.is_app_running(app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -234,13 +269,3 @@ class AppControllerClient():
         Engine service.
     """
     return self.server.update(apps_to_run, self.secret)
-
-
-  def is_app_running(self, app_id):
-    """Queries the AppController to see if the named application is running in
-    the AppScale deployment.
-
-    Returns:
-      True if the app is running, False otherwise.
-    """
-    return self.server.is_app_running(app_id, self.secret)
