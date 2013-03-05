@@ -246,6 +246,10 @@ class LocalState():
       keyname: A str representing the SSH keypair name used for this AppScale
         deployment.
     """
+
+    #"openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com' -keyout www.example.com.key -out www.example.com.cert"
+
+
     # lifted from http://sheogora.blogspot.com/2012/03/m2crypto-for-python-x509-certificates.html
     key = M2Crypto.RSA.gen_key(2048, 65537)
 
