@@ -614,7 +614,7 @@ class LocalState():
 
 
   @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES, stdin=None):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
 
@@ -624,6 +624,7 @@ class LocalState():
         executing to stdout.
       num_retries: The number of times we should try to execute the given
         command before aborting.
+      stdin: A str that is passes as standard input to the process
     Returns:
       The standard output and standard error produced when the command executes.
     Raises:
@@ -635,11 +636,23 @@ class LocalState():
       while tries_left:
         AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
         the_temp_file = tempfile.NamedTemporaryFile()
-        result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-          stderr=subprocess.STDOUT)
-        AppScaleLogger.verbose("       using temp file {0}"\
+        if stdin is not None:
+          stdin_strio = tempfile.TemporaryFile()
+          stdin_strio.write(stdin);
+          stdin_strio.seek(0)
+          AppScaleLogger.verbose("       stdin str: {0}"\
+                    .format(stdin),is_verbose)
+          result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+            stdin = stdin_strio,
+            stderr = subprocess.STDOUT)
+        else:
+          result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+            stderr=subprocess.STDOUT)
+        AppScaleLogger.verbose("       stdout buffer: {0}"\
                     .format(the_temp_file.name),is_verbose)
         result.wait()
+        if stdin is not None:
+          stdin_strio.close()
         if result.returncode == 0:
           the_temp_file.seek(0)
           output = the_temp_file.read()
