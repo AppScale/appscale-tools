@@ -30,7 +30,7 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'rabbitmq']
+    'zookeeper', 'memcache', 'taskqueue']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -38,7 +38,7 @@ class NodeLayout():
   # the user may not be able to specify directly.
   VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'rabbitmq', 'rabbitmq_master', 'rabbitmq_slave')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave')
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for
@@ -378,12 +378,12 @@ class NodeLayout():
         ip, cloud = self.parse_ip(ip)
         node = SimpleNode(ip, cloud, [role])
 
-        # In simple deployments the db master and rabbitmq master is always on
-        # the shadow node, and db slave / rabbitmq slave is always on the other
+        # In simple deployments the db master and taskqueue  master is always on
+        # the shadow node, and db slave / taskqueue slave is always on the other
         # nodes
         is_master = node.is_role('shadow')
         node.add_db_role(is_master)
-        node.add_rabbitmq_role(is_master)
+        node.add_taskqueue_role(is_master)
 
         if not node.is_valid():
           return self.invalid(node.errors().join(","))
@@ -486,14 +486,14 @@ class NodeLayout():
         elif role == 'db_master':
           node.add_role('zookeeper')
           node.add_role('role')
-        elif role == 'rabbitmq':
-          # Like the database, the first rabbitmq node is the master
+        elif role == 'taskqueue':
+          # Like the database, the first taskqueue node is the master
           if index == 0:
             is_master = True
           else:
             is_master = False
-          node.add_role('rabbitmq')
-          node.add_rabbitmq_role(is_master)
+          node.add_role('taskqueue')
+          node.add_taskqueue_role(is_master)
         else:
           node.add_role(role)
         
@@ -577,22 +577,22 @@ class NodeLayout():
     if not zookeeper_count:
       master_node.add_role('zookeeper')
 
-    # If no rabbitmq nodes are specified, make the shadow the rabbitmq_master
-    rabbitmq_count = 0
+    # If no taskqueue nodes are specified, make the shadow the taskqueue_master
+    taskqueue_count = 0
     for node in nodes:
-      if node.is_role('rabbitmq'):
-        rabbitmq_count += 1
+      if node.is_role('taskqueue'):
+        taskqueue_count += 1
 
-    if not rabbitmq_count:
-      master_node.add_role('rabbitmq')
-      master_node.add_role('rabbitmq_master')
+    if not taskqueue_count:
+      master_node.add_role('taskqueue')
+      master_node.add_role('taskqueue_master')
 
-    # Any node that runs appengine needs rabbitmq to dispatch task requests to
+    # Any node that runs appengine needs taskqueue to dispatch task requests to
     # It's safe to add the slave role since we ensure above that somebody
     # already has the master role
     for node in nodes:
-      if node.is_role('appengine') and not node.is_role('rabbitmq'):
-        node.add_role('rabbitmq_slave')
+      if node.is_role('appengine') and not node.is_role('taskqueue'):
+        node.add_role('taskqueue_slave')
 
     rep = self.is_database_replication_valid(nodes)
     if not rep['result']:
@@ -766,17 +766,17 @@ class Node():
       self.add_role('db_slave')
 
 
-  def add_rabbitmq_role(self, is_master):
-    """Adds a RabbitMQ master or slave role to this Node, depending on
+  def add_taskqueue_role(self, is_master):
+    """Adds a TaskQueue master or slave role to this Node, depending on
     the argument given.
 
     Args:
-      is_master: A bool that indicates we should add a RabbitMQ master role.
+      is_master: A bool that indicates we should add a TaskQueue master role.
     """
     if is_master:
-      self.add_role('rabbitmq_master')
+      self.add_role('taskqueue_master')
     else:
-      self.add_role('rabbitmq_slave')
+      self.add_role('taskqueue_slave')
 
 
   def add_role(self, role):
@@ -860,7 +860,7 @@ class SimpleNode(Node):
       self.roles.append('memcache')
       self.roles.append('login')
       self.roles.append('zookeeper')
-      self.roles.append('rabbitmq')
+      self.roles.append('taskqueue')
 
     # If they specify a servers role, expand it out to
     # be database, appengine, and memcache
@@ -869,7 +869,7 @@ class SimpleNode(Node):
       self.roles.append('appengine')
       self.roles.append('memcache')
       self.roles.append('database')
-      self.roles.append('rabbitmq')
+      self.roles.append('taskqueue')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
