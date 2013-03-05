@@ -50,6 +50,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell').and_return("")
+
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
@@ -247,8 +250,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       .and_return(fake_reservation_terminated)
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
-      .and_return(fake_ec2)
+    boto.should_receive('connect_ec2').and_return(fake_ec2)
 
     # and mock out the call to kill the instances
     fake_ec2.should_receive('terminate_instances').with_args(['i-ONE',
