@@ -178,7 +178,7 @@ class AppControllerClient():
           if match:
             if last_known_state != match.group(1):
               last_known_state = match.group(1)
-            AppScaleLogger.log(last_known_state)
+              AppScaleLogger.log(last_known_state)
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
