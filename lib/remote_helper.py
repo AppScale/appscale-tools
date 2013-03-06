@@ -420,6 +420,12 @@ class RemoteHelper():
     local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
     LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
 
+    # And rsync the firewall configuration file separately, as it's not a
+    # directory (which the above all are).
+    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + "firewall.conf"
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} root@{3}:/root/appscale/firewall.conf" \
+      .format(ssh_key, cls.SSH_OPTIONS, local_firewall, host), is_verbose)
+
 
   @classmethod
   def copy_deployment_credentials(cls, host, options):
