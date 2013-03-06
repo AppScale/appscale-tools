@@ -248,8 +248,7 @@ class LocalState():
       is_verbose: A bool that indicates if we want to print out the certificate
         generation to stdout or not.
     """
-    cls.shell("openssl req -new -newkey rsa:2048 -days 365 " + \
-      "-passin file:{0} -x509 ".format(LocalState.get_secret_key_location(keyname)) + \
+    cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
       "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
       "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
       LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
