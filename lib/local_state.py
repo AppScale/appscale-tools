@@ -238,54 +238,21 @@ class LocalState():
 
 
   @classmethod
-  def generate_ssl_cert(cls, keyname):
+  def generate_ssl_cert(cls, keyname, is_verbose):
     """Generates a self-signed SSL certificate that AppScale services can use
     to encrypt traffic with.
 
     Args:
       keyname: A str representing the SSH keypair name used for this AppScale
         deployment.
+      is_verbose: A bool that indicates if we want to print out the certificate
+        generation to stdout or not.
     """
-
-    #"openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj '/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com' -keyout www.example.com.key -out www.example.com.cert"
-
-
-    # lifted from http://sheogora.blogspot.com/2012/03/m2crypto-for-python-x509-certificates.html
-    key = M2Crypto.RSA.gen_key(2048, 65537)
-
-    pkey = M2Crypto.EVP.PKey()
-    pkey.assign_rsa(key)
-
-    cur_time = M2Crypto.ASN1.ASN1_UTCTIME()
-    cur_time.set_time(int(time.time()))
-    expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
-
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 3600)
-
-    # creating a certificate
-    cert = M2Crypto.X509.X509()
-    cert.set_pubkey(pkey)
-    cs_name = M2Crypto.X509.X509_Name()
-    cs_name.C = "US"
-    cs_name.ST = "Foo"
-    cs_name.L = "Bar"
-    cs_name.O = "AppScale"
-    cs_name.OU = "User"
-    cs_name.CN = "appscale.com"
-    cs_name.emailAddress = "support@appscale.com"
-    cert.set_version(2)
-    cert.set_serial_number(int(time.time()))
-    cert.set_subject(cs_name)
-    cert.set_issuer_name(cs_name)
-    cert.set_not_before(cur_time)
-    cert.set_not_after(expire_time)
-
-    # self signing a certificate
-    cert.sign(pkey, md="sha1")
-
-    key.save_key(LocalState.get_private_key_location(keyname), None)
-    cert.save_pem(LocalState.get_certificate_location(keyname))
+    cls.shell("openssl req -new -newkey rsa:2048 -days 365 " + \
+      "-passin file:{0} -x509 ".format(LocalState.get_secret_key_location(keyname)) + \
+      "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
+      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
+      LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
 
 
   @classmethod
