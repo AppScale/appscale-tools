@@ -20,7 +20,6 @@ import yaml
 
 # Third party libraries
 from flexmock import flexmock
-import M2Crypto
 import SOAPpy
 
 
@@ -156,31 +155,9 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return(self.success)
 
     # mock out generating the private key
-    flexmock(M2Crypto.RSA)
-    fake_rsa_key = flexmock(name='fake_rsa_key')
-    fake_rsa_key.should_receive('save_key').with_args(
-      LocalState.get_private_key_location(self.keyname), None)
-    M2Crypto.RSA.should_receive('gen_key').and_return(fake_rsa_key)
-
-    flexmock(M2Crypto.EVP)
-    fake_pkey = flexmock(name='fake_pkey')
-    fake_pkey.should_receive('assign_rsa').with_args(fake_rsa_key).and_return()
-    M2Crypto.EVP.should_receive('PKey').and_return(fake_pkey)
-
-    # and mock out generating the certificate
-    flexmock(M2Crypto.X509)
-    fake_cert = flexmock(name='fake_x509')
-    fake_cert.should_receive('set_pubkey').with_args(fake_pkey).and_return()
-    fake_cert.should_receive('set_subject')
-    fake_cert.should_receive('set_issuer_name')
-    fake_cert.should_receive('set_not_before')
-    fake_cert.should_receive('set_not_after')
-    fake_cert.should_receive('set_version')
-    fake_cert.should_receive('set_serial_number')
-    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha1")
-    fake_cert.should_receive('save_pem').with_args(
-      LocalState.get_certificate_location(self.keyname))
-    M2Crypto.X509.should_receive('X509').and_return(fake_cert)
+    subprocess.should_receive('Popen').with_args(re.compile('openssl'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
 
     # assume that we started god fine
     #subprocess.should_receive('Popen').with_args(re.compile('god &'),
