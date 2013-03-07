@@ -218,7 +218,6 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return('Database is at not-up-yet') \
       .and_return('Database is at 1.2.3.4')
     fake_appcontroller.should_receive('is_done_initializing') \
-      .and_raise(Exception) \
       .and_return(False) \
       .and_return(True)
     flexmock(SOAPpy)
