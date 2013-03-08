@@ -143,6 +143,12 @@ class TestRemoteHelper(unittest.TestCase):
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
+    # assume that root login isn't already enabled
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+      .and_return('Please login as the ubuntu user rather than root user.')
+
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
     local_state = flexmock(LocalState)
@@ -165,14 +171,9 @@ class TestRemoteHelper(unittest.TestCase):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
-
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
@@ -181,10 +182,6 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
-      .and_return().ordered()
-
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
@@ -204,10 +201,6 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
-      .and_return().ordered()
-
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\

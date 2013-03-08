@@ -60,6 +60,11 @@ class RemoteHelper():
   WAIT_TIME = 10
 
 
+  # The message that is sent if we try to log into a VM as the root user but
+  # root login isn't enabled yet.
+  LOGIN_AS_UBUNTU_USER = "Please login as the ubuntu user rather than root user."
+
+
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -212,15 +217,16 @@ class RemoteHelper():
       is_verbose: A bool indicating if we should print the command we execute to
         enable root login to stdout.
     """
-    try:
-      cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
-        is_verbose, user='ubuntu')
-    except ShellException as exception:
-      if infrastructure == 'euca':
-        AppScaleLogger.warn("Couldn't enable root login - it may already " + \
-          "be enabled")
-      else:
-        raise exception
+    # First, see if we need to enable root login at all (some VMs have it
+    # already enabled).
+    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    if re.match(cls.LOGIN_AS_UBUNTU_USER, output):
+      AppScaleLogger.log("Root login already enabled - not re-enabling it.")
+      return
+
+    AppScaleLogger.log("Root login not enabled - enabling it now.")
+    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+      is_verbose, user='ubuntu')
 
 
   @classmethod
