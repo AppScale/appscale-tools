@@ -87,7 +87,7 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', keyname='boo',
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True)
+      use_spot_instances=True, max_spot_price=1.23)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -111,7 +111,8 @@ class TestLocalState(unittest.TestCase):
       'instance_type' : 'm1.large',
       'min_images' : 2,
       'max_images' : 2,
-      'use_spot_instances' : True
+      'use_spot_instances' : True,
+      'max_spot_price' : 1.23
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'a':'b'})
