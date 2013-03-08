@@ -30,23 +30,23 @@ if command == "init":
     cprint("Usage: appscale init <cloud or cluster>", 'red')
     print("Specify 'cloud' for EC2 and Eucalyptus deployments, " +
       "and 'cluster' if running over a virtualized cluster.")
-    exit(1)
+    sys.exit(1)
 
   try:
     appscale.init(sys.argv[2])
-  except (AppScalefileException, BadConfigurationException) as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
 
   cprint("AppScalefile successfully created! Be sure to " +
     "customize it for your particular cloud or cluster.", 'green')
-  exit(0)
+  sys.exit(0)
 elif command == "up":
   try:
     appscale.up()
-  except AppScalefileException as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
 elif command == "ssh":
   if len(sys.argv) < 3:
     index = 0
@@ -55,26 +55,32 @@ elif command == "ssh":
 
   try:
     appscale.ssh(index)
-  except (TypeError, AppScaleException,
-    AppScalefileException) as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
 elif command == "status":
   try:
     appscale.status()
-  except AppScalefileException as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
 elif command == "deploy":
   try:
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.deploy(sys.argv[2])
-  except AppScalefileException as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
+elif command == "undeploy" or command == "remove":
+  try:
+    # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
+    appscale.undeploy(sys.argv[2])
+  except Exception as e:
+    cprint(e, 'red')
+    sys.exit(1)
 elif command == "tail":
   if len(sys.argv) < 3:
     # by default, tail the first node's logs, since that node is
@@ -92,28 +98,27 @@ elif command == "tail":
 
   try:
     appscale.tail(index, regex)
-  except (TypeError, AppScaleException,
-    AppScalefileException) as e:
-    cprint(e, 'red')
-    exit(1)
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
+  except Exception as e:
+    cprint(e, 'red')
+    sys.exit(1)
 elif command == "logs":
   if len(sys.argv) < 3:
     cprint("Usage: appscale logs <location to copy logs to>", 'red')
-    exit(1)
+    sys.exit(1)
 
   try:
     appscale.logs(sys.argv[2])
-  except AppScalefileException as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
-  except AppScalefileException as e:
+  except Exception as e:
     cprint(e, 'red')
-    exit(1)
+    sys.exit(1)
 else:
   appscale.help()

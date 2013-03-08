@@ -7,6 +7,8 @@
 import json
 import re
 import socket
+import signal
+import ssl
 import time
 
 
@@ -17,6 +19,7 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -58,6 +61,53 @@ class AppControllerClient():
     self.secret = secret
 
 
+  def run_with_timeout(self, timeout_time, default, function, *args):
+    """Runs the given function, aborting it if it runs too long.
+
+    Args:
+      timeout_time: The number of seconds that we should allow function to
+        execute for.
+      default: The value that should be returned if the timeout is exceeded.
+      function: The function that should be executed.
+      *args: The arguments that will be passed to function.
+    Returns:
+      Whatever function(*args) returns if it runs within the timeout window, and
+        default otherwise.
+    Raises:
+      AppControllerException: If the AppController we're trying to connect to is
+        not running at the given IP address, or if it rejects the SOAP request.
+    """
+    def timeout_handler(_, __):
+      """Raises a TimeoutException if the function we want to execute takes
+      too long to run.
+
+      Raises:
+        TimeoutException: If a SIGALRM is raised.
+      """
+      raise TimeoutException()
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout_time)  # trigger alarm in timeout_time seconds
+    try:
+      retval = function(*args)
+    except TimeoutException:
+      return default
+    except socket.error:
+      raise AppControllerException("The remote AppController is down. Is " + \
+        "AppScale running?")
+    except ssl.SSLError:
+      signal.alarm(0)  # turn off the alarm before we retry
+      return self.run_with_timeout(timeout_time, default. function, *args)
+    finally:
+      signal.alarm(0)  # turn off the alarm
+
+    if retval == self.BAD_SECRET_MESSAGE:
+      raise AppControllerException("Could not authenticate successfully" + \
+        " to the AppController. You may need to change the keyname in use.")
+
+    return retval
+
+
   def set_parameters(self, locations, credentials, app=None):
     """Passes the given parameters to an AppController, allowing it to start
     configuring API services in this AppScale deployment.
@@ -75,8 +125,8 @@ class AppControllerClient():
     if app is None:
       app = 'none'
 
-    result = self.server.set_parameters(locations, credentials,
-      [ app ], self.secret)
+    result = self.run_with_timeout(10, "Error", self.server.set_parameters,
+      locations, credentials, [app], self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -89,17 +139,12 @@ class AppControllerClient():
       A list of the public IP addresses of each machine in this AppScale
       deployment.
     """
-    try:
-      all_ips = self.server.get_all_public_ips(self.secret)
-    except socket.error:
-      raise AppControllerException("The remote AppController is down. Is " + \
-        "AppScale running?")
-
-    if all_ips == self.BAD_SECRET_MESSAGE:
-      raise AppControllerException("Could not authenticate successfully" + \
-        " to the AppController. You may need to change the keyname in use.")
-
-    return json.loads(all_ips)
+    all_ips = self.run_with_timeout(10, "", self.server.get_all_public_ips,
+      self.secret)
+    if all_ips == "":
+      return []
+    else:
+      return json.loads(all_ips)
 
 
   def get_role_info(self):
@@ -110,7 +155,12 @@ class AppControllerClient():
       A dict that contains the public IP address, private IP address, and a list
       of the API services that each node runs in this AppScale deployment.
     """
-    return json.loads(self.server.get_role_info(self.secret))
+    role_info = self.run_with_timeout(10, "", self.server.get_role_info,
+      self.secret)
+    if role_info == "":
+      return {}
+    else:
+      return json.loads(role_info)
 
 
   def get_uaserver_host(self, is_verbose):
@@ -143,7 +193,7 @@ class AppControllerClient():
           if match:
             if last_known_state != match.group(1):
               last_known_state = match.group(1)
-            AppScaleLogger.log(last_known_state)
+              AppScaleLogger.log(last_known_state)
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
@@ -161,7 +211,7 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.server.status(self.secret)
+    return self.run_with_timeout(10, "", self.server.status, self.secret)
 
 
   def is_initialized(self):
@@ -172,10 +222,8 @@ class AppControllerClient():
       A bool that indicates if all API services have finished starting up on
       this machine.
     """
-    try:
-      return self.server.is_done_initializing(self.secret)
-    except Exception:
-      return False
+    return self.run_with_timeout(10, False, self.server.is_done_initializing,
+      self.secret)
 
 
   def start_roles_on_nodes(self, roles_to_nodes):
@@ -187,30 +235,33 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.server.start_roles_on_nodes(roles_to_nodes, self.secret)
+    return self.run_with_timeout(10, "Error", self.server.start_roles_on_nodes,
+      roles_to_nodes, self.secret)
 
 
-  def stop_app(self, app_name):
+  def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
 
     Args:
-      app_name: A str that indicates which application should be stopped.
+      app_id: A str that indicates which application should be stopped.
     Returns:
       The result of telling the AppController to no longer host the app.
     """
-    return self.server.stop_app(app_name, self.secret)
+    return self.run_with_timeout(10, "Error", self.server.stop_app, app_id,
+      self.secret)
 
 
-  def is_app_running(self, app_name):
+  def is_app_running(self, app_id):
     """Queries the AppController to see if the named application is running.
 
     Args:
-      app_name: A str that indicates which application we should be checking
+      app_id: A str that indicates which application we should be checking
         for.
     Returns:
       True if the application is running, False otherwise.
     """
-    return self.server.is_app_running(app_name, self.secret)
+    return self.run_with_timeout(10, "Error", self.server.is_app_running,
+      app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -222,7 +273,8 @@ class AppControllerClient():
       remote_app_location: The location on the remote machine where the App
         Engine application can be found.
     """
-    return self.server.done_uploading(app_id, remote_app_location, self.secret)
+    return self.run_with_timeout(10, "Error", self.server.done_uploading,
+      app_id, remote_app_location, self.secret)
 
 
   def update(self, apps_to_run):
@@ -233,14 +285,5 @@ class AppControllerClient():
       apps_to_run: A list of apps to start running on nodes running the App
         Engine service.
     """
-    return self.server.update(apps_to_run, self.secret)
-
-
-  def is_app_running(self, app_id):
-    """Queries the AppController to see if the named application is running in
-    the AppScale deployment.
-
-    Returns:
-      True if the app is running, False otherwise.
-    """
-    return self.server.is_app_running(app_id, self.secret)
+    return self.run_with_timeout(10, "Error", self.server.update, apps_to_run,
+      self.secret)

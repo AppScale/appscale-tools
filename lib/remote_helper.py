@@ -60,8 +60,13 @@ class RemoteHelper():
   WAIT_TIME = 10
 
 
+  # The message that is sent if we try to log into a VM as the root user but
+  # root login isn't enabled yet.
+  LOGIN_AS_UBUNTU_USER = "Please login as the ubuntu user rather than root user."
+
+
   @classmethod
-  def start_head_node(cls, options, node_layout):
+  def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
     API services on its own node, as well as the other nodes in the deployment.
 
@@ -72,6 +77,8 @@ class RemoteHelper():
       options: A Namespace that includes parameters passed in by the user that
         define non-placement-strategy-related deployment options (e.g., keypair
         names, security group names).
+      my_id: A str that is used to uniquely identify this AppScale deployment
+        with the remote start application.
       node_layout: A NodeLayout that describes the placement strategy that
         should be used for this AppScale deployment.
     Returns:
@@ -86,8 +93,8 @@ class RemoteHelper():
       instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
       instance_id = cls.DUMMY_INSTANCE_ID
-      public_ip = node_layout.head_node().id
-      private_ip = node_layout.head_node().id
+      public_ip = node_layout.head_node().public_ip
+      private_ip = node_layout.head_node().private_ip
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
       LocalState.get_key_path_from_name(options.keyname), public_ip))
@@ -112,7 +119,8 @@ class RemoteHelper():
       options.verbose)
     AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
 
-    AppScaleLogger.remote_log_tools_state(options, "started head node")
+    AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
+      APPSCALE_VERSION)
     time.sleep(10)  # gives machines in cloud extra time to boot up
 
     cls.copy_deployment_credentials(public_ip, options)
@@ -209,15 +217,15 @@ class RemoteHelper():
       is_verbose: A bool indicating if we should print the command we execute to
         enable root login to stdout.
     """
-    try:
+    # First, see if we need to enable root login at all (some VMs have it
+    # already enabled).
+    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
+      AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
         is_verbose, user='ubuntu')
-    except ShellException as exception:
-      if infrastructure == 'euca':
-        AppScaleLogger.warn("Couldn't enable root login - it may already " + \
-          "be enabled")
-      else:
-        raise exception
+    else:
+      AppScaleLogger.log("Root login already enabled - not re-enabling it.")
 
 
   @classmethod
@@ -237,8 +245,10 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-      cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
+    #return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
+    #  cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
+    return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
+      cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
 
 
   @classmethod
@@ -399,7 +409,8 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager"]
+      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
+      "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
       if not os.path.exists(local_path):
@@ -413,6 +424,12 @@ class RemoteHelper():
     # (e.g., built database binaries).
     local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
     LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
+
+    # And rsync the firewall configuration file separately, as it's not a
+    # directory (which the above all are).
+    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + "firewall.conf"
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} root@{3}:/root/appscale/firewall.conf" \
+      .format(ssh_key, cls.SSH_OPTIONS, local_firewall, host), is_verbose)
 
 
   @classmethod
@@ -431,7 +448,7 @@ class RemoteHelper():
     cls.scp(host, options.keyname, LocalState.get_key_path_from_name(
       options.keyname), '/etc/appscale/ssh.key', options.verbose)
 
-    LocalState.generate_ssl_cert(options.keyname)
+    LocalState.generate_ssl_cert(options.keyname, options.verbose)
     cls.scp(host, options.keyname, LocalState.get_certificate_location(
       options.keyname), '/etc/appscale/certs/mycert.pem', options.verbose)
     cls.scp(host, options.keyname, LocalState.get_private_key_location(

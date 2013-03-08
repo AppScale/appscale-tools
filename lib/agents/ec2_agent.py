@@ -148,10 +148,11 @@ class EC2Agent(BaseAgent):
       params['IS_VERBOSE'] = False
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ[credential] and os.environ[credential] != '':
+      if credential in os.environ and os.environ[credential] != '':
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
-        raise AgentConfigurationException("no " + credential)
+        raise AgentConfigurationException("Couldn't find {0} in your " \
+          "environment.".format(credential))
 
     return params
 
@@ -256,8 +257,13 @@ class EC2Agent(BaseAgent):
     group = parameters[self.PARAM_GROUP]
     spot = False
 
-    AppScaleLogger.log('[{0}] [{1}] [{2}] [{3}] [ec2] [{4}] [{5}]'.format(count,
-      image_id, instance_type, keyname, group, spot))
+    AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
+      "instance type {2}, keyname {3}, in security group {4}".format(count,
+      image_id, instance_type, keyname, group))
+    if spot:
+      AppScaleLogger.log("Using spot instances")
+    else:
+      AppScaleLogger.log("Using on-demand instances")
 
     start_time = datetime.datetime.now()
     active_public_ips = []
@@ -299,7 +305,6 @@ class EC2Agent(BaseAgent):
 
       while now < end_time:
         time_left = (end_time - now).seconds
-        AppScaleLogger.log('[{0}] {1} seconds left...'.format(now, time_left))
         instance_info = self.describe_instances(parameters)
         public_ips = instance_info[0]
         private_ips = instance_info[1]
@@ -327,11 +332,11 @@ class EC2Agent(BaseAgent):
       end_time = datetime.datetime.now()
       total_time = end_time - start_time
       if spot:
-        AppScaleLogger.log('TIMING: It took {0} seconds to spawn {1} spot ' \
-                  'instances'.format(total_time.seconds, count))
+        AppScaleLogger.log("Started {0} spot instances in {1} seconds" \
+          .format(count, total_time.seconds))
       else:
-        AppScaleLogger.log('TIMING: It took {0} seconds to spawn {1} ' \
-                  'regular instances'.format(total_time.seconds, count))
+        AppScaleLogger.log("Started {0} on-demand instances in {1} seconds" \
+          .format(count, total_time.seconds))
       return instance_ids, public_ips, private_ips
     except EC2ResponseError as exception:
       self.handle_failure('EC2 response error while starting VMs: ' +
