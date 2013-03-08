@@ -50,7 +50,7 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False)
+      table='cassandra', verbose=False, use_spot_instances=False)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 

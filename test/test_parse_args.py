@@ -315,3 +315,31 @@ class TestParseArgs(unittest.TestCase):
     ec2_argv = self.cloud_argv[:] + ['--use_spot_instances']
     actual = ParseArgs(ec2_argv, self.function).args
     self.assertEquals(True, actual.use_spot_instances)
+
+
+  def test_max_spot_instance_price_flag(self):
+    # if the user wants to use spot instances, that only works on ec2, so
+    # abort if they're running on euca
+    euca_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
+      '--infrastructure', 'euca', '--machine', 'emi-ABCDEFG',
+      '--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, euca_argv,
+      self.function)
+
+    # also abort if they're running on a virtualized cluster
+    cluster_argv = self.cluster_argv[:] + ['--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, cluster_argv,
+      self.function)
+
+    # fail if running on EC2 and they didn't say that we should use spot
+    # instances
+    ec2_bad_argv = self.cloud_argv[:] + ['--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, ec2_bad_argv,
+      self.function)
+
+    # succeed if they did say it
+    ec2_argv = self.cloud_argv[:] + ['--use_spot_instances', '--max_spot_price',
+      '20.0']
+    actual = ParseArgs(ec2_argv, self.function).args
+    self.assertEquals(True, actual.use_spot_instances)
+    self.assertEquals(20.0, actual.max_spot_price)
