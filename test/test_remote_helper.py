@@ -171,6 +171,10 @@ class TestRemoteHelper(unittest.TestCase):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
+    local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
@@ -182,6 +186,10 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
@@ -201,6 +209,10 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\

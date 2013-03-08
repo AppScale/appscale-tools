@@ -220,13 +220,13 @@ class RemoteHelper():
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
     output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
-    if re.match(cls.LOGIN_AS_UBUNTU_USER, output):
+    AppScaleLogger.warn(str(output))
+    if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
+      AppScaleLogger.log("Root login not enabled - enabling it now.")
+      cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+        is_verbose, user='ubuntu')
+    else:
       AppScaleLogger.log("Root login already enabled - not re-enabling it.")
-      return
-
-    AppScaleLogger.log("Root login not enabled - enabling it now.")
-    cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
-      is_verbose, user='ubuntu')
 
 
   @classmethod
