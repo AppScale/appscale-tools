@@ -17,7 +17,6 @@ import unittest
 # Third party libraries
 import boto
 from flexmock import flexmock
-import M2Crypto
 import SOAPpy
 
 
@@ -144,6 +143,12 @@ class TestRemoteHelper(unittest.TestCase):
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
+    # assume that root login isn't already enabled
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+      .and_return('Please login as the ubuntu user rather than root user.')
+
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
     local_state = flexmock(LocalState)
@@ -173,7 +178,6 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
-
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
@@ -272,33 +276,11 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return().ordered()
 
     # mock out generating the private key
-    flexmock(M2Crypto.RSA)
-    fake_rsa_key = flexmock(name='fake_rsa_key')
-    fake_rsa_key.should_receive('save_key').with_args(
-      LocalState.get_private_key_location('bookey'), None)
-    M2Crypto.RSA.should_receive('gen_key').and_return(fake_rsa_key)
-
-    flexmock(M2Crypto.EVP)
-    fake_pkey = flexmock(name='fake_pkey')
-    fake_pkey.should_receive('assign_rsa').with_args(fake_rsa_key).and_return()
-    M2Crypto.EVP.should_receive('PKey').and_return(fake_pkey)
-
-    # and mock out generating the certificate
-    flexmock(M2Crypto.X509)
-    fake_cert = flexmock(name='fake_x509')
-    fake_cert.should_receive('set_pubkey').with_args(fake_pkey).and_return()
-    fake_cert.should_receive('set_subject')
-    fake_cert.should_receive('set_issuer_name')
-    fake_cert.should_receive('set_not_before')
-    fake_cert.should_receive('set_not_after')
-    fake_cert.should_receive('set_version')
-    fake_cert.should_receive('set_serial_number')
-    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha1")
-    fake_cert.should_receive('save_pem').with_args(
-      LocalState.get_certificate_location('bookey'))
-    M2Crypto.X509.should_receive('X509').and_return(fake_cert)
-
     local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^openssl'),True, stdin=None)\
+      .and_return().ordered()
+
     local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*mycert.pem'),True,5)\
       .and_return().ordered()

@@ -98,7 +98,7 @@ class TestLocalState(unittest.TestCase):
       'a' : 'b',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({'node-1': ['rabbitmq_slave', 'database', 'rabbitmq', 'memcache',
+      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
         'db_slave', 'appengine']}),
       'keyname' : 'boo',
       'replication' : '2',
