@@ -41,13 +41,15 @@ class EC2Agent(BaseAgent):
   PARAM_INSTANCE_TYPE = 'instance_type'
   PARAM_KEYNAME = 'keyname'
   PARAM_INSTANCE_IDS = 'instance_ids'
+  PARAM_SPOT = 'use_spot_instances'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
     PARAM_CREDENTIALS,
     PARAM_GROUP,
     PARAM_IMAGE_ID,
     PARAM_INSTANCE_TYPE,
-    PARAM_KEYNAME
+    PARAM_KEYNAME,
+    PARAM_SPOT
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
@@ -146,6 +148,11 @@ class EC2Agent(BaseAgent):
       params['IS_VERBOSE'] = args['verbose']
     else:
       params['IS_VERBOSE'] = False
+
+    if 'use_spot_instances' in args and args['use_spot_instances'] == True:
+      params[self.PARAM_SPOT] = True
+    else:
+      params[self.PARAM_SPOT] = False
 
     for credential in self.REQUIRED_CREDENTIALS:
       if credential in os.environ and os.environ[credential] != '':
@@ -255,7 +262,7 @@ class EC2Agent(BaseAgent):
     instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
-    spot = False
+    spot = parameters[self.PARAM_SPOT]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
       "instance type {2}, keyname {3}, in security group {4}".format(count,
@@ -305,6 +312,7 @@ class EC2Agent(BaseAgent):
 
       while now < end_time:
         time_left = (end_time - now).seconds
+        AppScaleLogger.log("Waiting for your instances to start...")
         instance_info = self.describe_instances(parameters)
         public_ips = instance_info[0]
         private_ips = instance_info[1]
@@ -487,7 +495,7 @@ class EC2Agent(BaseAgent):
     Returns the spot price for an EC2 instance of the specified instance type.
     The returned value is computed by averaging all the spot price history
     values returned by the back-end EC2 APIs and incrementing the average by
-    extra 20%.
+    extra 10%.
 
     Args:
       instance_type An EC2 instance type
@@ -501,9 +509,9 @@ class EC2Agent(BaseAgent):
     for entry in history:
       var_sum += entry.price
     average = var_sum / len(history)
-    plus_twenty = average * 1.20
+    plus_twenty = average * 1.10
     AppScaleLogger.log('The average spot instance price for a {0} machine is'\
-        ' {1}, and 20% more is {2}'.format(instance_type, average, plus_twenty))
+        ' {1}, and 10% more is {2}'.format(instance_type, average, plus_twenty))
     return plus_twenty
 
   def open_connection(self, parameters):
