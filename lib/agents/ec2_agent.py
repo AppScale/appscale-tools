@@ -148,10 +148,11 @@ class EC2Agent(BaseAgent):
       params['IS_VERBOSE'] = False
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ[credential] and os.environ[credential] != '':
+      if credential in os.environ and os.environ[credential] != '':
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
-        raise AgentConfigurationException("no " + credential)
+        raise AgentConfigurationException("Couldn't find {0} in your " \
+          "environment.".format(credential))
 
     return params
 
