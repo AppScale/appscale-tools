@@ -143,6 +143,12 @@ class TestRemoteHelper(unittest.TestCase):
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
+    # assume that root login isn't already enabled
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+      .and_return('Please login as the ubuntu user rather than root user.')
+
     # and assume that we can ssh in as ubuntu to enable root login, but that
     # it fails the first time
     local_state = flexmock(LocalState)
@@ -172,7 +178,6 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
-
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
