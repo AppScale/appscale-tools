@@ -25,6 +25,7 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
@@ -50,7 +51,7 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False)
+      table='cassandra', verbose=False, test=False)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -179,6 +180,10 @@ class TestRemoteHelper(unittest.TestCase):
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
 
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
+
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
 
@@ -201,6 +206,10 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
       .and_raise(ShellException).ordered()
+
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
@@ -232,6 +241,10 @@ class TestRemoteHelper(unittest.TestCase):
         stdin=re.compile('ls /etc/appscale/{0}/{1}'\
           .format(APPSCALE_VERSION, 'cassandra')))\
       .and_raise(ShellException).ordered()
+
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
