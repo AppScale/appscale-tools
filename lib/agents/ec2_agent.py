@@ -509,10 +509,10 @@ class EC2Agent(BaseAgent):
     for entry in history:
       var_sum += entry.price
     average = var_sum / len(history)
-    plus_twenty = average * 1.10
+    bid_price = average * 1.10
     AppScaleLogger.log('The average spot instance price for a {0} machine is'\
-        ' {1}, and 10% more is {2}'.format(instance_type, average, plus_twenty))
-    return plus_twenty
+        ' {1}, and 10% more is {2}'.format(instance_type, average, bid_price))
+    return bid_price
 
   def open_connection(self, parameters):
     """
