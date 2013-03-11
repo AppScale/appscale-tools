@@ -104,15 +104,18 @@ class RemoteHelper():
     except AppScaleException as ase:
        # On failure shutdown the cloud instances, cleanup the keys, but only 
        # if --test is not set.
-       if options.infrastructure and not options.test:
-         try:
-           cls.terminate_cloud_instance(instance_id, options)
-         except Exception as ase_e:
-           AppScaleLogger.log("Error terminating instances: "+str(ase_e))
-         raise AppScaleException(str(ase)+"\nPlease ensure that the "\
+       if options.infrastructure:
+         if not options.test:
+           try:
+             cls.terminate_cloud_instance(instance_id, options)
+           except Exception as ase_e:
+             AppScaleLogger.log("Error terminating instances: "+str(ase_e))
+         raise AppScaleException(str(ase)+" Please ensure that the "\
            "image {0} has the AppScale {1} installed on it."\
            .format(options.machine,APPSCALE_VERSION))
-       raise(ase)
+       else:
+         raise AppScaleExceptoin(str(ase)+" Please login to that machine and "\
+         "ensure that AppScale {0} is installed on it.".format(APPSCALE_VERSION))
 
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
@@ -361,22 +364,19 @@ class RemoteHelper():
     if not cls.does_host_have_location(host, keyname, '/etc/appscale',
       is_verbose):
       raise AppScaleException("The machine at {0} does not have " \
-        "AppScale installed. Please install AppScale on it and try again." \
-        .format(host))
+        "AppScale installed. ".format(host))
 
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
       '/etc/appscale/{0}'.format(APPSCALE_VERSION), is_verbose):
       raise AppScaleException("The machine at {0} does not have AppScale "  \
-        "{1} installed. Please install AppScale {1} on it and try again." \
-          .format(host, APPSCALE_VERSION))
+        "{1} installed.".format(host, APPSCALE_VERSION))
 
     # finally, make sure it has the database installed that the user requests
     if not cls.does_host_have_location(host, keyname,
       '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, database), is_verbose):
       raise AppScaleException("The machine at {0} does not have support for"  \
-        " {1} installed. Please provide a machine image that does and try "  \
-        "again.".format(host, database))
+        " {1} installed.".format(host, database))
 
 
   @classmethod
