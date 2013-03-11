@@ -9,7 +9,6 @@ import json
 import os
 import re
 import socket
-import subprocess
 import sys
 import tempfile
 import time
@@ -56,15 +55,6 @@ class TestAppScaleRunInstances(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
-#    flexmock(LocalState)
-#    LocalState.should_receive('shell').and_raise(Exception)
-#    LocalState.should_receive('ensure_appscale_isnt_running').and_return()
-#
-#    remote_helper = flexmock(RemoteHelper)
-#    remote_helper.should_receive('start_head_node').and_return()
-#    remote_helper.should_receive('ensure_machine_is_compatible').and_return()
-#    remote_helper.should_receive('does_host_have_location').and_return()
-
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
@@ -93,13 +83,12 @@ class TestAppScaleRunInstances(unittest.TestCase):
   def test_appscale_in_one_node_virt_deployment(self):
     # let's say that appscale isn't already running
 
-#    osp = flexmock(os.path)
-#    #osp.should_call('exists')
-#    osp.should_receive('exists').with_args(
-#      LocalState.get_locations_yaml_location(self.keyname)).and_return(False)
     local_state = flexmock(LocalState)
     local_state.should_receive('ensure_appscale_isnt_running').and_return()
     local_state.should_receive('make_appscale_directory').and_return()
+
+    rh = flexmock(RemoteHelper)
+    rh.should_receive('copy_deployment_credentials').and_return()
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -128,58 +117,58 @@ class TestAppScaleRunInstances(unittest.TestCase):
     builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
+    # mock out copying over the keys
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*.key'),False,5)
+
     # mock out our attempts to find /etc/appscale and presume it does exist
-    flexmock(subprocess)
-    #subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale'))\
+      .and_return()
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    #subprocess.should_receive('Popen').with_args(re.compile(
-    #  '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
+      .and_return()
 
-    # put in a mock indicating that the database the user wants is supported
-    #subprocess.should_receive('Popen').with_args(re.compile(
-    #  '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, 'cassandra')),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    # finally, put in a mock indicating that the database the user wants
+    # is supported
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
+          .format(APPSCALE_VERSION, 'cassandra')))\
+      .and_return()
 
     # mock out generating the private key
-    subprocess.should_receive('Popen').with_args(re.compile('openssl'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^openssl'),False,stdin=None)\
+      .and_return()
+
+    # mock out removing the old json file
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
+      .and_return()
 
     # assume that we started god fine
-    #subprocess.should_receive('Popen').with_args(re.compile('god &'),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .and_return()
+
 
     # and that we copied over the AppController's god file
-    #subprocess.should_receive('Popen').with_args(re.compile(
-    #  'appcontroller.god'),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
+      .and_return()
 
     # also, that we started the AppController itself
-    #subprocess.should_receive('Popen').with_args(re.compile('god load'),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('^god load .*appcontroller\.god'))\
+      .and_return()
 
     # assume that the AppController comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')
@@ -204,7 +193,8 @@ class TestAppScaleRunInstances(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('set_parameters').with_args(list, list,
       ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
+    fake_appcontroller.should_receive('get_all_public_ips')\
+      .with_args('the secret') \
       .and_return(json.dumps(['1.2.3.4']))
     role_info = [{
       'public_ip' : '1.2.3.4',
@@ -225,22 +215,6 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
-#    os.path.should_receive('exists').with_args(
-#      LocalState.get_locations_json_location(self.keyname)).and_return(True)
-#
-#    fake_nodes_json = flexmock(name="fake_nodes_json")
-#    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-#      "public_ip" : "1.2.3.4",
-#      "private_ip" : "1.2.3.4",
-#      "jobs" : ["shadow", "login"]
-#    }]))
-#    fake_nodes_json.should_receive('write').and_return()
-#    builtins.should_receive('open').with_args(
-#      LocalState.get_locations_json_location(self.keyname), 'r') \
-#      .and_return(fake_nodes_json)
-#    builtins.should_receive('open').with_args(
-#      LocalState.get_locations_json_location(self.keyname), 'w') \
-#      .and_return(fake_nodes_json)
     local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "1.2.3.4",
@@ -248,26 +222,27 @@ class TestAppScaleRunInstances(unittest.TestCase):
         "jobs" : ["shadow", "login"]
       }])))
 
-
     # copying over the locations yaml and json files should be fine
-    #subprocess.should_receive('Popen').with_args(re.compile(
-    #  'locations-{0}.[yaml|json]'.format(self.keyname)),
-    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,\
-      stdin=self.fake_input_file) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
+        False,5)\
+      .and_return()
 
-    #self.success.should_receive('wait').and_return(0)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
+        False,5)\
+      .and_return()
 
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
+        False,5)\
+      .and_return()
 
     # same for the secret key
-    #subprocess.should_receive('Popen').with_args(re.compile(
-    #  '{0}.secret'.format(self.keyname)),
-    subprocess.should_receive('Popen').with_args(re.compile('scp'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*.secret'),False,5)\
+      .and_return()
 
-    #self.success.should_receive('wait').and_return(0)
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
