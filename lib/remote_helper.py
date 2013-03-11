@@ -109,13 +109,14 @@ class RemoteHelper():
            try:
              cls.terminate_cloud_instance(instance_id, options)
            except Exception as tcie:
-             AppScaleLogger.log("Error terminating instances: "+str(tcie))
-         raise AppScaleException(str(ase)+" Please ensure that the "\
-           "image {0} has the AppScale {1} installed on it."\
-           .format(options.machine,APPSCALE_VERSION))
+             AppScaleLogger.log("Error terminating instances: {0}"
+               .format(str(tcie)))
+         raise AppScaleException("{0} Please ensure that the "\
+           "image {1} has the AppScale {2} installed on it."
+           .format(str(ase),options.machine,APPSCALE_VERSION))
        else:
          raise AppScaleException("{0} Please login to that machine and ensure "\
-           "that AppScale {1} is installed on it."\
+           "that AppScale {1} is installed on it."
            .format(str(ase),APPSCALE_VERSION))
 
     if options.scp:
@@ -174,7 +175,7 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    cls.enable_root_login(public_ips[0], options.keyname,\
+    cls.enable_root_login(public_ips[0], options.keyname,
       options.infrastructure, options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
