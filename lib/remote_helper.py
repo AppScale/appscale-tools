@@ -108,14 +108,15 @@ class RemoteHelper():
          if not options.test:
            try:
              cls.terminate_cloud_instance(instance_id, options)
-           except Exception as ase_e:
-             AppScaleLogger.log("Error terminating instances: "+str(ase_e))
+           except Exception as tcie:
+             AppScaleLogger.log("Error terminating instances: "+str(tcie))
          raise AppScaleException(str(ase)+" Please ensure that the "\
            "image {0} has the AppScale {1} installed on it."\
            .format(options.machine,APPSCALE_VERSION))
        else:
-         raise AppScaleExceptoin(str(ase)+" Please login to that machine and "\
-         "ensure that AppScale {0} is installed on it.".format(APPSCALE_VERSION))
+         raise AppScaleException("{0} Please login to that machine and ensure "\
+           "that AppScale {1} is installed on it."\
+           .format(str(ase),APPSCALE_VERSION))
 
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
@@ -364,7 +365,7 @@ class RemoteHelper():
     if not cls.does_host_have_location(host, keyname, '/etc/appscale',
       is_verbose):
       raise AppScaleException("The machine at {0} does not have " \
-        "AppScale installed. ".format(host))
+        "AppScale installed.".format(host))
 
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
@@ -433,7 +434,7 @@ class RemoteHelper():
           "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
           local_path))
       LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* "\
-        "root@{3}:/root/appscale/{4}".format(ssh_key, cls.SSH_OPTIONS, \
+        "root@{3}:/root/appscale/{4}".format(ssh_key, cls.SSH_OPTIONS, 
         local_path, host, dir_name), is_verbose)
 
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
@@ -609,13 +610,14 @@ class RemoteHelper():
 
   @classmethod
   def terminate_cloud_instance(cls, instance_id, options):
-    """Powers off a single instance in the currently AppScale deployment.
+    """Powers off a single instance in the currently AppScale deployment and
+       cleans up secret key from the local filesystem.
 
     Args:
-      instance_id: str containting the instance id.
+      instance_id: str containing the instance id.
       options: namespace containing the run parameters.
     """
-    AppScaleLogger.log("About to terminate instance {0}"\
+    AppScaleLogger.log("About to terminate instance {0}"
       .format(instance_id))
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
@@ -634,9 +636,9 @@ class RemoteHelper():
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"\
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"
       .format(keyname))
-    # This sleep is here to allow a moment for user to Ctl-C
+    # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
     # get all the instance IDs for machines in our deployment
