@@ -111,7 +111,7 @@ class RemoteHelper():
            except Exception as tcie:
              AppScaleLogger.log("Error terminating instances: {0}"
                .format(str(tcie)))
-         raise AppScaleException("{0} Please ensure that the "\
+         raise AppScaleException("{0} Please ensure that "\
            "image {1} has the AppScale {2} installed on it."
            .format(str(ase),options.machine,APPSCALE_VERSION))
        else:
