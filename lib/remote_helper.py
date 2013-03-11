@@ -105,10 +105,14 @@ class RemoteHelper():
        # On failure shutdown the cloud instances, cleanup the keys, but only 
        # if --test is not set.
        if options.infrastructure and not options.test:
+         
          try:
            cls.terminate_cloud_instance(instance_id, options)
          except Exception as ase_e:
            AppScaleLogger.log("Error terminating instances: "+str(ase_e))
+         raise AppScaleException(str(ase)+"\nPlease ensure that the "\
+           " image {1} has the AppScale {2} installed on it"\
+           .format(options.machine,APPSCALE_VERSION))
        raise(ase)
 
     if options.scp:
@@ -357,8 +361,9 @@ class RemoteHelper():
     # first, make sure the image is an appscale image
     if not cls.does_host_have_location(host, keyname, '/etc/appscale',
       is_verbose):
-      raise AppScaleException("The machine at "+host+" does not have " + \
-        "AppScale installed. Please install AppScale on it and try again.")
+      raise AppScaleException("The machine at {0} does not have " \
+        "AppScale installed. Please install AppScale on it and try again." \
+        .format(host))
 
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
