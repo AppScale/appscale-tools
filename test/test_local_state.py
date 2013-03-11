@@ -112,7 +112,7 @@ class TestLocalState(unittest.TestCase):
       'min_images' : 2,
       'max_images' : 2,
       'use_spot_instances' : True,
-      'max_spot_price' : 1.23
+      'max_spot_price' : '1.23'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'a':'b'})
