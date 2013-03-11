@@ -589,12 +589,12 @@ appengine:  1.2.3.4
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
-    ips_layout = yaml.safe_load(""
+    ips_layout = yaml.safe_load("""
 master : 1.2.3.4
 database: 1.2.3.4
 zookeeper: 1.2.3.4
 appengine:  1.2.3.4
-    "")
+    """)
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),
