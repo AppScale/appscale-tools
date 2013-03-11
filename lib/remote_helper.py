@@ -105,13 +105,12 @@ class RemoteHelper():
        # On failure shutdown the cloud instances, cleanup the keys, but only 
        # if --test is not set.
        if options.infrastructure and not options.test:
-         
          try:
            cls.terminate_cloud_instance(instance_id, options)
          except Exception as ase_e:
            AppScaleLogger.log("Error terminating instances: "+str(ase_e))
          raise AppScaleException(str(ase)+"\nPlease ensure that the "\
-           " image {1} has the AppScale {2} installed on it"\
+           "image {0} has the AppScale {1} installed on it."\
            .format(options.machine,APPSCALE_VERSION))
        raise(ase)
 
