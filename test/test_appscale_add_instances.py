@@ -133,13 +133,10 @@ appengine: 1.2.3.4
 
     # say that the ssh key works
     flexmock(subprocess)
-#    subprocess.should_receive('Popen').with_args(re.compile(
-#      'ls'.format(self.keyname)),
     subprocess.should_receive('Popen').with_args(re.compile('ssh'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
       stdin=self.fake_input_file) \
       .and_return(self.success)
-#    subprocess.should_receive('Popen').and_return(self.success)
 
     # mock out reading the locations.json file, and slip in our own json
     flexmock(os.path)
