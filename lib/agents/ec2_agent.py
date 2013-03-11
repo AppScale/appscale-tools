@@ -304,7 +304,11 @@ class EC2Agent(BaseAgent):
 
       conn = self.open_connection(parameters)
       if spot:
-        price = parameters[self.PARAM_SPOT_PRICE]
+        if parameters[self.PARAM_SPOT_PRICE]:
+          price = parameters[self.PARAM_SPOT_PRICE]
+        else:
+          price = self.get_optimal_spot_price(conn, instance_type)
+
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
           security_groups=[group], instance_type=instance_type, count=count)
       else:
