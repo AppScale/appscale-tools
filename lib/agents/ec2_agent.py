@@ -152,7 +152,8 @@ class EC2Agent(BaseAgent):
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
         raise AgentConfigurationException("Couldn't find {0} in your " \
-          "environment.".format(credential))
+          "environment. Please set it and run AppScale again."
+          .format(credential))
 
     return params
 
