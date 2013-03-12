@@ -92,12 +92,9 @@ class AppControllerClient():
       retval = function(*args)
     except TimeoutException:
       return default
-    except socket.error:
-      raise AppControllerException("The remote AppController is down. Is " + \
-        "AppScale running?")
-    except ssl.SSLError:
+    except (socket.error, ssl.SSLError):
       signal.alarm(0)  # turn off the alarm before we retry
-      return self.run_with_timeout(timeout_time, default. function, *args)
+      return self.run_with_timeout(timeout_time, default, function, *args)
     finally:
       signal.alarm(0)  # turn off the alarm
 
