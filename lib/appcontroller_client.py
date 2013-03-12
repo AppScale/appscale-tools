@@ -47,6 +47,10 @@ class AppControllerClient():
   BAD_SECRET_MESSAGE = 'false: bad secret'
 
 
+  # The number of times we should retry SOAP calls in case of failures.
+  DEFAULT_NUM_RETRIES = 5
+
+
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
 
@@ -61,13 +65,16 @@ class AppControllerClient():
     self.secret = secret
 
 
-  def run_with_timeout(self, timeout_time, default, function, *args):
+  def run_with_timeout(self, timeout_time, default, num_retries, function,
+    *args):
     """Runs the given function, aborting it if it runs too long.
 
     Args:
       timeout_time: The number of seconds that we should allow function to
         execute for.
       default: The value that should be returned if the timeout is exceeded.
+      num_retries: The number of times we should retry the SOAP call if we see
+        an unexpected exception.
       function: The function that should be executed.
       *args: The arguments that will be passed to function.
     Returns:
@@ -92,9 +99,21 @@ class AppControllerClient():
       retval = function(*args)
     except TimeoutException:
       return default
-    except (socket.error, ssl.SSLError):
+    except socket.error as exception:
       signal.alarm(0)  # turn off the alarm before we retry
-      return self.run_with_timeout(timeout_time, default, function, *args)
+      if num_retries > 0:
+        AppScaleLogger.log("Saw exception {0} when communicating with the " \
+          "AppController, retrying momentarily.".format(str(exception)))
+        time.sleep(1)
+        return self.run_with_timeout(timeout_time, default, num_retries - 1,
+          function, *args)
+      else:
+        raise exception
+    except ssl.SSLError:
+      # these are intermittent, so don't decrement our retry count for this
+      signal.alarm(0)  # turn off the alarm before we retry
+      return self.run_with_timeout(timeout_time, default, num_retries, function,
+        *args)
     finally:
       signal.alarm(0)  # turn off the alarm
 
@@ -122,8 +141,8 @@ class AppControllerClient():
     if app is None:
       app = 'none'
 
-    result = self.run_with_timeout(10, "Error", self.server.set_parameters,
-      locations, credentials, [app], self.secret)
+    result = self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.set_parameters, locations, credentials, [app], self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -136,8 +155,8 @@ class AppControllerClient():
       A list of the public IP addresses of each machine in this AppScale
       deployment.
     """
-    all_ips = self.run_with_timeout(10, "", self.server.get_all_public_ips,
-      self.secret)
+    all_ips = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+      self.server.get_all_public_ips, self.secret)
     if all_ips == "":
       return []
     else:
@@ -152,8 +171,8 @@ class AppControllerClient():
       A dict that contains the public IP address, private IP address, and a list
       of the API services that each node runs in this AppScale deployment.
     """
-    role_info = self.run_with_timeout(10, "", self.server.get_role_info,
-      self.secret)
+    role_info = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+      self.server.get_role_info, self.secret)
     if role_info == "":
       return {}
     else:
@@ -208,7 +227,8 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(10, "", self.server.status, self.secret)
+    return self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+      self.server.status, self.secret)
 
 
   def is_initialized(self):
@@ -219,8 +239,8 @@ class AppControllerClient():
       A bool that indicates if all API services have finished starting up on
       this machine.
     """
-    return self.run_with_timeout(10, False, self.server.is_done_initializing,
-      self.secret)
+    return self.run_with_timeout(10, False, self.DEFAULT_NUM_RETRIES,
+      self.server.is_done_initializing, self.secret)
 
 
   def start_roles_on_nodes(self, roles_to_nodes):
@@ -232,8 +252,8 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.run_with_timeout(10, "Error", self.server.start_roles_on_nodes,
-      roles_to_nodes, self.secret)
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
 
   def stop_app(self, app_id):
@@ -244,8 +264,8 @@ class AppControllerClient():
     Returns:
       The result of telling the AppController to no longer host the app.
     """
-    return self.run_with_timeout(10, "Error", self.server.stop_app, app_id,
-      self.secret)
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.stop_app, app_id, self.secret)
 
 
   def is_app_running(self, app_id):
@@ -257,8 +277,8 @@ class AppControllerClient():
     Returns:
       True if the application is running, False otherwise.
     """
-    return self.run_with_timeout(10, "Error", self.server.is_app_running,
-      app_id, self.secret)
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.is_app_running, app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -270,8 +290,8 @@ class AppControllerClient():
       remote_app_location: The location on the remote machine where the App
         Engine application can be found.
     """
-    return self.run_with_timeout(10, "Error", self.server.done_uploading,
-      app_id, remote_app_location, self.secret)
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.done_uploading, app_id, remote_app_location, self.secret)
 
 
   def update(self, apps_to_run):
@@ -282,5 +302,5 @@ class AppControllerClient():
       apps_to_run: A list of apps to start running on nodes running the App
         Engine service.
     """
-    return self.run_with_timeout(10, "Error", self.server.update, apps_to_run,
-      self.secret)
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.update, apps_to_run, self.secret)
