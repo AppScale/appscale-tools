@@ -61,14 +61,18 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell').and_return()
+
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
 
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -448,6 +452,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
 
   def test_upload_app_successfully(self):
+    remote_help = flexmock(RemoteHelper)
+    remote_help.should_receive('ssh').and_return()
+    remote_help.should_receive('scp').and_return()
+    remote_help.should_receive('copy_app_to_host').and_return()
+
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
@@ -532,21 +541,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(getpass)
     getpass.should_receive('getpass').and_return('aaaaaa')
 
-    # mock out making the remote app directory
-    flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
-
-    # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
-
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/tmp/appscale-app-baz.tar.gz'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
@@ -789,7 +783,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_data = """
     num_hosts:1
     num_ports:1
-    hosts:public-1
+    hosts:public1
     ports: 8080
     """
 
@@ -838,7 +832,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # and slap in a mock that says the app comes up after waiting for it
     # three times
     fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public-1',
+    fake_socket.should_receive('connect').with_args(('public1',
       8080)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
     flexmock(socket)
@@ -853,6 +847,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
 
   def test_upload_tar_gz_app_successfully(self):
+
     # mock out generating a random app dir, for later mocks
     flexmock(uuid)
     uuid.should_receive('uuid4').and_return('12345678')
@@ -866,11 +861,10 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(shutil)
     shutil.should_receive('rmtree').with_args(app_dir).and_return()
 
-    flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(
-      re.compile('tar zxvf '),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('tar zxvf'),False)\
+      .and_return()
 
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
@@ -931,7 +925,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_data = """
     num_hosts:1
     num_ports:1
-    hosts:public-1
+    hosts:public1
     ports: 8080
     """
 
@@ -957,20 +951,18 @@ class TestAppScaleUploadApp(unittest.TestCase):
     getpass.should_receive('getpass').and_return('aaaaaa')
 
     # mock out making the remote app directory
-    flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^mkdir -p'))\
+      .and_return()
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('tar -czf'),False)\
+      .and_return()
 
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/tmp/appscale-app-baz.tar.gz'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('/tmp/appscale-app-baz.tar.gz'),False,5)\
+      .and_return()
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
@@ -980,7 +972,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # and slap in a mock that says the app comes up after waiting for it
     # three times
     fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public-1',
+    fake_socket.should_receive('connect').with_args(('public1',
       8080)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
     flexmock(socket)

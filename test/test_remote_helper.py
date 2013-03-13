@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
+# Programmer: Chris Bunch, Brian Drawert
 
 
 # General-purpose Python library imports
@@ -17,7 +17,6 @@ import unittest
 # Third party libraries
 import boto
 from flexmock import flexmock
-import M2Crypto
 import SOAPpy
 
 
@@ -26,8 +25,10 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
@@ -50,7 +51,8 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False)
+      table='cassandra', verbose=False, test=False)
+    self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
     # mock out calls to EC2
@@ -58,6 +60,7 @@ class TestRemoteHelper(unittest.TestCase):
     # need to create it
     key_contents = "key contents here"
     fake_key = flexmock(name="fake_key", material=key_contents)
+    fake_key.should_receive('save').with_args(os.environ['HOME']+'/.appscale').and_return(None)
 
     fake_ec2 = flexmock(name="fake_ec2")
     fake_ec2.should_receive('get_key_pair').with_args('bookey') \
@@ -114,7 +117,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # finally, inject our mocked EC2
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').and_return(fake_ec2)
 
     # assume that ssh comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')
@@ -127,11 +130,14 @@ class TestRemoteHelper(unittest.TestCase):
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
+
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile')\
+      .and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -139,81 +145,116 @@ class TestRemoteHelper(unittest.TestCase):
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
-    # and assume that we can ssh in as ubuntu to enable root login, but that
-    # it fails the first time
-    flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile('ubuntu'), \
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed).and_return(self.success)
+    # assume that root login isn't already enabled
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+      .and_return('Please login as the ubuntu user rather than root user.')
 
-    # also assume that we can scp over our ssh keys, but that it fails the first
-    # time
-    subprocess.should_receive('Popen').with_args(re.compile('/root/.ssh/id_'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed).and_return(self.success)
+    # and assume that we can ssh in as ubuntu to enable root login
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh .*ubuntu'),False,5)\
+      .and_return()
 
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/root/.appscale/bookey.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed).and_return(self.success)
+    # also assume that we can scp over our ssh keys
+    local_state.should_receive('shell')\
+      .with_args(re.compile('scp .*/root/.ssh/id_'),False,5)\
+      .and_return()
+
+    local_state.should_receive('shell')\
+      .with_args(re.compile('scp .*/root/.appscale/bookey.key'),False,5)\
+      .and_return()
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
-    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale'))\
+      .and_raise(ShellException).ordered()
+
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
-    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale'))\
+      .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
+      .and_raise(ShellException).ordered()
+
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
-    subprocess.should_receive('Popen').with_args(re.compile('/etc/appscale'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+      .and_return().ordered()
+
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale'))\
+      .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/etc/appscale/{0}'.format(APPSCALE_VERSION)),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
+      .and_return().ordered()
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
-    subprocess.should_receive('Popen').with_args(re.compile(
-      '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, 'cassandra')),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.failed)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
+          .format(APPSCALE_VERSION, 'cassandra')))\
+      .and_raise(ShellException).ordered()
+
+    # check that the cleanup routine is called on error
+    flexmock(AppScaleTools).should_receive('terminate_instances')\
+      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.node_layout)
+      self.options, self.my_id, self.node_layout)
 
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
     # if the user specifies that we should copy from a directory that doesn't
     # exist, we should throw up and die
     flexmock(os.path)
-    os.path.should_receive('exists').with_args('/tmp/booscale-local/lib').and_return(False)
+    os.path.should_receive('exists').with_args('/tmp/booscale-local/lib')\
+      .and_return(False)
     self.assertRaises(BadConfigurationException, RemoteHelper.rsync_files,
       'public1', 'booscale', '/tmp/booscale-local', False)
 
@@ -226,9 +267,10 @@ class TestRemoteHelper(unittest.TestCase):
       '/tmp/booscale-local/')).and_return(True)
 
     # assume the rsyncs succeed
-    subprocess.should_receive('Popen').with_args(re.compile('rsync'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^rsync'),False)\
+      .and_return().ordered()
 
     RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local',
       False)
@@ -236,51 +278,41 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_copy_deployment_credentials_in_cloud(self):
     # mock out the scp'ing to public1 and assume they succeed
-    subprocess.should_receive('Popen').with_args(re.compile('secret.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*secret.key'),True,5)\
+      .and_return().ordered()
 
-    subprocess.should_receive('Popen').with_args(re.compile('ssh.key'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*ssh.key'),True,5)\
+      .and_return().ordered()
 
     # mock out generating the private key
-    flexmock(M2Crypto.RSA)
-    fake_rsa_key = flexmock(name='fake_rsa_key')
-    fake_rsa_key.should_receive('save_key').with_args(
-      LocalState.get_private_key_location('bookey'), None)
-    M2Crypto.RSA.should_receive('gen_key').and_return(fake_rsa_key)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^openssl'),True, stdin=None)\
+      .and_return().ordered()
 
-    flexmock(M2Crypto.EVP)
-    fake_pkey = flexmock(name='fake_pkey')
-    fake_pkey.should_receive('assign_rsa').with_args(fake_rsa_key).and_return()
-    M2Crypto.EVP.should_receive('PKey').and_return(fake_pkey)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*mycert.pem'),True,5)\
+      .and_return().ordered()
 
-    # and mock out generating the certificate
-    flexmock(M2Crypto.X509)
-    fake_cert = flexmock(name='fake_x509')
-    fake_cert.should_receive('set_pubkey').with_args(fake_pkey).and_return()
-    fake_cert.should_receive('set_subject')
-    fake_cert.should_receive('set_issuer_name')
-    fake_cert.should_receive('set_not_before')
-    fake_cert.should_receive('set_not_after')
-    fake_cert.should_receive('sign').with_args(fake_pkey, md="sha256")
-    fake_cert.should_receive('save_pem').with_args(
-      LocalState.get_certificate_location('bookey'))
-    M2Crypto.X509.should_receive('X509').and_return(fake_cert)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*mykey.pem'),True,5)\
+      .and_return().ordered()
 
     # next, mock out copying the private key and certificate
-    subprocess.should_receive('Popen').with_args(re.compile('mycert.pem'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),True,5,stdin=re.compile('^mkdir -p'))\
+      .and_return().ordered()
 
-    subprocess.should_receive('Popen').with_args(re.compile('mykey.pem'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*cloud1/mycert.pem'),True,5)\
+      .and_return().ordered()
 
-    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*cloud1/mykey.pem'),True,5)\
+      .and_return().ordered()
 
     options = flexmock(name='options', keyname='bookey', infrastructure='ec2',
       verbose=True)
@@ -289,24 +321,26 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_remote_appcontroller(self):
     # mock out removing the old json file
-    subprocess.should_receive('Popen').with_args(re.compile('rm -rf'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
+      .and_return().ordered()
 
     # assume we started god on public1 fine
-    subprocess.should_receive('Popen').with_args(re.compile('god &'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .and_return().ordered()
 
     # also assume that we scp'ed over the god config file fine
-    subprocess.should_receive('Popen').with_args(re.compile('appcontroller'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
+      .and_return().ordered()
 
     # and assume we started the AppController on public1 fine
-    subprocess.should_receive('Popen').with_args(re.compile('god load'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^ssh'),False,5,\
+        stdin=re.compile('^god load .*appcontroller\.god'))\
+      .and_return().ordered()
 
     # finally, assume the appcontroller comes up after a few tries
     # assume that ssh comes up on the third attempt
@@ -316,21 +350,33 @@ class TestRemoteHelper(unittest.TestCase):
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 
+    
+
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 
 
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
-    subprocess.should_receive('Popen').with_args(re.compile(
-      'locations-bookey.[yaml|json]'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
+        False,5)\
+      .and_return().ordered()
 
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
+        False,5)\
+      .and_return().ordered()
+
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
+        False,5)\
+      .and_return().ordered()
+	
     # and mock out copying the secret file
-    subprocess.should_receive('Popen').with_args(re.compile(
-      'bookey.secret'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
+    local_state.should_receive('shell')\
+      .with_args(re.compile('^scp .*bookey.secret'),False,5)\
+      .and_return().ordered()
 
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 

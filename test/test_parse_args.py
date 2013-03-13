@@ -57,7 +57,8 @@ class TestParseArgs(unittest.TestCase):
       .and_return('anything')
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
+      .and_return(fake_ec2)
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
@@ -73,10 +74,11 @@ class TestParseArgs(unittest.TestCase):
     # version of the tools
     argv_2 = ['--version']
     all_flags_2 = ['version']
-    with self.assertRaises(SystemExit) as context_manager:
+    try:
       ParseArgs(argv_2, self.function)
-    self.assertEquals(local_state.APPSCALE_VERSION,
-      context_manager.exception.message)
+      raise
+    except SystemExit:
+      pass
 
 
   def test_get_min_and_max(self):
@@ -157,12 +159,14 @@ class TestParseArgs(unittest.TestCase):
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', 'emi-ABCDEFG']
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', \
+        'emi-ABCDEFG']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine', 'boo']
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',\
+      'boo']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
     # Specifying --machine when we're not running in a cloud is not acceptable.
@@ -183,7 +187,8 @@ class TestParseArgs(unittest.TestCase):
     # value.
     argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, actual.args.instance_type)
+    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, \
+      actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
@@ -219,17 +224,21 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", \
+        "ami-ABCDEFG"]
     for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+      self.function)
 
 
   def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine", "emi-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",\
+      "emi-ABCDEFG"]
     for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, self.function)
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+      self.function)
 
 
   def test_failure_when_ami_doesnt_exist(self):
@@ -239,9 +248,11 @@ class TestParseArgs(unittest.TestCase):
       .and_raise(boto.exception.EC2ResponseError, '', '')
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
+      .and_return(fake_ec2)
 
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", "ami-ABCDEFG"]
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",\
+      "ami-ABCDEFG"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
 
@@ -273,3 +284,15 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = self.cloud_argv[:] + ['--scp', '/tmp/booscale']
     actual = ParseArgs(argv_2, self.function).args
     self.assertEquals('/tmp/booscale', actual.scp)
+
+
+  def test_login_flag(self):
+    # if the user wants to override the URL where we log in at, make sure it
+    # fails if they don't give us a URL to log in to
+    argv_1 = self.cloud_argv[:] + ['--login_host']
+    self.assertRaises(SystemExit, ParseArgs, argv_1, self.function)
+
+    # and it should succeed if they do give us the URL
+    argv_2 = self.cloud_argv[:] + ['--login_host', 'www.booscale.com']
+    actual = ParseArgs(argv_2, self.function).args
+    self.assertEquals('www.booscale.com', actual.login_host)

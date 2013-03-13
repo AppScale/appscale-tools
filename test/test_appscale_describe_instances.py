@@ -61,7 +61,7 @@ class TestAppScaleDescribeInstances(unittest.TestCase):
     self.fake_temp_file.should_receive('close').and_return()
 
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)

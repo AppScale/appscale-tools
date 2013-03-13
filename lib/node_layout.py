@@ -30,7 +30,7 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'rabbitmq']
+    'zookeeper', 'memcache', 'taskqueue']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -38,7 +38,7 @@ class NodeLayout():
   # the user may not be able to specify directly.
   VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'rabbitmq', 'rabbitmq_master', 'rabbitmq_slave')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave')
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for
@@ -80,6 +80,11 @@ class NodeLayout():
 
   INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
 
+
+  # The message to display if the user mixes advanced and simple tags 
+  # in their deployment
+  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not to mix simple and advance deployment methods"
+  
 
   def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
@@ -132,6 +137,11 @@ class NodeLayout():
       self.database_type = options['table']
     else:
       self.database_type = 'cassandra'
+
+    if 'login_host' in options and options['login_host'] is not None:
+      self.login_host = options['login_host']
+    else:
+      self.login_host = None
 
     self.nodes = []
 
@@ -325,16 +335,11 @@ class NodeLayout():
       cloud: A str that indicates if we believe that machine is in a virtualized
         cluster or in a cloud.
     """
-    id, cloud = None, None
-
     match = self.NODE_ID_REGEX.match(ip)
     if not match:
-      id = ip
-      cloud = "not-cloud"
+      return ip, "not-cloud"
     else:
-      id = match.group(0)
-      cloud = match.group(1)
-    return id, cloud
+      return match.group(0), match.group(1)
 
 
   def is_valid_simple_format(self):
@@ -370,27 +375,27 @@ class NodeLayout():
       if isinstance(ips, str):
         ips = [ips]
       for ip in ips:
-        id, cloud = self.parse_ip(ip)
-        node = SimpleNode(id, cloud, [role])
+        ip, cloud = self.parse_ip(ip)
+        node = SimpleNode(ip, cloud, [role])
 
-        # In simple deployments the db master and rabbitmq master is always on
-        # the shadow node, and db slave / rabbitmq slave is always on the other
+        # In simple deployments the db master and taskqueue  master is always on
+        # the shadow node, and db slave / taskqueue slave is always on the other
         # nodes
         is_master = node.is_role('shadow')
         node.add_db_role(is_master)
-        node.add_rabbitmq_role(is_master)
+        node.add_taskqueue_role(is_master)
 
         if not node.is_valid():
           return self.invalid(node.errors().join(","))
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-          if not self.NODE_ID_REGEX.match(node.id):
+          if not self.NODE_ID_REGEX.match(node.public_ip):
             return self.invalid("{0} is not a valid node ID (must be node-int)".
-              format(node.id))
+              format(node.public_ip))
         else:
           # Virtualized cluster deployments use IP addresses as node IDs
-          if not self.IP_REGEX.match(node.id):
-            return self.invalid("{0} must be an IP address".format(node.id))
+          if not self.IP_REGEX.match(node.public_ip):
+            return self.invalid("{0} must be an IP address".format(node.public_ip))
 
         nodes.append(node)
 
@@ -430,10 +435,12 @@ class NodeLayout():
       if node.is_role('database'):
         database_count += 1
 
-    # TODO(cgb): Revisit this later and see if it's necessary.
-    #if self.skip_replication:
-    #  self.nodes = nodes
-    #  return self.valid()
+    # by this point, somebody has a login role, so now's the time to see if we
+    # need to override their ip address with --login_host
+    if self.login_host is not None:
+      for node in nodes:
+        if node.is_role('login'):
+          node.public_ip = self.login_host
 
     rep = self.is_database_replication_valid(nodes)
 
@@ -466,8 +473,8 @@ class NodeLayout():
         if ip in node_hash:
           node = node_hash[ip]
         else:
-          id, cloud = self.parse_ip(ip)
-          node = AdvancedNode(id, cloud)
+          ip, cloud = self.parse_ip(ip)
+          node = AdvancedNode(ip, cloud)
 
         if role == 'database':
           # The first database node is the master
@@ -479,14 +486,14 @@ class NodeLayout():
         elif role == 'db_master':
           node.add_role('zookeeper')
           node.add_role('role')
-        elif role == 'rabbitmq':
-          # Like the database, the first rabbitmq node is the master
+        elif role == 'taskqueue':
+          # Like the database, the first taskqueue node is the master
           if index == 0:
             is_master = True
           else:
             is_master = False
-          node.add_role('rabbitmq')
-          node.add_rabbitmq_role(is_master)
+          node.add_role('taskqueue')
+          node.add_taskqueue_role(is_master)
         else:
           node.add_role(role)
         
@@ -500,13 +507,13 @@ class NodeLayout():
         return self.invalid(",".join(node.errors()))
 
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.NODE_ID_REGEX.match(node.id):
+        if not self.NODE_ID_REGEX.match(node.public_ip):
           return self.invalid("{0} is not a valid node ID (must be node-int)".
-            format(node.id))
+            format(node.public_ip))
       else:
         # Virtualized cluster deployments use IP addresses as node IDs
-        if not self.IP_REGEX.match(node.id):
-          return self.invalid("{0} must be an IP address".format(node.id))
+        if not self.IP_REGEX.match(node.public_ip):
+          return self.invalid("{0} must be an IP address".format(node.public_ip))
 
     master_nodes = []
     for node in nodes:
@@ -529,6 +536,13 @@ class NodeLayout():
     # If a login node was not specified, make the master into the login node
     if not login_nodes:
       master_node.add_role('login')
+
+    # by this point, somebody has a login role, so now's the time to see if we
+    # need to override their ip address with --login_host
+    if self.login_host is not None:
+      for node in nodes:
+        if node.is_role('login'):
+          node.public_ip = self.login_host
 
     appengine_count = 0
     for node in nodes:
@@ -563,22 +577,22 @@ class NodeLayout():
     if not zookeeper_count:
       master_node.add_role('zookeeper')
 
-    # If no rabbitmq nodes are specified, make the shadow the rabbitmq_master
-    rabbitmq_count = 0
+    # If no taskqueue nodes are specified, make the shadow the taskqueue_master
+    taskqueue_count = 0
     for node in nodes:
-      if node.is_role('rabbitmq'):
-        rabbitmq_count += 1
+      if node.is_role('taskqueue'):
+        taskqueue_count += 1
 
-    if not rabbitmq_count:
-      master_node.add_role('rabbitmq')
-      master_node.add_role('rabbitmq_master')
+    if not taskqueue_count:
+      master_node.add_role('taskqueue')
+      master_node.add_role('taskqueue_master')
 
-    # Any node that runs appengine needs rabbitmq to dispatch task requests to
+    # Any node that runs appengine needs taskqueue to dispatch task requests to
     # It's safe to add the slave role since we ensure above that somebody
     # already has the master role
     for node in nodes:
-      if node.is_role('appengine') and not node.is_role('rabbitmq'):
-        node.add_role('rabbitmq_slave')
+      if node.is_role('appengine') and not node.is_role('taskqueue'):
+        node.add_role('taskqueue_slave')
 
     rep = self.is_database_replication_valid(nodes)
     if not rep['result']:
@@ -690,7 +704,7 @@ class NodeLayout():
     result = {}
     # Put all nodes except the head node in the hash
     for node in self.other_nodes():
-      result[node.id] = node.roles
+      result[node.public_ip] = node.roles
     return result
 
 
@@ -721,7 +735,7 @@ class Node():
   """
 
 
-  def __init__(self, id, cloud, roles=[]):
+  def __init__(self, public_ip, cloud, roles=[]):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -732,7 +746,8 @@ class Node():
       cloud: The cloud that this Node belongs to.
       roles: A list of roles that this Node will run in an AppScale deployment.
     """
-    self.id = id
+    self.public_ip = public_ip
+    self.private_ip = public_ip
     self.cloud = cloud
     self.roles = roles
     self.expand_roles()
@@ -751,17 +766,17 @@ class Node():
       self.add_role('db_slave')
 
 
-  def add_rabbitmq_role(self, is_master):
-    """Adds a RabbitMQ master or slave role to this Node, depending on
+  def add_taskqueue_role(self, is_master):
+    """Adds a TaskQueue master or slave role to this Node, depending on
     the argument given.
 
     Args:
-      is_master: A bool that indicates we should add a RabbitMQ master role.
+      is_master: A bool that indicates we should add a TaskQueue master role.
     """
     if is_master:
-      self.add_role('rabbitmq_master')
+      self.add_role('taskqueue_master')
     else:
-      self.add_role('rabbitmq_slave')
+      self.add_role('taskqueue_slave')
 
 
   def add_role(self, role):
@@ -845,7 +860,7 @@ class SimpleNode(Node):
       self.roles.append('memcache')
       self.roles.append('login')
       self.roles.append('zookeeper')
-      self.roles.append('rabbitmq')
+      self.roles.append('taskqueue')
 
     # If they specify a servers role, expand it out to
     # be database, appengine, and memcache
@@ -854,7 +869,7 @@ class SimpleNode(Node):
       self.roles.append('appengine')
       self.roles.append('memcache')
       self.roles.append('database')
-      self.roles.append('rabbitmq')
+      self.roles.append('taskqueue')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))

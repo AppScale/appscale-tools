@@ -67,6 +67,8 @@ Available commands:
   ssh: Logs into a virtual machine in a currently running AppScale deployment.
   status: Reports on the state of a currently running AppScale deployment.
   deploy: Deploys a Google App Engine app to AppScale.
+  undeploy: Removes a Google App Engine app from AppScale.
+  remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
   destroy: Terminates the currently running AppScale deployment.
@@ -228,10 +230,7 @@ Available commands:
 
     # Finally, call AppScaleTools.run_instances
     options = ParseArgs(command, "appscale-run-instances").args
-    try:
-      AppScaleTools.run_instances(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.run_instances(options)
 
 
   def valid_ssh_key(self, config):
@@ -410,10 +409,40 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    try:
-      AppScaleTools.upload_app(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.upload_app(options)
+
+
+  def undeploy(self, appid):
+    """'undeploy' is a more accessible way to tell an AppScale deployment to
+    stop hosting a Google App Engine application than 'appscale-remove-app'. It
+    calls that command with the configuration options found in the AppScalefile
+    in the current working directory.
+
+    Args:
+      appid: The name of the application that we should remove.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
+    contents = self.read_appscalefile()
+
+    # Construct an remove-app command from the file's contents
+    command = []
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    if 'verbose' in contents_as_yaml:
+      command.append("--verbose")
+
+    command.append("--appname")
+    command.append(appid)
+
+    # Finally, exec the command. Don't worry about validating it -
+    # appscale-upload-app will do that for us.
+    options = ParseArgs(command, "appscale-remove-app").args
+    AppScaleTools.remove_app(options)
 
 
   def tail(self, node, file_regex):
@@ -465,7 +494,8 @@ Available commands:
 
     # construct the ssh command to exec with that IP address
     tail = "tail -f /var/log/appscale/" + str(file_regex)
-    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i", self.get_key_location(keyname), "root@" + ip, tail]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",\
+        self.get_key_location(keyname), "root@" + ip, tail]
 
     # exec the ssh command
     subprocess.call(command)
@@ -496,10 +526,7 @@ Available commands:
 
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args
-    try:
-      AppScaleTools.gather_logs(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.gather_logs(options)
 
 
   def destroy(self):
@@ -526,7 +553,4 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
-    try:
-      AppScaleTools.terminate_instances(options)
-    except Exception as e:
-      AppScaleLogger.warn(str(e))
+    AppScaleTools.terminate_instances(options)
