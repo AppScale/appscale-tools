@@ -10,6 +10,7 @@ import re
 import shutil
 import sys
 import time
+import uuid
 
 
 # AppScale-specific imports
@@ -125,7 +126,7 @@ class AppScaleTools():
       raise BadConfigurationException("There were problems with your " + \
         "placement strategy: " + str(node_layout.errors()))
 
-    all_ips = [node.id for node in node_layout.nodes]
+    all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
       # first, set up passwordless ssh
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
@@ -286,7 +287,9 @@ class AppScaleTools():
     else:
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over a virtualized cluster.")
-    AppScaleLogger.remote_log_tools_state(options, "started")
+    my_id = str(uuid.uuid4())
+    AppScaleLogger.remote_log_tools_state(options, my_id, "started",
+      APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
@@ -297,7 +300,8 @@ class AppScaleTools():
       AppScaleLogger.warn("Warning: This deployment strategy is not " + \
         "officially supported.")
 
-    public_ip, instance_id = RemoteHelper.start_head_node(options, node_layout)
+    public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
+      node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
       "for use.")
 
@@ -311,6 +315,7 @@ class AppScaleTools():
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
     uaserver_host = acc.get_uaserver_host(options.verbose)
+
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
 
@@ -352,7 +357,8 @@ class AppScaleTools():
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
       options.keyname)))
-    AppScaleLogger.remote_log_tools_state(options, "finished")
+    AppScaleLogger.remote_log_tools_state(options, my_id,
+      "finished", APPSCALE_VERSION)
 
 
   @classmethod

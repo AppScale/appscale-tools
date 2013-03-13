@@ -166,6 +166,10 @@ class ParseArgs():
       group.add_argument('--autoscale', action='store_true',
         help="adds/removes application servers based on incoming traffic")
 
+      # flags relating to the location where users reach appscale
+      self.parser.add_argument('--login_host',
+        help="override the provided login host with this one")
+
       # developer flags
       self.parser.add_argument('--force', action='store_true',
         default=False,

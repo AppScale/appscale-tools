@@ -1,4 +1,4 @@
-AppScale Tools Version 1.6.6
+AppScale Tools Version 1.6.8
 from AppScale Systems, Inc.
 http://www.appscale.com
 
@@ -13,5 +13,3 @@ sudo bash debian/appscale_build.sh
 
 This will remove any directories /usr/local/appscale-tools*
 and install the tools in /usr/local/appscale-tools.
-If you wish to change the target location, change TOOL_HOME in 
-Makefile.

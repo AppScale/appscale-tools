@@ -30,7 +30,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.7"
+APPSCALE_VERSION = "1.6.8"
 
 
 class LocalState():
@@ -238,50 +238,20 @@ class LocalState():
 
 
   @classmethod
-  def generate_ssl_cert(cls, keyname):
+  def generate_ssl_cert(cls, keyname, is_verbose):
     """Generates a self-signed SSL certificate that AppScale services can use
     to encrypt traffic with.
 
     Args:
       keyname: A str representing the SSH keypair name used for this AppScale
         deployment.
+      is_verbose: A bool that indicates if we want to print out the certificate
+        generation to stdout or not.
     """
-    # lifted from http://sheogora.blogspot.com/2012/03/m2crypto-for-python-x509-certificates.html
-    key = M2Crypto.RSA.gen_key(2048, 65537)
-
-    pkey = M2Crypto.EVP.PKey()
-    pkey.assign_rsa(key)
-
-    cur_time = M2Crypto.ASN1.ASN1_UTCTIME()
-    cur_time.set_time(int(time.time()))
-    expire_time = M2Crypto.ASN1.ASN1_UTCTIME()
-
-    # Expire certs in 1 hour.
-    expire_time.set_time(int(time.time()) + 3600)
-
-    # creating a certificate
-    cert = M2Crypto.X509.X509()
-    cert.set_pubkey(pkey)
-    cs_name = M2Crypto.X509.X509_Name()
-    cs_name.C = "US"
-    cs_name.ST = "Foo"
-    cs_name.L = "Bar"
-    cs_name.O = "AppScale"
-    cs_name.OU = "User"
-    cs_name.CN = "appscale.com"
-    cs_name.emailAddress = "support@appscale.com"
-    cert.set_version(2)
-    cert.set_serial_number(int(time.time()))
-    cert.set_subject(cs_name)
-    cert.set_issuer_name(cs_name)
-    cert.set_not_before(cur_time)
-    cert.set_not_after(expire_time)
-
-    # self signing a certificate
-    cert.sign(pkey, md="sha1")
-
-    key.save_key(LocalState.get_private_key_location(keyname), None)
-    cert.save_pem(LocalState.get_certificate_location(keyname))
+    cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
+      "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
+      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
+      LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
 
 
   @classmethod
@@ -383,7 +353,7 @@ class LocalState():
       'instance_id' : str(instance_id),
       'table' : options.table,
       'secret' : cls.get_secret_key(options.keyname),
-      'db_master' : node_layout.db_master().id,
+      'db_master' : node_layout.db_master().public_ip,
       'ips' : all_ips,
       'infrastructure' : infrastructure,
       'group' : options.group
@@ -614,8 +584,10 @@ class LocalState():
 
 
   @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES):
-    """Executes a command on this machine, retrying it if it initially fails.
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES,
+    stdin=None):
+    """Executes a command on this machine, retrying it up to five times if it
+    initially fails.
 
     Args:
       command: A str representing the command to execute.
@@ -623,28 +595,56 @@ class LocalState():
         executing to stdout.
       num_retries: The number of times we should try to execute the given
         command before aborting.
+      stdin: A str that is passes as standard input to the process
     Returns:
-      The standard output and standard error produced when the command executes.
+      A str with both the standard output and standard error produced when the
+      command executes.
     Raises:
       ShellException: If, after five attempts, executing the named command
       failed.
     """
     tries_left = num_retries
-    while tries_left:
-      AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
-      the_temp_file = tempfile.TemporaryFile()
-      result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-        stderr=subprocess.STDOUT)
-      result.wait()
-      if result.returncode == 0:
-        output = the_temp_file.read()
-        the_temp_file.close()
-        return output
-      AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-        .format(command), is_verbose)
-      tries_left -= 1
-      time.sleep(1)
-    raise ShellException('Could not execute command: {0}'.format(command))
+    try:
+      while tries_left:
+        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+        the_temp_file = tempfile.NamedTemporaryFile()
+        if stdin is not None:
+          stdin_strio = tempfile.TemporaryFile()
+          stdin_strio.write(stdin);
+          stdin_strio.seek(0)
+          AppScaleLogger.verbose("       stdin str: {0}"\
+                    .format(stdin),is_verbose)
+          result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+            stdin = stdin_strio,
+            stderr = subprocess.STDOUT)
+        else:
+          result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
+            stderr=subprocess.STDOUT)
+        AppScaleLogger.verbose("       stdout buffer: {0}"\
+                    .format(the_temp_file.name),is_verbose)
+        result.wait()
+        if stdin is not None:
+          stdin_strio.close()
+        if result.returncode == 0:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          return output
+        tries_left -= 1
+        if tries_left:
+          the_temp_file.close()
+          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
+            .format(command), is_verbose)
+        else:
+          the_temp_file.seek(0)
+          output = the_temp_file.read()
+          the_temp_file.close()
+          raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command,output))
+        time.sleep(1)
+    except OSError as e:
+      raise ShellException('Error executing command: {0}:{1}'\
+                .format(command,str(e)))
 
 
   @classmethod

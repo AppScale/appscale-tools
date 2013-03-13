@@ -57,11 +57,20 @@ class TestAppScaleAddInstances(unittest.TestCase):
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
+    self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
+    self.fake_input_file = flexmock(name='fake_input_file')
+    self.fake_input_file.should_receive('seek').with_args(0).and_return()
+    self.fake_input_file.should_receive('write').and_return()
+    self.fake_input_file.should_receive('read').and_return('boo out')
+    self.fake_input_file.should_receive('close').and_return()
+
     flexmock(tempfile)
-    tempfile.should_receive('TemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('TemporaryFile').and_return(self.fake_input_file)
+
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -124,9 +133,9 @@ appengine: 1.2.3.4
 
     # say that the ssh key works
     flexmock(subprocess)
-    subprocess.should_receive('Popen').with_args(re.compile(
-      'ls'.format(self.keyname)),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+    subprocess.should_receive('Popen').with_args(re.compile('ssh'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT,
+      stdin=self.fake_input_file) \
       .and_return(self.success)
 
     # mock out reading the locations.json file, and slip in our own json
