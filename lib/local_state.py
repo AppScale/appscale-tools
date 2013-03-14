@@ -17,10 +17,6 @@ import uuid
 import yaml
 
 
-# Third-party imports
-import M2Crypto
-
-
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
