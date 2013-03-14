@@ -62,7 +62,6 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
-
   def test_flags_that_cause_program_abort(self):
     # using a flag that isn't acceptable should raise
     # an exception
@@ -296,3 +295,23 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = self.cloud_argv[:] + ['--login_host', 'www.booscale.com']
     actual = ParseArgs(argv_2, self.function).args
     self.assertEquals('www.booscale.com', actual.login_host)
+
+
+  def test_spot_instances_flag(self):
+    # if the user wants to use spot instances, that only works on ec2, so
+    # abort if they're running on euca
+    euca_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
+      '--infrastructure', 'euca', '--machine', 'emi-ABCDEFG',
+      '--use_spot_instances']
+    self.assertRaises(BadConfigurationException, ParseArgs, euca_argv,
+      self.function)
+
+    # also abort if they're running on a virtualized cluster
+    cluster_argv = self.cluster_argv[:] + ['--use_spot_instances']
+    self.assertRaises(BadConfigurationException, ParseArgs, cluster_argv,
+      self.function)
+
+    # succeed if they're running on ec2
+    ec2_argv = self.cloud_argv[:] + ['--use_spot_instances']
+    actual = ParseArgs(ec2_argv, self.function).args
+    self.assertEquals(True, actual.use_spot_instances)
