@@ -12,7 +12,6 @@ import tempfile
 import threading
 import time
 
-
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -99,8 +98,27 @@ class RemoteHelper():
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
       LocalState.get_key_path_from_name(options.keyname), public_ip))
 
-    cls.ensure_machine_is_compatible(public_ip, options.keyname, options.table,
-      options.verbose)
+    try:
+      cls.ensure_machine_is_compatible(public_ip, options.keyname,
+        options.table, options.verbose)
+    except AppScaleException as ase:
+       # On failure shutdown the cloud instances, cleanup the keys, but only 
+       # if --test is not set.
+       if options.infrastructure:
+         if not options.test:
+           try:
+             cls.terminate_cloud_instance(instance_id, options)
+           except Exception as tcie:
+             AppScaleLogger.log("Error terminating instances: {0}"
+               .format(str(tcie)))
+         raise AppScaleException("{0} Please ensure that the "\
+           "image {1} has AppScale {2} installed on it."
+           .format(str(ase),options.machine,APPSCALE_VERSION))
+       else:
+         raise AppScaleException("{0} Please login to that machine and ensure "\
+           "that AppScale {1} is installed on it."
+           .format(str(ase),APPSCALE_VERSION))
+
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
         options.scp))
@@ -117,7 +135,8 @@ class RemoteHelper():
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
       options.verbose)
-    AppScaleLogger.log("Head node successfully initialized at {0}. It is now starting up {1}.".format(public_ip, options.table))
+    AppScaleLogger.log("Head node successfully initialized at {0}. It is now "\
+      "starting up {1}.".format(public_ip, options.table))
 
     AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
       APPSCALE_VERSION)
@@ -156,8 +175,8 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    cls.enable_root_login(public_ips[0], options.keyname, options.infrastructure,
-      options.verbose)
+    cls.enable_root_login(public_ips[0], options.keyname,
+      options.infrastructure, options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -343,22 +362,20 @@ class RemoteHelper():
     # first, make sure the image is an appscale image
     if not cls.does_host_have_location(host, keyname, '/etc/appscale',
       is_verbose):
-      raise AppScaleException("The machine at {0} does not have AppScale " + \
-        "installed. Please install AppScale on it and try again.".format(host))
+      raise AppScaleException("The machine at {0} does not have " \
+        "AppScale installed.".format(host))
 
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
       '/etc/appscale/{0}'.format(APPSCALE_VERSION), is_verbose):
-      raise AppScaleException("The machine at {0} does not have AppScale " + \
-        "{1} installed. Please install AppScale {1} on it and try again." \
-          .format(host, APPSCALE_VERSION))
+      raise AppScaleException("The machine at {0} does not have AppScale "  \
+        "{1} installed.".format(host, APPSCALE_VERSION))
 
     # finally, make sure it has the database installed that the user requests
     if not cls.does_host_have_location(host, keyname,
       '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, database), is_verbose):
-      raise AppScaleException("The machine at {0} does not have support for" + \
-        " {1} installed. Please provide a machine image that does and try " + \
-        "again.".format(host, database))
+      raise AppScaleException("The machine at {0} does not have support for"  \
+        " {1} installed.".format(host, database))
 
 
   @classmethod
@@ -407,15 +424,16 @@ class RemoteHelper():
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
       "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
-      "XMPPReceiver"]
+      "AppTaskQueue", "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
       if not os.path.exists(local_path):
-        raise BadConfigurationException("The location you specified to copy " +
+        raise BadConfigurationException("The location you specified to copy " \
           "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
           local_path))
-      LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* root@{3}:/root/appscale/{4}" \
-        .format(ssh_key, cls.SSH_OPTIONS, local_path, host, dir_name), is_verbose)
+      LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* "\
+        "root@{3}:/root/appscale/{4}".format(ssh_key, cls.SSH_OPTIONS, 
+        local_path, host, dir_name), is_verbose)
 
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
     # (e.g., built database binaries).
@@ -589,6 +607,25 @@ class RemoteHelper():
 
 
   @classmethod
+  def terminate_cloud_instance(cls, instance_id, options):
+    """Powers off a single instance in the currently AppScale deployment and
+       cleans up secret key from the local filesystem.
+
+    Args:
+      instance_id: str containing the instance id.
+      options: namespace containing the run parameters.
+    """
+    AppScaleLogger.log("About to terminate instance {0}"
+      .format(instance_id))
+    agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
+    params = agent.get_params_from_args(options)
+    params['IS_VERBOSE'] = options.verbose
+    params[agent.PARAM_INSTANCE_IDS] = [instance_id]
+    agent.terminate_instances(params)
+    agent.cleanup_state(params)
+    os.remove(LocalState.get_secret_key_location(options.keyname))
+
+  @classmethod
   def terminate_cloud_infrastructure(cls, keyname, is_verbose):
     """Powers off all machines in the currently running AppScale deployment.
 
@@ -597,7 +634,9 @@ class RemoteHelper():
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".format(keyname))
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"
+      .format(keyname))
+    # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
     # get all the instance IDs for machines in our deployment
