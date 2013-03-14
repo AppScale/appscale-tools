@@ -261,6 +261,10 @@ Available commands:
       return False
 
     all_ips = []
+    if not isinstance(config["ips_layout"], dict):
+      raise BadConfigurationException("ips_layout should be a dictionary. " \
+        "Please fix it and try again.")
+
     for role, ip_or_ips in config["ips_layout"].items():
       if isinstance(ip_or_ips, str):
         if not ip_or_ips in all_ips:
