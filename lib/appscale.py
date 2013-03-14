@@ -245,6 +245,9 @@ Available commands:
     Returns:
       A bool indicating whether or not the specified keyname can be used to log
       into each IP address without a password.
+
+    Raises:
+      BadConfigurationException: If the IPs layout was not a dictionary.
     """
     if "keyname" in config:
       keyname = config["keyname"]
@@ -255,6 +258,10 @@ Available commands:
       verbose = True
     else:
       verbose = False
+
+    if not isinstance(config["ips_layout"], dict):
+      raise BadConfigurationException("ips_layout should be a dictionary. " \
+        "Please fix it and try again.")
 
     ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
     if not os.path.exists(ssh_key_location):
