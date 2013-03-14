@@ -86,7 +86,8 @@ class TestLocalState(unittest.TestCase):
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
       appengine='1', autoscale=False, group='bazgroup',
-      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large')
+      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
+      use_spot_instances=True)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -109,7 +110,8 @@ class TestLocalState(unittest.TestCase):
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
       'min_images' : 2,
-      'max_images' : 2
+      'max_images' : 2,
+      'use_spot_instances' : True
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'a':'b'})

@@ -317,10 +317,7 @@ class RemoteHelper():
     return LocalState.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
-
       
-
-
   @classmethod
   def copy_ssh_keys_to_node(cls, host, keyname, is_verbose):
     """Sets the given SSH keypair as the default key for the named host,

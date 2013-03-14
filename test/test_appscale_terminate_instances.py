@@ -24,6 +24,7 @@ import SOAPpy
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from agents.ec2_agent import EC2Agent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -68,6 +69,17 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     self.failed = flexmock(name='failed', returncode=1)
     self.failed.should_receive('wait').and_return(1)
+
+    # throw in some mocks that assume our EC2 environment variables are set
+    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = "baz"
+
+
+  def tearDown(self):
+    # remove the environment variables we set up to not accidentally mess
+    # up other unit tests
+    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = ""
 
 
   def test_terminate_when_not_running(self):
