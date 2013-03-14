@@ -190,6 +190,9 @@ class LocalState():
         'use_spot_instances' : options.use_spot_instances
       }
 
+      if options.use_spot_instances:
+        iaas_creds['max_spot_price'] = str(options.max_spot_price)
+
       creds.update(iaas_creds)
 
     return creds

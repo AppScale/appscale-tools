@@ -42,6 +42,7 @@ class EC2Agent(BaseAgent):
   PARAM_KEYNAME = 'keyname'
   PARAM_INSTANCE_IDS = 'instance_ids'
   PARAM_SPOT = 'use_spot_instances'
+  PARAM_SPOT_PRICE = 'max_spot_price'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
     PARAM_CREDENTIALS,
@@ -153,6 +154,13 @@ class EC2Agent(BaseAgent):
       params[self.PARAM_SPOT] = True
     else:
       params[self.PARAM_SPOT] = False
+
+    if params[self.PARAM_SPOT]:
+      if 'max_spot_price' in args:
+        params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
+      else:
+        params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
+          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE])
 
     for credential in self.REQUIRED_CREDENTIALS:
       if credential in os.environ and os.environ[credential] != '':
@@ -297,7 +305,11 @@ class EC2Agent(BaseAgent):
 
       conn = self.open_connection(parameters)
       if spot:
-        price = self.get_optimal_spot_price(conn, instance_type)
+        if parameters[self.PARAM_SPOT_PRICE]:
+          price = parameters[self.PARAM_SPOT_PRICE]
+        else:
+          price = self.get_optimal_spot_price(conn, instance_type)
+
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
           security_groups=[group], instance_type=instance_type, count=count)
       else:
