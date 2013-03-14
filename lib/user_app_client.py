@@ -35,12 +35,18 @@ class UserAppClient():
 
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
-  ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
+  ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api",
+    "neptune_api"])
 
 
   # A regular expression that indicates how many load balancers provide access
   # for an application.
   NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+
+
+  # A regular expression that can be used to find out which user owns an appid
+  # for an App Engine app.
+  APP_OWNER_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
 
 
   # The initial amount of time we should sleep when waiting for UserAppServer
@@ -156,7 +162,6 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(appname, self.secret)
 
-    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
     search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
     if search_data:
       num_ports = int(search_data.group(1))
@@ -179,8 +184,7 @@ class UserAppClient():
     """
     app_data = self.server.get_app_data(app_id, self.secret)
 
-    self.NUM_OF_PORTS_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
+    search_data = self.APP_OWNER_REGEX.search(app_data)
     if search_data:
       return search_data.group(1)
     else:

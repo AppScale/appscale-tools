@@ -10,7 +10,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 import time
 import uuid
@@ -55,6 +54,10 @@ class LocalState():
 
   # The password to set for the default user.
   DEFAULT_PASSWORD = "aaaaaa"
+
+
+  # A str that regular expressions can use to check for e-mail addresses.
+  EMAIL = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
 
 
   @classmethod
@@ -251,8 +254,8 @@ class LocalState():
     """
     cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
       "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
-      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
-      LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
+      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname
+      ), LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
 
 
   @classmethod
@@ -359,12 +362,12 @@ class LocalState():
       'infrastructure' : infrastructure,
       'group' : options.group
     }
-    with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
-      file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
+    with open(cls.get_locations_yaml_location(options.keyname), 'w') as handle:
+      handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
     # and now we can write the json metadata file
-    with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
-      file_handle.write(json.dumps(role_info))
+    with open(cls.get_locations_json_location(options.keyname), 'w') as handle:
+      handle.write(json.dumps(role_info))
   
 
   @classmethod
@@ -407,9 +410,20 @@ class LocalState():
 
   @classmethod
   def get_host_for_role(cls, keyname, role):
+    """Reads the JSON-encoded metadata on disk and finds a machine hosting the
+    given role.
+
+    Args:
+      keyname: A str that represents an SSH keypair name, uniquely identifying
+        this AppScale deployment.
+      role: A str that represents the role we should find a host for.
+    Returns:
+      A str containing the publicly accessible IP or FQDN where the given host
+        can be reached.
+    """
     for node in cls.get_local_nodes_info(keyname):
       if role in node["jobs"]:
-          return node["public_ip"]
+        return node["public_ip"]
 
 
   @classmethod
@@ -492,8 +506,7 @@ class LocalState():
       else:
         username = raw_input('Enter your desired e-mail address: ')
 
-      email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
-      if re.match(email_regex, username):
+      if re.match(cls.EMAIL, username):
         return username
       else:
         AppScaleLogger.warn('Invalid e-mail address. Please try again.')
@@ -611,7 +624,7 @@ class LocalState():
         the_temp_file = tempfile.NamedTemporaryFile()
         if stdin is not None:
           stdin_strio = tempfile.TemporaryFile()
-          stdin_strio.write(stdin);
+          stdin_strio.write(stdin)
           stdin_strio.seek(0)
           AppScaleLogger.verbose("       stdin str: {0}"\
                     .format(stdin),is_verbose)
@@ -643,9 +656,9 @@ class LocalState():
           raise ShellException("Executing command '{0}' failed:\n{1}"\
                     .format(command,output))
         time.sleep(1)
-    except OSError as e:
+    except OSError as error:
       raise ShellException('Error executing command: {0}:{1}'\
-                .format(command,str(e)))
+                .format(command, str(error)))
 
 
   @classmethod

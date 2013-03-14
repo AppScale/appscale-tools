@@ -102,7 +102,6 @@ class EC2Agent(BaseAgent):
         "different keyname")
 
     security_groups = conn.get_all_security_groups()
-    group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
         self.handle_failure("Security group already exists - please use a " + \
@@ -324,7 +323,6 @@ class EC2Agent(BaseAgent):
       now = datetime.datetime.now()
 
       while now < end_time:
-        time_left = (end_time - now).seconds
         AppScaleLogger.log("Waiting for your instances to start...")
         instance_info = self.describe_instances(parameters)
         public_ips = instance_info[0]
@@ -375,14 +373,15 @@ class EC2Agent(BaseAgent):
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
     conn.stop_instances(instance_ids)
-    AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'stopped',\
+    AppScaleLogger.log("Stopping instances: {0}".format(' '.join(instance_ids)))
+    if not self.wait_for_status_change(parameters, conn, 'stopped',
            max_wait_time=120):
-      AppScaleLogger.log("re-stopping instances: "+' '.join(instance_ids))
+      AppScaleLogger.log("Re-stopping instances: {0}" \
+        .format(' '.join(instance_ids)))
       conn.stop_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'stopped',\
+      if not self.wait_for_status_change(parameters, conn, 'stopped',
             max_wait_time=120):
-        self.handle_failure("ERROR: could not stop instances: "+\
+        self.handle_failure("ERROR: could not stop instances: " +
             ' '.join(instance_ids))
 
 
@@ -399,18 +398,18 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     conn.terminate_instances(instance_ids)
     AppScaleLogger.log('Terminating instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'terminated',\
+    if not self.wait_for_status_change(parameters, conn, 'terminated',
             max_wait_time=120):
       AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
       conn.terminate_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'terminated',\
+      if not self.wait_for_status_change(parameters, conn, 'terminated',
                 max_wait_time=120):
-        self.handle_failure("ERROR: could not terminate instances: "+\
+        self.handle_failure("ERROR: could not terminate instances: " +
             ' '.join(instance_ids))
 
 
-  def wait_for_status_change(self, parameters, conn, state_requested, \
-                              max_wait_time=60,poll_interval=10):
+  def wait_for_status_change(self, parameters, conn, state_requested,
+                              max_wait_time=60, poll_interval=10):
     """
     After we have sent a signal to the cloud infrastructure to change the state
       of the instances (unsually from runnning to either stoppped or 
@@ -442,8 +441,6 @@ class EC2Agent(BaseAgent):
         return True
       if time.time()-time_start > max_wait_time:
         return False
-
-
 
 
   def create_image(self, instance_id, name, parameters):

@@ -6,9 +6,6 @@
 import os
 import re
 import socket
-import subprocess
-import sys
-import tempfile
 import threading
 import time
 
@@ -102,22 +99,22 @@ class RemoteHelper():
       cls.ensure_machine_is_compatible(public_ip, options.keyname,
         options.table, options.verbose)
     except AppScaleException as ase:
-       # On failure shutdown the cloud instances, cleanup the keys, but only 
-       # if --test is not set.
-       if options.infrastructure:
-         if not options.test:
-           try:
-             cls.terminate_cloud_instance(instance_id, options)
-           except Exception as tcie:
-             AppScaleLogger.log("Error terminating instances: {0}"
-               .format(str(tcie)))
-         raise AppScaleException("{0} Please ensure that the "\
-           "image {1} has AppScale {2} installed on it."
-           .format(str(ase),options.machine,APPSCALE_VERSION))
-       else:
-         raise AppScaleException("{0} Please login to that machine and ensure "\
-           "that AppScale {1} is installed on it."
-           .format(str(ase),APPSCALE_VERSION))
+      # On failure shutdown the cloud instances, cleanup the keys, but only
+      # if --test is not set.
+      if options.infrastructure:
+        if not options.test:
+          try:
+            cls.terminate_cloud_instance(instance_id, options)
+          except Exception as tcie:
+            AppScaleLogger.log("Error terminating instances: {0}"
+              .format(str(tcie)))
+        raise AppScaleException("{0} Please ensure that the "\
+          "image {1} has AppScale {2} installed on it."
+          .format(str(ase),options.machine,APPSCALE_VERSION))
+      else:
+        raise AppScaleException("{0} Please login to that machine and ensure "\
+          "that AppScale {1} is installed on it."
+          .format(str(ase),APPSCALE_VERSION))
 
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
@@ -175,8 +172,7 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    cls.enable_root_login(public_ips[0], options.keyname,
-      options.infrastructure, options.verbose)
+    cls.enable_root_login(public_ips[0], options.keyname, options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -224,7 +220,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def enable_root_login(cls, host, keyname, infrastructure, is_verbose):
+  def enable_root_login(cls, host, keyname, is_verbose):
     """Logs into the named host and alters its ssh configuration to enable the
     root user to directly log in.
 
@@ -438,13 +434,18 @@ class RemoteHelper():
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
     # (e.g., built database binaries).
     local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
-    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' " \
+      "--exclude='hadoop-*' --exclude='hbase/hbase-*' " \
+      "--exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB"
+      .format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
 
     # And rsync the firewall configuration file separately, as it's not a
     # directory (which the above all are).
-    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + "firewall.conf"
-    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} root@{3}:/root/appscale/firewall.conf" \
-      .format(ssh_key, cls.SSH_OPTIONS, local_firewall, host), is_verbose)
+    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + \
+      "firewall.conf"
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} " \
+      "root@{3}:/root/appscale/firewall.conf".format(ssh_key, cls.SSH_OPTIONS,
+      local_firewall, host), is_verbose)
 
 
   @classmethod
@@ -597,9 +598,9 @@ class RemoteHelper():
     acc = AppControllerClient(host, LocalState.get_secret_key(keyname))
     all_ips = acc.get_all_public_ips()
 
-    for ip in all_ips:
+    for ip_addr in all_ips:
       while True:
-        acc = AppControllerClient(ip, LocalState.get_secret_key(keyname))
+        acc = AppControllerClient(ip_addr, LocalState.get_secret_key(keyname))
         if acc.is_initialized():
           break
         else:
@@ -673,9 +674,9 @@ class RemoteHelper():
     all_ips = acc.get_all_public_ips()
 
     threads = []
-    for ip in all_ips:
-      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
-        keyname, is_verbose))
+    for ip_addr in all_ips:
+      thread = threading.Thread(target=cls.stop_remote_appcontroller,
+        args=(ip_addr, keyname, is_verbose))
       thread.start()
       threads.append(thread)
 
@@ -684,10 +685,11 @@ class RemoteHelper():
 
     boxes_shut_down = 0
     is_running_regex = re.compile("appscale-controller stop")
-    for ip in all_ips:
-      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+    for ip_addr in all_ips:
+      AppScaleLogger.log("Shutting down AppScale API services at {0}"
+        .format(ip_addr))
       while True:
-        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
+        remote_output = cls.ssh(ip_addr, keyname, 'ps x', is_verbose)
         AppScaleLogger.log(remote_output)
         if not is_running_regex.match(remote_output):
           break
@@ -722,8 +724,8 @@ class RemoteHelper():
 
   @classmethod
   def copy_app_to_host(cls, app_location, keyname, is_verbose):
-    """Copies the given application to a machine running the Login service within
-    an AppScale deployment.
+    """Copies the given application to a machine running the Login service in an
+    AppScale deployment.
 
     Args:
       app_location: The location on the local filesystem where the application

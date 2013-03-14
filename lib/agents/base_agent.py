@@ -129,19 +129,19 @@ class BaseAgent:
     """
     raise NotImplementedError
 
-  def has_parameter(self, p, params):
+  def has_parameter(self, param, params):
     """
-    Checks whether the parameter p is present in the params map.
+    Checks whether the parameter param is present in the params map.
 
     Args:
-      p       A parameter name
+      param       A parameter name
       params  A dictionary of parameters
 
     Returns:
       True if params contains p and the value of p is not None.
       Returns False otherwise.
     """
-    return params.has_key(p) and params[p] is not None
+    return params.has_key(param) and params[param] is not None
 
   def diff(self, list1, list2):
     """
