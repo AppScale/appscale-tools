@@ -149,6 +149,30 @@ class TestAppScale(unittest.TestCase):
     appscale.up()
 
 
+  def testUpWithMalformedClusterAppScalefile(self):
+    # if we try to use an IPs layout that isn't a dictionary, we should throw up
+    # and die
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file, with an IPs layout that is a str
+    contents = {
+      'ips_layout': "'master' 'ip1' 'appengine' 'ip1'",
+      'keyname': 'boobazblarg'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale tools calls. since we're running
+    # via a cluster, this means we call add-keypair to set up SSH keys, then
+    # run-instances to start appscale
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('add_keypair')
+
+    self.assertRaises(BadConfigurationException, appscale.up)
+
+
   def testUpWithCloudAppScalefile(self):
     # calling 'appscale up' if there is an AppScalefile present
     # should call appscale-run-instances with the given config
