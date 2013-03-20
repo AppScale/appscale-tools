@@ -17,7 +17,7 @@ installexpect()
   echo "Installing expect"
   mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
   cd ${APPSCALE_TOOLS_HOME}/downloads
-  curl -o expect5.45.tar.gz http://appscale.cs.ucsb.edu/appscale_files/expect5.45.tar.gz
+  curl -o expect5.45.tar.gz http://appscale-build.s3-website-us-east-1.amazonaws.com/expect5.45.tar.gz
   tar zxvf expect5.45.tar.gz
   pushd expect5.45
   ./configure
@@ -42,7 +42,7 @@ installsshcopyid()
     set -e
     echo "ssh-copy-id not found - installing."
     cd /usr/bin
-    curl -o ssh-copy-id http://appscale.cs.ucsb.edu/appscale_files/ssh-copy-id
+    curl -o ssh-copy-id http://appscale-build.s3-website-us-east-1.amazonaws.com/ssh-copy-id
     chmod +x ./ssh-copy-id
   fi
   set -e
@@ -58,7 +58,7 @@ installsetuptools()
      echo "setuptools not found - installing."
      mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
      cd ${APPSCALE_TOOLS_HOME}/downloads
-     curl -o setuptools-0.6c11.tar.gz http://appscale.cs.ucsb.edu/appscale_files/setuptools-0.6c11.tar.gz
+     curl -o setuptools-0.6c11.tar.gz http://appscale-build.s3-website-us-east-1.amazonaws.com/setuptools-0.6c11.tar.gz
      tar zxvf setuptools-0.6c11.tar.gz
      pushd setuptools-0.6c11
      python setup.py install
