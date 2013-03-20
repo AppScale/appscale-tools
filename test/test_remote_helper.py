@@ -51,7 +51,7 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -136,7 +136,8 @@ class TestRemoteHelper(unittest.TestCase):
 
 
     flexmock(tempfile)
-    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
+    tempfile.should_receive('NamedTemporaryFile')\
+      .and_return(self.fake_temp_file)
 
     self.success = flexmock(name='success', returncode=0)
     self.success.should_receive('wait').and_return(0)
@@ -150,15 +151,13 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
       .and_return('Please login as the ubuntu user rather than root user.')
 
-    # and assume that we can ssh in as ubuntu to enable root login, but that
-    # it fails the first time
+    # and assume that we can ssh in as ubuntu to enable root login
     local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh .*ubuntu'),False,5)\
       .and_return()
 
-    # also assume that we can scp over our ssh keys, but that it fails the first
-    # time
+    # also assume that we can scp over our ssh keys
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*/root/.ssh/id_'),False,5)\
       .and_return()

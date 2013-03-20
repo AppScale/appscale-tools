@@ -17,10 +17,6 @@ import uuid
 import yaml
 
 
-# Third-party imports
-import M2Crypto
-
-
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
@@ -190,8 +186,13 @@ class LocalState():
         'infrastructure' : options.infrastructure,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
-        'max_images' : node_layout.max_vms
+        'max_images' : node_layout.max_vms,
+        'use_spot_instances' : options.use_spot_instances
       }
+
+      if options.use_spot_instances:
+        iaas_creds['max_spot_price'] = str(options.max_spot_price)
+
       creds.update(iaas_creds)
 
     return creds
@@ -584,7 +585,8 @@ class LocalState():
 
 
   @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES, stdin=None):
+  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES,
+    stdin=None):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
 
@@ -596,7 +598,8 @@ class LocalState():
         command before aborting.
       stdin: A str that is passes as standard input to the process
     Returns:
-      The standard output and standard error produced when the command executes.
+      A str with both the standard output and standard error produced when the
+      command executes.
     Raises:
       ShellException: If, after five attempts, executing the named command
       failed.
