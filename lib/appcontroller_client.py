@@ -111,7 +111,7 @@ class AppControllerClient():
         raise exception
     #except ssl.SSLError:
     except Exception:  # Should be ssl.SSLError but the ssl module isn't 
-                       #  available when runing as a App.
+                       #  available when running as a GAE App.
       # these are intermittent, so don't decrement our retry count for this
       signal.alarm(0)  # turn off the alarm before we retry
       return self.run_with_timeout(timeout_time, default, num_retries, function,
@@ -237,21 +237,34 @@ class AppControllerClient():
     """Queries the AppController to see what the API status is.
 
     Returns:
-      A dct that indicates what the AppController reports the status is.
+      A dict that indicates what the AppController reports the status is.
     """
-    jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    api_status_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_api_status, self.secret)
-    return json.loads(jdata)
+    return json.loads(api_status_jdata)
 
   def get_database_information(self):
     """Queries the AppController to see what the database info is.
 
     Returns:
-      A dct that indicates what the AppController reports info is.
+      A dict that indicates what the AppController reports info is.
     """
-    jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    db_info_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_database_information, self.secret)
-    return json.loads(jdata)
+    return json.loads(db_info_jdata)
+
+  def upload_tgz(self, tgz_filename, email):
+    """Tells the AppController to load the app found in the tar.gz file
+
+    Args:
+      tgz_filename: str full path to the uploaded tar.gz file.
+      email: str email of the app admin.
+    Return:
+      A str with the message from the AppController.
+    """
+    msg = self.run_with_timeout(500,"Timeout uploading app.",1,
+      self.server.upload_tgz_file(tgz_filename, email, self.secret))
+    return msg
 
   def get_stats(self):
     """Queries the AppController to see what its stats are.
@@ -259,9 +272,9 @@ class AppControllerClient():
     Returns:
       A dict that indicates what the AppController reports its stats as.
     """
-    jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    stats_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_stats_json, self.secret)
-    return json.loads(jdata)
+    return json.loads(stats_jdata)
 
   def is_initialized(self):
     """Queries the AppController to see if it has started up all of the API
