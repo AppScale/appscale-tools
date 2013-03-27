@@ -688,7 +688,7 @@ class RemoteHelper():
       AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
       while True:
         remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
-        AppScaleLogger.log(remote_output)
+        AppScaleLogger.verbose(remote_output, is_verbose)
         if not is_running_regex.match(remote_output):
           break
         time.sleep(0.3)
