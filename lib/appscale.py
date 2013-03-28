@@ -26,6 +26,7 @@ from custom_exceptions import UsageException
 
 # AppScale-specific imports
 from appscale_tools import AppScaleTools
+from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 
@@ -55,6 +56,9 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
+  TERMINATE = "ruby /root/appscale/AppController/terminate.rb"
+
+
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """
@@ -71,8 +75,9 @@ Available commands:
   remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
-  destroy: Terminates the currently running AppScale deployment.
+  destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
+  clean: Forcefully terminates all services in a cluster AppScale deployment.
   help: Displays this message.
 """
 
@@ -267,8 +272,27 @@ Available commands:
     if not os.path.exists(ssh_key_location):
       return False
 
+    all_ips = self.get_all_ips(config["ips_layout"])
+    for ip in all_ips:
+      if not self.can_ssh_to_ip(ip, keyname, verbose):
+        return False
+
+    return True
+
+
+  def get_all_ips(self, ips_layout):
+    """Searches through the given IPs layout and finds all the unique IP
+    addresses.
+
+    Args:
+      ips_layout: A dict that maps AppScale roles to either an IP address or a
+        list of IP addresses that host that role.
+    Returns:
+      A list containing all of the IP addresses in the IPs layout, without
+        duplicates.
+    """
     all_ips = []
-    for role, ip_or_ips in config["ips_layout"].items():
+    for role, ip_or_ips in ips_layout.items():
       if isinstance(ip_or_ips, str):
         if not ip_or_ips in all_ips:
           all_ips.append(ip_or_ips)
@@ -277,11 +301,7 @@ Available commands:
           if not ip in all_ips:
             all_ips.append(ip)
 
-    for ip in all_ips:
-      if not self.can_ssh_to_ip(ip, keyname, verbose):
-        return False
-
-    return True
+    return all_ips
 
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
@@ -561,3 +581,47 @@ Available commands:
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
+
+
+  def clean(self):
+    """'clean' provides a mechanism that will forcefully shut down all AppScale-
+    related services on virtual machines in a cluster deployment.
+
+    Returns:
+      A list of the IP addresses where AppScale was shut down.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+      BadConfigurationException: If this method is invoked and the AppScalefile
+        indicates that a cloud deployment is being used.
+    """
+    contents = self.read_appscalefile()
+
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'ips_layout' not in contents_as_yaml:
+      raise BadConfigurationException("Please specify ips_layout in your " \
+        "AppScalefile and try again.")
+
+    if 'verbose' in contents_as_yaml:
+      is_verbose = contents_as_yaml['verbose']
+    else:
+      is_verbose = False
+
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = 'appscale'
+
+    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+    for ip in all_ips:
+      RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
+
+    try:
+      LocalState.cleanup_appscale_files(keyname)
+    except Exception:
+      pass
+
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+
+    return all_ips

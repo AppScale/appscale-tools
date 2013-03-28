@@ -120,5 +120,11 @@ elif command == "destroy" or command == "down":
   except Exception as e:
     cprint(e, 'red')
     sys.exit(1)
+elif command == "clean":
+  try:
+    appscale.clean()
+  except Exception as e:
+    cprint(e, 'red')
+    sys.exit(1)
 else:
   appscale.help()

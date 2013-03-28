@@ -670,7 +670,11 @@ class RemoteHelper():
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
-    all_ips = acc.get_all_public_ips()
+
+    try:
+      all_ips = acc.get_all_public_ips()
+    except Exception:
+      all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
     for ip in all_ips:
