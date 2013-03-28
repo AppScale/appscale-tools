@@ -71,8 +71,9 @@ Available commands:
   remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
-  destroy: Terminates the currently running AppScale deployment.
+  destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
+  clean: Forcefully terminates all services in a cluster AppScale deployment.
   help: Displays this message.
 """
 
@@ -561,3 +562,16 @@ Available commands:
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
+
+
+  def clean(self):
+    """'clean' provides a mechanism that will forcefully shut down all AppScale-
+    related services on virtual machines in a cluster deployment.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+      BadConfigurationException: If this method is invoked and the AppScalefile
+        indicates that a cloud deployment is being used.
+    """
+    contents = self.read_appscalefile()

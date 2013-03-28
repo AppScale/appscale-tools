@@ -562,3 +562,11 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
     appscale.destroy()
+
+
+  def testCleanWithNoAppScalefile(self):
+    # calling 'appscale clean' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.clean)
