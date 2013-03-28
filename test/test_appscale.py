@@ -6,6 +6,7 @@
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +29,7 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
+from remote_helper import RemoteHelper
 
 
 class TestAppScale(unittest.TestCase):
@@ -591,3 +593,27 @@ class TestAppScale(unittest.TestCase):
 
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
     self.assertRaises(BadConfigurationException, appscale.clean)
+
+
+  def testCleanInClusterDeployment(self):
+    # calling 'appscale clean' in a cluster deployment should ssh into each of
+    # the boxes specified in the ips_layout and run the terminate script
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'ips_layout' : {
+        'controller': 'public1',
+        'servers': ['public2', 'public3']
+      }
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    flexmock(RemoteHelper)
+    RemoteHelper.should_receive('ssh') \
+      .with_args(re.compile('public[123]'), 'appscale', str, False)
+
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    expected = ['public1', 'public2', 'public3']
+    self.assertEquals(expected, appscale.clean())
