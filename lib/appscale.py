@@ -617,7 +617,11 @@ Available commands:
     for ip in all_ips:
       RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
 
-    LocalState.cleanup_appscale_files(keyname)
+    try:
+      LocalState.cleanup_appscale_files(keyname)
+    except Exception:
+      pass
+
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
 
     return all_ips
