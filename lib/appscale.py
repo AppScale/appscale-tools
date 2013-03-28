@@ -575,3 +575,8 @@ Available commands:
         indicates that a cloud deployment is being used.
     """
     contents = self.read_appscalefile()
+
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'ips_layout' not in contents_as_yaml:
+      raise BadConfigurationException("Please specify ips_layout in your " \
+        "AppScalefile and try again.")

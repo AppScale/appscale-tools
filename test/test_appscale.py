@@ -570,3 +570,24 @@ class TestAppScale(unittest.TestCase):
     appscale = AppScale()
     self.addMockForNoAppScalefile(appscale)
     self.assertRaises(AppScalefileException, appscale.clean)
+
+
+  def testCleanInCloudDeployment(self):
+    # calling 'appscale clean' in a cloud deployment should throw up and die
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    self.assertRaises(BadConfigurationException, appscale.clean)
