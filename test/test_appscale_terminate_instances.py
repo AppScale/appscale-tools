@@ -88,7 +88,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return(False)
+      LocalState.get_secret_key_location(self.keyname)).and_return(False)
 
     argv = [
       "--keyname", self.keyname
@@ -104,7 +104,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
+      LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
     # mock out reading the locations.yaml file, and pretend that we're on
     # a virtualized cluster
@@ -193,7 +193,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
+      LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
     # mock out reading the locations.yaml file, and pretend that we're on
     # a virtualized cluster

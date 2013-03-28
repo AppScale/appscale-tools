@@ -370,8 +370,7 @@ class AppScaleTools():
       AppScaleException: If AppScale is not running, and thus can't be
       terminated.
     """
-    if not os.path.exists(LocalState.get_locations_yaml_location(
-      options.keyname)):
+    if not os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
