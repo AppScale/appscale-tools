@@ -29,6 +29,7 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
+from local_state import LocalState
 from remote_helper import RemoteHelper
 
 
@@ -612,6 +613,9 @@ class TestAppScale(unittest.TestCase):
     flexmock(RemoteHelper)
     RemoteHelper.should_receive('ssh') \
       .with_args(re.compile('public[123]'), 'appscale', str, False)
+
+    flexmock(LocalState)
+    LocalState.should_receive('cleanup_appscale_files').with_args('appscale')
 
     appscale = AppScale()
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)

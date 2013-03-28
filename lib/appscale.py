@@ -26,6 +26,7 @@ from custom_exceptions import UsageException
 
 # AppScale-specific imports
 from appscale_tools import AppScaleTools
+from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 
@@ -615,5 +616,8 @@ Available commands:
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
     for ip in all_ips:
       RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
+
+    LocalState.cleanup_appscale_files(keyname)
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
 
     return all_ips
