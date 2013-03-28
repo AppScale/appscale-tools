@@ -37,8 +37,8 @@ class RemoteHelper():
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
-  # The port the AppLoadBalancer runs on, by default.
-  APP_LOAD_BALANCER_PORT = 80
+  # The port the AppDashBoard runs on, by default.
+  APP_DASHBOARD_PORT = 80
 
 
   # The default port that the ssh daemon runs on.
@@ -423,7 +423,7 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
+      "AppDashboard", "AppMonitoring", "Neptune", "InfrastructureManager",
       "AppTaskQueue", "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
