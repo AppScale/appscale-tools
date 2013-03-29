@@ -734,7 +734,8 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
+        os.path.abspath(tar_location)),
       is_verbose)
 
     return extracted_location
