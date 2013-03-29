@@ -670,7 +670,11 @@ class RemoteHelper():
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
-    all_ips = acc.get_all_public_ips()
+
+    try:
+      all_ips = acc.get_all_public_ips()
+    except Exception:
+      all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
     for ip in all_ips:
@@ -688,7 +692,7 @@ class RemoteHelper():
       AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
       while True:
         remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
-        AppScaleLogger.log(remote_output)
+        AppScaleLogger.verbose(remote_output, is_verbose)
         if not is_running_regex.match(remote_output):
           break
         time.sleep(0.3)
