@@ -5,6 +5,7 @@
 # General-purpose Python library imports
 import json
 import os
+import re
 import sys
 import unittest
 import yaml
@@ -200,3 +201,18 @@ class TestLocalState(unittest.TestCase):
     host = 'public1'
     instance_id = 'i-ABCDEFG'
     LocalState.update_local_metadata(options, node_layout, host, instance_id)
+
+  def test_extract_app_to_dir(self):
+
+    flexmock(os)
+    os.should_receive('mkdir').and_return()
+    flexmock(os.path)
+    os.path.should_receive('abspath').with_args('relative/app.tar.gz')\
+      .and_return('/tmp/relative/app.tar.gz')
+
+    flexmock(LocalState)
+    LocalState.should_receive('shell')\
+      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'),False)\
+      .and_return()
+
+    LocalState.extract_app_to_dir('relative/app.tar.gz',False)
