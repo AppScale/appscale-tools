@@ -600,8 +600,8 @@ Available commands:
 
     contents_as_yaml = yaml.safe_load(contents)
     if 'ips_layout' not in contents_as_yaml:
-      raise BadConfigurationException("Please specify ips_layout in your " \
-        "AppScalefile and try again.")
+      raise BadConfigurationException("Cannot use 'appscale clean' in a " \
+        "cloud deployment.")
 
     if 'verbose' in contents_as_yaml:
       is_verbose = contents_as_yaml['verbose']
