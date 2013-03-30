@@ -109,7 +109,6 @@ class AppControllerClient():
           function, *args)
       else:
         raise exception
-    #except ssl.SSLError:
     except Exception:  # Should be ssl.SSLError but the ssl module isn't 
                        #  available when running as a GAE App.
       # these are intermittent, so don't decrement our retry count for this

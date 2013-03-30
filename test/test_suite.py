@@ -16,6 +16,7 @@ from test_appscale_reset_pwd import TestAppScaleResetPassword
 from test_appscale_run_instances import TestAppScaleRunInstances
 from test_appscale_upload_app import TestAppScaleUploadApp
 from test_appscale_terminate_instances import TestAppScaleTerminateInstances
+from test_appcontroller_client import TestAppControllerClient
 
 
 # imports for appscale library tests
@@ -30,7 +31,8 @@ test_cases = [TestAppScale, TestAppScaleAddInstances, TestAppScaleAddKeypair,
   TestAppScaleDescribeInstances, TestAppScaleGatherLogs, TestAppScaleRemoveApp,
   TestAppScaleResetPassword, TestAppScaleRunInstances,
   TestAppScaleTerminateInstances, TestAppScaleUploadApp, TestAppScaleLogger,
-  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper]
+  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper,
+  TestAppControllerClient]
 
 test_case_names = []
 for cls in test_cases:
