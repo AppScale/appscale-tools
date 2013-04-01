@@ -47,4 +47,48 @@ class TestAppControllerClient(unittest.TestCase):
        ret['api2'] != 'failed':
       raise Exception('get_api_status failed')
 
+  def test_get_database_information(self):
+    fake_soap = flexmock(name='fake_soap')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').and_return(fake_soap)
+    fake_soap.should_receive('get_database_information')\
+      .and_return(
+        json.dumps({'table':'test_db', 'replication':1 })
+      )
+    #run commands
+    acc = AppControllerClient('fake_host', 'fake_secret')
+    ret = acc.get_database_information()
+    if ret['table'] != 'test_db' or\
+       ret['replication'] != 1:
+      raise Exception('get_database_information failed')
+
+  def test_upload_tgz(self):
+    fake_soap = flexmock(name='fake_soap')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').and_return(fake_soap)
+    fake_soap.should_receive('upload_tgz_file')\
+      .and_return("fake success message")
+    #run commands
+    acc = AppControllerClient('fake_host', 'fake_secret')
+    ret = acc.upload_tgz('/fake/file.tar.gz','fake@email.com')
+    if ret != "fake success message":
+      raise Exception('upload_tgz failed')
+
+  def test_get_stats(self):
+    fake_soap = flexmock(name='fake_soap')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').and_return(fake_soap)
+    fake_soap.should_receive('get_stats_json')\
+      .and_return(json.dumps([
+      {'apps' : {'app1':True, 'app2':False} }
+      ]))
+    #run commands
+    acc = AppControllerClient('fake_host', 'fake_secret')
+    ret = acc.get_stats()
+    print str(dir(ret))
+    print json.dumps(ret)
+    if ret[0]['apps']['app1'] is not True or\
+       ret[0]['apps']['app2'] is not False:
+      raise Exception('get_stats failed')
+
 

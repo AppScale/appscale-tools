@@ -109,8 +109,8 @@ class AppControllerClient():
           function, *args)
       else:
         raise exception
-    except Exception:  # Should be ssl.SSLError but the ssl module isn't 
-                       #  available when running as a GAE App.
+    except Exception as exception:  # Should be ssl.SSLError but the ssl module
+                                    # isn't available when running as a GAE App.
       # these are intermittent, so don't decrement our retry count for this
       signal.alarm(0)  # turn off the alarm before we retry
       return self.run_with_timeout(timeout_time, default, num_retries, function,
@@ -262,7 +262,7 @@ class AppControllerClient():
       A str with the message from the AppController.
     """
     msg = self.run_with_timeout(500,"Timeout uploading app.",1,
-      self.server.upload_tgz_file(tgz_filename, email, self.secret))
+      self.server.upload_tgz_file, tgz_filename, email, self.secret)
     return msg
 
   def get_stats(self):
