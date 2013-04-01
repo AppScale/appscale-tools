@@ -85,8 +85,6 @@ class TestAppControllerClient(unittest.TestCase):
     #run commands
     acc = AppControllerClient('fake_host', 'fake_secret')
     ret = acc.get_stats()
-    print str(dir(ret))
-    print json.dumps(ret)
     if ret[0]['apps']['app1'] is not True or\
        ret[0]['apps']['app2'] is not False:
       raise Exception('get_stats failed')
