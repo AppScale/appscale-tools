@@ -97,7 +97,6 @@ class TestLocalState(unittest.TestCase):
     })
 
     expected = {
-      'a' : 'b',
       'table' : 'cassandra',
       'hostname' : 'public1',
       'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
@@ -116,7 +115,7 @@ class TestLocalState(unittest.TestCase):
       'max_spot_price' : '1.23'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
-      'public1', {'a':'b'})
+      'public1', {'max_spot_price':'1.23'})
     self.assertEquals(expected, actual)
 
 
