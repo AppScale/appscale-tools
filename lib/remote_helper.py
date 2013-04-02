@@ -241,7 +241,8 @@ class RemoteHelper():
     """
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
-    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
+      num_retries=1)
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
@@ -267,8 +268,6 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    #return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-    #  cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
     return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
       cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
 
