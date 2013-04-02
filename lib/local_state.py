@@ -26,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.8"
+APPSCALE_VERSION = "1.6.9"
 
 
 class LocalState():
