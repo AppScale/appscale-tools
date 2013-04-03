@@ -6,6 +6,7 @@
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +29,8 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
+from local_state import LocalState
+from remote_helper import RemoteHelper
 
 
 class TestAppScale(unittest.TestCase):
@@ -147,6 +150,30 @@ class TestAppScale(unittest.TestCase):
     AppScaleTools.should_receive('run_instances')
 
     appscale.up()
+
+
+  def testUpWithMalformedClusterAppScalefile(self):
+    # if we try to use an IPs layout that isn't a dictionary, we should throw up
+    # and die
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file, with an IPs layout that is a str
+    contents = {
+      'ips_layout': "'master' 'ip1' 'appengine' 'ip1'",
+      'keyname': 'boobazblarg'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale tools calls. since we're running
+    # via a cluster, this means we call add-keypair to set up SSH keys, then
+    # run-instances to start appscale
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('add_keypair')
+
+    self.assertRaises(BadConfigurationException, appscale.up)
 
 
   def testUpWithCloudAppScalefile(self):
@@ -538,3 +565,59 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
     appscale.destroy()
+
+
+  def testCleanWithNoAppScalefile(self):
+    # calling 'appscale clean' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.clean)
+
+
+  def testCleanInCloudDeployment(self):
+    # calling 'appscale clean' in a cloud deployment should throw up and die
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    self.assertRaises(BadConfigurationException, appscale.clean)
+
+
+  def testCleanInClusterDeployment(self):
+    # calling 'appscale clean' in a cluster deployment should ssh into each of
+    # the boxes specified in the ips_layout and run the terminate script
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'ips_layout' : {
+        'controller': 'public1',
+        'servers': ['public2', 'public3']
+      }
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    flexmock(RemoteHelper)
+    RemoteHelper.should_receive('ssh') \
+      .with_args(re.compile('public[123]'), 'appscale', str, False)
+
+    flexmock(LocalState)
+    LocalState.should_receive('cleanup_appscale_files').with_args('appscale')
+
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    expected = ['public1', 'public2', 'public3']
+    self.assertEquals(expected, appscale.clean())

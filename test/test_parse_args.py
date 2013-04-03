@@ -56,11 +56,13 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
       .and_return('anything')
 
+    fake_price = flexmock(name='fake_price', price=1.00)
+    fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
+
     flexmock(boto)
     boto.should_receive('connect_ec2').with_args('baz', 'baz') \
       .and_return(fake_ec2)
     boto.should_receive('connect_euca').and_return(fake_ec2)
-
 
 
   def test_flags_that_cause_program_abort(self):
@@ -296,3 +298,51 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = self.cloud_argv[:] + ['--login_host', 'www.booscale.com']
     actual = ParseArgs(argv_2, self.function).args
     self.assertEquals('www.booscale.com', actual.login_host)
+
+
+  def test_spot_instances_flag(self):
+    # if the user wants to use spot instances, that only works on ec2, so
+    # abort if they're running on euca
+    euca_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
+      '--infrastructure', 'euca', '--machine', 'emi-ABCDEFG',
+      '--use_spot_instances']
+    self.assertRaises(BadConfigurationException, ParseArgs, euca_argv,
+      self.function)
+
+    # also abort if they're running on a virtualized cluster
+    cluster_argv = self.cluster_argv[:] + ['--use_spot_instances']
+    self.assertRaises(BadConfigurationException, ParseArgs, cluster_argv,
+      self.function)
+
+    # succeed if they're running on ec2
+    ec2_argv = self.cloud_argv[:] + ['--use_spot_instances']
+    actual = ParseArgs(ec2_argv, self.function).args
+    self.assertEquals(True, actual.use_spot_instances)
+
+
+  def test_max_spot_instance_price_flag(self):
+    # if the user wants to use spot instances, that only works on ec2, so
+    # abort if they're running on euca
+    euca_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
+      '--infrastructure', 'euca', '--machine', 'emi-ABCDEFG',
+      '--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, euca_argv,
+      self.function)
+
+    # also abort if they're running on a virtualized cluster
+    cluster_argv = self.cluster_argv[:] + ['--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, cluster_argv,
+      self.function)
+
+    # fail if running on EC2 and they didn't say that we should use spot
+    # instances
+    ec2_bad_argv = self.cloud_argv[:] + ['--max_spot_price', '20']
+    self.assertRaises(BadConfigurationException, ParseArgs, ec2_bad_argv,
+      self.function)
+
+    # succeed if they did say it
+    ec2_argv = self.cloud_argv[:] + ['--use_spot_instances', '--max_spot_price',
+      '20.0']
+    actual = ParseArgs(ec2_argv, self.function).args
+    self.assertEquals(True, actual.use_spot_instances)
+    self.assertEquals(20.0, actual.max_spot_price)

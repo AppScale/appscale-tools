@@ -5,6 +5,7 @@
 # General-purpose Python library imports
 import json
 import os
+import re
 import sys
 import unittest
 import yaml
@@ -86,7 +87,8 @@ class TestLocalState(unittest.TestCase):
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
       appengine='1', autoscale=False, group='bazgroup',
-      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large')
+      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
+      use_spot_instances=True, max_spot_price=1.23)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -95,7 +97,6 @@ class TestLocalState(unittest.TestCase):
     })
 
     expected = {
-      'a' : 'b',
       'table' : 'cassandra',
       'hostname' : 'public1',
       'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
@@ -109,10 +110,12 @@ class TestLocalState(unittest.TestCase):
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
       'min_images' : 2,
-      'max_images' : 2
+      'max_images' : 2,
+      'use_spot_instances' : True,
+      'max_spot_price' : '1.23'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
-      'public1', {'a':'b'})
+      'public1', {'max_spot_price':'1.23'})
     self.assertEquals(expected, actual)
 
 
@@ -197,3 +200,18 @@ class TestLocalState(unittest.TestCase):
     host = 'public1'
     instance_id = 'i-ABCDEFG'
     LocalState.update_local_metadata(options, node_layout, host, instance_id)
+
+  def test_extract_app_to_dir(self):
+
+    flexmock(os)
+    os.should_receive('mkdir').and_return()
+    flexmock(os.path)
+    os.path.should_receive('abspath').with_args('relative/app.tar.gz')\
+      .and_return('/tmp/relative/app.tar.gz')
+
+    flexmock(LocalState)
+    LocalState.should_receive('shell')\
+      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'),False)\
+      .and_return()
+
+    LocalState.extract_app_to_dir('relative/app.tar.gz',False)
