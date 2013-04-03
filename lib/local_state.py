@@ -26,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.8"
+APPSCALE_VERSION = "1.6.9"
 
 
 class LocalState():
@@ -189,10 +189,6 @@ class LocalState():
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
-
-      if options.use_spot_instances:
-        iaas_creds['max_spot_price'] = str(options.max_spot_price)
-
       creds.update(iaas_creds)
 
     return creds
@@ -734,7 +730,8 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
+        os.path.abspath(tar_location)),
       is_verbose)
 
     return extracted_location
