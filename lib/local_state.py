@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
+# Programmer: Chris Bunch, Brian Drawert
 
 
 # First-party Python imports
@@ -189,10 +189,6 @@ class LocalState():
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
-
-      if options.use_spot_instances:
-        iaas_creds['max_spot_price'] = str(options.max_spot_price)
-
       creds.update(iaas_creds)
 
     return creds
@@ -460,6 +456,21 @@ class LocalState():
 
 
   @classmethod
+  def get_all_public_ips(cls, keyname):
+    """Searches through the local metadata to get all of the public IPs or FQDNs
+    for machines in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A list containing all the public IPs or FQDNs in this AppScale deployment.
+    """
+    nodes = cls.get_local_nodes_info(keyname)
+    return [node['public_ip'] for node in nodes]
+
+
+  @classmethod
   def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
@@ -719,7 +730,8 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
+        os.path.abspath(tar_location)),
       is_verbose)
 
     # check if the tar.gz contains a folder
