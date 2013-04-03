@@ -128,6 +128,9 @@ class RemoteHelper():
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
       additional_params = params[agent.PARAM_CREDENTIALS]
+
+      if options.use_spot_instances:
+        additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])
     else:
       additional_params = {}
 
@@ -238,7 +241,8 @@ class RemoteHelper():
     """
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
-    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
+      num_retries=1)
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
@@ -264,8 +268,6 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    #return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-    #  cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
     return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
       cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
 
@@ -317,10 +319,7 @@ class RemoteHelper():
     return LocalState.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
-
       
-
-
   @classmethod
   def copy_ssh_keys_to_node(cls, host, keyname, is_verbose):
     """Sets the given SSH keypair as the default key for the named host,
@@ -673,7 +672,11 @@ class RemoteHelper():
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
-    all_ips = acc.get_all_public_ips()
+
+    try:
+      all_ips = acc.get_all_public_ips()
+    except Exception:
+      all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
     for ip in all_ips:
@@ -691,7 +694,7 @@ class RemoteHelper():
       AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
       while True:
         remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
-        AppScaleLogger.log(remote_output)
+        AppScaleLogger.verbose(remote_output, is_verbose)
         if not is_running_regex.match(remote_output):
           break
         time.sleep(0.3)

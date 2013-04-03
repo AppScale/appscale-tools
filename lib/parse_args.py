@@ -150,6 +150,11 @@ class ParseArgs():
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+      self.parser.add_argument('--use_spot_instances', action='store_true',
+        default=False,
+        help="use spot instances instead of on-demand instances (EC2 only)")
+      self.parser.add_argument('--max_spot_price', type=float,
+        help="the maximum price to pay for spot instances in EC2")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
@@ -348,12 +353,29 @@ class ParseArgs():
         raise BadConfigurationException("Cannot specify a machine image " + \
           "when --infrastructure is not specified.")
 
+      if self.args.use_spot_instances or self.args.max_spot_price:
+        raise BadConfigurationException("Can't run spot instances when " + \
+          "--infrastructure is not specified.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
     if self.args.infrastructure and not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
+
+    # if the user wants to use spot instances in a cloud, make sure that it's
+    # EC2 (since Euca doesn't have spot instances)
+    if self.args.infrastructure != 'ec2' and (self.args.use_spot_instances or \
+      self.args.max_spot_price):
+      raise BadConfigurationException("Can't run spot instances unless " + \
+        "Amazon EC2 is the infrastructure used.")
+
+    # if the user does want to set a max spot price, make sure they told us that
+    # they want to use spot instances in the first place
+    if self.args.max_spot_price and not self.args.use_spot_instances:
+      raise BadConfigurationException("Can't have a max spot instance price" + \
+        " if --use_spot_instances is not set.")
 
 
   def validate_credentials(self):

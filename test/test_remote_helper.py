@@ -51,7 +51,7 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -147,8 +147,8 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume that root login isn't already enabled
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
       .and_return('Please login as the ubuntu user rather than root user.')
 
     # and assume that we can ssh in as ubuntu to enable root login
@@ -190,19 +190,19 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale')) \
       .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
       .and_raise(ShellException).ordered()
 
@@ -215,30 +215,31 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale')) \
       .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION))) \
       .and_return().ordered()
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
-          .format(APPSCALE_VERSION, 'cassandra')))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale/{0}/{1}'
+          .format(APPSCALE_VERSION, 'cassandra'))) \
       .and_raise(ShellException).ordered()
 
     # check that the cleanup routine is called on error

@@ -17,10 +17,6 @@ import uuid
 import yaml
 
 
-# Third-party imports
-import M2Crypto
-
-
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
@@ -30,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.8"
+APPSCALE_VERSION = "1.6.9"
 
 
 class LocalState():
@@ -190,7 +186,8 @@ class LocalState():
         'infrastructure' : options.infrastructure,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
-        'max_images' : node_layout.max_vms
+        'max_images' : node_layout.max_vms,
+        'use_spot_instances' : options.use_spot_instances
       }
       creds.update(iaas_creds)
 
@@ -459,6 +456,21 @@ class LocalState():
 
 
   @classmethod
+  def get_all_public_ips(cls, keyname):
+    """Searches through the local metadata to get all of the public IPs or FQDNs
+    for machines in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A list containing all the public IPs or FQDNs in this AppScale deployment.
+    """
+    nodes = cls.get_local_nodes_info(keyname)
+    return [node['public_ip'] for node in nodes]
+
+
+  @classmethod
   def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
@@ -718,7 +730,8 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, tar_location),
+    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
+        os.path.abspath(tar_location)),
       is_verbose)
 
     return extracted_location
