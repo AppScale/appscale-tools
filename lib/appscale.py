@@ -215,6 +215,10 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
+      if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY"]:
+        os.environ[key] = value
+        continue
+
       if value is True:
         command.append(str("--%s" % key))
       else:
