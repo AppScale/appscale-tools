@@ -472,12 +472,8 @@ class RemoteHelper():
       options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
-    if options.infrastructure:
-      cert = os.environ["EC2_CERT"]
-      private_key = os.environ["EC2_PRIVATE_KEY"]
-    else:
-      cert = LocalState.get_certificate_location(options.keyname)
-      private_key = LocalState.get_private_key_location(options.keyname)
+    cert = LocalState.get_certificate_location(options.keyname)
+    private_key = LocalState.get_private_key_location(options.keyname)
 
     cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1',
       options.verbose)
