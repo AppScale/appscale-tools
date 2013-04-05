@@ -60,15 +60,9 @@ class EC2Agent(BaseAgent):
 
   # A list of the environment variables that must be provided
   # to control machines in Amazon EC2.
-  # TODO(cgb): Strictly speaking, the tools don't need
-  # EC2_CERT and EC2_PRIVATE_KEY, but the AppController does.
-  # Once we refactor the AppController to use a library that
-  # doesn't need them, remove them from this list.
   REQUIRED_EC2_CREDENTIALS = (
     'EC2_SECRET_KEY',
-    'EC2_ACCESS_KEY',
-    'EC2_CERT',
-    'EC2_PRIVATE_KEY'
+    'EC2_ACCESS_KEY'
   )
 
   # A tuple of the credentials that we build our internal
