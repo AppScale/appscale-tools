@@ -61,9 +61,7 @@ class AppScale():
 
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
-  USAGE = """
-
-Usage: appscale command [<args>]
+  USAGE = """Usage: appscale command [<args>]
 
 Available commands:
   init: Writes a new configuration file for starting AppScale.
@@ -148,12 +146,6 @@ Available commands:
     appscale_dir = os.path.expanduser("~") + os.sep + ".appscale"
     key_file = appscale_dir + os.sep + keyname + ".key"
     return key_file
-
-
-  def help(self):
-    """Aborts and prints out the directives allowed for this module.
-    """
-    raise UsageException(self.USAGE)
 
 
   def init(self, environment):

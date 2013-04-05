@@ -68,12 +68,6 @@ class TestAppScale(unittest.TestCase):
     return mock
 
 
-  def testReportHelp(self):
-    # calling 'appscale help' should report usage information
-    appscale = AppScale()
-    self.assertRaises(UsageException, appscale.help)
-
-
   def testInitWithNoAppScalefile(self):
     # calling 'appscale init cloud' if there's no AppScalefile in the local
     # directory should write a new cloud config file there
