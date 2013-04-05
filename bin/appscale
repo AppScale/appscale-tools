@@ -22,7 +22,8 @@ from custom_exceptions import BadConfigurationException
 
 appscale = AppScale()
 if len(sys.argv) < 2:
-  appscale.help()
+  print(AppScale.USAGE)
+  sys.exit(1)
 
 command = sys.argv[1]
 if command == "init":
@@ -127,4 +128,5 @@ elif command == "clean":
     cprint(e, 'red')
     sys.exit(1)
 else:
-  appscale.help()
+  print(AppScale.USAGE)
+  sys.exit(0)
