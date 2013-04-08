@@ -215,6 +215,10 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
+      if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
+        os.environ[key] = value
+        continue
+
       if value is True:
         command.append(str("--%s" % key))
       else:
@@ -562,6 +566,16 @@ Available commands:
     # Construct a terminate-instances command from the file's contents
     command = []
     contents_as_yaml = yaml.safe_load(contents)
+
+    if "EC2_ACCESS_KEY" in contents_as_yaml:
+      os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
+
+    if "EC2_SECRET_KEY" in contents_as_yaml:
+      os.environ["EC2_SECRET_KEY"] = contents_as_yaml["EC2_SECRET_KEY"]
+
+    if "EC2_URL" in contents_as_yaml:
+      os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
+
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
