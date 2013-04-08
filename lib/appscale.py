@@ -255,7 +255,7 @@ Available commands:
     else:
       keyname = "appscale"
 
-    if "verbose" in config:
+    if 'verbose' in config and config['verbose'] == True:
       verbose = True
     else:
       verbose = False
@@ -423,7 +423,7 @@ Available commands:
     if 'test' in contents_as_yaml:
       command.append("--test")
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--file")
@@ -456,7 +456,7 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--appname")
@@ -580,7 +580,7 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     # Finally, exec the command. Don't worry about validating it -
@@ -609,7 +609,7 @@ Available commands:
       raise BadConfigurationException("Cannot use 'appscale clean' in a " \
         "cloud deployment.")
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       is_verbose = contents_as_yaml['verbose']
     else:
       is_verbose = False
