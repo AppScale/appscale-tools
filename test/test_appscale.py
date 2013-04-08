@@ -6,6 +6,7 @@
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,17 +29,21 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import UsageException
+from local_state import LocalState
+from remote_helper import RemoteHelper
 
 
 class TestAppScale(unittest.TestCase):
 
 
   def setUp(self):
-    pass
+    os.environ['EC2_ACCESS_KEY'] = ''
+    os.environ['EC2_SECRET_KEY'] = ''
 
   
   def tearDown(self):
-    pass
+    os.environ['EC2_ACCESS_KEY'] = ''
+    os.environ['EC2_SECRET_KEY'] = ''
 
 
   def addMockForNoAppScalefile(self, appscale):
@@ -63,12 +68,6 @@ class TestAppScale(unittest.TestCase):
      .and_return(flexmock(read=lambda: contents)))
 
     return mock
-
-
-  def testReportHelp(self):
-    # calling 'appscale help' should report usage information
-    appscale = AppScale()
-    self.assertRaises(UsageException, appscale.help)
 
 
   def testInitWithNoAppScalefile(self):
@@ -208,6 +207,43 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('run_instances')
     appscale.up()
+
+
+  def testUpWithEC2EnvironmentVariables(self):
+    # if the user wants us to use their EC2 credentials when running AppScale,
+    # we should make sure they get set
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'min' : 1,
+      'max' : 1,
+      'EC2_ACCESS_KEY' : 'access key',
+      'EC2_SECRET_KEY' : 'secret key'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, pretend that our ec2 image to use exists
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_return()
+    flexmock(boto)
+    boto.should_receive('connect_ec2').with_args('access key', 'secret key') \
+      .and_return(fake_ec2)
+
+    # finally, mock out the actual appscale-run-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
+    appscale.up()
+
+    self.assertEquals('access key', os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals('secret key', os.environ['EC2_SECRET_KEY'])
 
 
   def testSshWithNoAppScalefile(self):
@@ -562,3 +598,88 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
     appscale.destroy()
+
+
+  def testDestroyWithEC2EnvironmentVariables(self):
+    # if the user wants us to use their EC2 credentials when running AppScale,
+    # we should make sure they get set
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'min' : 1,
+      'max' : 1,
+      'EC2_ACCESS_KEY' : 'access key',
+      'EC2_SECRET_KEY' : 'secret key'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-terminate-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('terminate_instances')
+    appscale.destroy()
+
+    self.assertEquals('access key', os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals('secret key', os.environ['EC2_SECRET_KEY'])
+
+
+  def testCleanWithNoAppScalefile(self):
+    # calling 'appscale clean' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.clean)
+
+
+  def testCleanInCloudDeployment(self):
+    # calling 'appscale clean' in a cloud deployment should throw up and die
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    self.assertRaises(BadConfigurationException, appscale.clean)
+
+
+  def testCleanInClusterDeployment(self):
+    # calling 'appscale clean' in a cluster deployment should ssh into each of
+    # the boxes specified in the ips_layout and run the terminate script
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'ips_layout' : {
+        'controller': 'public1',
+        'servers': ['public2', 'public3']
+      }
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+
+    flexmock(RemoteHelper)
+    RemoteHelper.should_receive('ssh') \
+      .with_args(re.compile('public[123]'), 'appscale', str, False)
+
+    flexmock(LocalState)
+    LocalState.should_receive('cleanup_appscale_files').with_args('appscale')
+
+    appscale = AppScale()
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    expected = ['public1', 'public2', 'public3']
+    self.assertEquals(expected, appscale.clean())

@@ -60,15 +60,9 @@ class EC2Agent(BaseAgent):
 
   # A list of the environment variables that must be provided
   # to control machines in Amazon EC2.
-  # TODO(cgb): Strictly speaking, the tools don't need
-  # EC2_CERT and EC2_PRIVATE_KEY, but the AppController does.
-  # Once we refactor the AppController to use a library that
-  # doesn't need them, remove them from this list.
   REQUIRED_EC2_CREDENTIALS = (
     'EC2_SECRET_KEY',
-    'EC2_ACCESS_KEY',
-    'EC2_CERT',
-    'EC2_PRIVATE_KEY'
+    'EC2_ACCESS_KEY'
   )
 
   # A tuple of the credentials that we build our internal
@@ -150,18 +144,6 @@ class EC2Agent(BaseAgent):
     else:
       params['IS_VERBOSE'] = False
 
-    if 'use_spot_instances' in args and args['use_spot_instances'] == True:
-      params[self.PARAM_SPOT] = True
-    else:
-      params[self.PARAM_SPOT] = False
-
-    if params[self.PARAM_SPOT]:
-      if 'max_spot_price' in args:
-        params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
-      else:
-        params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
-          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE])
-
     for credential in self.REQUIRED_CREDENTIALS:
       if credential in os.environ and os.environ[credential] != '':
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
@@ -169,6 +151,18 @@ class EC2Agent(BaseAgent):
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
           .format(credential))
+
+    if 'use_spot_instances' in args and args['use_spot_instances'] == True:
+      params[self.PARAM_SPOT] = True
+    else:
+      params[self.PARAM_SPOT] = False
+
+    if params[self.PARAM_SPOT]:
+      if 'max_spot_price' in args and args['max_spot_price'] is not None:
+        params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
+      else:
+        params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
+          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE])
 
     return params
 

@@ -26,6 +26,7 @@ from custom_exceptions import UsageException
 
 # AppScale-specific imports
 from appscale_tools import AppScaleTools
+from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 
@@ -55,11 +56,12 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
+  TERMINATE = "ruby /root/appscale/AppController/terminate.rb"
+
+
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
-  USAGE = """
-
-Usage: appscale command [<args>]
+  USAGE = """Usage: appscale command [<args>]
 
 Available commands:
   init: Writes a new configuration file for starting AppScale.
@@ -71,8 +73,9 @@ Available commands:
   remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
-  destroy: Terminates the currently running AppScale deployment.
+  destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
+  clean: Forcefully terminates all services in a cluster AppScale deployment.
   help: Displays this message.
 """
 
@@ -145,12 +148,6 @@ Available commands:
     return key_file
 
 
-  def help(self):
-    """Aborts and prints out the directives allowed for this module.
-    """
-    raise UsageException(self.USAGE)
-
-
   def init(self, environment):
     """Writes an AppScalefile in the local directory, that contains common
     configuration parameters.
@@ -218,6 +215,10 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
+      if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
+        os.environ[key] = value
+        continue
+
       if value is True:
         command.append(str("--%s" % key))
       else:
@@ -254,7 +255,7 @@ Available commands:
     else:
       keyname = "appscale"
 
-    if "verbose" in config:
+    if 'verbose' in config and config['verbose'] == True:
       verbose = True
     else:
       verbose = False
@@ -267,8 +268,27 @@ Available commands:
     if not os.path.exists(ssh_key_location):
       return False
 
+    all_ips = self.get_all_ips(config["ips_layout"])
+    for ip in all_ips:
+      if not self.can_ssh_to_ip(ip, keyname, verbose):
+        return False
+
+    return True
+
+
+  def get_all_ips(self, ips_layout):
+    """Searches through the given IPs layout and finds all the unique IP
+    addresses.
+
+    Args:
+      ips_layout: A dict that maps AppScale roles to either an IP address or a
+        list of IP addresses that host that role.
+    Returns:
+      A list containing all of the IP addresses in the IPs layout, without
+        duplicates.
+    """
     all_ips = []
-    for role, ip_or_ips in config["ips_layout"].items():
+    for role, ip_or_ips in ips_layout.items():
       if isinstance(ip_or_ips, str):
         if not ip_or_ips in all_ips:
           all_ips.append(ip_or_ips)
@@ -277,11 +297,7 @@ Available commands:
           if not ip in all_ips:
             all_ips.append(ip)
 
-    for ip in all_ips:
-      if not self.can_ssh_to_ip(ip, keyname, verbose):
-        return False
-
-    return True
+    return all_ips
 
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
@@ -407,7 +423,7 @@ Available commands:
     if 'test' in contents_as_yaml:
       command.append("--test")
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--file")
@@ -440,7 +456,7 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--appname")
@@ -550,14 +566,68 @@ Available commands:
     # Construct a terminate-instances command from the file's contents
     command = []
     contents_as_yaml = yaml.safe_load(contents)
+
+    if "EC2_ACCESS_KEY" in contents_as_yaml:
+      os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
+
+    if "EC2_SECRET_KEY" in contents_as_yaml:
+      os.environ["EC2_SECRET_KEY"] = contents_as_yaml["EC2_SECRET_KEY"]
+
+    if "EC2_URL" in contents_as_yaml:
+      os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
+
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
+
+
+  def clean(self):
+    """'clean' provides a mechanism that will forcefully shut down all AppScale-
+    related services on virtual machines in a cluster deployment.
+
+    Returns:
+      A list of the IP addresses where AppScale was shut down.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+      BadConfigurationException: If this method is invoked and the AppScalefile
+        indicates that a cloud deployment is being used.
+    """
+    contents = self.read_appscalefile()
+
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'ips_layout' not in contents_as_yaml:
+      raise BadConfigurationException("Cannot use 'appscale clean' in a " \
+        "cloud deployment.")
+
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      is_verbose = contents_as_yaml['verbose']
+    else:
+      is_verbose = False
+
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = 'appscale'
+
+    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+    for ip in all_ips:
+      RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
+
+    try:
+      LocalState.cleanup_appscale_files(keyname)
+    except Exception:
+      pass
+
+    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+
+    return all_ips
