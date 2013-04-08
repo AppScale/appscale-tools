@@ -426,24 +426,27 @@ class AppScaleTools():
       RemoteHelper.create_user_accounts(username, password, userappserver_host,
         options.keyname)
 
-    if userappclient.does_app_exist(app_id):
-      raise AppScaleException("The given application is already running in " + \
-        "AppScale. Please choose a different application ID or use " + \
-        "appscale-remove-app to take down the existing application.")
-
+    app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)
     if app_admin is not None and username != app_admin:
       raise AppScaleException("The given user doesn't own this application" + \
         ", so they can't upload an app with that application ID. Please " + \
         "change the application ID and try again.")
 
-    AppScaleLogger.log("Uploading {0}".format(app_id))
-    userappclient.reserve_app_id(username, app_id, app_language)
+    if app_exists:
+      AppScaleLogger.log("Uploading new version of app {0}".format(app_id))
+    else:
+      AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
+      userappclient.reserve_app_id(username, app_id, app_language)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
-    acc.done_uploading(app_id, remote_file_path)
-    acc.update([app_id])
+
+    if app_exists:
+      acc.restart_apps([app_id])
+    else:
+      acc.done_uploading(app_id, remote_file_path)
+      acc.update([app_id])
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving

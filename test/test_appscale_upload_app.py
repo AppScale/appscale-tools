@@ -285,9 +285,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
 
   def test_upload_app_when_app_exists_on_virt_cluster(self):
-    # we don't let you upload an app if it's already running, so abort
+    # we do let you upload an app if it's already running
 
-    # add in mocks so that there is an app.yaml, but with no appid set
+    # add in mocks so that there is an app.yaml with an appid set
     flexmock(os.path)
     os.path.should_call('exists')
     app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
@@ -310,6 +310,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
+    fake_appcontroller.should_receive('restart_apps_on_all_nodes').with_args(
+      ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -337,6 +339,13 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
+    app_data = """
+    num_hosts:1
+    num_ports:1
+    hosts:public1
+    ports: 8080
+    """
+
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
@@ -345,7 +354,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return("\nnum_ports:10\n")
+      'baz', 'the secret').and_return(app_data)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -355,12 +364,42 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(getpass)
     getpass.should_receive('getpass').and_return('aaaaaa')
 
+    # mock out making the remote app directory
+    flexmock(subprocess)
+    subprocess.should_receive('Popen').with_args(re.compile('mkdir -p'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+
+    # and mock out tarring and copying the app
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+
+    subprocess.should_receive('Popen').with_args(re.compile(
+      '/tmp/appscale-app-baz.tar.gz'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+
+    # as well as removing the tar'ed app once we're done copying it
+    flexmock(os)
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+      .and_return()
+
+    # and slap in a mock that says the app comes up after waiting for it
+    # three times
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args(('public1',
+      8080)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
+
     argv = [
       "--keyname", self.keyname,
       "--file", self.app_dir
     ]
     options = ParseArgs(argv, self.function).args
-    self.assertRaises(AppScaleException, AppScaleTools.upload_app, options)
+    AppScaleTools.upload_app(options)
 
 
   def test_upload_app_when_app_admin_not_this_user(self):
@@ -469,6 +508,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
+    fake_appcontroller.should_receive('restart_apps_on_all_nodes').with_args(
+      ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -496,6 +537,13 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
+    app_data = """
+    num_hosts:1
+    num_ports:1
+    hosts:public1
+    ports: 8080
+    """
+
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
@@ -504,7 +552,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return("\nnum_ports:10\n")
+      'baz', 'the secret').and_return(app_data)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -514,12 +562,41 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(getpass)
     getpass.should_receive('getpass').and_return('aaaaaa')
 
+    # mock out making the remote app directory
+    local_state = flexmock(LocalState)
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^mkdir -p')) \
+      .and_return()
+
+    # and mock out tarring and copying the app
+    local_state.should_receive('shell') \
+      .with_args(re.compile('tar -czf'), False) \
+      .and_return()
+
+    local_state.should_receive('shell') \
+      .with_args(re.compile('/tmp/appscale-app-baz.tar.gz'), False, 5) \
+      .and_return()
+
+    # as well as removing the tar'ed app once we're done copying it
+    flexmock(os)
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+      .and_return()
+
+    # and slap in a mock that says the app comes up after waiting for it
+    # three times
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args(('public1',
+      8080)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
+
     argv = [
       "--keyname", self.keyname,
       "--file", self.app_dir
     ]
     options = ParseArgs(argv, self.function).args
-    self.assertRaises(AppScaleException, AppScaleTools.upload_app, options)
+    AppScaleTools.upload_app(options)
 
 
   def test_upload_app_successfully(self):
@@ -750,17 +827,17 @@ class TestAppScaleUploadApp(unittest.TestCase):
     getpass.should_receive('getpass').and_return('aaaaaa')
 
     # mock out making the remote app directory
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^mkdir -p'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^mkdir -p')) \
       .and_return()
 
     # and mock out tarring and copying the app
-    local_state.should_receive('shell')\
-      .with_args(re.compile('tar -czf'),False)\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('tar -czf'), False) \
       .and_return()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('/tmp/appscale-app-baz.tar.gz'),False,5)\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('/tmp/appscale-app-baz.tar.gz'), False, 5) \
       .and_return()
 
     # as well as removing the tar'ed app once we're done copying it

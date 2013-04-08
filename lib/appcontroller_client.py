@@ -304,3 +304,15 @@ class AppControllerClient():
     """
     return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.update, apps_to_run, self.secret)
+
+  def restart_apps(self, apps_to_restart):
+    """Tells the AppController to restart all AppServers running the named
+    appids, which we assume have already been uploaded to that machine and
+    started previously.
+
+    Args:
+      apps_to_restart: A list of apps to restart on nodes running the App
+        Engine service.
+    """
+    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.restart_apps_on_all_nodes, apps_to_restart, self.secret)
