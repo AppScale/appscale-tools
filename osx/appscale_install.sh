@@ -5,7 +5,7 @@ cd `dirname $0`/..
 # copy tools files
 TARGETDIR=/usr/local/appscale-tools
 mkdir -p $TARGETDIR
-cp -r bin lib templates LICENSE README $TARGETDIR || exit 1
+cp -r bin lib templates LICENSE README.md $TARGETDIR || exit 1
 
 # from installpylibs
 easy_install termcolor M2Crypto SOAPpy pyyaml boto==2.6 argparse
