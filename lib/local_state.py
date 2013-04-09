@@ -737,7 +737,7 @@ class LocalState():
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
       included_dir = extracted_location + os.sep + file_list[0]
-      if len(file_list) ==  1 and os.path.isdir(included_dir):
+      if len(file_list) == 1 and os.path.isdir(included_dir):
         extracted_location = included_dir
 
     return extracted_location
