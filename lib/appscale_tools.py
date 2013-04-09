@@ -450,7 +450,7 @@ class AppScaleTools():
     AppScaleLogger.log("Please wait for your app to start serving.")
 
     if app_exists:
-      time.sleep(20)
+      time.sleep(20)  # give the AppController time to restart the app
 
     serving_host, serving_port = userappclient.get_serving_info(app_id,
       options.keyname)
