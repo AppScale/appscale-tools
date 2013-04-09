@@ -310,7 +310,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
-    fake_appcontroller.should_receive('restart_apps_on_all_nodes').with_args(
+    fake_appcontroller.should_receive('done_uploading').with_args(
+      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -508,7 +510,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
-    fake_appcontroller.should_receive('restart_apps_on_all_nodes').with_args(
+    fake_appcontroller.should_receive('done_uploading').with_args(
+      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \

@@ -442,15 +442,16 @@ class AppScaleTools():
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
 
-    if app_exists:
-      acc.restart_apps([app_id])
-    else:
-      acc.done_uploading(app_id, remote_file_path)
-      acc.update([app_id])
+    acc.done_uploading(app_id, remote_file_path)
+    acc.update([app_id])
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
+
+    if app_exists:
+      time.sleep(20)
+
     serving_host, serving_port = userappclient.get_serving_info(app_id,
       options.keyname)
     RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
