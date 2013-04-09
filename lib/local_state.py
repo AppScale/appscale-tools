@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
+# Programmer: Chris Bunch, Brian Drawert
 
 
 # First-party Python imports
@@ -733,5 +733,11 @@ class LocalState():
     cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
         os.path.abspath(tar_location)),
       is_verbose)
+
+    file_list = os.listdir(extracted_location)
+    if len(file_list) > 0:
+      included_dir = extracted_location + os.sep + file_list[0]
+      if len(file_list) == 1 and os.path.isdir(included_dir):
+        extracted_location = included_dir
 
     return extracted_location
