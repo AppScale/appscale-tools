@@ -734,10 +734,10 @@ class LocalState():
         os.path.abspath(tar_location)),
       is_verbose)
 
-    # check if the tar.gz contains a folder
     file_list = os.listdir(extracted_location)
-    if len(file_list) ==  1 and\
-      os.path.isdir(extracted_location + os.sep + file_list[0]):
-      extracted_location += os.sep + file_list[0]
+    if len(file_list) > 0:
+      included_dir = extracted_location + os.sep + file_list[0]
+      if len(file_list) ==  1 and os.path.isdir(included_dir):
+        extracted_location = included_dir
 
     return extracted_location
