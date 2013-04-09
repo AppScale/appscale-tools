@@ -969,7 +969,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
       .and_return()
 
-    flexmock(os.path)
     os.should_receive('listdir').and_return(['app.yaml','index.py'])
 
     # and slap in a mock that says the app comes up after waiting for it
