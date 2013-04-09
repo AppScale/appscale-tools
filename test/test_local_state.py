@@ -217,9 +217,6 @@ class TestLocalState(unittest.TestCase):
     os.should_receive('listdir').and_return(['one_folder'])
     os.path.should_receive('isdir').with_args(re.compile('one_folder').and_return(True)
 
-
     loc = LocalState.extract_app_to_dir('relative/app.tar.gz',False)
-    if re.search('one_folder',loc):
-      pass
-    else:
+    if not re.search('one_folder',loc):
       raise Exception("one_folder not found in LocalState.extract_app_to_dir() return value")
