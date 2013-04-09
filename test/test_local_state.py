@@ -214,4 +214,12 @@ class TestLocalState(unittest.TestCase):
       .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'),False)\
       .and_return()
 
-    LocalState.extract_app_to_dir('relative/app.tar.gz',False)
+    os.should_receive('listdir').and_return(['one_folder'])
+    os.path.should_receive('isdir').with_args(re.compile('one_folder').and_return(True)
+
+
+    loc = LocalState.extract_app_to_dir('relative/app.tar.gz',False)
+    if re.search('one_folder',loc):
+      pass
+    else:
+      raise Exception("one_folder not found in LocalState.extract_app_to_dir() return value")
