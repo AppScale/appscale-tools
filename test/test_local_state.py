@@ -211,12 +211,11 @@ class TestLocalState(unittest.TestCase):
 
     flexmock(LocalState)
     LocalState.should_receive('shell')\
-      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'),False)\
+      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'), False)\
       .and_return()
 
     os.should_receive('listdir').and_return(['one_folder'])
-    os.path.should_receive('isdir').with_args(re.compile('one_folder').and_return(True)
+    os.path.should_receive('isdir').with_args(re.compile('one_folder')).and_return(True)
 
-    loc = LocalState.extract_app_to_dir('relative/app.tar.gz',False)
-    if not re.search('one_folder',loc):
-      raise Exception("one_folder not found in LocalState.extract_app_to_dir() return value")
+    location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
+    self.assertEquals(True, 'one_folder' in location)
