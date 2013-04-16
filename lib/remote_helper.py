@@ -11,6 +11,8 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
+
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
@@ -746,7 +748,8 @@ class RemoteHelper():
       'mkdir -p {0}'.format(remote_app_dir), is_verbose)
 
     AppScaleLogger.log("Tarring application")
-    local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
+    rand = str(uuid.uuid4()).replace('-', '')[:8]
+    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
     LocalState.shell("cd {0} && tar -czf {1} *".format(app_location,
       local_tarred_app), is_verbose)
 
