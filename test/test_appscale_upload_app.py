@@ -80,6 +80,10 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.failed = flexmock(name='success', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
+    # mock out generating a random app dir, for later mocks
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return('1234')
+
 
   def test_upload_app_without_file_flag(self):
     # not specifying the file to upload should abort
@@ -384,7 +388,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
-    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz-1234.tar.gz') \
       .and_return()
 
     # and slap in a mock that says the app comes up after waiting for it
@@ -583,7 +587,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
-    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz-1234.tar.gz') \
       .and_return()
 
     # and slap in a mock that says the app comes up after waiting for it
@@ -706,7 +710,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
-    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz-1234.tar.gz') \
       .and_return()
 
     # and slap in a mock that says the app comes up after waiting for it
@@ -727,11 +731,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
 
   def test_upload_tar_gz_app_successfully(self):
-
-    # mock out generating a random app dir, for later mocks
-    flexmock(uuid)
-    uuid.should_receive('uuid4').and_return('12345678')
-    app_dir = '/tmp/appscale-app-12345678'
+    app_dir = '/tmp/appscale-app-1234'
 
     # add in mocks so that the gzip'ed file gets extracted to /tmp
     # as well as for removing it later
@@ -846,7 +846,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # as well as removing the tar'ed app once we're done copying it
     flexmock(os)
-    os.should_receive('remove').with_args('/tmp/appscale-app-baz.tar.gz') \
+    os.should_receive('remove').with_args('/tmp/appscale-app-baz-1234.tar.gz') \
       .and_return()
 
     os.should_receive('listdir').and_return(['app.yaml','index.py'])
