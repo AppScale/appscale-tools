@@ -43,9 +43,8 @@ class TestAppControllerClient(unittest.TestCase):
     #run commands
     acc = AppControllerClient('fake_host', 'fake_secret')
     ret = acc.get_api_status() 
-    if ret['api1'] != 'running' or\
-       ret['api2'] != 'failed':
-      raise Exception('get_api_status failed')
+    self.assertEquals(ret['api1'], 'running')
+    self.assertEquals(ret['api2'], 'failed')
 
   def test_get_database_information(self):
     fake_soap = flexmock(name='fake_soap')
