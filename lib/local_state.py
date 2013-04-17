@@ -651,12 +651,20 @@ class LocalState():
           the_temp_file.seek(0)
           output = the_temp_file.read()
           the_temp_file.close()
-          raise ShellException("Executing command '{0}' failed:\n{1}"\
-                    .format(command,output))
+          if stdin is not None:
+            raise ShellException("Executing command '{0} {1}' failed:\n{2}"\
+                    .format(command, stdin, output))
+          else:
+            raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command, output))
         time.sleep(1)
     except OSError as e:
-      raise ShellException('Error executing command: {0}:{1}'\
-                .format(command,str(e)))
+      if stdin is not None:
+        raise ShellException("Error executing command: '{0} {1}':{1}"\
+                .format(command, stdin, str(e)))
+      else:
+        raise ShellException("Error executing command: '{0}':{1}"\
+                .format(command, str(e)))
 
 
   @classmethod
