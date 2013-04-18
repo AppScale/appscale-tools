@@ -50,6 +50,15 @@ class AppControllerClient():
   # The number of times we should retry SOAP calls in case of failures.
   DEFAULT_NUM_RETRIES = 5
 
+  # The default timeout for run_with_timeout.
+  DEFAULT_TIMEOUT_TIME = 10
+
+  # The timeout to use when uploading a tar.gz file.
+  UPLOAD_TARGZ_TIME = 500
+
+  # The number of retries to use when uploading a tar.gz file.
+  UPLOAD_TARGZ_RETRIES = 1
+
 
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
@@ -228,9 +237,8 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
-      self.server.status, self.secret)
-
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.status, self.secret)
 
   def get_api_status(self):
     """Queries the AppController to see what the API status is.
@@ -238,8 +246,8 @@ class AppControllerClient():
     Returns:
       A dict that indicates what the AppController reports the status is.
     """
-    api_status_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
-      self.server.get_api_status, self.secret)
+    api_status_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.get_api_status, self.secret)
     return json.loads(api_status_jdata)
 
   def get_database_information(self):
@@ -248,8 +256,9 @@ class AppControllerClient():
     Returns:
       A dict that indicates what the AppController reports info is.
     """
-    db_info_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
-      self.server.get_database_information, self.secret)
+    db_info_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "",
+      self.DEFAULT_NUM_RETRIES, self.server.get_database_information,
+      self.secret)
     return json.loads(db_info_jdata)
 
   def upload_tgz(self, tgz_filename, email):
@@ -261,7 +270,8 @@ class AppControllerClient():
     Return:
       A str with the message from the AppController.
     """
-    msg = self.run_with_timeout(500,"Timeout uploading app.",1,
+    msg = self.run_with_timeout(self.UPLOAD_TARGZ_TIME, 
+      "Timeout uploading app.", self.UPLOAD_TARGZ_RETRIES, 
       self.server.upload_tgz_file, tgz_filename, email, self.secret)
     return msg
 
@@ -271,8 +281,8 @@ class AppControllerClient():
     Returns:
       A dict that indicates what the AppController reports its stats as.
     """
-    stats_jdata = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
-      self.server.get_stats_json, self.secret)
+    stats_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.get_stats_json, self.secret)
     return json.loads(stats_jdata)
 
   def is_initialized(self):
