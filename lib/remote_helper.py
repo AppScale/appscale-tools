@@ -427,7 +427,7 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
+      "AppDashboard", "AppMonitoring", "Neptune", "InfrastructureManager",
       "AppTaskQueue", "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
