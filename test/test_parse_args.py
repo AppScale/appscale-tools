@@ -65,6 +65,12 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
+  def tearDown(self):
+    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = ''
+    os.environ['EC2_URL'] = ''
+
+
   def test_flags_that_cause_program_abort(self):
     # using a flag that isn't acceptable should raise
     # an exception
@@ -346,3 +352,32 @@ class TestParseArgs(unittest.TestCase):
     actual = ParseArgs(ec2_argv, self.function).args
     self.assertEquals(True, actual.use_spot_instances)
     self.assertEquals(20.0, actual.max_spot_price)
+
+
+  def test_ec2_creds_as_params(self):
+    # specifying EC2_ACCESS_KEY but not EC2_SECRET_KEY should fail
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+      "ami-ABCDEFG", "--EC2_ACCESS_KEY", "access_key"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # specifying EC2_SECRET_KEY but not EC2_ACCESS_KEY should fail
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+      "ami-ABCDEFG", "--EC2_SECRET_KEY", "secret_key"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # specifying both should result in them being set in the environment
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+      "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
+      "baz"]
+    ParseArgs(argv, self.function)
+    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+
+    # specifying a EC2_URL should result in it being set in the environment
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+      "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
+      "baz", "--EC2_URL", "http://boo.baz"]
+    ParseArgs(argv, self.function)
+    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
