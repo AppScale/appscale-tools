@@ -156,9 +156,11 @@ class ParseArgs():
       self.parser.add_argument('--max_spot_price', type=float,
         help="the maximum price to pay for spot instances in EC2")
       self.parser.add_argument('--EC2_ACCESS_KEY',
-        help="the access key that identifies this user in EC2")
+        help="the access key that identifies this user in an EC2-compatible" + \
+          " service")
       self.parser.add_argument('--EC2_SECRET_KEY',
-        help="the secret key that identifies this user in EC2")
+        help="the secret key that identifies this user in an EC2-compatible" + \
+          " service")
       self.parser.add_argument('--EC2_URL',
         help="a URL that identifies where an EC2-compatible service runs")
 
