@@ -52,6 +52,9 @@ class TestAppScaleLogger(unittest.TestCase):
     self.my_id = "12345"
 
     self.expected = {
+      "EC2_ACCESS_KEY" : None,
+      "EC2_SECRET_KEY" : None,
+      "EC2_URL" : None,
       "admin_pass" : None,
       "admin_user" : None,
       "appengine" : 1,
