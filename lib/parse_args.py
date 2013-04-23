@@ -155,6 +155,14 @@ class ParseArgs():
         help="use spot instances instead of on-demand instances (EC2 only)")
       self.parser.add_argument('--max_spot_price', type=float,
         help="the maximum price to pay for spot instances in EC2")
+      self.parser.add_argument('--EC2_ACCESS_KEY',
+        help="the access key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_SECRET_KEY',
+        help="the secret key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_URL',
+        help="a URL that identifies where an EC2-compatible service runs")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
@@ -342,6 +350,23 @@ class ParseArgs():
       BadConfigurationException: If the value given to us for
         infrastructure-related flags were invalid.
     """
+    if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
+      raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
+        "EC2_SECRET_KEY must also be specified.")
+
+    if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
+      raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
+        "EC2_ACCESS_KEY must also be specified.")
+
+    if self.args.EC2_ACCESS_KEY:
+      os.environ['EC2_ACCESS_KEY'] = self.args.EC2_ACCESS_KEY
+
+    if self.args.EC2_SECRET_KEY:
+      os.environ['EC2_SECRET_KEY'] = self.args.EC2_SECRET_KEY
+
+    if self.args.EC2_URL:
+      os.environ['EC2_URL'] = self.args.EC2_URL
+
     if not self.args.infrastructure:
       # make sure we didn't get a group or machine flag, since those are
       # infrastructure-only
