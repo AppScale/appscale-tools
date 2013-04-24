@@ -661,10 +661,10 @@ class LocalState():
     except OSError as os_error:
       if stdin:
         raise ShellException("Error executing command: '{0} {1}':{2}"\
-                .format(command, stdin, str(os_error)))
+                .format(command, stdin, os_error))
       else:
         raise ShellException("Error executing command: '{0}':{1}"\
-                .format(command, str(os_error)))
+                .format(command, os_error))
 
 
   @classmethod

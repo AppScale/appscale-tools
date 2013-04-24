@@ -219,3 +219,30 @@ class TestLocalState(unittest.TestCase):
 
     location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
     self.assertEquals(True, 'one_folder' in location)
+
+  def test_shell_exceptions(self):
+    fake_tmp_file = flexmock(name='tempfile')
+    fake_tmp_file.should_receive('write').and_return()
+    fake_tmp_file.should_receive('read').and_return('')
+    fake_tmp_file.should_receive('seek').and_return()
+    fake_tmp_file.should_receive('close').and_return()
+    flexmock(tempfile).should_receive('NamedTemporaryFile')\
+      .and_return(fake_tmp_file)
+    flexmock(tempfile).should_receive('TemporaryFile')
+      .and_return(fake_tmp_file)
+
+    fake_result = flexmock(name='result')
+    fake_result.returncode = 0
+    fake_result.should_receive('wait').and_return()
+    flexmock(subprocess).should_receive('Popen').and_return(fake_result).once()
+    flexmock(time).should_receive('sleep').and_return()
+
+    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False))
+    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False, 
+        stdin='fake_stdin'))
+      
+    flexmock(subprocess).should_receive('Popen').and_raise(OSError).once()
+
+    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False))
+    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False, 
+        stdin='fake_stdin'))
