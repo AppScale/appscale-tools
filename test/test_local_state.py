@@ -6,7 +6,10 @@
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
+import time
 import unittest
 import yaml
 
@@ -20,6 +23,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 from local_state import LocalState
 from node_layout import NodeLayout
 
@@ -228,21 +232,23 @@ class TestLocalState(unittest.TestCase):
     fake_tmp_file.should_receive('close').and_return()
     flexmock(tempfile).should_receive('NamedTemporaryFile')\
       .and_return(fake_tmp_file)
-    flexmock(tempfile).should_receive('TemporaryFile')
+    flexmock(tempfile).should_receive('TemporaryFile')\
       .and_return(fake_tmp_file)
 
     fake_result = flexmock(name='result')
-    fake_result.returncode = 0
+    fake_result.returncode = 1
     fake_result.should_receive('wait').and_return()
-    flexmock(subprocess).should_receive('Popen').and_return(fake_result).once()
+    fake_subprocess = flexmock(subprocess)
+    fake_subprocess.should_receive('Popen').and_return(fake_result)
+    fake_subprocess.STDOUT = ''
     flexmock(time).should_receive('sleep').and_return()
 
-    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False))
-    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False, 
-        stdin='fake_stdin'))
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
+        stdin='fake_stdin')
       
-    flexmock(subprocess).should_receive('Popen').and_raise(OSError).once()
+    fake_subprocess.should_receive('Popen').and_raise(OSError)
 
-    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False))
-    self.assertRaises(ShellException, LocalState.shell('fake_cmd', False, 
-        stdin='fake_stdin'))
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
+        stdin='fake_stdin')
