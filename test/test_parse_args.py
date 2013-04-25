@@ -354,7 +354,7 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals(20.0, actual.max_spot_price)
 
 
-  def test_ec2_creds_as_params(self):
+  def test_ec2_creds_in_run_instances(self):
     # specifying EC2_ACCESS_KEY but not EC2_SECRET_KEY should fail
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG", "--EC2_ACCESS_KEY", "access_key"]
@@ -378,6 +378,32 @@ class TestParseArgs(unittest.TestCase):
       "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
       "baz", "--EC2_URL", "http://boo.baz"]
     ParseArgs(argv, self.function)
+    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+
+
+  def test_ec2_creds_in_term_instances(self):
+    function = "appscale-terminate-instances"
+
+    # specifying EC2_ACCESS_KEY but not EC2_SECRET_KEY should fail
+    argv = ["--EC2_ACCESS_KEY", "access_key"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, function)
+
+    # specifying EC2_SECRET_KEY but not EC2_ACCESS_KEY should fail
+    argv = ["--EC2_SECRET_KEY", "secret_key"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, function)
+
+    # specifying both should result in them being set in the environment
+    argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz"]
+    ParseArgs(argv, function)
+    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+
+    # specifying a EC2_URL should result in it being set in the environment
+    argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz", "--EC2_URL",
+      "http://boo.baz"]
+    ParseArgs(argv, function)
     self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
     self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
     self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
