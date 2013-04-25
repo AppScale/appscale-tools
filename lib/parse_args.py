@@ -239,6 +239,14 @@ class ParseArgs():
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+      self.parser.add_argument('--EC2_ACCESS_KEY',
+        help="the access key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_SECRET_KEY',
+        help="the secret key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_URL',
+        help="a URL that identifies where an EC2-compatible service runs")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -272,6 +280,7 @@ class ParseArgs():
       self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
+      self.validate_environment_flags()
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
@@ -287,7 +296,7 @@ class ParseArgs():
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      pass
+      self.validate_environment_flags()
     elif function == "appscale-remove-app":
       if not self.args.appname:
         raise SystemExit("Must specify appname")
@@ -343,12 +352,12 @@ class ParseArgs():
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
 
 
-  def validate_infrastructure_flags(self):
-    """Validates flags corresponding to cloud infrastructures.
+  def validate_environment_flags(self):
+    """Validates flags dealing with setting environment variables.
 
     Raises:
-      BadConfigurationException: If the value given to us for
-        infrastructure-related flags were invalid.
+      BadConfigurationException: If the user gives us either EC2_ACCESS_KEY
+        or EC2_SECRET_KEY, but forgets to also specify the other.
     """
     if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
       raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
@@ -367,6 +376,14 @@ class ParseArgs():
     if self.args.EC2_URL:
       os.environ['EC2_URL'] = self.args.EC2_URL
 
+
+  def validate_infrastructure_flags(self):
+    """Validates flags corresponding to cloud infrastructures.
+
+    Raises:
+      BadConfigurationException: If the value given to us for
+        infrastructure-related flags were invalid.
+    """
     if not self.args.infrastructure:
       # make sure we didn't get a group or machine flag, since those are
       # infrastructure-only
