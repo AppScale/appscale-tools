@@ -7,34 +7,17 @@ DIST=other
 
 case "$1" in
     tools)
-        #installexpect
-        # For mac osx
         installsshcopyid
         installsetuptools
-        #postinstallsetuptools
-
         installpylibs
-
-        installeuca2ools
-        installec2ools
-
       	installappscaletools
-	      postinstallappscaletools
+	postinstallappscaletools
 	;;
     all)
-	# scratch install of appscale including post script.
-        #installexpect
-        # For mac osx
         installsshcopyid
         installsetuptools
-        #postinstallsetuptools
-
         installpylibs
-
-        installeuca2ools
-        installec2ools
-
-	      installappscaletools
-	      postinstallappscaletools
+	installappscaletools
+	postinstallappscaletools
 	;;
 esac
