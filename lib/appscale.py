@@ -407,6 +407,9 @@ Available commands:
     Args:
       app: The path (absolute or relative) to the Google App Engine application
         that should be uploaded.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -432,7 +435,7 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    AppScaleTools.upload_app(options)
+    return AppScaleTools.upload_app(options)
 
 
   def undeploy(self, appid):
