@@ -405,7 +405,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       "--file", self.app_dir
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.upload_app(options)
+    (host, port) = AppScaleTools.upload_app(options)
+    self.assertEquals(host, 'public1')
+    self.assertEquals(port, 8080)
 
 
   def test_upload_app_when_app_admin_not_this_user(self):
@@ -604,7 +606,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       "--file", self.app_dir
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.upload_app(options)
+    (host, port) = AppScaleTools.upload_app(options)
+    self.assertEquals(host, 'public1')
+    self.assertEquals(port, 8080)
 
 
   def test_upload_app_successfully(self):
@@ -727,7 +731,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       "--file", self.app_dir
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.upload_app(options)
+    (host, port) = AppScaleTools.upload_app(options)
+    self.assertEquals(host, 'public1')
+    self.assertEquals(port, 8080)
 
 
   def test_upload_tar_gz_app_successfully(self):
@@ -865,4 +871,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       "--file", self.app_dir + ".tar.gz"
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.upload_app(options)
+    (host, port) = AppScaleTools.upload_app(options)
+    self.assertEquals(host, 'public1')
+    self.assertEquals(port, 8080)
