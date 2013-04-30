@@ -392,10 +392,15 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
+    fake_port = 8080
+    fake_host = 'fake_host'
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('upload_app')
+    AppScaleTools.should_receive('upload_app').and_return(
+      (fake_host, fake_port))
     app = '/bar/app'
-    appscale.deploy(app)
+    (host, port) = appscale.deploy(app)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testUndeployWithNoAppScalefile(self):
@@ -454,10 +459,15 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
+    fake_port = 8080
+    fake_host = 'fake_host'
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('upload_app')
+    AppScaleTools.should_receive('upload_app').and_return(
+      (fake_host, fake_port))
     app = '/bar/app'
-    appscale.deploy(app)
+    (host, port) = appscale.deploy(app)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testTailWithNoAppScalefile(self):
