@@ -399,8 +399,8 @@ class TestAppScale(unittest.TestCase):
       (fake_host, fake_port))
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
-    self.assertEquals(host, fake_host)
-    self.assertEquals(port, fake_port)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testUndeployWithNoAppScalefile(self):
@@ -466,8 +466,8 @@ class TestAppScale(unittest.TestCase):
       (fake_host, fake_port))
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
-    self.assertEquals(host, fake_host)
-    self.assertEquals(port, fake_port)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testTailWithNoAppScalefile(self):
