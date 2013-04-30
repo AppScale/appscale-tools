@@ -394,6 +394,9 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_app_to_dir(options.file,
@@ -461,3 +464,5 @@ class AppScaleTools():
 
     if created_dir:
       shutil.rmtree(file_location)
+
+    return (serving_host, serving_port)
