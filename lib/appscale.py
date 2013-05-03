@@ -221,6 +221,8 @@ Available commands:
 
       if value is True:
         command.append(str("--%s" % key))
+      elif value is False:
+        pass
       else:
         if key == "ips_layout":
           command.append("--ips_layout")
