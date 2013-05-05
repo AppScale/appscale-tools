@@ -50,6 +50,15 @@ class AppControllerClient():
   # The number of times we should retry SOAP calls in case of failures.
   DEFAULT_NUM_RETRIES = 5
 
+  # The default timeout for run_with_timeout.
+  DEFAULT_TIMEOUT_TIME = 10
+
+  # The timeout to use when uploading a tar.gz file.
+  UPLOAD_TARGZ_TIME = 500
+
+  # The number of retries to use when uploading a tar.gz file.
+  UPLOAD_TARGZ_RETRIES = 1
+
 
   def __init__(self, host, secret):
     """Creates a new AppControllerClient.
@@ -109,7 +118,8 @@ class AppControllerClient():
           function, *args)
       else:
         raise exception
-    except ssl.SSLError:
+    except Exception as exception:  # Should be ssl.SSLError but the ssl module
+                                    # isn't available when running as a GAE App.
       # these are intermittent, so don't decrement our retry count for this
       signal.alarm(0)  # turn off the alarm before we retry
       return self.run_with_timeout(timeout_time, default, num_retries, function,
@@ -227,9 +237,53 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
-      self.server.status, self.secret)
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.status, self.secret)
 
+  def get_api_status(self):
+    """Queries the AppController to see what the API status is.
+
+    Returns:
+      A dict that indicates what the AppController reports the status is.
+    """
+    api_status_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.get_api_status, self.secret)
+    return json.loads(api_status_jdata)
+
+  def get_database_information(self):
+    """Queries the AppController to see what the database info is.
+
+    Returns:
+      A dict that indicates what the AppController reports info is.
+    """
+    db_info_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "",
+      self.DEFAULT_NUM_RETRIES, self.server.get_database_information,
+      self.secret)
+    return json.loads(db_info_jdata)
+
+  def upload_tgz(self, tgz_filename, email):
+    """Tells the AppController to load the app found in the tar.gz file
+
+    Args:
+      tgz_filename: str full path to the uploaded tar.gz file.
+      email: str email of the app admin.
+    Return:
+      A str with the message from the AppController.
+    """
+    msg = self.run_with_timeout(self.UPLOAD_TARGZ_TIME, 
+      "Timeout uploading app.", self.UPLOAD_TARGZ_RETRIES, 
+      self.server.upload_tgz_file, tgz_filename, email, self.secret)
+    return msg
+
+  def get_stats(self):
+    """Queries the AppController to see what its stats are.
+
+    Returns:
+      A dict that indicates what the AppController reports its stats as.
+    """
+    stats_jdata = self.run_with_timeout(self.DEFAULT_TIMEOUT_TIME, "", 
+      self.DEFAULT_NUM_RETRIES, self.server.get_stats_json, self.secret)
+    return json.loads(stats_jdata)
 
   def is_initialized(self):
     """Queries the AppController to see if it has started up all of the API
