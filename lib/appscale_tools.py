@@ -352,7 +352,7 @@ class AppScaleTools():
     RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_LOAD_BALANCER_PORT, options.verbose)
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
@@ -394,6 +394,9 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_app_to_dir(options.file,
@@ -426,28 +429,32 @@ class AppScaleTools():
       RemoteHelper.create_user_accounts(username, password, userappserver_host,
         options.keyname)
 
-    if userappclient.does_app_exist(app_id):
-      raise AppScaleException("The given application is already running in " + \
-        "AppScale. Please choose a different application ID or use " + \
-        "appscale-remove-app to take down the existing application.")
-
+    app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)
     if app_admin is not None and username != app_admin:
       raise AppScaleException("The given user doesn't own this application" + \
         ", so they can't upload an app with that application ID. Please " + \
         "change the application ID and try again.")
 
-    AppScaleLogger.log("Uploading {0}".format(app_id))
-    userappclient.reserve_app_id(username, app_id, app_language)
+    if app_exists:
+      AppScaleLogger.log("Uploading new version of app {0}".format(app_id))
+    else:
+      AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
+      userappclient.reserve_app_id(username, app_id, app_language)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
+
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
+
+    if app_exists:
+      time.sleep(20)  # give the AppController time to restart the app
+
     serving_host, serving_port = userappclient.get_serving_info(app_id,
       options.keyname)
     RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
@@ -457,3 +464,5 @@ class AppScaleTools():
 
     if created_dir:
       shutil.rmtree(file_location)
+
+    return (serving_host, serving_port)

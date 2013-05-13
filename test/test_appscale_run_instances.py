@@ -194,9 +194,9 @@ class TestAppScaleRunInstances(unittest.TestCase):
       UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
-    # as well as for the AppLoadBalancer
+    # as well as for the AppDashboard
     fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      RemoteHelper.APP_LOAD_BALANCER_PORT)).and_raise(Exception) \
+      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
 
     flexmock(socket)
@@ -453,9 +453,9 @@ appengine:  1.2.3.4
       UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
-    # as well as for the AppLoadBalancer
+    # as well as for the AppDashboard
     fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_LOAD_BALANCER_PORT)).and_raise(Exception) \
+      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
 
     flexmock(socket)
@@ -686,9 +686,9 @@ appengine:  1.2.3.4
       UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
-    # as well as for the AppLoadBalancer
+    # as well as for the AppDashboard
     fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_LOAD_BALANCER_PORT)).and_raise(Exception) \
+      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
 
     flexmock(socket)

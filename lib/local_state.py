@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
+# Programmer: Chris Bunch, Brian Drawert
 
 
 # First-party Python imports
@@ -26,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.9"
+APPSCALE_VERSION = "1.7.0"
 
 
 class LocalState():
@@ -651,12 +651,20 @@ class LocalState():
           the_temp_file.seek(0)
           output = the_temp_file.read()
           the_temp_file.close()
-          raise ShellException("Executing command '{0}' failed:\n{1}"\
-                    .format(command,output))
+          if stdin:
+            raise ShellException("Executing command '{0} {1}' failed:\n{2}"\
+                    .format(command, stdin, output))
+          else:
+            raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command, output))
         time.sleep(1)
-    except OSError as e:
-      raise ShellException('Error executing command: {0}:{1}'\
-                .format(command,str(e)))
+    except OSError as os_error:
+      if stdin:
+        raise ShellException("Error executing command: '{0} {1}':{2}"\
+                .format(command, stdin, os_error))
+      else:
+        raise ShellException("Error executing command: '{0}':{1}"\
+                .format(command, os_error))
 
 
   @classmethod
@@ -733,5 +741,11 @@ class LocalState():
     cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
         os.path.abspath(tar_location)),
       is_verbose)
+
+    file_list = os.listdir(extracted_location)
+    if len(file_list) > 0:
+      included_dir = extracted_location + os.sep + file_list[0]
+      if len(file_list) == 1 and os.path.isdir(included_dir):
+        extracted_location = included_dir
 
     return extracted_location
