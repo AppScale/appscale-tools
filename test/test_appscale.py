@@ -37,11 +37,13 @@ class TestAppScale(unittest.TestCase):
 
 
   def setUp(self):
-    pass
+    os.environ['EC2_ACCESS_KEY'] = ''
+    os.environ['EC2_SECRET_KEY'] = ''
 
   
   def tearDown(self):
-    pass
+    os.environ['EC2_ACCESS_KEY'] = ''
+    os.environ['EC2_SECRET_KEY'] = ''
 
 
   def addMockForNoAppScalefile(self, appscale):
@@ -66,12 +68,6 @@ class TestAppScale(unittest.TestCase):
      .and_return(flexmock(read=lambda: contents)))
 
     return mock
-
-
-  def testReportHelp(self):
-    # calling 'appscale help' should report usage information
-    appscale = AppScale()
-    self.assertRaises(UsageException, appscale.help)
 
 
   def testInitWithNoAppScalefile(self):
@@ -211,6 +207,43 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('run_instances')
     appscale.up()
+
+
+  def testUpWithEC2EnvironmentVariables(self):
+    # if the user wants us to use their EC2 credentials when running AppScale,
+    # we should make sure they get set
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'min' : 1,
+      'max' : 1,
+      'EC2_ACCESS_KEY' : 'access key',
+      'EC2_SECRET_KEY' : 'secret key'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, pretend that our ec2 image to use exists
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_return()
+    flexmock(boto)
+    boto.should_receive('connect_ec2').with_args('access key', 'secret key') \
+      .and_return(fake_ec2)
+
+    # finally, mock out the actual appscale-run-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('run_instances')
+    appscale.up()
+
+    self.assertEquals('access key', os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals('secret key', os.environ['EC2_SECRET_KEY'])
 
 
   def testSshWithNoAppScalefile(self):
@@ -359,10 +392,15 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
+    fake_port = 8080
+    fake_host = 'fake_host'
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('upload_app')
+    AppScaleTools.should_receive('upload_app').and_return(
+      (fake_host, fake_port))
     app = '/bar/app'
-    appscale.deploy(app)
+    (host, port) = appscale.deploy(app)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testUndeployWithNoAppScalefile(self):
@@ -421,10 +459,15 @@ class TestAppScale(unittest.TestCase):
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale-run-instances call
+    fake_port = 8080
+    fake_host = 'fake_host'
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('upload_app')
+    AppScaleTools.should_receive('upload_app').and_return(
+      (fake_host, fake_port))
     app = '/bar/app'
-    appscale.deploy(app)
+    (host, port) = appscale.deploy(app)
+    self.assertEquals(fake_host, host)
+    self.assertEquals(fake_port, port)
 
 
   def testTailWithNoAppScalefile(self):
@@ -565,6 +608,35 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
     appscale.destroy()
+
+
+  def testDestroyWithEC2EnvironmentVariables(self):
+    # if the user wants us to use their EC2 credentials when running AppScale,
+    # we should make sure they get set
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'min' : 1,
+      'max' : 1,
+      'EC2_ACCESS_KEY' : 'access key',
+      'EC2_SECRET_KEY' : 'secret key'
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-terminate-instances call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('terminate_instances')
+    appscale.destroy()
+
+    self.assertEquals('access key', os.environ['EC2_ACCESS_KEY'])
+    self.assertEquals('secret key', os.environ['EC2_SECRET_KEY'])
 
 
   def testCleanWithNoAppScalefile(self):

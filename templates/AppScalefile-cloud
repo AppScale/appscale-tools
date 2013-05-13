@@ -12,8 +12,7 @@ machine : 'ami-ABCDEFG'
 instance_type : 'm1.large'
 
 # The database that your Google App Engine applications will be backed by.
-# Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
-# also supported.
+# Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
 
 # The AWS keyname that should be used for all machines in this AppScale

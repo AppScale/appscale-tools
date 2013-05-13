@@ -33,8 +33,7 @@ ips_layout :
 #   - 192.168.1.9
 
 # The database that your Google App Engine applications will be backed by.
-# Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
-# also supported.
+# Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
 
 # Whether or not increased output should be presented to standard output.

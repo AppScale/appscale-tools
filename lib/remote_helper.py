@@ -11,6 +11,8 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
+
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
@@ -37,8 +39,8 @@ class RemoteHelper():
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
-  # The port the AppLoadBalancer runs on, by default.
-  APP_LOAD_BALANCER_PORT = 80
+  # The port the AppDashboard runs on, by default.
+  APP_DASHBOARD_PORT = 80
 
 
   # The default port that the ssh daemon runs on.
@@ -425,7 +427,7 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
+      "AppDashboard", "AppMonitoring", "Neptune", "InfrastructureManager",
       "AppTaskQueue", "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
@@ -472,12 +474,8 @@ class RemoteHelper():
       options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
-    if options.infrastructure:
-      cert = os.environ["EC2_CERT"]
-      private_key = os.environ["EC2_PRIVATE_KEY"]
-    else:
-      cert = LocalState.get_certificate_location(options.keyname)
-      private_key = LocalState.get_private_key_location(options.keyname)
+    cert = LocalState.get_certificate_location(options.keyname)
+    private_key = LocalState.get_private_key_location(options.keyname)
 
     cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1',
       options.verbose)
@@ -750,7 +748,8 @@ class RemoteHelper():
       'mkdir -p {0}'.format(remote_app_dir), is_verbose)
 
     AppScaleLogger.log("Tarring application")
-    local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
+    rand = str(uuid.uuid4()).replace('-', '')[:8]
+    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
     LocalState.shell("cd {0} && tar -czf {1} *".format(app_location,
       local_tarred_app), is_verbose)
 

@@ -27,8 +27,8 @@ class EC2Agent(BaseAgent):
   # Setting this value is a bit of an art, but we choose the value below
   # because our image is roughly 10GB in size, and if Eucalyptus doesn't
   # have the image cached, it could take half an hour to get our image
-  # started.
-  MAX_VM_CREATION_TIME = 1800
+  # started.  We set this to 60 minutes so we have some leeway.
+  MAX_VM_CREATION_TIME = 3600
 
   # The amount of time that run_instances waits between each describe-instances
   # request. Setting this value too low can cause Eucalyptus to interpret
@@ -60,15 +60,9 @@ class EC2Agent(BaseAgent):
 
   # A list of the environment variables that must be provided
   # to control machines in Amazon EC2.
-  # TODO(cgb): Strictly speaking, the tools don't need
-  # EC2_CERT and EC2_PRIVATE_KEY, but the AppController does.
-  # Once we refactor the AppController to use a library that
-  # doesn't need them, remove them from this list.
   REQUIRED_EC2_CREDENTIALS = (
     'EC2_SECRET_KEY',
-    'EC2_ACCESS_KEY',
-    'EC2_CERT',
-    'EC2_PRIVATE_KEY'
+    'EC2_ACCESS_KEY'
   )
 
   # A tuple of the credentials that we build our internal

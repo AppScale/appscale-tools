@@ -61,9 +61,7 @@ class AppScale():
 
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
-  USAGE = """
-
-Usage: appscale command [<args>]
+  USAGE = """Usage: appscale command [<args>]
 
 Available commands:
   init: Writes a new configuration file for starting AppScale.
@@ -150,12 +148,6 @@ Available commands:
     return key_file
 
 
-  def help(self):
-    """Aborts and prints out the directives allowed for this module.
-    """
-    raise UsageException(self.USAGE)
-
-
   def init(self, environment):
     """Writes an AppScalefile in the local directory, that contains common
     configuration parameters.
@@ -223,8 +215,14 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
+      if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
+        os.environ[key] = value
+        continue
+
       if value is True:
         command.append(str("--%s" % key))
+      elif value is False:
+        pass
       else:
         if key == "ips_layout":
           command.append("--ips_layout")
@@ -259,7 +257,7 @@ Available commands:
     else:
       keyname = "appscale"
 
-    if "verbose" in config:
+    if 'verbose' in config and config['verbose'] == True:
       verbose = True
     else:
       verbose = False
@@ -411,6 +409,9 @@ Available commands:
     Args:
       app: The path (absolute or relative) to the Google App Engine application
         that should be uploaded.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -427,7 +428,7 @@ Available commands:
     if 'test' in contents_as_yaml:
       command.append("--test")
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--file")
@@ -436,7 +437,7 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    AppScaleTools.upload_app(options)
+    return AppScaleTools.upload_app(options)
 
 
   def undeploy(self, appid):
@@ -460,7 +461,7 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     command.append("--appname")
@@ -570,11 +571,21 @@ Available commands:
     # Construct a terminate-instances command from the file's contents
     command = []
     contents_as_yaml = yaml.safe_load(contents)
+
+    if "EC2_ACCESS_KEY" in contents_as_yaml:
+      os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
+
+    if "EC2_SECRET_KEY" in contents_as_yaml:
+      os.environ["EC2_SECRET_KEY"] = contents_as_yaml["EC2_SECRET_KEY"]
+
+    if "EC2_URL" in contents_as_yaml:
+      os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
+
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
     # Finally, exec the command. Don't worry about validating it -
@@ -603,7 +614,7 @@ Available commands:
       raise BadConfigurationException("Cannot use 'appscale clean' in a " \
         "cloud deployment.")
 
-    if 'verbose' in contents_as_yaml:
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       is_verbose = contents_as_yaml['verbose']
     else:
       is_verbose = False
