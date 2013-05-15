@@ -20,7 +20,6 @@ import yaml
 
 # Third party libraries
 from flexmock import flexmock
-import M2Crypto
 import SOAPpy
 
 
