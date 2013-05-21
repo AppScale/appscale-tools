@@ -19,6 +19,7 @@ import yaml
 
 # Third party libraries
 import apiclient.discovery
+import apiclient.errors
 import boto
 from flexmock import flexmock
 import httplib2
@@ -916,6 +917,16 @@ appengine:  1.2.3.4
 
     fake_gce = flexmock(name='fake_gce')
     fake_gce.should_receive('images').and_return(fake_images)
+
+    # next, presume that the firewall doesn't exist yet
+    fake_firewall_request = flexmock(name='fake_firewall_request')
+    fake_firewall_request.should_receive('execute').with_args(
+      fake_authorized_http).and_raise(apiclient.errors.HttpError, None, None)
+
+    fake_firewalls = flexmock(name='fake_firewalls')
+    fake_firewalls.should_receive('get').with_args(project=project_id,
+      firewall='bazgroup').and_return(fake_firewall_request)
+    fake_gce.should_receive('firewalls').and_return(fake_firewalls)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)

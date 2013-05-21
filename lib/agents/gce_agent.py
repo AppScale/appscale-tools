@@ -17,6 +17,7 @@ import oauth2client.tools
 # AppScale-specific imports
 from agents.base_agent import AgentConfigurationException
 from agents.base_agent import BaseAgent 
+from appscale_logger import AppScaleLogger
 
 
 class GCEAgent(BaseAgent):
@@ -62,6 +63,38 @@ class GCEAgent(BaseAgent):
 
 
   def configure_instance_security(self, parameters):
+    """ Creates a GCE firewall with the specified name, and opens the ports on
+    that firewall as needed for AppScale.
+
+    We expect the firewall to not exist before this point, to avoid accidentally
+    placing AppScale instances from different deployments in the same firewall
+    (thus enabling them to see each other's web traffic).
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        firewall that we should create in GCE.
+    Returns:
+      True, if the named firewall was created successfully.
+    Raises:
+      AgentRuntimeException: If the named firewall already exists in GCE.
+    """
+    firewall = parameters[self.PARAM_GROUP]
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.firewalls().get(
+        project=parameters[self.PARAM_PROJECT], firewall=firewall)
+      response = request.execute(auth_http)
+      raise AgentRuntimeException("Firewall already exists - please use a " + \
+        "different group name")
+    except apiclient.errors.HttpError:
+      # If we get a HttpError, then the firewall doesn't exist, which is the
+      # desired outcome.
+      pass
+
+    AppScaleLogger.log("Creating firewall: {0}".format(firewall))
     raise NotImplementedError
 
 
@@ -166,10 +199,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(auth_http)
       return True
     except apiclient.errors.HttpError as http_error:
-      if http_error.resp.status == '404':
-        return False
-      else:
-        raise http_error
+      return False
 
 
   def cleanup_state(self, parameters):
