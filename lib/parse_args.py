@@ -168,6 +168,9 @@ class ParseArgs():
       self.parser.add_argument('--client_secrets',
         help="the JSON file that can be used to authenticate with Google " + \
           "APIs via OAuth")
+      self.parser.add_argument('--project',
+        help="the name of the project that is allowed to use Google " + \
+          "Compute Engine")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',

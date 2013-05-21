@@ -18,8 +18,13 @@ import yaml
 
 
 # Third party libraries
+import apiclient.discovery
 import boto
 from flexmock import flexmock
+import httplib2
+import oauth2client.client
+import oauth2client.file
+import oauth2client.tools
 import SOAPpy
 
 
@@ -819,6 +824,7 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_gce_deployment(self):
     # presume that our client_secrets file exists
+    project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     flexmock(os.path)
     os.path.should_call('exists')
@@ -855,6 +861,66 @@ appengine:  1.2.3.4
       .and_return(fake_secret)
     builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
+
+    # mock out interactions with GCE
+    # first, mock out the oauth library calls
+    fake_flow = flexmock(name='fake_flow')
+    flexmock(oauth2client.client)
+    oauth2client.client.should_receive('flow_from_clientsecrets').with_args(
+      client_secrets, scope=str).and_return(fake_flow)
+
+    fake_storage = flexmock(name='fake_storage')
+    fake_storage.should_receive('get').and_return(None)
+
+    flexmock(oauth2client.file)
+    oauth2client.file.should_receive('Storage').with_args(str).and_return(
+      fake_storage)
+
+    fake_credentials = flexmock(name='fake_credentials')
+    flexmock(oauth2client.tools)
+    oauth2client.tools.should_receive('run').with_args(fake_flow,
+      fake_storage).and_return(fake_credentials)
+
+    # next, mock out http calls to GCE
+    fake_http = flexmock(name='fake_http')
+    fake_authorized_http = flexmock(name='fake_authorized_http')
+
+    flexmock(httplib2)
+    httplib2.should_receive('Http').and_return(fake_http)
+    fake_credentials.should_receive('authorize').with_args(fake_http) \
+      .and_return(fake_authorized_http)
+
+    # presume that our image does exist in GCE, with some fake data
+    # acquired by running a not mocked version of this code
+    image_name = 'appscale-image-name'
+    image_info = {
+      u'kind': u'compute#image',
+      u'description': u'',
+      u'rawDisk': {u'containerType': u'TAR', u'source': u''},
+      u'preferredKernel': u'https://www.googleapis.com/compute/v1beta14' + \
+        u'/projects/google/global/kernels/gce-v20130515',
+      u'sourceType': u'RAW',
+      u'creationTimestamp': u'2013-05-21T08:05:12.198-07:00',
+      u'id': u'4235320207849085220',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects' + \
+        u'/961228229472/global/images/' + unicode(image_name),
+      u'name': unicode(image_name)
+    }
+    fake_image_request = flexmock(name='fake_image_request')
+    fake_image_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(image_info)
+
+    fake_images = flexmock(name='fake_images')
+    fake_images.should_receive('get').with_args(project=project_id,
+      image=image_name).and_return(fake_image_request)
+
+    fake_gce = flexmock(name='fake_gce')
+    fake_gce.should_receive('images').and_return(fake_images)
+
+    # finally, inject our fake GCE connection
+    flexmock(apiclient.discovery)
+    apiclient.discovery.should_receive('build').with_args('compute', str) \
+      .and_return(fake_gce)
 
     # assume that root login is not enabled
     local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -987,9 +1053,10 @@ appengine:  1.2.3.4
       "--max", "1",
       "--group", "bazgroup",
       "--infrastructure", "gce",
-      "--machine", "appscale-image-name",
+      "--machine", image_name,
       "--keyname", self.keyname,
       "--client_secrets", client_secrets,
+      "--project", project_id,
       "--test"
     ]
 

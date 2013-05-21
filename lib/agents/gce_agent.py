@@ -6,6 +6,14 @@
 import os.path
 
 
+# Third-party imports
+import apiclient.discovery
+import httplib2
+import oauth2client.client
+import oauth2client.file
+import oauth2client.tools
+
+
 # AppScale-specific imports
 from agents.base_agent import AgentConfigurationException
 from agents.base_agent import BaseAgent 
@@ -22,6 +30,9 @@ class GCEAgent(BaseAgent):
 
   PARAM_KEYNAME = 'keyname'
 
+
+  PARAM_PROJECT = 'project'
+
   
   PARAM_SECRETS = 'client_secrets'
 
@@ -30,8 +41,24 @@ class GCEAgent(BaseAgent):
     PARAM_GROUP,
     PARAM_IMAGE_ID,
     PARAM_KEYNAME,
+    PARAM_PROJECT,
     PARAM_SECRETS
   )
+
+
+  OAUTH2_STORAGE = 'oauth2.dat'
+
+
+  GCE_SCOPE = 'https://www.googleapis.com/auth/compute'
+
+
+  API_VERSION = 'v1beta15'
+
+
+  GCE_URL = 'https://www.googleapis.com/compute/%s/projects/' % (API_VERSION)
+
+
+  DEFAULT_ZONE = 'us-central1-a'
 
 
   def configure_instance_security(self, parameters):
@@ -56,6 +83,7 @@ class GCEAgent(BaseAgent):
       self.PARAM_GROUP : args['group'],
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_KEYNAME : args['keyname'],
+      self.PARAM_PROJECT : args['project'],
       self.PARAM_SECRETS : args['client_secrets']
     }
 
@@ -119,7 +147,29 @@ class GCEAgent(BaseAgent):
 
 
   def does_image_exist(self, parameters):
-    raise NotImplementedError
+    """ Queries Google Compute Engine to see if the specified image exists for
+    this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        image that we should check for existence.
+    Returns:
+      True if the named image exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.images().get(project=parameters[self.PARAM_PROJECT],
+        image=parameters[self.PARAM_IMAGE_ID])
+      response = request.execute(auth_http)
+      return True
+    except apiclient.errors.HttpError as http_error:
+      if http_error.resp.status == '404':
+        return False
+      else:
+        raise http_error
 
 
   def cleanup_state(self, parameters):
@@ -127,7 +177,28 @@ class GCEAgent(BaseAgent):
 
 
   def open_connection(self, parameters):
-    raise NotImplementedError
+    """ Connects to Google Compute Engine with the given credentials.
+
+    Args:
+      parameters: A dict that contains all the parameters necessary to
+        authenticate this user with Google Compute Engine. We assume that the
+        user has already authorized this account for use with GCE.
+    Returns:
+      An apiclient.discovery.Resource that is a connection valid for requests
+      to Google Compute Engine for the given user, and a Credentials object that
+      can be used to sign requests performed with that connection.
+    """
+    # Perform OAuth 2.0 authorization.
+    flow = oauth2client.client.flow_from_clientsecrets(
+      parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+    storage = oauth2client.file.Storage(self.OAUTH2_STORAGE)
+    credentials = storage.get()
+
+    if credentials is None or credentials.invalid:
+      credentials = oauth2client.tools.run(flow, storage)
+
+    # Build the service
+    return apiclient.discovery.build('compute', self.API_VERSION), credentials
 
 
   def handle_failure(self, msg):
