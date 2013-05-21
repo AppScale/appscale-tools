@@ -59,6 +59,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "admin_user" : None,
       "appengine" : 1,
       "autoscale" : True,
+      "client_secrets" : None,
       "min" : 1,
       "max" : 1,
       "infrastructure" : "ec2",
