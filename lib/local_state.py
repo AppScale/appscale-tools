@@ -744,7 +744,9 @@ class LocalState():
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
-      # Remove file that begin with a dot.
+      # We need to ignore files that begin with a dot (hidden files) as some
+      # tar clients (particularly on OSX) add these file to the archive, and 
+      # this results in an error uploading the app.
       file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
