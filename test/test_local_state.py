@@ -224,6 +224,30 @@ class TestLocalState(unittest.TestCase):
     location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
     self.assertEquals(True, 'one_folder' in location)
 
+  def test_extract_app_to_dir__with_dotfiles(self):
+    flexmock(os)
+    os.should_receive('mkdir').and_return()
+    flexmock(os.path)
+    os.path.should_receive('abspath').with_args('relative/app.tar.gz') \
+      .and_return('/tmp/relative/app.tar.gz')
+
+    flexmock(LocalState)
+    LocalState.should_receive('shell') \
+      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'), False) \
+      .and_return()
+
+    os.should_receive('listdir').and_return(['one_folder', '.dot_file',
+      '.dot_folder'])
+    os.path.should_receive('isdir').with_args(re.compile('one_folder')) \
+      .and_return(True)
+    os.path.should_receive('isdir').with_args(re.compile('.dot_file')) \
+      .and_return(False)
+    os.path.should_receive('isdir').with_args(re.compile('.dot_folder')) \
+      .and_return(True)
+
+    location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
+    self.assertEquals(True, 'one_folder' in location)
+
   def test_shell_exceptions(self):
     fake_tmp_file = flexmock(name='tempfile')
     fake_tmp_file.should_receive('write').and_return()
