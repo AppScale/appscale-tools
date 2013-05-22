@@ -3,7 +3,9 @@
 
 
 # General-purpose Python library imports
+import datetime
 import os.path
+import uuid
 
 
 # Third-party imports
@@ -21,6 +23,9 @@ from appscale_logger import AppScaleLogger
 
 
 class GCEAgent(BaseAgent):
+
+
+  MAX_VM_CREATION_TIME = 600
 
 
   PARAM_GROUP = 'group'
@@ -60,6 +65,12 @@ class GCEAgent(BaseAgent):
 
 
   DEFAULT_ZONE = 'us-central1-a'
+
+
+  DEFAULT_MACHINE_TYPE = 'n1-standard-1'
+
+
+  DEFAULT_SERVICE_EMAIL = 'default'
 
 
   def configure_instance_security(self, parameters):
@@ -215,11 +226,118 @@ class GCEAgent(BaseAgent):
 
 
   def describe_instances(self, parameters):
-    raise NotImplementedError
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.instances().list(
+      project=parameters[self.PARAM_PROJECT],
+      filter="name eq appscale-{0}-.*".format(parameters[self.PARAM_GROUP]),
+      zone=self.DEFAULT_ZONE
+    )
+    response = request.execute(auth_http)
+
+    instance_ids = []
+    public_ips = []
+    private_ips = []
+    for instance in response['items']:
+      if instance['status'] == "RUNNING":
+        instance_ids.append(instance['name'])
+        public_ips.append(instance['networkInterfaces'][0]['accessConfigs'][0]['natIP'])
+        private_ips.append(instance['networkInterfaces'][0]['networkIP'])
+
+    return public_ips, private_ips, instance_ids
 
 
   def run_instances(self, count, parameters, security_configured):
-    raise NotImplementedError
+    project_id = parameters[self.PARAM_PROJECT]
+    image_id = parameters[self.PARAM_IMAGE_ID]
+    instance_type = self.DEFAULT_MACHINE_TYPE  #parameters[self.PARAM_INSTANCE_TYPE]
+    keyname = parameters[self.PARAM_KEYNAME]
+    group = parameters[self.PARAM_GROUP]
+
+    AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
+      "instance type {2}, keyname {3}, in security group {4}".format(count,
+      image_id, instance_type, keyname, group))
+
+    # First, see how many instances are running and what their info is.
+    start_time = datetime.datetime.now()
+    active_public_ips, active_private_ips, active_instances = self.describe_instances(parameters)
+
+    # Construct URLs
+    image_url = '%s%s/global/images/%s' % (
+           self.GCE_URL, project_id, image_id)
+    project_url = '%s%s' % (self.GCE_URL, project_id)
+    machine_type_url = '%s/global/machineTypes/%s' % (
+          project_url, instance_type)
+    zone_url = '%s/zones/%s' % (project_url, self.DEFAULT_ZONE)
+    network_url = '%s/global/networks/%s' % (project_url, group)
+
+    # Construct the request body
+    for index in range(count):
+      instances = {
+        'name': "appscale-{0}-{1}".format(group, uuid.uuid4()),
+        'machineType': machine_type_url,
+        'image': image_url,
+        'networkInterfaces': [{
+          'accessConfigs': [{
+            'type': 'ONE_TO_ONE_NAT',
+            'name': 'External NAT'
+           }],
+          'network': network_url
+        }],
+        'serviceAccounts': [{
+             'email': self.DEFAULT_SERVICE_EMAIL,
+             'scopes': [self.GCE_SCOPE]
+        }]
+      }
+
+      # Create the instance
+      gce_service, credentials = self.open_connection(parameters)
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.instances().insert(
+           project=project_id, body=instances, zone=self.DEFAULT_ZONE)
+      response = request.execute(auth_http)
+    
+      instance_ids = []
+      public_ips = []
+      private_ips = []
+      end_time = datetime.datetime.now() + datetime.timedelta(0,
+        self.MAX_VM_CREATION_TIME)
+      now = datetime.datetime.now()
+
+      while now < end_time:
+        time_left = (end_time - now).seconds
+        AppScaleLogger.log("Waiting for your instances to start...")
+        instance_info = self.describe_instances(parameters)
+        public_ips = instance_info[0]
+        private_ips = instance_info[1]
+        instance_ids = instance_info[2]
+        public_ips = self.diff(public_ips, active_public_ips)
+        private_ips = self.diff(private_ips, active_private_ips)
+        instance_ids = self.diff(instance_ids, active_instances)
+        if count == len(public_ips):
+          break
+        time.sleep(self.SLEEP_TIME)
+        now = datetime.datetime.now()
+
+      if not public_ips:
+        self.handle_failure('No public IPs were able to be procured '
+                            'within the time limit')
+
+      if len(public_ips) != count:
+        for index in range(0, len(public_ips)):
+          if public_ips[index] == '0.0.0.0':
+            instance_to_term = instance_ids[index]
+            AppScaleLogger.log('Instance {0} failed to get a public IP address'\
+                    'and is being terminated'.format(instance_to_term))
+            self.terminate_instances([instance_to_term])
+
+      end_time = datetime.datetime.now()
+      total_time = end_time - start_time
+      AppScaleLogger.log("Started {0} on-demand instances in {1} seconds" \
+        .format(count, total_time.seconds))
+      return instance_ids, public_ips, private_ips
 
 
   def stop_instances(self, parameters):
@@ -230,10 +348,9 @@ class GCEAgent(BaseAgent):
     raise NotImplementedError
 
 
-  def wait_for_status_change(self, parameters, conn, state_requested, \
-                              max_wait_time=60,poll_interval=10):
+  def wait_for_status_change(self, parameters, conn, state_requested,
+    max_wait_time=60, poll_interval=10):
     raise NotImplementedError
-
 
   def create_image(self, instance_id, name, parameters):
     raise NotImplementedError

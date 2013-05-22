@@ -33,6 +33,7 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
+from agents.gce_agent import GCEAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -898,13 +899,13 @@ appengine:  1.2.3.4
       u'kind': u'compute#image',
       u'description': u'',
       u'rawDisk': {u'containerType': u'TAR', u'source': u''},
-      u'preferredKernel': u'https://www.googleapis.com/compute/v1beta15' + \
-        u'/projects/google/global/kernels/gce-v20130515',
+      u'preferredKernel': unicode(GCEAgent.GCE_URL) + \
+        u'/google/global/kernels/gce-v20130515',
       u'sourceType': u'RAW',
       u'creationTimestamp': u'2013-05-21T08:05:12.198-07:00',
       u'id': u'4235320207849085220',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects' + \
-        u'/961228229472/global/images/' + unicode(image_name),
+      u'selfLink': unicode(GCEAgent.GCE_URL) + \
+        u'961228229472/global/images/' + unicode(image_name),
       u'name': unicode(image_name)
     }
     fake_image_request = flexmock(name='fake_image_request')
@@ -945,11 +946,14 @@ appengine:  1.2.3.4
       u'name': u'operation-1369175117235-4dd41ec7d6c11-8013657f',
       u'startTime': u'2013-05-21T15:25:17.308-07:00',
       u'insertTime': u'2013-05-21T15:25:17.235-07:00',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/networks/bazgroup',
+      u'targetLink': unicode(GCEAgent.GCE_URL) + \
+        u'appscale.com:appscale/global/networks/bazgroup',
       u'operationType': u'insert',
       u'progress': 0,
       u'id': u'4904874319704759670',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/operations/operation-1369175117235-4dd41ec7d6c11-8013657f',
+      u'selfLink': unicode(GCEAgent.GCE_URL) + \
+        u'appscale.com:appscale/global/operations/' + \
+        u'operation-1369175117235-4dd41ec7d6c11-8013657f',
       u'user': u'Chris@appscale.com'
     }
 
@@ -966,11 +970,14 @@ appengine:  1.2.3.4
       u'name': u'operation-1369176378310-4dd4237a84021-68e4dfa6',
       u'startTime': u'2013-05-21T15:46:18.402-07:00',
       u'insertTime': u'2013-05-21T15:46:18.310-07:00',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/firewalls/testfirewall',
+      u'targetLink': unicode(GCEAgent.GCE_URL) + \
+        u'appscale.com:appscale/global/firewalls/bazgroup',
       u'operationType': u'insert',
       u'progress': 0,
       u'id': u'13248349431060541723',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/operations/operation-1369176378310-4dd4237a84021-68e4dfa6',
+      u'selfLink': unicode(GCEAgent.GCE_URL) + \
+        u'appscale.com:appscale/global/operations/' + \
+        u'operation-1369176378310-4dd4237a84021-68e4dfa6',
       u'user': u'Chris@appscale.com'
     }
 
@@ -979,6 +986,90 @@ appengine:  1.2.3.4
       fake_authorized_http).and_return(firewall_info)
     fake_firewalls.should_receive('insert').with_args(project=project_id,
       body=dict).and_return(fake_firewall_insert_request)
+
+    # we only need to create one node, so set up mocks for that
+    add_instance_info = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': u'operation-1369248752891-4dd5311848461-afc55a20',
+      u'azone': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a',
+      u'startTime': u'2013-05-22T11:52:32.939-07:00',
+      u'insertTime': u'2013-05-22T11:52:32.891-07:00',
+      u'targetLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'operationType': u'insert',
+      u'progress': 0,
+      u'id': u'6663616273628949255',
+      u'selfLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/operations/operation-1369248752891-4dd5311848461-afc55a20',
+      u'user': u'Chris@appscale.com'
+    }
+
+    fake_add_instance_request = flexmock(name='fake_add_instance_request')
+    fake_add_instance_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(add_instance_info)
+
+    fake_instances = flexmock(name='fake_instances')
+    fake_gce.should_receive('instances').and_return(fake_instances)
+    fake_instances.should_receive('insert').with_args(project=project_id,
+      body=dict, zone=str).and_return(fake_add_instance_request)
+
+    # add some fake data in where no instances are initially running, then one
+    # is (in response to our insert request)
+    no_instance_info = {
+      u'items': []
+    }
+
+    list_instance_info = {
+      u'items': [{
+        u'status': u'RUNNING',
+        u'kind': u'compute#instance',
+        u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
+        u'name': u'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+        u'tags': {u'fingerprint': u'42WmSpB8rSM='},
+        u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
+        u'disks': [{
+          u'index': 0,
+          u'kind': u'compute#attachedDisk',
+          u'type': u'EPHEMERAL',
+          u'mode': u'READ_WRITE'
+        }],
+        u'canIpForward': False,
+        u'serviceAccounts': [{
+          u'scopes': [GCEAgent.GCE_SCOPE],
+          u'email': u'961228229472@project.gserviceaccount.com'
+        }],
+        u'metadata': {
+          u'kind': u'compute#metadata',
+          u'fingerprint': u'42WmSpB8rSM='
+        },
+        u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
+        u'id': u'8684033495853907982',
+        u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'networkInterfaces': [{
+          u'accessConfigs': [{
+            u'kind': u'compute#accessConfig',
+            u'type': u'ONE_TO_ONE_NAT',
+            u'name': u'External NAT',
+            u'natIP': u'public1'
+          }],
+          u'networkIP': u'private1',
+          u'network': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/networks/bazgroup',
+          u'name': u'nic0'
+        }]
+      }],
+      u'kind': u'compute#instanceList',
+      u'id': u'projects/appscale.com:appscale/zones/us-central1-a/instances',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/961228229472/zones/us-central1-a/instances'
+    }
+
+    fake_list_instance_request = flexmock(name='fake_list_instance_request')
+    fake_list_instance_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(no_instance_info).and_return(
+        list_instance_info)
+
+    fake_instances.should_receive('list').with_args(project=project_id,
+      filter="name eq appscale-bazgroup-.*", zone=GCEAgent.DEFAULT_ZONE) \
+      .and_return(fake_list_instance_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
