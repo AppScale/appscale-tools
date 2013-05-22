@@ -63,39 +63,99 @@ class GCEAgent(BaseAgent):
 
 
   def configure_instance_security(self, parameters):
-    """ Creates a GCE firewall with the specified name, and opens the ports on
-    that firewall as needed for AppScale.
+    """ Creates a GCE network and firewall with the specified name, and opens
+    the ports on that firewall as needed for AppScale.
 
-    We expect the firewall to not exist before this point, to avoid accidentally
-    placing AppScale instances from different deployments in the same firewall
-    (thus enabling them to see each other's web traffic).
+    We expect both the network and the firewall to not exist before this point,
+    to avoid accidentally placing AppScale instances from different deployments
+    in the same network and firewall (thus enabling them to see each other's web
+    traffic).
 
     Args:
       parameters: A dict with keys for each parameter needed to connect to
         Google Compute Engine, and an additional key indicating the name of the
-        firewall that we should create in GCE.
+        network and firewall that we should create in GCE.
     Returns:
-      True, if the named firewall was created successfully.
+      True, if the named network and firewall was created successfully.
     Raises:
-      AgentRuntimeException: If the named firewall already exists in GCE.
+      AgentRuntimeException: If the named network or firewall already exist in
+      GCE.
     """
-    firewall = parameters[self.PARAM_GROUP]
+    if self.does_network_exist(parameters):
+      raise AgentRuntimeException("Network already exists - please use a " + \
+        "different group name.")
+
+    if self.does_firewall_exist(parameters):
+      raise AgentRuntimeException("Firewall already exists - please use a " + \
+        "different group name.")
+
+    network_url = self.create_network(parameters)
+    self.create_firewall(parameters, network_url)
+
+
+  def does_network_exist(self, parameters):
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.networks().get(
+        project=parameters[self.PARAM_PROJECT],
+        network=parameters[self.PARAM_GROUP])
+      response = request.execute(auth_http)
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
+  def does_firewall_exist(self, parameters):
     gce_service, credentials = self.open_connection(parameters)
     try:
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.firewalls().get(
-        project=parameters[self.PARAM_PROJECT], firewall=firewall)
+        project=parameters[self.PARAM_PROJECT],
+        firewall=parameters[self.PARAM_GROUP])
       response = request.execute(auth_http)
-      raise AgentRuntimeException("Firewall already exists - please use a " + \
-        "different group name")
+      return True
     except apiclient.errors.HttpError:
-      # If we get a HttpError, then the firewall doesn't exist, which is the
-      # desired outcome.
-      pass
+      return False
 
-    AppScaleLogger.log("Creating firewall: {0}".format(firewall))
-    raise NotImplementedError
+  
+  def create_network(self, parameters):
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.networks().insert(
+      project=parameters[self.PARAM_PROJECT],
+      body={
+        "name" : parameters[self.PARAM_GROUP],
+        "description" : "Network used for AppScale instances",
+        "IPv4Range" : "10.240.0.0/16"
+      }
+    )
+    response = request.execute(auth_http)
+    return response['targetLink']
+
+
+  def create_firewall(self, parameters, network_url):
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.firewalls().insert(
+      project=parameters[self.PARAM_PROJECT],
+      body={
+        "name" : parameters[self.PARAM_GROUP],
+        "description" : "Firewall used for AppScale instances",
+        "network" : network_url,
+        "sourceRanges" : ["0.0.0.0/0"],
+        "allowed" : [
+          {"IPProtocol" : "tcp", "ports": ["1-65535"]},
+          {"IPProtocol" : "udp", "ports": ["1-65535"]},
+          {"IPProtocol" : "icmp"}
+        ]
+      }
+    )
+    response = request.execute(auth_http)
 
 
   def get_params_from_args(self, args):

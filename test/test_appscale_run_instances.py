@@ -898,12 +898,12 @@ appengine:  1.2.3.4
       u'kind': u'compute#image',
       u'description': u'',
       u'rawDisk': {u'containerType': u'TAR', u'source': u''},
-      u'preferredKernel': u'https://www.googleapis.com/compute/v1beta14' + \
+      u'preferredKernel': u'https://www.googleapis.com/compute/v1beta15' + \
         u'/projects/google/global/kernels/gce-v20130515',
       u'sourceType': u'RAW',
       u'creationTimestamp': u'2013-05-21T08:05:12.198-07:00',
       u'id': u'4235320207849085220',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects' + \
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects' + \
         u'/961228229472/global/images/' + unicode(image_name),
       u'name': unicode(image_name)
     }
@@ -918,6 +918,16 @@ appengine:  1.2.3.4
     fake_gce = flexmock(name='fake_gce')
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the network doesn't exist yet
+    fake_network_request = flexmock(name='fake_network_request')
+    fake_network_request.should_receive('execute').with_args(
+      fake_authorized_http).and_raise(apiclient.errors.HttpError, None, None)
+
+    fake_networks = flexmock(name='fake_networks')
+    fake_networks.should_receive('get').with_args(project=project_id,
+      network='bazgroup').and_return(fake_network_request)
+    fake_gce.should_receive('networks').and_return(fake_networks)
+
     # next, presume that the firewall doesn't exist yet
     fake_firewall_request = flexmock(name='fake_firewall_request')
     fake_firewall_request.should_receive('execute').with_args(
@@ -927,6 +937,48 @@ appengine:  1.2.3.4
     fake_firewalls.should_receive('get').with_args(project=project_id,
       firewall='bazgroup').and_return(fake_firewall_request)
     fake_gce.should_receive('firewalls').and_return(fake_firewalls)
+
+    # presume that we can create the network fine
+    network_info = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': u'operation-1369175117235-4dd41ec7d6c11-8013657f',
+      u'startTime': u'2013-05-21T15:25:17.308-07:00',
+      u'insertTime': u'2013-05-21T15:25:17.235-07:00',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/networks/bazgroup',
+      u'operationType': u'insert',
+      u'progress': 0,
+      u'id': u'4904874319704759670',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/operations/operation-1369175117235-4dd41ec7d6c11-8013657f',
+      u'user': u'Chris@appscale.com'
+    }
+
+    fake_network_insert_request = flexmock(name='fake_network_insert_request')
+    fake_network_insert_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(network_info)
+    fake_networks.should_receive('insert').with_args(project=project_id,
+      body=dict).and_return(fake_network_insert_request)
+
+    # and presume that we can create the firewall fine
+    firewall_info = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': u'operation-1369176378310-4dd4237a84021-68e4dfa6',
+      u'startTime': u'2013-05-21T15:46:18.402-07:00',
+      u'insertTime': u'2013-05-21T15:46:18.310-07:00',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/firewalls/testfirewall',
+      u'operationType': u'insert',
+      u'progress': 0,
+      u'id': u'13248349431060541723',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/operations/operation-1369176378310-4dd4237a84021-68e4dfa6',
+      u'user': u'Chris@appscale.com'
+    }
+
+    fake_firewall_insert_request = flexmock(name='fake_firewall_insert_request')
+    fake_firewall_insert_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(firewall_info)
+    fake_firewalls.should_receive('insert').with_args(project=project_id,
+      body=dict).and_return(fake_firewall_insert_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
