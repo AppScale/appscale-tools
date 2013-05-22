@@ -744,6 +744,8 @@ class LocalState():
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
+      # Remove file that begin with a dot.
+      file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
         extracted_location = included_dir
