@@ -1015,7 +1015,6 @@ appengine:  1.2.3.4
     # add some fake data in where no instances are initially running, then one
     # is (in response to our insert request)
     no_instance_info = {
-      u'items': []
     }
 
     list_instance_info = {

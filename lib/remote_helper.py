@@ -129,7 +129,8 @@ class RemoteHelper():
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
-      additional_params = params[agent.PARAM_CREDENTIALS]
+      additional_params = {}
+      #additional_params = params[agent.PARAM_CREDENTIALS]
 
       if options.use_spot_instances:
         additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])

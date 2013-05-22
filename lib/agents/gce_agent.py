@@ -5,6 +5,7 @@
 # General-purpose Python library imports
 import datetime
 import os.path
+import time
 import uuid
 
 
@@ -26,6 +27,9 @@ class GCEAgent(BaseAgent):
 
 
   MAX_VM_CREATION_TIME = 600
+
+
+  SLEEP_TIME = 20
 
 
   PARAM_GROUP = 'group'
@@ -58,7 +62,7 @@ class GCEAgent(BaseAgent):
   GCE_SCOPE = 'https://www.googleapis.com/auth/compute'
 
 
-  API_VERSION = 'v1beta15'
+  API_VERSION = 'v1beta14'
 
 
   GCE_URL = 'https://www.googleapis.com/compute/%s/projects/' % (API_VERSION)
@@ -113,6 +117,7 @@ class GCEAgent(BaseAgent):
         project=parameters[self.PARAM_PROJECT],
         network=parameters[self.PARAM_GROUP])
       response = request.execute(auth_http)
+      AppScaleLogger.log(str(response))
       return True
     except apiclient.errors.HttpError:
       return False
@@ -127,6 +132,7 @@ class GCEAgent(BaseAgent):
         project=parameters[self.PARAM_PROJECT],
         firewall=parameters[self.PARAM_GROUP])
       response = request.execute(auth_http)
+      AppScaleLogger.log(str(response))
       return True
     except apiclient.errors.HttpError:
       return False
@@ -145,6 +151,7 @@ class GCEAgent(BaseAgent):
       }
     )
     response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
     return response['targetLink']
 
 
@@ -167,6 +174,7 @@ class GCEAgent(BaseAgent):
       }
     )
     response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
 
 
   def get_params_from_args(self, args):
@@ -235,15 +243,19 @@ class GCEAgent(BaseAgent):
       zone=self.DEFAULT_ZONE
     )
     response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
 
     instance_ids = []
     public_ips = []
     private_ips = []
-    for instance in response['items']:
-      if instance['status'] == "RUNNING":
-        instance_ids.append(instance['name'])
-        public_ips.append(instance['networkInterfaces'][0]['accessConfigs'][0]['natIP'])
-        private_ips.append(instance['networkInterfaces'][0]['networkIP'])
+
+    if response and 'items' in response:
+      instances = response['items']
+      for instance in instances:
+        if instance['status'] == "RUNNING":
+          instance_ids.append(instance['name'])
+          public_ips.append(instance['networkInterfaces'][0]['accessConfigs'][0]['natIP'])
+          private_ips.append(instance['networkInterfaces'][0]['networkIP'])
 
     return public_ips, private_ips, instance_ids
 
@@ -298,46 +310,47 @@ class GCEAgent(BaseAgent):
       request = gce_service.instances().insert(
            project=project_id, body=instances, zone=self.DEFAULT_ZONE)
       response = request.execute(auth_http)
+      AppScaleLogger.log(str(response))
     
-      instance_ids = []
-      public_ips = []
-      private_ips = []
-      end_time = datetime.datetime.now() + datetime.timedelta(0,
-        self.MAX_VM_CREATION_TIME)
+    instance_ids = []
+    public_ips = []
+    private_ips = []
+    end_time = datetime.datetime.now() + datetime.timedelta(0,
+      self.MAX_VM_CREATION_TIME)
+    now = datetime.datetime.now()
+
+    while now < end_time:
+      time_left = (end_time - now).seconds
+      AppScaleLogger.log("Waiting for your instances to start...")
+      instance_info = self.describe_instances(parameters)
+      public_ips = instance_info[0]
+      private_ips = instance_info[1]
+      instance_ids = instance_info[2]
+      public_ips = self.diff(public_ips, active_public_ips)
+      private_ips = self.diff(private_ips, active_private_ips)
+      instance_ids = self.diff(instance_ids, active_instances)
+      if count == len(public_ips):
+        break
+      time.sleep(self.SLEEP_TIME)
       now = datetime.datetime.now()
 
-      while now < end_time:
-        time_left = (end_time - now).seconds
-        AppScaleLogger.log("Waiting for your instances to start...")
-        instance_info = self.describe_instances(parameters)
-        public_ips = instance_info[0]
-        private_ips = instance_info[1]
-        instance_ids = instance_info[2]
-        public_ips = self.diff(public_ips, active_public_ips)
-        private_ips = self.diff(private_ips, active_private_ips)
-        instance_ids = self.diff(instance_ids, active_instances)
-        if count == len(public_ips):
-          break
-        time.sleep(self.SLEEP_TIME)
-        now = datetime.datetime.now()
+    if not public_ips:
+      self.handle_failure('No public IPs were able to be procured '
+                          'within the time limit')
 
-      if not public_ips:
-        self.handle_failure('No public IPs were able to be procured '
-                            'within the time limit')
+    if len(public_ips) != count:
+      for index in range(0, len(public_ips)):
+        if public_ips[index] == '0.0.0.0':
+          instance_to_term = instance_ids[index]
+          AppScaleLogger.log('Instance {0} failed to get a public IP address'\
+                  'and is being terminated'.format(instance_to_term))
+          self.terminate_instances([instance_to_term])
 
-      if len(public_ips) != count:
-        for index in range(0, len(public_ips)):
-          if public_ips[index] == '0.0.0.0':
-            instance_to_term = instance_ids[index]
-            AppScaleLogger.log('Instance {0} failed to get a public IP address'\
-                    'and is being terminated'.format(instance_to_term))
-            self.terminate_instances([instance_to_term])
-
-      end_time = datetime.datetime.now()
-      total_time = end_time - start_time
-      AppScaleLogger.log("Started {0} on-demand instances in {1} seconds" \
-        .format(count, total_time.seconds))
-      return instance_ids, public_ips, private_ips
+    end_time = datetime.datetime.now()
+    total_time = end_time - start_time
+    AppScaleLogger.log("Started {0} on-demand instances in {1} seconds" \
+      .format(count, total_time.seconds))
+    return instance_ids, public_ips, private_ips
 
 
   def stop_instances(self, parameters):
@@ -374,6 +387,7 @@ class GCEAgent(BaseAgent):
       request = gce_service.images().get(project=parameters[self.PARAM_PROJECT],
         image=parameters[self.PARAM_IMAGE_ID])
       response = request.execute(auth_http)
+      AppScaleLogger.log(str(response))
       return True
     except apiclient.errors.HttpError as http_error:
       return False
