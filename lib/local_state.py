@@ -744,9 +744,12 @@ class LocalState():
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
-      # We need to ignore files that begin with a dot (hidden files) as some
-      # tar clients (particularly on OSX) add these file to the archive, and 
-      # this results in an error uploading the app.
+      # Users can upload an archive containing their application or a directory
+      # containing their application. To see which case this is, we count how
+      # many files are present in the archive. As some platforms will inject a 
+      # dot file into every directory, we shouldn't consider those when trying 
+      # to find out if this archive is just a directory or not (because the 
+      # presence of the dot file will cause our count to be incorrect).
       file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
