@@ -23,6 +23,7 @@ import SOAPpy
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from agents.euca_agent import EucalyptusAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -54,6 +55,13 @@ class TestRemoteHelper(unittest.TestCase):
       table='cassandra', verbose=False, test=False, use_spot_instances=False)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
+
+    # set up phony AWS credentials for each test
+    # ones that test not having them present can
+    # remove them
+    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = "baz"
+    os.environ['EC2_URL'] = "http://boo"
 
     # mock out calls to EC2
     # begin by assuming that our ssh keypair doesn't exist, and thus that we

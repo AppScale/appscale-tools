@@ -613,7 +613,8 @@ class NodeLayout():
     """
     database_node_count = 0
     for node in nodes:
-      if node.is_role('database') or node.is_role('db_master'):
+      if node.is_role('database') or node.is_role('db_master') or \
+        node.is_role('db_slave'):
         database_node_count += 1
 
     if not database_node_count:

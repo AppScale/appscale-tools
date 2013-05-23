@@ -352,7 +352,7 @@ class AppScaleTools():
     RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_LOAD_BALANCER_PORT, options.verbose)
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}/status".format(LocalState.get_login_host(
@@ -394,6 +394,9 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_app_to_dir(options.file,
@@ -461,3 +464,5 @@ class AppScaleTools():
 
     if created_dir:
       shutil.rmtree(file_location)
+
+    return (serving_host, serving_port)

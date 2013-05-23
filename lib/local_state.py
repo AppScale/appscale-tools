@@ -26,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.9"
+APPSCALE_VERSION = "1.7.0"
 
 
 class LocalState():
@@ -84,7 +84,8 @@ class LocalState():
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
       raise BadConfigurationException("AppScale is already running. Terminate" +
-        " it or use the --force flag to run anyways.")
+        " it, set 'force: True' in your AppScalefile, or use the --force flag" +
+        " to run anyways.")
 
 
   @classmethod
@@ -651,12 +652,20 @@ class LocalState():
           the_temp_file.seek(0)
           output = the_temp_file.read()
           the_temp_file.close()
-          raise ShellException("Executing command '{0}' failed:\n{1}"\
-                    .format(command,output))
+          if stdin:
+            raise ShellException("Executing command '{0} {1}' failed:\n{2}"\
+                    .format(command, stdin, output))
+          else:
+            raise ShellException("Executing command '{0}' failed:\n{1}"\
+                    .format(command, output))
         time.sleep(1)
-    except OSError as e:
-      raise ShellException('Error executing command: {0}:{1}'\
-                .format(command,str(e)))
+    except OSError as os_error:
+      if stdin:
+        raise ShellException("Error executing command: '{0} {1}':{2}"\
+                .format(command, stdin, os_error))
+      else:
+        raise ShellException("Error executing command: '{0}':{1}"\
+                .format(command, os_error))
 
 
   @classmethod
@@ -736,6 +745,13 @@ class LocalState():
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
+      # Users can upload an archive containing their application or a directory
+      # containing their application. To see which case this is, we count how
+      # many files are present in the archive. As some platforms will inject a 
+      # dot file into every directory, we shouldn't consider those when trying 
+      # to find out if this archive is just a directory or not (because the 
+      # presence of the dot file will cause our count to be incorrect).
+      file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
         extracted_location = included_dir
