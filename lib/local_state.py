@@ -26,7 +26,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.6.9"
+APPSCALE_VERSION = "1.7.0"
 
 
 class LocalState():
@@ -84,7 +84,8 @@ class LocalState():
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
       raise BadConfigurationException("AppScale is already running. Terminate" +
-        " it or use the --force flag to run anyways.")
+        " it, set 'force: True' in your AppScalefile, or use the --force flag" +
+        " to run anyways.")
 
 
   @classmethod
