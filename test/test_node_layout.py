@@ -279,9 +279,5 @@ class TestNodeLayout(unittest.TestCase):
     fake_node.should_receive('is_role').with_args('database').and_return(False)
     fake_node.should_receive('is_role').with_args('db_master').and_return(False)
     fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
-
     output = NodeLayout({}).is_database_replication_valid([fake_node])
-    self.assertTrue( output['result'] )
-
-    
-    
+    self.assertTrue(output['result'])
