@@ -5,6 +5,7 @@
 # General-purpose Python library imports
 import datetime
 import os.path
+import shutil
 import time
 import uuid
 
@@ -21,6 +22,7 @@ import oauth2client.tools
 from agents.base_agent import AgentConfigurationException
 from agents.base_agent import BaseAgent 
 from appscale_logger import AppScaleLogger
+from local_state import LocalState
 
 
 class GCEAgent(BaseAgent):
@@ -77,6 +79,12 @@ class GCEAgent(BaseAgent):
   DEFAULT_SERVICE_EMAIL = 'default'
 
 
+  GCE_PRIVATE_SSH_KEY = os.path.expanduser("~/.ssh/google_compute_engine")
+
+
+  GCE_PUBLIC_SSH_KEY = GCE_PRIVATE_SSH_KEY + ".pub"
+
+
   def configure_instance_security(self, parameters):
     """ Creates a GCE network and firewall with the specified name, and opens
     the ports on that firewall as needed for AppScale.
@@ -96,6 +104,22 @@ class GCEAgent(BaseAgent):
       AgentRuntimeException: If the named network or firewall already exist in
       GCE.
     """
+    AppScaleLogger.log("Verifying that SSH key exists locally")
+    if not os.path.exists(self.GCE_PRIVATE_SSH_KEY):
+      raise AgentRuntimeException("Couldn't find your GCE private key at {0}" \
+        .format(self.GCE_PRIVATE_SSH_KEY))
+
+    if not os.path.exists(self.GCE_PUBLIC_SSH_KEY):
+      raise AgentRuntimeException("Couldn't find your GCE public key at {0}" \
+        .format(self.GCE_PUBLIC_SSH_KEY))
+
+    # Now that we know that the SSH keys exist, copy them to ~/.appscale.
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    public_key = '{0}{1}.pub'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
+    shutil.copy(self.GCE_PRIVATE_SSH_KEY, private_key)
+    shutil.copy(self.GCE_PUBLIC_SSH_KEY, public_key)
+
     if self.does_network_exist(parameters):
       raise AgentRuntimeException("Network already exists - please use a " + \
         "different group name.")

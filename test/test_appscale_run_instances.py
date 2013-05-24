@@ -8,6 +8,7 @@ import httplib
 import json
 import os
 import re
+import shutil
 import socket
 import sys
 import tempfile
@@ -831,6 +832,24 @@ appengine:  1.2.3.4
     flexmock(os.path)
     os.path.should_call('exists')
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
+
+    # and that the user has an ssh key already set up, which we can copy to
+    # ~/.appscale
+    os.path.should_receive('exists').with_args(GCEAgent.GCE_PRIVATE_SSH_KEY) \
+      .and_return(True)
+    os.path.should_receive('exists').with_args(GCEAgent.GCE_PUBLIC_SSH_KEY) \
+      .and_return(True)
+
+    private_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH,
+      self.keyname)
+    public_key = '{0}{1}.pub'.format(LocalState.LOCAL_APPSCALE_PATH,
+      self.keyname)
+
+    flexmock(shutil)
+    shutil.should_receive('copy').with_args(GCEAgent.GCE_PRIVATE_SSH_KEY,
+      private_key)
+    shutil.should_receive('copy').with_args(GCEAgent.GCE_PUBLIC_SSH_KEY,
+      public_key)
 
     # let's say that appscale isn't already running
     local_state = flexmock(LocalState)
