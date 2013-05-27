@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # Programmer: Chris Bunch (chris@appscale.com)
-
+"""
+This file provides a single class, GCEAgent, that the AppScale Tools can use to
+interact with Google Compute Engine.
+"""
 
 # General-purpose Python library imports
 import datetime
@@ -27,11 +30,24 @@ from local_state import LocalState
 
 
 class GCEAgent(BaseAgent):
+  """ GCEAgent defines a specialized BaseAgent that allows for interaction with
+  Google Compute Engine.
+
+  It authenticates via OAuth2 and interacts with GCE via the Google Client
+  Library.
+  """
 
 
+  # The maximum amount of time, in seconds, that we are willing to wait for a
+  # virtual machine to start up, after calling instances().add(). GCE is pretty
+  # fast at starting up images, and in practice, we haven't seen it take longer
+  # than 200 seconds, but this upper bound is set just to be safe.
   MAX_VM_CREATION_TIME = 600
 
 
+  # The amount of time that run_instances waits between each instances().list()
+  # request. Setting this value lower results in more requests made to Google,
+  # but is more responsive to when machines become ready to use.
   SLEEP_TIME = 20
 
 
@@ -74,15 +90,21 @@ class GCEAgent(BaseAgent):
   DEFAULT_ZONE = 'us-central1-a'
 
 
+  # TODO(cgb): Make this a parameter that the user can specify, and validate it
+  # in ParseArgs.
   DEFAULT_MACHINE_TYPE = 'n1-standard-1'
 
 
   DEFAULT_SERVICE_EMAIL = 'default'
 
 
+  # The location on the local filesystem where SSH private keys used with
+  # Google Compute Engine are stored, by default.
   GCE_PRIVATE_SSH_KEY = os.path.expanduser("~/.ssh/google_compute_engine")
 
 
+  # The location on the local filesystem where SSH public keys uploaded to
+  # Google Compute Engine are stored, by default.
   GCE_PUBLIC_SSH_KEY = GCE_PRIVATE_SSH_KEY + ".pub"
 
 
@@ -134,6 +156,15 @@ class GCEAgent(BaseAgent):
 
 
   def does_network_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified network exists.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        network that we should query for existence in GCE.
+    Returns:
+      True if the named network exists, and False otherwise.
+    """
     gce_service, credentials = self.open_connection(parameters)
     try:
       http = httplib2.Http()
@@ -149,6 +180,15 @@ class GCEAgent(BaseAgent):
 
 
   def does_firewall_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified firewall exists.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        firewall that we should query for existence in GCE.
+    Returns:
+      True if the named firewall exists, and False otherwise.
+    """
     gce_service, credentials = self.open_connection(parameters)
     try:
       http = httplib2.Http()
@@ -164,6 +204,16 @@ class GCEAgent(BaseAgent):
 
   
   def create_network(self, parameters):
+    """ Creates a new network in Google Compute Engine with the specified name.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        network that we should create in GCE.
+    Returns:
+      The URL corresponding to the name of the network that was created, for use
+      with binding this network to one or more firewalls.
+    """
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
@@ -182,6 +232,17 @@ class GCEAgent(BaseAgent):
 
 
   def delete_network(self, parameters):
+    """ Deletes the network in Google Compute Engine with the specified name.
+
+    Note that callers should not invoke this method unless they are confident
+    that no firewalls or instances are using this network, or this method will
+    fail.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        network that we should delete.
+    """
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
@@ -191,9 +252,20 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
   def create_firewall(self, parameters, network_url):
+    """ Creates a new firewall in Google Compute Engine with the specified name,
+    bound to the specified network.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        firewall that we should create.
+      network_url: A str containing the URL of the network that this new
+        firewall should be applied to.
+    """
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
@@ -217,6 +289,16 @@ class GCEAgent(BaseAgent):
 
 
   def delete_firewall(self, parameters):
+    """ Deletes a firewall in Google Compute Engine with the specified name.
+
+    Callers should not invoke this method until they are certain that no
+    instances are using the specified firewall, or this method will fail.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        firewall that we should create.
+    """
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
