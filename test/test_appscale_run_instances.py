@@ -846,6 +846,8 @@ appengine:  1.2.3.4
       self.keyname)
 
     flexmock(shutil)
+    shutil.should_receive('copy').with_args(client_secrets,
+      LocalState.get_client_secrets_location(self.keyname))
     shutil.should_receive('copy').with_args(GCEAgent.GCE_PRIVATE_SSH_KEY,
       private_key)
     shutil.should_receive('copy').with_args(GCEAgent.GCE_PUBLIC_SSH_KEY,
@@ -1031,10 +1033,11 @@ appengine:  1.2.3.4
       operation=create_firewall).and_return(fake_firewall_checker)
 
     # we only need to create one node, so set up mocks for that
+    add_instance = u'operation-1369248752891-4dd5311848461-afc55a20'
     add_instance_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
-      u'name': u'operation-1369248752891-4dd5311848461-afc55a20',
+      u'name': add_instance,
       u'azone': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a',
       u'startTime': u'2013-05-22T11:52:32.939-07:00',
       u'insertTime': u'2013-05-22T11:52:32.891-07:00',
@@ -1054,6 +1057,16 @@ appengine:  1.2.3.4
     fake_gce.should_receive('instances').and_return(fake_instances)
     fake_instances.should_receive('insert').with_args(project=project_id,
       body=dict, zone=str).and_return(fake_add_instance_request)
+
+    created_instance_info = {
+      u'status': u'DONE'
+    }
+
+    fake_instance_checker = flexmock(name='fake_network_checker')
+    fake_instance_checker.should_receive('execute').and_return(
+      created_instance_info)
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=add_instance).and_return(fake_network_checker)
 
     # add some fake data in where no instances are initially running, then one
     # is (in response to our insert request)
@@ -1120,7 +1133,7 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 1, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      False, 1, stdin='ls').and_raise(ShellException)
 
     # assume that we can enable root login
     local_state.should_receive('shell').with_args(re.compile('ssh'),

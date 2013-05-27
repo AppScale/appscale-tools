@@ -41,6 +41,9 @@ class GCEAgent(BaseAgent):
   PARAM_IMAGE_ID = 'image_id'
 
 
+  PARAM_INSTANCE_IDS = 'instance_ids'
+
+
   PARAM_KEYNAME = 'keyname'
 
 
@@ -57,9 +60,6 @@ class GCEAgent(BaseAgent):
     PARAM_PROJECT,
     PARAM_SECRETS
   )
-
-
-  OAUTH2_STORAGE = 'oauth2.dat'
 
 
   GCE_SCOPE = 'https://www.googleapis.com/auth/compute'
@@ -181,6 +181,18 @@ class GCEAgent(BaseAgent):
     return response['targetLink']
 
 
+  def delete_network(self, parameters):
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.networks().delete(
+      project=parameters[self.PARAM_PROJECT],
+      network=parameters[self.PARAM_GROUP]
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
+
+
   def create_firewall(self, parameters, network_url):
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
@@ -204,6 +216,19 @@ class GCEAgent(BaseAgent):
     self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
+  def delete_firewall(self, parameters):
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.firewalls().delete(
+      project=parameters[self.PARAM_PROJECT],
+      firewall=parameters[self.PARAM_GROUP]
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+
+
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
     Google Compute Engine (here, the client_secrets file and the image name).
@@ -218,17 +243,31 @@ class GCEAgent(BaseAgent):
     if not isinstance(args, dict):
       args = vars(args)
 
+    client_secrets = os.path.expanduser(args['client_secrets'])
+    if not os.path.exists(client_secrets):
+      raise AgentConfigurationException("Couldn't find your client secrets " + \
+        "file at {0}".format(client_secrets))
+    shutil.copy(client_secrets, LocalState.get_client_secrets_location(
+      args['keyname']))
+
     return {
       self.PARAM_GROUP : args['group'],
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_SECRETS : args['client_secrets']
+      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets'])
     }
 
 
   def get_params_from_yaml(self, keyname):
-    raise NotImplementedError
+    params = {
+      self.PARAM_GROUP : LocalState.get_group(keyname),
+      self.PARAM_KEYNAME : keyname,
+      self.PARAM_PROJECT : LocalState.get_project(keyname),
+      self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname)
+    }
+
+    return params
 
 
   def assert_required_parameters(self, parameters, operation):
@@ -338,6 +377,7 @@ class GCEAgent(BaseAgent):
            project=project_id, body=instances, zone=self.DEFAULT_ZONE)
       response = request.execute(auth_http)
       AppScaleLogger.log(str(response))
+      self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
     
     instance_ids = []
     public_ips = []
@@ -380,20 +420,20 @@ class GCEAgent(BaseAgent):
     return instance_ids, public_ips, private_ips
 
 
-  def stop_instances(self, parameters):
-    raise NotImplementedError
-
-
   def terminate_instances(self, parameters):
-    raise NotImplementedError
-
-
-  def wait_for_status_change(self, parameters, conn, state_requested,
-    max_wait_time=60, poll_interval=10):
-    raise NotImplementedError
-
-  def create_image(self, instance_id, name, parameters):
-    raise NotImplementedError
+    instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+    for instance_id in instance_ids:
+      gce_service, credentials = self.open_connection(parameters)
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.instances().delete(
+        project=parameters[self.PARAM_PROJECT],
+        zone=self.DEFAULT_ZONE,
+        instance=instance_id
+      )
+      response = request.execute(auth_http)
+      AppScaleLogger.log(str(response))
+      self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
   def does_image_exist(self, parameters):
@@ -421,7 +461,15 @@ class GCEAgent(BaseAgent):
 
 
   def cleanup_state(self, parameters):
-    raise NotImplementedError
+    """ Deletes the firewall and network that were created during this AppScale
+    deployment.
+
+    Args:
+      parameters: A dict that contains the name of the firewall and network to
+        delete (the group name) as well as the credentials necessary to do so.
+    """
+    self.delete_firewall(parameters)
+    self.delete_network(parameters)
 
 
   def open_connection(self, parameters):
@@ -439,7 +487,8 @@ class GCEAgent(BaseAgent):
     # Perform OAuth 2.0 authorization.
     flow = oauth2client.client.flow_from_clientsecrets(
       parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
-    storage = oauth2client.file.Storage(self.OAUTH2_STORAGE)
+    storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
+      parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()
 
     if credentials is None or credentials.invalid:
@@ -474,7 +523,3 @@ class GCEAgent(BaseAgent):
             response['error']['errors']])
           raise AgentRuntimeException(str(message))
     return
-
-
-  def handle_failure(self, msg):
-    raise NotImplementedError

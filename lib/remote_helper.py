@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import getpass
 import os
 import re
 import socket
@@ -244,8 +245,22 @@ class RemoteHelper():
     """
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
-    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
-      num_retries=1)
+    try:
+      output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
+        num_retries=1)
+    except ShellException as exception:
+      # Google Compute Engine creates a user with the same name as the currently
+      # logged-in user, so log in as that user to enable root login.
+      if infrastructure == "gce":
+        AppScaleLogger.log("Root login not enabled - enabling it now.")
+        cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+          is_verbose, user=getpass.getuser())
+        return
+      else:
+        raise exception
+
+    # Amazon EC2 rejects a root login request and tells the user to log in as
+    # the ubuntu user, so do that to enable root login.
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
