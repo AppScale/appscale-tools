@@ -20,6 +20,7 @@ import oauth2client.tools
 
 # AppScale-specific imports
 from agents.base_agent import AgentConfigurationException
+from agents.base_agent import AgentRuntimeException
 from agents.base_agent import BaseAgent 
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
@@ -176,6 +177,7 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
     return response['targetLink']
 
 
@@ -199,6 +201,7 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
   def get_params_from_args(self, args):
@@ -444,6 +447,33 @@ class GCEAgent(BaseAgent):
 
     # Build the service
     return apiclient.discovery.build('compute', self.API_VERSION), credentials
+
+
+  def ensure_operation_succeeds(self, gce_service, auth_http, response, project_id):
+    status = response['status']
+    while status != 'DONE' and response:
+      operation_id = response['name']
+
+      # Identify if this is a per-zone resource
+      if 'zone' in response:
+        zone_name = response['zone'].split('/')[-1]
+        request = gce_service.zoneOperations().get(
+            project=project_id,
+            operation=operation_id,
+            zone=zone_name)
+      else:
+        request = gce_service.globalOperations().get(
+             project=project_id, operation=operation_id)
+
+      response = request.execute(auth_http)
+      if response:
+        status = response['status']
+
+        if 'error' in response:
+          message = "\n".join([errors['message'] for errors in
+            response['error']['errors']])
+          raise AgentRuntimeException(str(message))
+    return
 
 
   def handle_failure(self, msg):

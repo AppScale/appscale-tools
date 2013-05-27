@@ -959,10 +959,11 @@ appengine:  1.2.3.4
     fake_gce.should_receive('firewalls').and_return(fake_firewalls)
 
     # presume that we can create the network fine
+    create_network = u'operation-1369175117235-4dd41ec7d6c11-8013657f'
     network_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
-      u'name': u'operation-1369175117235-4dd41ec7d6c11-8013657f',
+      u'name': create_network,
       u'startTime': u'2013-05-21T15:25:17.308-07:00',
       u'insertTime': u'2013-05-21T15:25:17.235-07:00',
       u'targetLink': unicode(GCEAgent.GCE_URL) + \
@@ -982,11 +983,24 @@ appengine:  1.2.3.4
     fake_networks.should_receive('insert').with_args(project=project_id,
       body=dict).and_return(fake_network_insert_request)
 
+    created_network_info = {
+      u'status': u'DONE'
+    }
+
+    fake_network_checker = flexmock(name='fake_network_checker')
+    fake_network_checker.should_receive('execute').and_return(
+      created_network_info)
+    fake_blocker = flexmock(name='fake_blocker')
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=create_network).and_return(fake_network_checker)
+    fake_gce.should_receive('globalOperations').and_return(fake_blocker)
+
     # and presume that we can create the firewall fine
+    create_firewall = u'operation-1369176378310-4dd4237a84021-68e4dfa6'
     firewall_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
-      u'name': u'operation-1369176378310-4dd4237a84021-68e4dfa6',
+      u'name': create_firewall,
       u'startTime': u'2013-05-21T15:46:18.402-07:00',
       u'insertTime': u'2013-05-21T15:46:18.310-07:00',
       u'targetLink': unicode(GCEAgent.GCE_URL) + \
@@ -1005,6 +1019,16 @@ appengine:  1.2.3.4
       fake_authorized_http).and_return(firewall_info)
     fake_firewalls.should_receive('insert').with_args(project=project_id,
       body=dict).and_return(fake_firewall_insert_request)
+
+    created_firewall_info = {
+      u'status': u'DONE'
+    }
+
+    fake_firewall_checker = flexmock(name='fake_network_checker')
+    fake_firewall_checker.should_receive('execute').and_return(
+      created_firewall_info)
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=create_firewall).and_return(fake_firewall_checker)
 
     # we only need to create one node, so set up mocks for that
     add_instance_info = {
