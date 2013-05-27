@@ -69,6 +69,11 @@ class GCEAgent(BaseAgent):
   PARAM_SECRETS = 'client_secrets'
 
 
+  PARAM_VERBOSE = 'is_verbose'
+
+
+  # A set that contains all of the items necessary to run AppScale in Google
+  # Compute Engine.
   REQUIRED_CREDENTIALS = (
     PARAM_GROUP,
     PARAM_IMAGE_ID,
@@ -78,23 +83,30 @@ class GCEAgent(BaseAgent):
   )
 
 
+  # The OAuth 2.0 scope used to interact with Google Compute Engine.
   GCE_SCOPE = 'https://www.googleapis.com/auth/compute'
 
 
+  # The version of the Google Compute Engine API that we support.
   API_VERSION = 'v1beta14'
 
 
-  GCE_URL = 'https://www.googleapis.com/compute/%s/projects/' % (API_VERSION)
+  # The URL endpoint that receives Google Compute Engine API requests.
+  GCE_URL = 'https://www.googleapis.com/compute/%s/projects/'.format(API_VERSION)
 
 
+  # The zone that instances should be created in and removed from.
   DEFAULT_ZONE = 'us-central1-a'
 
 
+  # The instance type that we should run AppScale on in Google Compute Engine.
   # TODO(cgb): Make this a parameter that the user can specify, and validate it
   # in ParseArgs.
   DEFAULT_MACHINE_TYPE = 'n1-standard-1'
 
 
+  # The person to contact if there is a problem with the instance. We set this
+  # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
 
 
@@ -173,7 +185,7 @@ class GCEAgent(BaseAgent):
         project=parameters[self.PARAM_PROJECT],
         network=parameters[self.PARAM_GROUP])
       response = request.execute(auth_http)
-      AppScaleLogger.log(str(response))
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
       return False
@@ -197,7 +209,7 @@ class GCEAgent(BaseAgent):
         project=parameters[self.PARAM_PROJECT],
         firewall=parameters[self.PARAM_GROUP])
       response = request.execute(auth_http)
-      AppScaleLogger.log(str(response))
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
       return False
@@ -226,7 +238,7 @@ class GCEAgent(BaseAgent):
       }
     )
     response = request.execute(auth_http)
-    AppScaleLogger.log(str(response))
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
     return response['targetLink']
 
@@ -251,7 +263,7 @@ class GCEAgent(BaseAgent):
       network=parameters[self.PARAM_GROUP]
     )
     response = request.execute(auth_http)
-    AppScaleLogger.log(str(response))
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
@@ -284,7 +296,7 @@ class GCEAgent(BaseAgent):
       }
     )
     response = request.execute(auth_http)
-    AppScaleLogger.log(str(response))
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
@@ -307,7 +319,7 @@ class GCEAgent(BaseAgent):
       firewall=parameters[self.PARAM_GROUP]
     )
     response = request.execute(auth_http)
-    AppScaleLogger.log(str(response))
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
@@ -332,7 +344,7 @@ class GCEAgent(BaseAgent):
     shutil.copy(client_secrets, LocalState.get_client_secrets_location(
       args['keyname']))
 
-    return {
+    params = {
       self.PARAM_GROUP : args['group'],
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_KEYNAME : args['keyname'],
@@ -340,16 +352,31 @@ class GCEAgent(BaseAgent):
       self.PARAM_SECRETS : os.path.expanduser(args['client_secrets'])
     }
 
+    if 'verbose' in args:
+      params[self.PARAM_VERBOSE] = args['verbose']
+    else:
+      params[self.PARAM_VERBOSE] = False
+
+    return params
+
 
   def get_params_from_yaml(self, keyname):
-    params = {
+    """ Searches through the locations.yaml file to build a dict containing the
+    parameters necessary to interact with Google Compute Engine.
+
+    Args:
+      keyname: A str that uniquely identifies this AppScale deployment.
+    Returns:
+      A dict containing all of the credentials necessary to interact with
+        Google Compute Engine.
+    """
+    return {
       self.PARAM_GROUP : LocalState.get_group(keyname),
       self.PARAM_KEYNAME : keyname,
       self.PARAM_PROJECT : LocalState.get_project(keyname),
-      self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname)
+      self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname),
+      self.PARAM_VERBOSE : False  # TODO(cgb): Don't put False in here.
     }
-
-    return params
 
 
   def assert_required_parameters(self, parameters, operation):
@@ -378,10 +405,20 @@ class GCEAgent(BaseAgent):
       raise AgentConfigurationException('Could not find your client_secrets ' \
         'file at {0}'.format(parameters[self.PARAM_SECRETS]))
 
-    return
-
 
   def describe_instances(self, parameters):
+    """ Queries Google Compute Engine to see which instances are currently
+    running, and retrieve information about their public and private IPs.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+    Returns:
+      A tuple of the form (public_ips, private_ips, instance_ids), where each
+        member is a list. Items correspond to each other across these lists,
+        so a caller is guaranteed that item X in each list belongs to the same
+        virtual machine.
+    """
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
@@ -391,7 +428,7 @@ class GCEAgent(BaseAgent):
       zone=self.DEFAULT_ZONE
     )
     response = request.execute(auth_http)
-    AppScaleLogger.log(str(response))
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
 
     instance_ids = []
     public_ips = []
@@ -409,6 +446,20 @@ class GCEAgent(BaseAgent):
 
 
   def run_instances(self, count, parameters, security_configured):
+    """ Starts 'count' instances in Google Compute Engine, and returns once they
+    have been started.
+
+    Callers should create a network and attach a firewall to it before using
+    this method, or the newly created instances will not have a network and
+    firewall to attach to (and thus this method will fail).
+
+    Args:
+      count: An int that specifies how many virtual machines should be started.
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      security_configured: Unused, as we assume that the network and firewall
+        has already been set up.
+    """
     project_id = parameters[self.PARAM_PROJECT]
     image_id = parameters[self.PARAM_IMAGE_ID]
     instance_type = self.DEFAULT_MACHINE_TYPE  #parameters[self.PARAM_INSTANCE_TYPE]
@@ -421,16 +472,16 @@ class GCEAgent(BaseAgent):
 
     # First, see how many instances are running and what their info is.
     start_time = datetime.datetime.now()
-    active_public_ips, active_private_ips, active_instances = self.describe_instances(parameters)
+    active_public_ips, active_private_ips, active_instances = \
+      self.describe_instances(parameters)
 
     # Construct URLs
-    image_url = '%s%s/global/images/%s' % (
-           self.GCE_URL, project_id, image_id)
-    project_url = '%s%s' % (self.GCE_URL, project_id)
-    machine_type_url = '%s/global/machineTypes/%s' % (
-          project_url, instance_type)
-    zone_url = '%s/zones/%s' % (project_url, self.DEFAULT_ZONE)
-    network_url = '%s/global/networks/%s' % (project_url, group)
+    image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL, project_id, image_id)
+    project_url = '{0}{1}'.format(self.GCE_URL, project_id)
+    machine_type_url = '{0}/global/machineTypes/{1}'.format(project_url,
+      instance_type)
+    zone_url = '{0}/zones/{1}'.format(project_url, self.DEFAULT_ZONE)
+    network_url = '{0}/global/networks/{1}'.format(project_url, group)
 
     # Construct the request body
     for index in range(count):
@@ -458,7 +509,7 @@ class GCEAgent(BaseAgent):
       request = gce_service.instances().insert(
            project=project_id, body=instances, zone=self.DEFAULT_ZONE)
       response = request.execute(auth_http)
-      AppScaleLogger.log(str(response))
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
     
     instance_ids = []
@@ -503,6 +554,14 @@ class GCEAgent(BaseAgent):
 
 
   def terminate_instances(self, parameters):
+    """ Deletes the instances specified in 'parameters' running in Google
+    Compute Engine.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key mapping to a list of
+        instance names that should be deleted.
+    """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     for instance_id in instance_ids:
       gce_service, credentials = self.open_connection(parameters)
@@ -514,7 +573,7 @@ class GCEAgent(BaseAgent):
         instance=instance_id
       )
       response = request.execute(auth_http)
-      AppScaleLogger.log(str(response))
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
 
 
@@ -536,7 +595,7 @@ class GCEAgent(BaseAgent):
       request = gce_service.images().get(project=parameters[self.PARAM_PROJECT],
         image=parameters[self.PARAM_IMAGE_ID])
       response = request.execute(auth_http)
-      AppScaleLogger.log(str(response))
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError as http_error:
       return False
@@ -581,6 +640,27 @@ class GCEAgent(BaseAgent):
 
 
   def ensure_operation_succeeds(self, gce_service, auth_http, response, project_id):
+    """ Waits for the given GCE operation to finish successfully.
+
+    Callers should use this function whenever they perform a destructive
+    operation in Google Compute Engine. For example, it is not necessary to use
+    this function when seeing if a resource exists (e.g., a network, firewall,
+    or instance), but it is useful to use this method when creating or deleting
+    a resource. One example is when we create a network. As we are only allowed
+    to have five networks, it is useful to make sure that the network was
+    successfully created before trying to create a firewall attached to that
+    network.
+
+    Args:
+      gce_service: An apiclient.discovery.Resource that is a connection valid
+        for requests to Google Compute Engine for the given user.
+      auth_http: A HTTP connection that has been signed with the given user's
+        Credentials, and is authorized with the GCE scope.
+      response: A dict that contains the operation that we want to ensure has
+        succeeded, referenced by a unique ID (the 'name' field).
+      project_id: A str that identifies the GCE project that requests should
+        be billed to.
+    """
     status = response['status']
     while status != 'DONE' and response:
       operation_id = response['name']
@@ -604,4 +684,3 @@ class GCEAgent(BaseAgent):
           message = "\n".join([errors['message'] for errors in
             response['error']['errors']])
           raise AgentRuntimeException(str(message))
-    return
