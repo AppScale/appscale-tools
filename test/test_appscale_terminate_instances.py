@@ -573,10 +573,11 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_gce.should_receive('globalOperations').and_return(fake_blocker)
 
     # and the call to delete the network
+    delete_network = u'operation-1369677749954-4ddb6f3bd1849-056cf8ca'
     fake_delete_network_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
-      u'name': u'operation-1369677749954-4ddb6f3bd1849-056cf8ca',
+      u'name': delete_network,
       u'startTime': u'2013-05-27T11:02:30.012-07:00',
       u'insertTime': u'2013-05-27T11:02:29.954-07:00',
       u'targetId': u'17688075350400527692',
@@ -594,6 +595,13 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_networks.should_receive('delete').with_args(project=project_id,
       network=self.group).and_return(fake_delete_network_request)
     fake_gce.should_receive('networks').and_return(fake_networks)
+
+    # mock out the call to make sure the network was deleted
+    fake_network_checker = flexmock(name='fake_network_checker')
+    fake_network_checker.should_receive('execute').and_return(all_done)
+
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=delete_network).and_return(fake_network_checker)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
