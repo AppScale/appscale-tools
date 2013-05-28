@@ -15,6 +15,10 @@ import uuid
 
 # Third-party imports
 import apiclient.discovery
+# Don't bother us about the discovery.Resource not having certain
+# methods, since it gets built dynamically.
+# pylint: disable-msg=E1101
+
 import httplib2
 import oauth2client.client
 import oauth2client.file
@@ -92,7 +96,8 @@ class GCEAgent(BaseAgent):
 
 
   # The URL endpoint that receives Google Compute Engine API requests.
-  GCE_URL = 'https://www.googleapis.com/compute/%s/projects/'.format(API_VERSION)
+  GCE_URL = 'https://www.googleapis.com/compute/{0}/projects/'.format(
+    API_VERSION)
 
 
   # The zone that instances should be created in and removed from.
@@ -239,7 +244,8 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
     return response['targetLink']
 
 
@@ -264,7 +270,8 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
 
 
   def create_firewall(self, parameters, network_url):
@@ -297,7 +304,8 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
 
 
   def delete_firewall(self, parameters):
@@ -320,7 +328,8 @@ class GCEAgent(BaseAgent):
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-    self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
 
 
   def get_params_from_args(self, args):
@@ -379,7 +388,7 @@ class GCEAgent(BaseAgent):
     }
 
 
-  def assert_required_parameters(self, parameters, operation):
+  def assert_required_parameters(self, parameters, _):
     """ Checks the given parameters to make sure that they can be used to
     interact with Google Compute Engine.
 
@@ -439,8 +448,9 @@ class GCEAgent(BaseAgent):
       for instance in instances:
         if instance['status'] == "RUNNING":
           instance_ids.append(instance['name'])
-          public_ips.append(instance['networkInterfaces'][0]['accessConfigs'][0]['natIP'])
-          private_ips.append(instance['networkInterfaces'][0]['networkIP'])
+          network_interface = instance['networkInterfaces'][0]
+          public_ips.append(network_interface['accessConfigs'][0]['natIP'])
+          private_ips.append(network_interface['networkIP'])
 
     return public_ips, private_ips, instance_ids
 
@@ -462,7 +472,7 @@ class GCEAgent(BaseAgent):
     """
     project_id = parameters[self.PARAM_PROJECT]
     image_id = parameters[self.PARAM_IMAGE_ID]
-    instance_type = self.DEFAULT_MACHINE_TYPE  #parameters[self.PARAM_INSTANCE_TYPE]
+    instance_type = self.DEFAULT_MACHINE_TYPE
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
 
@@ -476,11 +486,11 @@ class GCEAgent(BaseAgent):
       self.describe_instances(parameters)
 
     # Construct URLs
-    image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL, project_id, image_id)
+    image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL, project_id,
+      image_id)
     project_url = '{0}{1}'.format(self.GCE_URL, project_id)
     machine_type_url = '{0}/global/machineTypes/{1}'.format(project_url,
       instance_type)
-    zone_url = '{0}/zones/{1}'.format(project_url, self.DEFAULT_ZONE)
     network_url = '{0}/global/networks/{1}'.format(project_url, group)
 
     # Construct the request body
@@ -510,7 +520,8 @@ class GCEAgent(BaseAgent):
            project=project_id, body=instances, zone=self.DEFAULT_ZONE)
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-      self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+      self.ensure_operation_succeeds(gce_service, auth_http, response,
+        parameters[self.PARAM_PROJECT])
     
     instance_ids = []
     public_ips = []
@@ -520,7 +531,6 @@ class GCEAgent(BaseAgent):
     now = datetime.datetime.now()
 
     while now < end_time:
-      time_left = (end_time - now).seconds
       AppScaleLogger.log("Waiting for your instances to start...")
       instance_info = self.describe_instances(parameters)
       public_ips = instance_info[0]
@@ -574,7 +584,8 @@ class GCEAgent(BaseAgent):
       )
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
-      self.ensure_operation_succeeds(gce_service, auth_http, response, parameters[self.PARAM_PROJECT])
+      self.ensure_operation_succeeds(gce_service, auth_http, response,
+        parameters[self.PARAM_PROJECT])
 
 
   def does_image_exist(self, parameters):
@@ -597,7 +608,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError as http_error:
+    except apiclient.errors.HttpError:
       return False
 
 
@@ -639,7 +650,8 @@ class GCEAgent(BaseAgent):
     return apiclient.discovery.build('compute', self.API_VERSION), credentials
 
 
-  def ensure_operation_succeeds(self, gce_service, auth_http, response, project_id):
+  def ensure_operation_succeeds(self, gce_service, auth_http, response,
+    project_id):
     """ Waits for the given GCE operation to finish successfully.
 
     Callers should use this function whenever they perform a destructive

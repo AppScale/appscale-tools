@@ -189,7 +189,13 @@ class LocalState():
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
+
+      if options.infrastructure == "gce":
+        iaas_creds['project'] = options.project
+        iaas_creds['gce_user'] = getpass.getuser()
+
       creds.update(iaas_creds)
+
 
     return creds
 

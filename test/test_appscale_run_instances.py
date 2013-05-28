@@ -1066,7 +1066,7 @@ appengine:  1.2.3.4
     fake_instance_checker.should_receive('execute').and_return(
       created_instance_info)
     fake_blocker.should_receive('get').with_args(project=project_id,
-      operation=add_instance).and_return(fake_network_checker)
+      operation=add_instance).and_return(fake_instance_checker)
 
     # add some fake data in where no instances are initially running, then one
     # is (in response to our insert request)
