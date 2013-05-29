@@ -190,7 +190,13 @@ class LocalState():
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
+
+      if options.infrastructure == "gce":
+        iaas_creds['project'] = options.project
+        iaas_creds['gce_user'] = getpass.getuser()
+
       creds.update(iaas_creds)
+
 
     return creds
 
@@ -356,6 +362,10 @@ class LocalState():
       'infrastructure' : infrastructure,
       'group' : options.group
     }
+
+    if infrastructure == "gce":
+      yaml_contents['project'] = options.project
+
     with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
@@ -581,6 +591,41 @@ class LocalState():
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
       return yaml.safe_load(file_handle.read())["group"]
+
+
+  @classmethod
+  def get_project(cls, keyname):
+    """Reads the locations.yaml file to see what project ID is used to interact
+    with Google Compute Engine in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the project ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["project"]
+
+
+  @classmethod
+  def get_client_secrets_location(cls, keyname):
+    """Returns the path on the local filesystem where the client secrets JSON
+    file (used to interact with Google Compute Engine) can be found.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str that corresponds to a location on the local filesystem where the
+      client secrets file can be found.
+    """
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-secrets.json"
+
+
+  @classmethod
+  def get_oauth2_storage_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-oauth2.dat"
 
 
   @classmethod

@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import getpass
 import os
 import re
 import socket
@@ -129,7 +130,8 @@ class RemoteHelper():
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
-      additional_params = params[agent.PARAM_CREDENTIALS]
+      additional_params = {}
+      #additional_params = params[agent.PARAM_CREDENTIALS]
 
       if options.use_spot_instances:
         additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])
@@ -243,8 +245,22 @@ class RemoteHelper():
     """
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
-    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
-      num_retries=1)
+    try:
+      output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
+        num_retries=1)
+    except ShellException as exception:
+      # Google Compute Engine creates a user with the same name as the currently
+      # logged-in user, so log in as that user to enable root login.
+      if infrastructure == "gce":
+        AppScaleLogger.log("Root login not enabled - enabling it now.")
+        cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+          is_verbose, user=getpass.getuser())
+        return
+      else:
+        raise exception
+
+    # Amazon EC2 rejects a root login request and tells the user to log in as
+    # the ubuntu user, so do that to enable root login.
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
@@ -483,6 +499,16 @@ class RemoteHelper():
       options.verbose)
     cls.scp(host, options.keyname, private_key,
       "/etc/appscale/keys/cloud1/mykey.pem", options.verbose)
+
+    # In Google Compute Engine, we also need to copy over our client_secrets
+    # file and the OAuth2 file that the user has approved for use with their
+    # credentials, otherwise the AppScale VMs won't be able to interact with
+    # GCE.
+    if options.infrastructure and options.infrastructure == 'gce':
+      cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
+        options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
+      cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
+        options.keyname) , '/etc/appscale/oauth2.dat', options.verbose)
 
 
   @classmethod
