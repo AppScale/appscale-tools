@@ -16,9 +16,11 @@ from appscale_tools import AppScaleTools
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from parse_args import ParseArgs
+import version_helper
 
 
 if __name__ == "__main__":
+  version_helper.ensure_valid_python_is_used()
   options = ParseArgs(sys.argv[1:], "appscale-remove-app").args
   try:
     AppScaleTools.remove_app(options)

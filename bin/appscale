@@ -18,8 +18,10 @@ from appscale import AppScale
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
+import version_helper
 
 
+version_helper.ensure_valid_python_is_used()
 appscale = AppScale()
 if len(sys.argv) < 2:
   print(AppScale.USAGE)

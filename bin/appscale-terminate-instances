@@ -14,9 +14,11 @@ sys.path.append(lib)
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
+import version_helper
 
 
 if __name__ == "__main__":
+  version_helper.ensure_valid_python_is_used()
   options = ParseArgs(sys.argv[1:], "appscale-terminate-instances").args
   try:
     AppScaleTools.terminate_instances(options)
