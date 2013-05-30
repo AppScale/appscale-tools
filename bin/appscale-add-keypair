@@ -11,16 +11,22 @@ import unittest
 # AppScale library imports
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+
+
+# Make sure we're on Python 2.6 or greater before importing any code
+# that's incompatible with older versions.
+import version_helper
+version_helper.ensure_valid_python_is_used()
+
+
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from parse_args import ParseArgs
-import version_helper
 
 
 if __name__ == "__main__":
-  version_helper.ensure_valid_python_is_used()
   options = ParseArgs(sys.argv[1:], "appscale-add-keypair").args
   try:
     AppScaleTools.add_keypair(options)
-  except Exception as e:
+  except Exception, e:
     AppScaleLogger.warn(str(e))

@@ -32,11 +32,11 @@ def ensure_valid_python_is_used():
   """
   if not hasattr(sys, 'version_info'):
     cprint("Very old versions of Python are not supported. Please "
-      "use version 2.6 or newer.", "red")
+      "use version 2.6 or newer.\n", "red")
     sys.exit(1)
 
   version_tuple = tuple(sys.version_info[:2])
   if version_tuple < (2, 6):
-    cprint("Error: Python {0}.{1} is not supported. Please use "
-      "version 2.6 or newer.".format(version_tuple[0], version_tuple[1]), "red")
+    cprint("Error: Python %d.%d is not supported. Please use "
+      "version 2.6 or newer.\n" % version_tuple, "red")
     sys.exit(1)

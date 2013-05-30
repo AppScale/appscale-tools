@@ -11,19 +11,25 @@ import unittest
 # AppScale library imports
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+
+
+# Make sure we're on Python 2.6 or greater before importing any code
+# that's incompatible with older versions.
+import version_helper
+version_helper.ensure_valid_python_is_used()
+
+
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from parse_args import ParseArgs
-import version_helper
 
 
 if __name__ == "__main__":
-  version_helper.ensure_valid_python_is_used()
   options = ParseArgs(sys.argv[1:], "appscale-remove-app").args
   try:
     AppScaleTools.remove_app(options)
-  except (AppControllerException, AppScaleException) as e:
+  except (AppControllerException, AppScaleException), e:
     AppScaleLogger.warn(str(e))
     sys.exit(1)
