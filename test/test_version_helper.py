@@ -28,7 +28,7 @@ class TestVersionHelper(unittest.TestCase):
     termcolor.should_receive('cprint').with_args(str, 'red')
 
 
-  def testRunningOnVeryOldPython(self):
+  def test_running_on_very_old_python(self):
     # If we're running on any Python version too old to have a 'version_info'
     # field, it definitely won't run the AppScale Tools, so throw up and die.
     fake_sys = flexmock(name='fake_sys')
@@ -36,7 +36,7 @@ class TestVersionHelper(unittest.TestCase):
       fake_sys)
 
 
-  def testRunningOnPython25(self):
+  def test_running_on_python_25(self):
     # Python 2.5 is the newest version we don't support in the AppScale Tools,
     # so we should fail in this case.
     fake_sys = flexmock(name='fake_sys', version_info=[2, 5])
@@ -44,7 +44,7 @@ class TestVersionHelper(unittest.TestCase):
       fake_sys)
 
 
-  def testRunningOnPython26(self):
+  def test_running_on_python_26(self):
     # Python 2.6 is the oldest version we support in the AppScale Tools, so
     # don't fail in this case.
     fake_sys = flexmock(name='fake_sys', version_info=[2, 6])

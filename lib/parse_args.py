@@ -36,15 +36,15 @@ class ParseArgs():
   ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
 
 
-  # The instance type that should be used if the user does not specify one.
-  DEFAULT_INSTANCE_TYPE = "m1.large"
+  # The EC2 instance type that should be used if the user does not specify one.
+  DEFAULT_EC2_INSTANCE_TYPE = "m1.large"
 
 
-  # A list of the instance types we allow users to run AppScale over.
+  # A list of the instance types we allow users to run AppScale over in EC2.
   # TODO(cgb): Change this to a map that maps to the number of each type that
   # users can spawn without having to contact Amazon, and enforce this
   # limitation.
-  ALLOWED_INSTANCE_TYPES = [
+  ALLOWED_EC2_INSTANCE_TYPES = [
     # Standard Instances (First Generation)
     "m1.small", "m1.medium", "m1.large", "m1.xlarge",
 
@@ -73,6 +73,21 @@ class ParseArgs():
     "hs1.8xlarge",
     ]
 
+  # The GCE instance type that should be used if the user does not specify one.
+  DEFAULT_GCE_INSTANCE_TYPE = "n1-standard-1"
+
+  ALLOWED_GCE_INSTANCE_TYPES = [
+    "n1-standard-1",
+    "n1-standard-2",
+    "n1-standard-4",
+    "n1-standard-8",
+    "n1-highcpu-2",
+    "n1-highcpu-4",
+    "n1-highcpu-8",
+    "n1-highmem-2",
+    "n1-highmem-4",
+    "n1-highmem-8"
+  ]
 
   # The default security group to create and use for AppScale cloud deployments.
   DEFAULT_SECURITY_GROUP = "appscale"
@@ -136,16 +151,16 @@ class ParseArgs():
       self.parser.add_argument('--ips_layout',
         help="a base64-encoded YAML dictating the placement strategy")
 
-      # flags relating to cloud infrastructures
+      # flags relating to EC2-like cloud infrastructures
       self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
       self.parser.add_argument('--machine', '-m',
         help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type', '-t',
-        default=self.DEFAULT_INSTANCE_TYPE,
-        choices=self.ALLOWED_INSTANCE_TYPES,
-        help="the instance type to use")
+        default=self.DEFAULT_EC2_INSTANCE_TYPE,
+        choices=self.ALLOWED_EC2_INSTANCE_TYPES,
+        help="the EC2 instance type to use")
       self.parser.add_argument('--group', '-g',
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
@@ -171,6 +186,10 @@ class ParseArgs():
       self.parser.add_argument('--project',
         help="the name of the project that is allowed to use Google " + \
           "Compute Engine")
+      self.parser.add_argument('--gce_instance_type',
+        default=self.DEFAULT_GCE_INSTANCE_TYPE,
+        choices=self.ALLOWED_GCE_INSTANCE_TYPES,
+        help="the Google Compute Engine instance type to use")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',

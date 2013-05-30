@@ -183,7 +183,6 @@ class LocalState():
     if options.infrastructure:
       iaas_creds = {
         'machine' : options.machine,
-        'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
@@ -191,9 +190,12 @@ class LocalState():
         'use_spot_instances' : options.use_spot_instances
       }
 
-      if options.infrastructure == "gce":
+      if options.infrastructure in ["ec2", "euca"]:
+        iaas_creds['instance_type'] = options.instance_type
+      elif options.infrastructure == "gce":
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
+        iaas_creds['instance_type'] = options.gce_instance_type
 
       creds.update(iaas_creds)
 

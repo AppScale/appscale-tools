@@ -829,6 +829,7 @@ appengine:  1.2.3.4
     # presume that our client_secrets file exists
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
+    instance_type = 'n1-standard-8'
     flexmock(os.path)
     os.path.should_call('exists')
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
@@ -1077,7 +1078,7 @@ appengine:  1.2.3.4
       u'items': [{
         u'status': u'RUNNING',
         u'kind': u'compute#instance',
-        u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
+        u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/' + instance_type,
         u'name': u'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
         u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
         u'tags': {u'fingerprint': u'42WmSpB8rSM='},
@@ -1262,6 +1263,7 @@ appengine:  1.2.3.4
       "--max", "1",
       "--group", "bazgroup",
       "--infrastructure", "gce",
+      "--gce_instance_type", instance_type,
       "--machine", image_name,
       "--keyname", self.keyname,
       "--client_secrets", client_secrets,

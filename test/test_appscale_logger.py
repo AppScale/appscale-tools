@@ -66,6 +66,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "machine" : "ami-ABCDEFG",
       "force" : False,
       "group" : "blargscale",
+      "gce_instance_type" : "n1-standard-1",
       "instance_type" : "m1.large",
       "ips" : None,
       "ips_layout" : None,

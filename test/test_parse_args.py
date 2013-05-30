@@ -195,7 +195,7 @@ class TestParseArgs(unittest.TestCase):
     # value.
     argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, \
+    self.assertEquals(ParseArgs.DEFAULT_EC2_INSTANCE_TYPE, \
       actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
