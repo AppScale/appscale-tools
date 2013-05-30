@@ -76,6 +76,7 @@ installpylibs()
   easy_install boto==2.6
   easy_install oauth2client
   easy_install google-api-python-client
+  easy_install httplib2
   easy_install argparse
 }
 
