@@ -24,13 +24,15 @@ from test_local_state import TestLocalState
 from test_node_layout import TestNodeLayout
 from test_parse_args import TestParseArgs
 from test_remote_helper import TestRemoteHelper
+from test_version_helper import TestVersionHelper
 
 
 test_cases = [TestAppScale, TestAppScaleAddInstances, TestAppScaleAddKeypair,
   TestAppScaleDescribeInstances, TestAppScaleGatherLogs, TestAppScaleRemoveApp,
   TestAppScaleResetPassword, TestAppScaleRunInstances,
   TestAppScaleTerminateInstances, TestAppScaleUploadApp, TestAppScaleLogger,
-  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper]
+  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper,
+  TestVersionHelper]
 
 test_case_names = []
 for cls in test_cases:
