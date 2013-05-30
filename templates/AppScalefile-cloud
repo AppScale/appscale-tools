@@ -46,6 +46,15 @@ min : 1
 # deployment.
 max : 1
 
+# The location on your computer where an OAuth2.0 client ID for an installed
+# application can be found, which enables the AppScale Tools to talk to Google
+# Compute Engine on your behalf.
+#client_secrets: '~/client_secrets.json'
+
+# The project number associated with your Google Compute Engine account, used
+# to uniquely identify you when communicating with Google Compute Engine.
+#project: '123456789'
+
 # The number of copies (replicas) of each piece of data stored in the
 # specified database. By default, we determine the optimal value based
 # on the number of virtual machines running the 'database' role, by the
