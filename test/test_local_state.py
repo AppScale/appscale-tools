@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 import unittest
+import uuid
 import yaml
 
 
@@ -276,3 +277,16 @@ class TestLocalState(unittest.TestCase):
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
         stdin='fake_stdin')
+
+
+  def test_generate_crash_log(self):
+    crashlog_suffix = '123456'
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return(crashlog_suffix)
+
+    exception = Exception('baz')
+
+    expected = '{0}crash-log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
+      crashlog_suffix)
+    actual = LocalState.generate_crash_log(exception)
+    self.assertEquals(expected, actual)

@@ -25,6 +25,7 @@ from appscale import AppScale
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
+from local_state import LocalState
 
 
 appscale = AppScale()
@@ -43,6 +44,7 @@ if command == "init":
   try:
     appscale.init(sys.argv[2])
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 
@@ -53,6 +55,7 @@ elif command == "up":
   try:
     appscale.up()
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "ssh":
@@ -64,6 +67,7 @@ elif command == "ssh":
   try:
     appscale.ssh(index)
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
   except KeyboardInterrupt:
@@ -73,6 +77,7 @@ elif command == "status":
   try:
     appscale.status()
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "deploy":
@@ -80,6 +85,7 @@ elif command == "deploy":
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.deploy(sys.argv[2])
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "undeploy" or command == "remove":
@@ -87,6 +93,7 @@ elif command == "undeploy" or command == "remove":
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.undeploy(sys.argv[2])
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "tail":
@@ -110,6 +117,7 @@ elif command == "tail":
     # don't print the stack trace on a Control-C
     pass
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "logs":
@@ -120,18 +128,21 @@ elif command == "logs":
   try:
     appscale.logs(sys.argv[2])
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 elif command == "clean":
   try:
     appscale.clean()
   except Exception, e:
+    LocalState.generate_crash_log(e)
     cprint(e, 'red')
     sys.exit(1)
 else:

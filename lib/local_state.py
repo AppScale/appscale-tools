@@ -804,3 +804,21 @@ class LocalState():
         extracted_location = included_dir
 
     return extracted_location
+
+
+  @classmethod
+  def generate_crash_log(cls, exception):
+    """Writes information to the local filesystem about an uncaught exception
+    that killed an AppScale Tool's execution, to aid in debugging at a later
+    time.
+
+    Args:
+      exception: The Exception that crashed executing an AppScale Tool, whose
+        information we want to log for debugging purposes.
+    Returns:
+      The location on the filesystem where the crash log was written to.
+    """
+    crash_log_filename = '{0}crash-log-{1}'.format(
+      LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
+
+    return crash_log_filename
