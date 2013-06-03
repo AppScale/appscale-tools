@@ -46,7 +46,6 @@ if command == "init":
     appscale.init(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 
   cprint("AppScalefile successfully created! Be sure to " +
@@ -57,7 +56,6 @@ elif command == "up":
     appscale.up()
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "ssh":
   if len(sys.argv) < 3:
@@ -69,7 +67,6 @@ elif command == "ssh":
     appscale.ssh(index)
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
@@ -79,7 +76,6 @@ elif command == "status":
     appscale.status()
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "deploy":
   try:
@@ -87,7 +83,6 @@ elif command == "deploy":
     appscale.deploy(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "undeploy" or command == "remove":
   try:
@@ -95,7 +90,6 @@ elif command == "undeploy" or command == "remove":
     appscale.undeploy(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "tail":
   if len(sys.argv) < 3:
@@ -119,7 +113,6 @@ elif command == "tail":
     pass
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "logs":
   if len(sys.argv) < 3:
@@ -130,21 +123,18 @@ elif command == "logs":
     appscale.logs(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 elif command == "clean":
   try:
     appscale.clean()
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
-    cprint(e, 'red')
     sys.exit(1)
 else:
   print(AppScale.USAGE)
