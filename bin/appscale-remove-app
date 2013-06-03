@@ -5,7 +5,7 @@
 # General-purpose Python library imports
 import os
 import sys
-import unittest
+import traceback
 
 
 # AppScale library imports
@@ -21,8 +21,7 @@ version_helper.ensure_valid_python_is_used()
 
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppScaleException
+from local_state import LocalState
 from parse_args import ParseArgs
 
 
@@ -30,6 +29,7 @@ if __name__ == "__main__":
   options = ParseArgs(sys.argv[1:], "appscale-remove-app").args
   try:
     AppScaleTools.remove_app(options)
-  except (AppControllerException, AppScaleException), e:
-    AppScaleLogger.warn(str(e))
+    sys.exit(0)
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
