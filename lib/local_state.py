@@ -6,7 +6,9 @@
 import getpass
 import hashlib
 import json
+import locale
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -807,7 +809,7 @@ class LocalState():
 
 
   @classmethod
-  def generate_crash_log(cls, exception):
+  def generate_crash_log(cls, exception, stacktrace):
     """Writes information to the local filesystem about an uncaught exception
     that killed an AppScale Tool's execution, to aid in debugging at a later
     time.
@@ -815,10 +817,37 @@ class LocalState():
     Args:
       exception: The Exception that crashed executing an AppScale Tool, whose
         information we want to log for debugging purposes.
+      stacktrace: A str that contains the newline-separated stacktrace
+        corresponding to the given exception.
     Returns:
       The location on the filesystem where the crash log was written to.
     """
     crash_log_filename = '{0}crash-log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
+    locale.setlocale(locale.LC_ALL, '')
+    log_info = {
+      # System-specific information
+      'platform' : platform.platform(),
+      'runtime' : platform.python_implementation(),
+      'locale' : locale.getlocale()[0],
+
+      # Crash-specific information
+      'exception' : exception.__class__.__name__,
+      'message' : exception.message,
+      'stacktrace' : stacktrace.rstrip(),
+
+      # AppScale Tools-specific information
+      'tools_version' : APPSCALE_VERSION
+    }
+
+    with open(crash_log_filename, 'w') as file_handle:
+      for key, value in log_info.iteritems():
+        file_handle.write("{0} : {1}\n\n".format(key, value))
+
+    AppScaleLogger.warn("The AppScale Tools crashed because of an internal " \
+      "error, of class {0}. We were able to generate a crash log with more " \
+      "information at {1}. Please read it for more details or send it " \
+      "to appscale_community@googlegroups.com if you believe this is a " \
+      "bug.".format(log_info['exception'], crash_log_filename))
     return crash_log_filename
