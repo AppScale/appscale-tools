@@ -6,7 +6,9 @@
 import getpass
 import hashlib
 import json
+import locale
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -183,14 +185,22 @@ class LocalState():
     if options.infrastructure:
       iaas_creds = {
         'machine' : options.machine,
-        'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
+
+      if options.infrastructure in ["ec2", "euca"]:
+        iaas_creds['instance_type'] = options.instance_type
+      elif options.infrastructure == "gce":
+        iaas_creds['project'] = options.project
+        iaas_creds['gce_user'] = getpass.getuser()
+        iaas_creds['instance_type'] = options.gce_instance_type
+
       creds.update(iaas_creds)
+
 
     return creds
 
@@ -356,6 +366,10 @@ class LocalState():
       'infrastructure' : infrastructure,
       'group' : options.group
     }
+
+    if infrastructure == "gce":
+      yaml_contents['project'] = options.project
+
     with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
@@ -584,6 +598,41 @@ class LocalState():
 
 
   @classmethod
+  def get_project(cls, keyname):
+    """Reads the locations.yaml file to see what project ID is used to interact
+    with Google Compute Engine in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the project ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["project"]
+
+
+  @classmethod
+  def get_client_secrets_location(cls, keyname):
+    """Returns the path on the local filesystem where the client secrets JSON
+    file (used to interact with Google Compute Engine) can be found.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str that corresponds to a location on the local filesystem where the
+      client secrets file can be found.
+    """
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-secrets.json"
+
+
+  @classmethod
+  def get_oauth2_storage_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-oauth2.dat"
+
+
+  @classmethod
   def cleanup_appscale_files(cls, keyname):
     """Removes all AppScale metadata files from this machine.
 
@@ -757,3 +806,48 @@ class LocalState():
         extracted_location = included_dir
 
     return extracted_location
+
+
+  @classmethod
+  def generate_crash_log(cls, exception, stacktrace):
+    """Writes information to the local filesystem about an uncaught exception
+    that killed an AppScale Tool's execution, to aid in debugging at a later
+    time.
+
+    Args:
+      exception: The Exception that crashed executing an AppScale Tool, whose
+        information we want to log for debugging purposes.
+      stacktrace: A str that contains the newline-separated stacktrace
+        corresponding to the given exception.
+    Returns:
+      The location on the filesystem where the crash log was written to.
+    """
+    crash_log_filename = '{0}crash-log-{1}'.format(
+      LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
+
+    locale.setlocale(locale.LC_ALL, '')
+    log_info = {
+      # System-specific information
+      'platform' : platform.platform(),
+      'runtime' : platform.python_implementation(),
+      'locale' : locale.getlocale()[0],
+
+      # Crash-specific information
+      'exception' : exception.__class__.__name__,
+      'message' : exception.message,
+      'stacktrace' : stacktrace.rstrip(),
+
+      # AppScale Tools-specific information
+      'tools_version' : APPSCALE_VERSION
+    }
+
+    with open(crash_log_filename, 'w') as file_handle:
+      for key, value in log_info.iteritems():
+        file_handle.write("{0} : {1}\n\n".format(key, value))
+
+    AppScaleLogger.warn("The AppScale Tools crashed because of an internal " \
+      "error, of class {0}.\nWe were able to generate a crash log with more " \
+      "information at\n{1}.\nPlease read it for more details or send it " \
+      "to appscale_community@googlegroups.com if you believe this is a " \
+      "bug.".format(log_info['exception'], crash_log_filename))
+    return crash_log_filename
