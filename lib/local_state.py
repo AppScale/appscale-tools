@@ -845,9 +845,7 @@ class LocalState():
       for key, value in log_info.iteritems():
         file_handle.write("{0} : {1}\n\n".format(key, value))
 
-    AppScaleLogger.warn("The AppScale Tools crashed because of an internal " \
-      "error, of class {0}.\nWe were able to generate a crash log with more " \
-      "information at\n{1}.\nPlease read it for more details or send it " \
-      "to appscale_community@googlegroups.com if you believe this is a " \
-      "bug.".format(log_info['exception'], crash_log_filename))
+    AppScaleLogger.warn(str(exception))
+    AppScaleLogger.log("\nA crash log with more information is available " \
+      "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
