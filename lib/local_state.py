@@ -814,6 +814,10 @@ class LocalState():
     that killed an AppScale Tool's execution, to aid in debugging at a later
     time.
 
+    Only prints this information if the exception is not an AppScale-specific
+    one. If it is, we've included more specific info in the message there to
+    tell the user how to fix the problem, so throw it instead.
+
     Args:
       exception: The Exception that crashed executing an AppScale Tool, whose
         information we want to log for debugging purposes.
@@ -821,7 +825,14 @@ class LocalState():
         corresponding to the given exception.
     Returns:
       The location on the filesystem where the crash log was written to.
+    Raises:
+      AppScaleException: If the exception given is of class AppScaleException,
+        and thus is an exception that includes specific information on the
+        problem at hand and how to fix it.
     """
+    if exception.__class__ == AppScaleException:
+      raise exception
+
     crash_log_filename = '{0}crash-log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
