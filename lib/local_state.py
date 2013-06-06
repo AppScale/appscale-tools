@@ -834,7 +834,7 @@ class LocalState():
 
       # Crash-specific information
       'exception' : exception.__class__.__name__,
-      'message' : exception.message,
+      'message' : str(exception),
       'stacktrace' : stacktrace.rstrip(),
 
       # AppScale Tools-specific information
