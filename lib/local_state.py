@@ -814,10 +814,6 @@ class LocalState():
     that killed an AppScale Tool's execution, to aid in debugging at a later
     time.
 
-    Only prints this information if the exception is not an AppScale-specific
-    one. If it is, we've included more specific info in the message there to
-    tell the user how to fix the problem, so throw it instead.
-
     Args:
       exception: The Exception that crashed executing an AppScale Tool, whose
         information we want to log for debugging purposes.
@@ -825,14 +821,7 @@ class LocalState():
         corresponding to the given exception.
     Returns:
       The location on the filesystem where the crash log was written to.
-    Raises:
-      AppScaleException: If the exception given is of class AppScaleException,
-        and thus is an exception that includes specific information on the
-        problem at hand and how to fix it.
     """
-    if exception.__class__ == AppScaleException:
-      raise exception
-
     crash_log_filename = '{0}crash-log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
@@ -856,9 +845,7 @@ class LocalState():
       for key, value in log_info.iteritems():
         file_handle.write("{0} : {1}\n\n".format(key, value))
 
-    AppScaleLogger.warn("The AppScale Tools crashed because of an internal " \
-      "error, of class {0}.\nWe were able to generate a crash log with more " \
-      "information at\n{1}.\nPlease read it for more details or send it " \
-      "to appscale_community@googlegroups.com if you believe this is a " \
-      "bug.".format(log_info['exception'], crash_log_filename))
+    AppScaleLogger.warn(str(exception))
+    AppScaleLogger.log("\nA crash log with more information is available " \
+      "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
