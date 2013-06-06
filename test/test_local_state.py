@@ -303,7 +303,7 @@ class TestLocalState(unittest.TestCase):
     locale.should_receive('getlocale').and_return(("'Murica", None))
 
     # Mock out writing it to the crash log file
-    expected = '{0}crash-log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
+    expected = '{0}log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
       crashlog_suffix)
 
     fake_file = flexmock(name='fake_file')

@@ -822,7 +822,7 @@ class LocalState():
     Returns:
       The location on the filesystem where the crash log was written to.
     """
-    crash_log_filename = '{0}crash-log-{1}'.format(
+    crash_log_filename = '{0}log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
     locale.setlocale(locale.LC_ALL, '')
@@ -846,6 +846,6 @@ class LocalState():
         file_handle.write("{0} : {1}\n\n".format(key, value))
 
     AppScaleLogger.warn(str(exception))
-    AppScaleLogger.log("\nA crash log with more information is available " \
+    AppScaleLogger.log("\nA log with more information is available " \
       "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
