@@ -53,6 +53,11 @@ class GCEAgent(BaseAgent):
   # but is more responsive to when machines become ready to use.
   SLEEP_TIME = 20
 
+  # The following constants are string literals that can be used by callers to
+  # index into the parameters the user passes in, as opposed to having to type
+  # out the strings each time we need them.
+  PARAM_CREDENTIALS = 'credentials'
+
 
   PARAM_GROUP = 'group'
 
