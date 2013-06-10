@@ -4,13 +4,16 @@
 
 # General-purpose Python library imports
 import json
+import locale
 import os
+import platform
 import re
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
+import uuid
 import yaml
 
 
@@ -22,6 +25,7 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import LocalState
@@ -276,3 +280,43 @@ class TestLocalState(unittest.TestCase):
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
         stdin='fake_stdin')
+
+
+  def test_generate_crash_log(self):
+    crashlog_suffix = '123456'
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return(crashlog_suffix)
+
+    exception_class = 'Exception'
+    exception_message = 'baz message'
+    exception = Exception(exception_message)
+    stacktrace = "\n".join(['Traceback (most recent call last):',
+      '  File "<stdin>", line 2, in <module>',
+      '{0}: {1}'.format(exception_class, exception_message)])
+
+    # Mock out grabbing our system's information
+    flexmock(platform)
+    platform.should_receive('platform').and_return("MyOS")
+    platform.should_receive('python_implementation').and_return("MyPython")
+
+    flexmock(locale)
+    locale.should_receive('getlocale').and_return(("'Murica", None))
+
+    # Mock out writing it to the crash log file
+    expected = '{0}log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
+      crashlog_suffix)
+
+    fake_file = flexmock(name='fake_file')
+    fake_file.should_receive('write').with_args(str)
+
+    fake_builtins = flexmock(sys.modules['__builtin__'])
+    fake_builtins.should_call('open')  # set the fall-through
+    fake_builtins.should_receive('open').with_args(expected, 'w').and_return(
+      fake_file)
+
+    # mock out printing the crash log message
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('warn')
+
+    actual = LocalState.generate_crash_log(exception, stacktrace)
+    self.assertEquals(expected, actual)
