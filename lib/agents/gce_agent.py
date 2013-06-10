@@ -54,6 +54,9 @@ class GCEAgent(BaseAgent):
   SLEEP_TIME = 20
 
 
+  PARAM_CREDENTIALS = 'credentials'
+
+
   PARAM_GROUP = 'group'
 
 
