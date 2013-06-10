@@ -631,11 +631,6 @@ class NodeLayout():
     if self.replication > database_node_count:
       return self.invalid("Replication factor cannot exceed # of databases")
 
-    # Perform all the database specific checks here
-    if self.database_type == 'mysql' and database_node_count % self.replication:
-      return self.invalid("MySQL requires that the amount of replication " + \
-        "be divisible by the number of nodes") 
-
     return self.valid()
 
 
