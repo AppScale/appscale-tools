@@ -841,6 +841,11 @@ class LocalState():
       'tools_version' : APPSCALE_VERSION
     }
 
+    # If LOCAL_APPSCALE_PATH doesn't exist, create it so that we can write the
+    # crash log.
+    if not os.path.exists(LocalState.LOCAL_APPSCALE_PATH):
+      os.mkdir(LocalState.LOCAL_APPSCALE_PATH)
+
     with open(crash_log_filename, 'w') as file_handle:
       for key, value in log_info.iteritems():
         file_handle.write("{0} : {1}\n\n".format(key, value))
