@@ -248,8 +248,7 @@ class RemoteHelper():
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
     try:
-      output = cls.ssh(host, keyname, 'ls', is_verbose, user='root',
-        num_retries=1)
+      output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
     except ShellException as exception:
       # Google Compute Engine creates a user with the same name as the currently
       # logged-in user, so log in as that user to enable root login.
