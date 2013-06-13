@@ -178,6 +178,11 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     local_state = flexmock(LocalState)
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
@@ -196,8 +201,13 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
+    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
@@ -224,6 +234,12 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     local_state = flexmock(LocalState)
+
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
 
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
@@ -473,3 +489,4 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.wait_for_machines_to_finish_loading('public1', 'bookey')
+

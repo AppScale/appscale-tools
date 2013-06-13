@@ -401,7 +401,7 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 1, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
     local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -634,7 +634,7 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 1, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
     local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -1134,7 +1134,7 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 1, stdin='ls').and_raise(ShellException)
+      False, 5, stdin='ls').and_raise(ShellException)
 
     # assume that we can enable root login
     local_state.should_receive('shell').with_args(re.compile('ssh'),
