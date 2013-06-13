@@ -489,4 +489,3 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.wait_for_machines_to_finish_loading('public1', 'bookey')
-
