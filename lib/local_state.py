@@ -822,7 +822,7 @@ class LocalState():
     Returns:
       The location on the filesystem where the crash log was written to.
     """
-    crash_log_filename = '{0}crash-log-{1}'.format(
+    crash_log_filename = '{0}log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
     locale.setlocale(locale.LC_ALL, '')
@@ -834,20 +834,23 @@ class LocalState():
 
       # Crash-specific information
       'exception' : exception.__class__.__name__,
-      'message' : exception.message,
+      'message' : str(exception),
       'stacktrace' : stacktrace.rstrip(),
 
       # AppScale Tools-specific information
       'tools_version' : APPSCALE_VERSION
     }
 
+    # If LOCAL_APPSCALE_PATH doesn't exist, create it so that we can write the
+    # crash log.
+    if not os.path.exists(LocalState.LOCAL_APPSCALE_PATH):
+      os.mkdir(LocalState.LOCAL_APPSCALE_PATH)
+
     with open(crash_log_filename, 'w') as file_handle:
       for key, value in log_info.iteritems():
         file_handle.write("{0} : {1}\n\n".format(key, value))
 
-    AppScaleLogger.warn("The AppScale Tools crashed because of an internal " \
-      "error, of class {0}.\nWe were able to generate a crash log with more " \
-      "information at\n{1}.\nPlease read it for more details or send it " \
-      "to appscale_community@googlegroups.com if you believe this is a " \
-      "bug.".format(log_info['exception'], crash_log_filename))
+    AppScaleLogger.warn(str(exception))
+    AppScaleLogger.log("\nA log with more information is available " \
+      "at\n{0}.".format(crash_log_filename))
     return crash_log_filename

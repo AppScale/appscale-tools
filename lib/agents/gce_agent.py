@@ -53,6 +53,11 @@ class GCEAgent(BaseAgent):
   # but is more responsive to when machines become ready to use.
   SLEEP_TIME = 20
 
+  # The following constants are string literals that can be used by callers to
+  # index into the parameters the user passes in, as opposed to having to type
+  # out the strings each time we need them.
+  PARAM_CREDENTIALS = 'credentials'
+
 
   PARAM_GROUP = 'group'
 
@@ -338,9 +343,16 @@ class GCEAgent(BaseAgent):
     Returns:
       A dict containing the location of the client_secrets file and that name
       of the image to use in GCE.
+    Raises:
+      AgentConfigurationException: If the caller fails to specify a
+        client_secrets file, or if it doesn't exist on the local filesystem.
     """
     if not isinstance(args, dict):
       args = vars(args)
+
+    if not args['client_secrets']:
+      raise AgentConfigurationException("Please specify a client_secrets " + \
+        "file in your AppScalefile when running over Google Compute Engine.")
 
     client_secrets = os.path.expanduser(args['client_secrets'])
     if not os.path.exists(client_secrets):
