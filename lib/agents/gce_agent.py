@@ -343,6 +343,9 @@ class GCEAgent(BaseAgent):
     Returns:
       A dict containing the location of the client_secrets file and that name
       of the image to use in GCE.
+    Raises:
+      AgentConfigurationException: If the caller fails to specify a
+        client_secrets file, or if it doesn't exist on the local filesystem.
     """
     if not isinstance(args, dict):
       args = vars(args)
