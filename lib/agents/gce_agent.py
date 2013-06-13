@@ -343,9 +343,16 @@ class GCEAgent(BaseAgent):
     Returns:
       A dict containing the location of the client_secrets file and that name
       of the image to use in GCE.
+    Raises:
+      AgentConfigurationException: If the caller fails to specify a
+        client_secrets file, or if it doesn't exist on the local filesystem.
     """
     if not isinstance(args, dict):
       args = vars(args)
+
+    if not args['client_secrets']:
+      raise AgentConfigurationException("Please specify a client_secrets " + \
+        "file in your AppScalefile when running over Google Compute Engine.")
 
     client_secrets = os.path.expanduser(args['client_secrets'])
     if not os.path.exists(client_secrets):
