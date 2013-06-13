@@ -13,10 +13,6 @@ AppScale Tools.
 import sys
 
 
-# Third-party Python libraries
-import termcolor
-
-
 def ensure_valid_python_is_used(system=sys):
   """ Makes sure that we are running a version of Python that the AppScale
   Tools supports.
@@ -35,12 +31,12 @@ def ensure_valid_python_is_used(system=sys):
       older than 2.6.
   """
   if not hasattr(system, 'version_info'):
-    termcolor.cprint("Very old versions of Python are not supported. Please "
-      "use version 2.6 or newer.\n", "red")
+    sys.stderr.write("Very old versions of Python are not supported. Please "
+      "use version 2.6 or newer.\n")
     sys.exit(1)
 
   version_tuple = tuple(system.version_info[:2])
   if version_tuple < (2, 6):
-    termcolor.cprint("Error: Python %d.%d is not supported. Please use "
-      "version 2.6 or newer.\n" % version_tuple, "red")
+    sys.stderr.write("Error: Python %d.%d is not supported. Please use "
+      "version 2.6 or newer.\n" % version_tuple)
     sys.exit(1)
