@@ -874,3 +874,19 @@ class TestAppScaleUploadApp(unittest.TestCase):
     (host, port) = AppScaleTools.upload_app(options)
     self.assertEquals('public1', host)
     self.assertEquals(8080, port) 
+ 
+ 
+  def test_java_bad_sdk_version(self):
+    bad_jars = ['test.jar', 'appengine-api-1.0-sdk-1.7.3.jar']
+    flexmock(os)
+    os.should_receive('listdir').with_args('/war/WEB-INF/lib').and_return(bad_jars)
+    self.assertEquals(True, AppEngineHelper.is_sdk_mismatch(''))
+
+    
+  def test_java_good_sdk_version(self):
+    target_jar = AppEngineHelper.JAVA_SDK_JAR_PREFIX + '-' \
+      + AppEngineHelper.SUPPORTED_SDK_VERSION + '.jar'
+    good_jars = ['test.jar', target_jar]
+    flexmock(os)
+    os.should_receive('listdir').with_args('/war/WEB-INF/lib').and_return(good_jars)
+    self.assertEquals(False, AppEngineHelper.is_sdk_mismatch('')) 
