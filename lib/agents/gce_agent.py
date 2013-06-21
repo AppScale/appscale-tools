@@ -154,8 +154,9 @@ class GCEAgent(BaseAgent):
       raise AgentRuntimeException("Couldn't find your GCE public key at {0}" \
         .format(self.GCE_PUBLIC_SSH_KEY))
 
-    if not self.does_ssh_key_exist(parameters):
-      self.create_ssh_key(parameters)
+    ssh_key_exists, all_ssh_keys = self.does_ssh_key_exist(parameters)
+    if not ssh_key_exists:
+      self.create_ssh_key(parameters, all_ssh_keys)
 
     # Now that we know that the SSH keys exist, copy them to ~/.appscale.
     keyname = parameters[self.PARAM_KEYNAME]
@@ -184,7 +185,9 @@ class GCEAgent(BaseAgent):
         Google Compute Engine. We don't have an additional key for the name of
         the SSH key, since we use the one in ~/.ssh.
     Returns:
-      True if GCE_PUBLIC_SSH_KEY's contents are in GCE, and False otherwise.
+      A tuple of two items. The first item is a bool that is True if
+        GCE_PUBLIC_SSH_KEY's contents are in GCE, and False otherwise, while
+        the second item is the contents of all SSH keys stored in GCE.
     """
     our_public_ssh_key = None
     with open(self.GCE_PUBLIC_SSH_KEY) as file_handle:
@@ -199,9 +202,12 @@ class GCEAgent(BaseAgent):
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
 
+      if not 'items' in response['commonInstanceMetadata']:
+        return False, ""
+
       metadata = response['commonInstanceMetadata']['items']
       if not metadata:
-        return False
+        return False, ""
 
       for item in metadata:
         if item['key'] != 'sshKeys':
@@ -211,11 +217,11 @@ class GCEAgent(BaseAgent):
         # ours is in this list.
         all_ssh_keys = item['value']
         if our_public_ssh_key in all_ssh_keys:
-          return True
+          return True, all_ssh_keys
 
-      return False
+      return False, all_ssh_keys
     except apiclient.errors.HttpError:
-      return False
+      return False, ""
 
 
   def does_network_exist(self, parameters):
@@ -266,15 +272,42 @@ class GCEAgent(BaseAgent):
       return False
 
   
-  def create_ssh_key(self, parameters):
+  def create_ssh_key(self, parameters, all_ssh_keys):
     """ Creates a new SSH key in Google Compute Engine with the contents of
     GCE_PUBLIC_SSH_KEY.
 
     Args:
       parameters: A dict with keys for each parameter needed to connect to
         Google Compute Engine.
+      all_ssh_keys: A str that contains all of the SSH keys that are
+        currently passed in to GCE instances.
     """
-    raise NotImplementedError
+    our_public_ssh_key = None
+    with open(self.GCE_PUBLIC_SSH_KEY) as file_handle:
+      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+
+    if all_ssh_keys:
+      new_all_ssh_keys = our_public_ssh_key + "\n" + all_ssh_keys
+    else:
+      new_all_ssh_keys = our_public_ssh_key
+
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.projects().setCommonInstanceMetadata(
+      project=parameters[self.PARAM_PROJECT],
+      body={
+        "kind": "compute#metadata",
+        "items": [{
+          "key": "sshKeys",
+          "value": new_all_ssh_keys
+        }]
+      }
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
 
 
   def create_network(self, parameters):

@@ -935,6 +935,54 @@ appengine:  1.2.3.4
     fake_gce = flexmock(name='fake_gce')
     fake_gce.should_receive('projects').and_return(fake_projects)
 
+    # thus we will need to set the metadata with our ssh key
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')  # set the fall-through
+
+    fake_ssh_pub_key = flexmock(name="fake_ssh_pub_key")
+    fake_ssh_pub_key.should_receive('read').and_return('ssh-rsa key2info myhost')
+    builtins.should_receive('open').with_args(GCEAgent.GCE_PUBLIC_SSH_KEY) \
+      .and_return(fake_ssh_pub_key)
+
+    new_metadata_body = {
+      "items": [{
+        "value" : u'cgb:ssh-rsa key2info myhost\ncgb:ssh-rsa keyinfo myhost',
+        "key" : "sshKeys"
+      }],
+      "kind": "compute#metadata"
+    }
+
+    set_metadata_name = u'operation-222222-4dd41ec7d6c11-8013657f'
+    set_metadata = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': set_metadata_name,
+      u'operationType': u'insert',
+      u'progress': 0,
+      u'selfLink': unicode(GCEAgent.GCE_URL) + \
+        u'appscale.com:appscale/global/operations/' + \
+        u'operation-1369175117235-4dd41ec7d6c11-8013657f',
+      u'user': u'Chris@appscale.com'
+    }
+
+    fake_set_metadata_request = flexmock(name='fake_set_metadata_request')
+    fake_set_metadata_request.should_receive('execute').and_return(set_metadata)
+
+    fake_projects.should_receive('setCommonInstanceMetadata').with_args(
+      project=project_id, body=new_metadata_body).and_return(
+      fake_set_metadata_request)
+
+    updated_metadata_info = {
+      u'status': u'DONE'
+    }
+
+    fake_metadata_checker = flexmock(name='fake_network_checker')
+    fake_metadata_checker.should_receive('execute').and_return(
+      updated_metadata_info)
+    fake_blocker = flexmock(name='fake_blocker')
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=set_metadata_name).and_return(fake_metadata_checker)
+
     # presume that our image does exist in GCE, with some fake data
     # acquired by running a not mocked version of this code
     image_name = 'appscale-image-name'
@@ -1013,7 +1061,6 @@ appengine:  1.2.3.4
     fake_network_checker = flexmock(name='fake_network_checker')
     fake_network_checker.should_receive('execute').and_return(
       created_network_info)
-    fake_blocker = flexmock(name='fake_blocker')
     fake_blocker.should_receive('get').with_args(project=project_id,
       operation=create_network).and_return(fake_network_checker)
     fake_gce.should_receive('globalOperations').and_return(fake_blocker)
