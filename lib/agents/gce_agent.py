@@ -118,7 +118,7 @@ class GCEAgent(BaseAgent):
 
   # The location on the local filesystem where SSH private keys used with
   # Google Compute Engine are stored, by default.
-  GCE_PRIVATE_SSH_KEY = os.path.expanduser("~/.ssh/google_compute_engine")
+  GCE_PRIVATE_SSH_KEY = os.path.expanduser("~/.ssh/id_rsa")
 
 
   # The location on the local filesystem where SSH public keys uploaded to
@@ -154,6 +154,9 @@ class GCEAgent(BaseAgent):
       raise AgentRuntimeException("Couldn't find your GCE public key at {0}" \
         .format(self.GCE_PUBLIC_SSH_KEY))
 
+    if not self.does_ssh_key_exist(parameters):
+      self.create_ssh_key(parameters)
+
     # Now that we know that the SSH keys exist, copy them to ~/.appscale.
     keyname = parameters[self.PARAM_KEYNAME]
     private_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
@@ -171,6 +174,19 @@ class GCEAgent(BaseAgent):
 
     network_url = self.create_network(parameters)
     self.create_firewall(parameters, network_url)
+
+
+  def does_ssh_key_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified SSH key exists.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine. We don't have an additional key for the name of
+        the SSH key, since we use the one in ~/.ssh.
+    Returns:
+      True if GCE_PUBLIC_SSH_KEY's contents are in GCE, and False otherwise.
+    """
+    raise NotImplementedError
 
 
   def does_network_exist(self, parameters):
@@ -221,6 +237,17 @@ class GCEAgent(BaseAgent):
       return False
 
   
+  def create_ssh_key(self, parameters):
+    """ Creates a new SSH key in Google Compute Engine with the contents of
+    GCE_PUBLIC_SSH_KEY.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+    """
+    raise NotImplementedError
+
+
   def create_network(self, parameters):
     """ Creates a new network in Google Compute Engine with the specified name.
 
