@@ -410,6 +410,12 @@ class AppScaleTools():
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     AppEngineHelper.validate_app_id(app_id)
+    
+    if app_language == 'java':
+      if AppEngineHelper.is_sdk_mismatch(file_location):
+        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' + 
+          'versions in your app. The current supported ' + 
+          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
