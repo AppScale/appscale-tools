@@ -186,7 +186,36 @@ class GCEAgent(BaseAgent):
     Returns:
       True if GCE_PUBLIC_SSH_KEY's contents are in GCE, and False otherwise.
     """
-    raise NotImplementedError
+    our_public_ssh_key = None
+    with open(self.GCE_PUBLIC_SSH_KEY) as file_handle:
+      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.projects().get(
+        project=parameters[self.PARAM_PROJECT])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+      metadata = response['commonInstanceMetadata']['items']
+      if not metadata:
+        return False
+
+      for item in metadata:
+        if item['key'] != 'sshKeys':
+          continue
+
+        # Now that we know there's one or more SSH keys, just make sure that
+        # ours is in this list.
+        all_ssh_keys = item['value']
+        if our_public_ssh_key in all_ssh_keys:
+          return True
+
+      return False
+    except apiclient.errors.HttpError:
+      return False
 
 
   def does_network_exist(self, parameters):

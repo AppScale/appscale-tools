@@ -914,6 +914,27 @@ appengine:  1.2.3.4
     fake_credentials.should_receive('authorize').with_args(fake_http) \
       .and_return(fake_authorized_http)
 
+    # presume that there is an ssh key stored, but it isn't ours
+    metadata_info = {
+      u'kind': u'compute#project', 
+      u'description': u'', 
+      u'commonInstanceMetadata': {
+        u'items': [{
+          u'value': u'cgb:ssh-rsa keyinfo myhost', 
+          u'key': u'sshKeys'}], 
+        u'kind': u'compute#metadata'},
+    }
+    fake_metadata_request = flexmock(name='fake_metadata_request')
+    fake_metadata_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(metadata_info)
+
+    fake_projects = flexmock(name='fake_projects')
+    fake_projects.should_receive('get').with_args(project=project_id) \
+      .and_return(fake_metadata_request)
+
+    fake_gce = flexmock(name='fake_gce')
+    fake_gce.should_receive('projects').and_return(fake_projects)
+
     # presume that our image does exist in GCE, with some fake data
     # acquired by running a not mocked version of this code
     image_name = 'appscale-image-name'
@@ -938,7 +959,6 @@ appengine:  1.2.3.4
     fake_images.should_receive('get').with_args(project=project_id,
       image=image_name).and_return(fake_image_request)
 
-    fake_gce = flexmock(name='fake_gce')
     fake_gce.should_receive('images').and_return(fake_images)
 
     # next, presume that the network doesn't exist yet
