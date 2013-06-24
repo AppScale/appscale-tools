@@ -20,6 +20,7 @@ from test_appscale_terminate_instances import TestAppScaleTerminateInstances
 
 # imports for appscale library tests
 from test_appscale_logger import TestAppScaleLogger
+from test_factory import TestFactory
 from test_local_state import TestLocalState
 from test_node_layout import TestNodeLayout
 from test_parse_args import TestParseArgs
@@ -31,7 +32,7 @@ test_cases = [TestAppScale, TestAppScaleAddInstances, TestAppScaleAddKeypair,
   TestAppScaleDescribeInstances, TestAppScaleGatherLogs, TestAppScaleRemoveApp,
   TestAppScaleResetPassword, TestAppScaleRunInstances,
   TestAppScaleTerminateInstances, TestAppScaleUploadApp, TestAppScaleLogger,
-  TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper,
+  TestFactory, TestLocalState, TestNodeLayout, TestParseArgs, TestRemoteHelper,
   TestVersionHelper]
 
 test_case_names = []
