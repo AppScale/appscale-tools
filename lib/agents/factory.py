@@ -1,23 +1,31 @@
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
 from agents.gce_agent import GCEAgent
+from custom_exceptions import UnknownInfrastructureException
+
 
 __author__ = 'hiranya'
 __email__ = 'hiranya@appscale.com'
 
+
 class InfrastructureAgentFactory:
-  """
-  Factory implementation which can be used to instantiate concrete infrastructure
-  agents.
-  """
+  """ Factory implementation which can be used to instantiate infrastructure
+  agents. """
 
-  VALID_AGENTS = ['ec2', 'euca', 'gce']
 
+  # A set containing each of the cloud infrastructures that AppScale can
+  # deploy over.
+  VALID_AGENTS = ('ec2', 'euca', 'gce')
+
+
+  # A dict that maps each VALID_AGENT above to the class that implements
+  # support for it in AppScale.
   agents = {
     'ec2': EC2Agent,
     'euca': EucalyptusAgent,
     'gce': GCEAgent
   }
+
 
   @classmethod
   def create_agent(cls, infrastructure):
@@ -25,17 +33,16 @@ class InfrastructureAgentFactory:
     Instantiate a new infrastructure agent.
 
     Args:
-      infrastructure  A string indicating the type of infrastructure
-                      agent to be initialized.
-
+      infrastructure: A string indicating the type of infrastructure
+        agent to be initialized.
     Returns:
       An infrastructure agent instance that implements the BaseAgent API
-
     Raises:
-      NameError       If the given input string does not map to any known
-                      agent type.
+      UnknownInfrastructureException: If the infrastructure given is not one
+        that we support.
     """
     if cls.agents.has_key(infrastructure):
       return cls.agents[infrastructure]()
     else:
-      raise NameError('Unrecognized infrastructure: ' + str(infrastructure))
+      raise UnknownInfrastructureException('Unrecognized infrastructure: {0}' \
+        .format(infrastructure))
