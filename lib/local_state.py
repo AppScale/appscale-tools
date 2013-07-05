@@ -12,7 +12,6 @@ import platform
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 import time
 import uuid
@@ -420,7 +419,7 @@ class LocalState():
   def get_host_for_role(cls, keyname, role):
     for node in cls.get_local_nodes_info(keyname):
       if role in node["jobs"]:
-          return node["public_ip"]
+        return node["public_ip"]
 
 
   @classmethod

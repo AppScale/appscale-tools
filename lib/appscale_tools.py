@@ -256,7 +256,7 @@ class AppScaleTools():
 
     try:
       uac.change_password(username, encrypted_password)
-      AppScaleLogger.success("The password was successfully changed for the " + \
+      AppScaleLogger.success("The password was successfully changed for the " \
         "given user.")
     except Exception as e:
       AppScaleLogger.warn("Could not change the user's password for the " + \
@@ -349,7 +349,8 @@ class AppScaleTools():
     # up and have started all their API services.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
