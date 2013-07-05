@@ -371,7 +371,7 @@ class NodeLayout():
     nodes = []
     for role, ips in self.input_yaml.iteritems():
       if not ips:
-        next
+        continue
 
       if isinstance(ips, str):
         ips = [ips]

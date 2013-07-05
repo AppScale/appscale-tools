@@ -671,7 +671,7 @@ class LocalState():
         the_temp_file = tempfile.NamedTemporaryFile()
         if stdin is not None:
           stdin_strio = tempfile.TemporaryFile()
-          stdin_strio.write(stdin);
+          stdin_strio.write(stdin)
           stdin_strio.seek(0)
           AppScaleLogger.verbose("       stdin str: {0}"\
                     .format(stdin),is_verbose)
