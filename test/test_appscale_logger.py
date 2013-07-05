@@ -5,7 +5,6 @@
 # General-purpose Python library imports
 import httplib
 import os
-import re
 import sys
 import unittest
 
@@ -18,10 +17,9 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from agents.ec2_agent import EC2Agent
 from appscale_logger import AppScaleLogger
 from parse_args import ParseArgs
-
-from agents.ec2_agent import EC2Agent
 
 
 class TestAppScaleLogger(unittest.TestCase):

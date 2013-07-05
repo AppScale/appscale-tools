@@ -315,7 +315,6 @@ class ParseArgs():
       self.validate_admin_flags()
     elif function == "appscale-add-keypair":
       self.validate_ips_flags()
-      pass
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
@@ -358,7 +357,7 @@ class ParseArgs():
 
     if self.args.ips:
       if not os.path.exists(self.args.ips):
-        raise BadConfigurationException("The given ips.yaml file did not exist.")
+        raise BadConfigurationException("The given ips.yaml file didn't exist.")
     elif self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
@@ -373,8 +372,7 @@ class ParseArgs():
 
 
   def validate_ips_flags(self):
-    """Sets up the ips flag if the ips_layout flag is given.
-    """
+    """Sets up the ips flag if the ips_layout flag is given."""
     if self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
 
@@ -448,6 +446,9 @@ class ParseArgs():
 
 
   def validate_credentials(self):
+    """If running over a cloud infrastructure, makes sure that all of the
+    necessary credentials have been specified.
+    """
     if not self.args.infrastructure:
       return
 

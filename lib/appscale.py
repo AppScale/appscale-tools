@@ -7,7 +7,6 @@ import base64
 import json
 import os
 import shutil
-import socket
 import subprocess
 
 
@@ -21,7 +20,6 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
-from custom_exceptions import UsageException
 
 
 # AppScale-specific imports
@@ -290,7 +288,7 @@ Available commands:
         duplicates.
     """
     all_ips = []
-    for role, ip_or_ips in ips_layout.items():
+    for _, ip_or_ips in ips_layout.items():
       if isinstance(ip_or_ips, str):
         if not ip_or_ips in all_ips:
           all_ips.append(ip_or_ips)
@@ -355,7 +353,7 @@ Available commands:
     try:
       with open(self.get_locations_json_file(keyname)) as f:
         nodes_json_raw = f.read()
-    except IOError as e:
+    except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
 
@@ -507,7 +505,7 @@ Available commands:
     try:
       with open(self.get_locations_json_file(keyname)) as f:
         nodes_json_raw = f.read()
-    except IOError as e:
+    except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
 
@@ -522,8 +520,8 @@ Available commands:
 
     # construct the ssh command to exec with that IP address
     tail = "tail -f /var/log/appscale/" + str(file_regex)
-    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",\
-        self.get_key_location(keyname), "root@" + ip, tail]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
+      self.get_key_location(keyname), "root@" + ip, tail]
 
     # exec the ssh command
     subprocess.call(command)

@@ -7,9 +7,6 @@ import os
 import sys
 import unittest
 
-# Third party testing libraries
-from flexmock import flexmock
-
 
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"

@@ -3,9 +3,7 @@
 
 
 # General-purpose Python library imports
-import base64
 import getpass
-import httplib
 import json
 import os
 import re
@@ -22,26 +20,19 @@ import yaml
 
 # Third party libraries
 from flexmock import flexmock
-import M2Crypto
 import SOAPpy
 
 
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
-from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppEngineConfigException
-from custom_exceptions import BadConfigurationException
-from local_state import APPSCALE_VERSION
 from local_state import LocalState
-from node_layout import NodeLayout
 from parse_args import ParseArgs
-from remote_helper import RemoteHelper
-from user_app_client import UserAppClient
 
 
 class TestAppScaleUploadApp(unittest.TestCase):

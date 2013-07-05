@@ -51,7 +51,7 @@ if len(sys.argv) > 1:
 else:
   run_test_cases = test_case_names
 
-for test_class, test_name in zip(test_cases,test_case_names):
+for test_class, test_name in zip(test_cases, test_case_names):
   if test_name in run_test_cases:
     tests = unittest.TestLoader().loadTestsFromTestCase(test_class)
     appscale_test_suite.addTests(tests)
