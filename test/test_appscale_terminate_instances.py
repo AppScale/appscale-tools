@@ -6,7 +6,6 @@
 import json
 import os
 import re
-import socket
 import subprocess
 import sys
 import tempfile
@@ -32,14 +31,11 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
-from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
 from local_state import LocalState
 from parse_args import ParseArgs
-from remote_helper import RemoteHelper
 
 
 class TestAppScaleTerminateInstances(unittest.TestCase):
