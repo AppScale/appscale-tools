@@ -81,9 +81,10 @@ class NodeLayout():
   INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
 
 
-  # The message to display if the user mixes advanced and simple tags 
-  # in their deployment
-  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not to mix simple and advance deployment methods"
+  # The message to display if the user mixes advanced and simple tags in their
+  # deployment.
+  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not " \
+    "to mix simple and advanced deployment methods."
   
 
   def __init__(self, options):
@@ -322,12 +323,12 @@ class NodeLayout():
     return True
 
 
-  def parse_ip(self, ip):
+  def parse_ip(self, ip_address):
     """Parses the given IP address or node ID and returns it and a str
     indicating whether or not we are in a cloud deployment.
 
     Args:
-      ip: A str that represents the IP address or node ID (of the format
+      ip_address: A str that represents the IP address or node ID (of the format
         node-int) to parse.
     Returns:
       id: A str that represents the IP address of this machine (if running in a
@@ -335,9 +336,9 @@ class NodeLayout():
       cloud: A str that indicates if we believe that machine is in a virtualized
         cluster or in a cloud.
     """
-    match = self.NODE_ID_REGEX.match(ip)
+    match = self.NODE_ID_REGEX.match(ip_address)
     if not match:
-      return ip, "not-cloud"
+      return ip_address, "not-cloud"
     else:
       return match.group(0), match.group(1)
 
@@ -386,7 +387,7 @@ class NodeLayout():
         node.add_taskqueue_role(is_master)
 
         if not node.is_valid():
-          return self.invalid(node.errors().join(","))
+          return self.invalid(",".join(node.errors()))
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
           if not self.NODE_ID_REGEX.match(node.public_ip):
@@ -395,7 +396,8 @@ class NodeLayout():
         else:
           # Virtualized cluster deployments use IP addresses as node IDs
           if not self.IP_REGEX.match(node.public_ip):
-            return self.invalid("{0} must be an IP address".format(node.public_ip))
+            return self.invalid("{0} must be an IP address".format(
+              node.public_ip))
 
         nodes.append(node)
 
@@ -468,13 +470,13 @@ class NodeLayout():
       if isinstance(ips, str):
         ips = [ips]
 
-      for index, ip in enumerate(ips):
+      for index, ip_addr in enumerate(ips):
         node = None
-        if ip in node_hash:
-          node = node_hash[ip]
+        if ip_addr in node_hash:
+          node = node_hash[ip_addr]
         else:
-          ip, cloud = self.parse_ip(ip)
-          node = AdvancedNode(ip, cloud)
+          ip_addr, cloud = self.parse_ip(ip_addr)
+          node = AdvancedNode(ip_addr, cloud)
 
         if role == 'database':
           # The first database node is the master
@@ -497,7 +499,7 @@ class NodeLayout():
         else:
           node.add_role(role)
         
-        node_hash[ip] = node
+        node_hash[ip_addr] = node
 
     # Dont need the hash any more, make a nodes list
     nodes = node_hash.values()
@@ -513,7 +515,8 @@ class NodeLayout():
       else:
         # Virtualized cluster deployments use IP addresses as node IDs
         if not self.IP_REGEX.match(node.public_ip):
-          return self.invalid("{0} must be an IP address".format(node.public_ip))
+          return self.invalid("{0} must be an IP address".format(
+            node.public_ip))
 
     master_nodes = []
     for node in nodes:
@@ -665,6 +668,13 @@ class NodeLayout():
 
 
   def head_node(self):
+    """ Searches through the nodes in this NodeLayout for the node with the
+    'shadow' role.
+
+    Returns:
+      The node running the 'shadow' role, or None if (1) the NodeLayout isn't
+      acceptable for use with AppScale, or (2) no shadow node was specified.
+    """
     if not self.is_valid():
       return None
 
@@ -676,6 +686,13 @@ class NodeLayout():
 
 
   def other_nodes(self):
+    """ Searches through the nodes in this NodeLayout for all nodes without the
+    'shadow' role.
+
+    Returns:
+      A list of nodes not running the 'shadow' role, or the empty list if the
+      NodeLayout isn't acceptable for use with AppScale.
+    """
     if not self.is_valid():
       return []
 
@@ -687,6 +704,13 @@ class NodeLayout():
 
 
   def db_master(self):
+    """ Searches through the nodes in this NodeLayout for the node with the
+    'db_master' role.
+
+    Returns:
+      The node running the 'db_master' role, or None if (1) the NodeLayout isn't
+      acceptable for use with AppScale, or (2) no db_master node was specified.
+    """
     if not self.is_valid():
       return None
 
