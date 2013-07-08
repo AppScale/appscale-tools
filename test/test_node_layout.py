@@ -4,7 +4,6 @@
 
 # General-purpose Python library imports
 import os
-import re
 import sys
 import unittest
 

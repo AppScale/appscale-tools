@@ -38,15 +38,12 @@ from agents.gce_agent import GCEAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
-from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
-from node_layout import NodeLayout
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 from user_app_client import UserAppClient
-import user_app_client
 
 
 class TestAppScaleRunInstances(unittest.TestCase):
