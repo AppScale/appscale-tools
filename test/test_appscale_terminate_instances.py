@@ -95,7 +95,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_yaml_location(self.keyname)).and_return(False)
 
     argv = [
-      "--keyname", self.keyname
+      "--keyname", self.keyname,
+      "--test"
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.terminate_instances,
@@ -183,6 +184,10 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    # also mock out asking the user for confirmation on shutting down
+    # their cloud
+    builtins.should_receive('raw_input').and_return('yes')
 
     argv = [
       "--keyname", self.keyname
@@ -289,6 +294,10 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    # also mock out asking the user for confirmation on shutting down
+    # their cloud
+    builtins.should_receive('raw_input').and_return('yes')
 
     argv = [
       "--keyname", self.keyname
@@ -615,7 +624,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_secret_key_location(self.keyname)).and_return()
 
     argv = [
-      "--keyname", self.keyname
+      "--keyname", self.keyname,
+      "--test"
     ]
     options = ParseArgs(argv, self.function).args
     AppScaleTools.terminate_instances(options)

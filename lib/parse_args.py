@@ -274,6 +274,9 @@ class ParseArgs():
           " service")
       self.parser.add_argument('--EC2_URL',
         help="a URL that identifies where an EC2-compatible service runs")
+      self.parser.add_argument('--test', action='store_true',
+        default=False,
+        help="uses a default username and password for cloud admin")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")

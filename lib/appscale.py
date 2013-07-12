@@ -586,6 +586,9 @@ Available commands:
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
+    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
+      command.append("--test")
+
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
     options = ParseArgs(command, "appscale-terminate-instances").args
