@@ -376,6 +376,9 @@ class AppScaleTools():
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
+    if options.test == False:
+      LocalState.ensure_user_wants_to_terminate()
+
     if LocalState.get_infrastructure(options.keyname) in \
       InfrastructureAgentFactory.VALID_AGENTS:
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
