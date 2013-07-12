@@ -857,6 +857,13 @@ class LocalState():
 
   @classmethod
   def ensure_user_wants_to_terminate(cls):
+    """ Asks the user for confirmation before we terminate their AppScale
+    deployment.
+
+    Raises:
+      AppScaleException: If the user does not want to terminate their
+        AppScale deployment.
+    """
     AppScaleLogger.warn("Terminating AppScale will delete all stored data.")
     confirm = raw_input("Are you sure you want to do this? (Y/N) ")
     if confirm.lower() == 'y' or confirm.lower() == 'yes':
