@@ -853,3 +853,13 @@ class LocalState():
     AppScaleLogger.log("\nA log with more information is available " \
       "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
+
+
+  @classmethod
+  def ensure_user_wants_to_terminate(cls):
+    AppScaleLogger.warn("Terminating AppScale will delete all stored data.")
+    confirm = raw_input("Are you sure you want to do this? (Y/N) ")
+    if confirm.lower() == 'y' or confirm.lower() == 'yes':
+      return
+    else:
+      raise AppScaleException('AppScale termination was cancelled.')
