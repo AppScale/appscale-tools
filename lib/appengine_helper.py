@@ -88,8 +88,7 @@ class AppEngineHelper():
       The location where we can expect to find an appengine-web.xml file for the
       given application.
     """
-    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
-      "appengine-web.xml"
+    return app_dir + os.sep + "WEB-INF" + os.sep + "appengine-web.xml"
 
 
   @classmethod
