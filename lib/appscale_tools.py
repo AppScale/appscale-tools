@@ -18,6 +18,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -410,7 +411,14 @@ class AppScaleTools():
       file_location = options.file
       created_dir = False
 
-    app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    try:
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    except AppEngineConfigException:
+      # Java App Engine users may have specified their war directory. In that
+      # case, just move up one level, back to the app's directory.
+      file_location = file_location + os.sep + ".."
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     AppEngineHelper.validate_app_id(app_id)
