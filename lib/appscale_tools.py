@@ -407,9 +407,12 @@ class AppScaleTools():
       file_location = LocalState.extract_app_to_dir(options.file,
         options.verbose)
       created_dir = True
-    else:
+    elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+    else:
+      raise AppEngineConfigException('{0} is not a .tar.gz file or a ' \
+        'directory. Please try uploading either a .tar.gz file or a directory.')
 
     try:
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
