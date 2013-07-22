@@ -51,6 +51,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
 
   def setUp(self):
     self.keyname = "boobazblargfoo"
+    self.group = "bazgroup"
     self.function = "appscale-run-instances"
 
     # mock out any writing to stdout
@@ -69,6 +70,17 @@ class TestAppScaleRunInstances(unittest.TestCase):
     os.path.should_call('exists')
     os.path.should_receive('exists').with_args(appscalefile_path) \
       .and_return(True)
+
+    appscalefile_contents = ""
+    self.builtins = flexmock(sys.modules['__builtin__'])
+    self.builtins.should_call('open')  # set the fall-through
+    fake_appscalefile = flexmock(name="fake_appscalefile")
+    fake_appscalefile.should_receive('read').and_return(appscalefile_contents)
+    fake_appscalefile.should_receive('write').and_return()
+    self.builtins.should_receive('open').with_args(appscalefile_path, 'r') \
+      .and_return(fake_appscalefile)
+    self.builtins.should_receive('open').with_args(appscalefile_path, 'w') \
+      .and_return(fake_appscalefile)
 
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
@@ -131,16 +143,13 @@ class TestAppScaleRunInstances(unittest.TestCase):
 
     # mock out writing the secret key to ~/.appscale, as well as reading it
     # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-    builtins.should_receive('open').with_args(secret_key_location, 'w') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
     # mock out copying over the keys
@@ -328,16 +337,13 @@ appengine:  1.2.3.4
 
     # mock out writing the secret key to ~/.appscale, as well as reading it
     # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-    builtins.should_receive('open').with_args(secret_key_location, 'w') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
     # mock out interactions with AWS
@@ -362,13 +368,13 @@ appengine:  1.2.3.4
       .and_return(fake_key)
 
     # and the same for the security group
-    fake_ec2.should_receive('create_security_group').with_args('bazgroup',
+    fake_ec2.should_receive('create_security_group').with_args(self.group,
       str).and_return()
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
+    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
       from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
+    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
       from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
+    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
       ip_protocol='icmp', cidr_ip='0.0.0.0/0')
 
     # slip in some fake spot instance info
@@ -379,7 +385,7 @@ appengine:  1.2.3.4
 
     # also mock out acquiring a spot instance
     fake_ec2.should_receive('request_spot_instances').with_args('1.1',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
+      'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
       instance_type='m1.large', count=1)
 
     # assume that there are no instances running initially, and that the
@@ -537,7 +543,7 @@ appengine:  1.2.3.4
       "--machine", "ami-ABCDEFG",
       "--use_spot_instances",
       "--keyname", self.keyname,
-      "--group", "bazgroup",
+      "--group", self.group,
       "--test"
     ]
 
@@ -567,16 +573,13 @@ appengine:  1.2.3.4
 
     # mock out writing the secret key to ~/.appscale, as well as reading it
     # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-    builtins.should_receive('open').with_args(secret_key_location, 'w') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
     # mock out interactions with AWS
@@ -771,7 +774,7 @@ appengine:  1.2.3.4
       "--use_spot_instances",
       "--max_spot_price", "1.23",
       "--keyname", self.keyname,
-      "--group", "bazgroup",
+      "--group", self.group,
       "--test"
     ]
 
@@ -881,16 +884,13 @@ appengine:  1.2.3.4
 
     # mock out writing the secret key to ~/.appscale, as well as reading it
     # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-    builtins.should_receive('open').with_args(secret_key_location, 'w') \
+    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
     # mock out interactions with GCE
@@ -945,7 +945,7 @@ appengine:  1.2.3.4
     # thus we will need to set the metadata with our ssh key
     fake_ssh_pub_key = flexmock(name="fake_ssh_pub_key")
     fake_ssh_pub_key.should_receive('read').and_return('ssh-rsa key2info myhost')
-    builtins.should_receive('open').with_args(public_key).and_return(
+    self.builtins.should_receive('open').with_args(public_key).and_return(
       fake_ssh_pub_key)
 
     new_metadata_body = {
@@ -1332,7 +1332,7 @@ appengine:  1.2.3.4
     argv = [
       "--min", "1",
       "--max", "1",
-      "--group", "bazgroup",
+      "--group", self.group,
       "--infrastructure", "gce",
       "--gce_instance_type", instance_type,
       "--machine", image_name,
