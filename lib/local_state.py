@@ -22,6 +22,7 @@ import yaml
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 
@@ -870,3 +871,45 @@ class LocalState():
       return
     else:
       raise AppScaleException('AppScale termination was cancelled.')
+
+
+  @classmethod
+  def ensure_appscalefile_is_up_to_date(cls, keyname, group):
+    """ Examines the AppScalefile in the current working directory to make sure
+    it specifies the named keyname and group, updating it if it does not.
+
+    This scenario can occur if the user wants us to automatically generate a
+    keyname and group for them (in which case they don't specify either).
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      group: A str corresponding to the security group to use in this AppScale
+        deployment.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+    """
+    appscalefile_path = os.getcwd() + os.sep + "AppScalefile"
+    if not os.path.exists(appscalefile_path):
+      raise AppScalefileException("Couldn't find an AppScale file at {0}" \
+        .format(appscalefile_path))
+
+    old_contents = ''
+    with open(appscalefile_path, 'r') as file_handle:
+      old_contents = file_handle.read()
+
+    keyname_string = "keyname: '{0}'".format(keyname)
+    group_string = "group: '{0}'".format(group)
+
+    new_contents = old_contents
+    if keyname_string not in old_contents:
+      new_contents += "\n" + keyname_string
+    if group_string not in old_contents:
+      new_contents += "\n" + group_string
+
+    if len(old_contents) == len(new_contents):
+      return
+
+    with open(appscalefile_path, 'w') as file_handle:
+      file_handle.write(new_contents)

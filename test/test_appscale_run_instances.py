@@ -62,6 +62,14 @@ class TestAppScaleRunInstances(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
+    # pretend we have an appscalefile at the right location, and that it
+    # specifies the keyname and group
+    appscalefile_path = os.getcwd() + os.sep + "AppScalefile"
+    flexmock(os.path)
+    os.path.should_call('exists')
+    os.path.should_receive('exists').with_args(appscalefile_path) \
+      .and_return(True)
+
     # throw some default mocks together for when invoking via shell succeeds
     # and when it fails
     self.fake_temp_file = flexmock(name='fake_temp_file')
@@ -827,8 +835,6 @@ appengine:  1.2.3.4
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
-    flexmock(os.path)
-    os.path.should_call('exists')
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
 
     # and that the user does not have an ssh key set up, forcing us to create

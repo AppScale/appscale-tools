@@ -184,11 +184,6 @@ class TestParseArgs(unittest.TestCase):
     self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
       self.function)
 
-    # Specifying --group when we're not running in a cloud is not acceptable.
-    argv_5 = self.cluster_argv[:] + ['--group', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_5,
-      self.function)
-
 
   def test_instance_types(self):
     # Not specifying an instance type should default to a predetermined
