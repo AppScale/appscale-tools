@@ -626,6 +626,10 @@ Available commands:
       keyname = 'appscale'
 
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+
+    if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
+      LocalState.ensure_user_wants_to_terminate()
+
     for ip in all_ips:
       RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
 
