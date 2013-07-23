@@ -4,7 +4,6 @@
 
 # General-purpose Python library imports
 import os
-import re
 import sys
 import unittest
 
@@ -273,3 +272,11 @@ class TestNodeLayout(unittest.TestCase):
 
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
+
+  def test_is_database_replication_valid_with_db_slave(self):
+    fake_node = flexmock()
+    fake_node.should_receive('is_role').with_args('database').and_return(False)
+    fake_node.should_receive('is_role').with_args('db_master').and_return(False)
+    fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
+    output = NodeLayout({}).is_database_replication_valid([fake_node])
+    self.assertTrue(output['result'])

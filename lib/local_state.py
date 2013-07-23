@@ -6,11 +6,12 @@
 import getpass
 import hashlib
 import json
+import locale
 import os
+import platform
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 import time
 import uuid
@@ -26,7 +27,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.7.0"
+APPSCALE_VERSION = "1.9.0"
 
 
 class LocalState():
@@ -84,7 +85,8 @@ class LocalState():
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
       raise BadConfigurationException("AppScale is already running. Terminate" +
-        " it or use the --force flag to run anyways.")
+        " it, set 'force: True' in your AppScalefile, or use the --force flag" +
+        " to run anyways.")
 
 
   @classmethod
@@ -182,14 +184,22 @@ class LocalState():
     if options.infrastructure:
       iaas_creds = {
         'machine' : options.machine,
-        'instance_type' : options.instance_type,
         'infrastructure' : options.infrastructure,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
         'use_spot_instances' : options.use_spot_instances
       }
+
+      if options.infrastructure in ["ec2", "euca"]:
+        iaas_creds['instance_type'] = options.instance_type
+      elif options.infrastructure == "gce":
+        iaas_creds['project'] = options.project
+        iaas_creds['gce_user'] = getpass.getuser()
+        iaas_creds['instance_type'] = options.gce_instance_type
+
       creds.update(iaas_creds)
+
 
     return creds
 
@@ -355,6 +365,10 @@ class LocalState():
       'infrastructure' : infrastructure,
       'group' : options.group
     }
+
+    if infrastructure == "gce":
+      yaml_contents['project'] = options.project
+
     with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
@@ -405,7 +419,7 @@ class LocalState():
   def get_host_for_role(cls, keyname, role):
     for node in cls.get_local_nodes_info(keyname):
       if role in node["jobs"]:
-          return node["public_ip"]
+        return node["public_ip"]
 
 
   @classmethod
@@ -583,6 +597,41 @@ class LocalState():
 
 
   @classmethod
+  def get_project(cls, keyname):
+    """Reads the locations.yaml file to see what project ID is used to interact
+    with Google Compute Engine in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the project ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["project"]
+
+
+  @classmethod
+  def get_client_secrets_location(cls, keyname):
+    """Returns the path on the local filesystem where the client secrets JSON
+    file (used to interact with Google Compute Engine) can be found.
+
+    Args:
+      keyname: A str representing the SSH keypair name used for this AppScale
+        deployment.
+    Returns:
+      A str that corresponds to a location on the local filesystem where the
+      client secrets file can be found.
+    """
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-secrets.json"
+
+
+  @classmethod
+  def get_oauth2_storage_location(cls, keyname):
+    return cls.LOCAL_APPSCALE_PATH + keyname + "-oauth2.dat"
+
+
+  @classmethod
   def cleanup_appscale_files(cls, keyname):
     """Removes all AppScale metadata files from this machine.
 
@@ -622,7 +671,7 @@ class LocalState():
         the_temp_file = tempfile.NamedTemporaryFile()
         if stdin is not None:
           stdin_strio = tempfile.TemporaryFile()
-          stdin_strio.write(stdin);
+          stdin_strio.write(stdin)
           stdin_strio.seek(0)
           AppScaleLogger.verbose("       stdin str: {0}"\
                     .format(stdin),is_verbose)
@@ -744,8 +793,80 @@ class LocalState():
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
+      # Users can upload an archive containing their application or a directory
+      # containing their application. To see which case this is, we count how
+      # many files are present in the archive. As some platforms will inject a 
+      # dot file into every directory, we shouldn't consider those when trying 
+      # to find out if this archive is just a directory or not (because the 
+      # presence of the dot file will cause our count to be incorrect).
+      file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
         extracted_location = included_dir
 
     return extracted_location
+
+
+  @classmethod
+  def generate_crash_log(cls, exception, stacktrace):
+    """Writes information to the local filesystem about an uncaught exception
+    that killed an AppScale Tool's execution, to aid in debugging at a later
+    time.
+
+    Args:
+      exception: The Exception that crashed executing an AppScale Tool, whose
+        information we want to log for debugging purposes.
+      stacktrace: A str that contains the newline-separated stacktrace
+        corresponding to the given exception.
+    Returns:
+      The location on the filesystem where the crash log was written to.
+    """
+    crash_log_filename = '{0}log-{1}'.format(
+      LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
+
+    locale.setlocale(locale.LC_ALL, '')
+    log_info = {
+      # System-specific information
+      'platform' : platform.platform(),
+      'runtime' : platform.python_implementation(),
+      'locale' : locale.getlocale()[0],
+
+      # Crash-specific information
+      'exception' : exception.__class__.__name__,
+      'message' : str(exception),
+      'stacktrace' : stacktrace.rstrip(),
+
+      # AppScale Tools-specific information
+      'tools_version' : APPSCALE_VERSION
+    }
+
+    # If LOCAL_APPSCALE_PATH doesn't exist, create it so that we can write the
+    # crash log.
+    if not os.path.exists(LocalState.LOCAL_APPSCALE_PATH):
+      os.mkdir(LocalState.LOCAL_APPSCALE_PATH)
+
+    with open(crash_log_filename, 'w') as file_handle:
+      for key, value in log_info.iteritems():
+        file_handle.write("{0} : {1}\n\n".format(key, value))
+
+    AppScaleLogger.warn(str(exception))
+    AppScaleLogger.log("\nA log with more information is available " \
+      "at\n{0}.".format(crash_log_filename))
+    return crash_log_filename
+
+
+  @classmethod
+  def ensure_user_wants_to_terminate(cls):
+    """ Asks the user for confirmation before we terminate their AppScale
+    deployment.
+
+    Raises:
+      AppScaleException: If the user does not want to terminate their
+        AppScale deployment.
+    """
+    AppScaleLogger.warn("Terminating AppScale will delete all stored data.")
+    confirm = raw_input("Are you sure you want to do this? (Y/N) ")
+    if confirm.lower() == 'y' or confirm.lower() == 'yes':
+      return
+    else:
+      raise AppScaleException('AppScale termination was cancelled.')

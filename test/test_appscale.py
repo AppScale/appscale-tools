@@ -28,7 +28,6 @@ from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
-from custom_exceptions import UsageException
 from local_state import LocalState
 from remote_helper import RemoteHelper
 
@@ -125,7 +124,6 @@ class TestAppScale(unittest.TestCase):
       'keyname': 'boobazblarg'
     }
     yaml_dumped_contents = yaml.dump(contents)
-    base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # for this test, let's say that we don't have an SSH key already
@@ -160,7 +158,6 @@ class TestAppScale(unittest.TestCase):
       'keyname': 'boobazblarg'
     }
     yaml_dumped_contents = yaml.dump(contents)
-    base64_ips_layout = base64.b64encode(yaml.dump(contents["ips_layout"]))
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
 
     # finally, mock out the actual appscale tools calls. since we're running
@@ -546,8 +543,8 @@ class TestAppScale(unittest.TestCase):
       .and_return(flexmock(read=lambda: nodes_contents)))
 
     flexmock(subprocess)
-    subprocess.should_receive('call').with_args(["ssh", "-o",\
-      "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'),\
+    subprocess.should_receive('call').with_args(["ssh", "-o",
+      "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'),
       "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
     appscale.tail(1, "c*")
 

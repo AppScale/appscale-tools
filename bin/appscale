@@ -4,6 +4,7 @@
 # First-party Python libraries
 import os
 import sys
+import traceback
 
 
 # Third-party Python libraries
@@ -14,10 +15,18 @@ from termcolor import cprint
 # around
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+
+# Make sure we're on Python 2.6 or greater before importing any code
+# that's incompatible with older versions.
+import version_helper
+version_helper.ensure_valid_python_is_used()
+
+
 from appscale import AppScale
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
+from local_state import LocalState
 
 
 appscale = AppScale()
@@ -29,14 +38,14 @@ command = sys.argv[1]
 if command == "init":
   if len(sys.argv) < 3:
     cprint("Usage: appscale init <cloud or cluster>", 'red')
-    print("Specify 'cloud' for EC2 and Eucalyptus deployments, " +
-      "and 'cluster' if running over a virtualized cluster.")
+    print("Specify 'cloud' for EC2, Eucalyptus, and Google Compute Engine " +
+      "deployments, and 'cluster' if running over a virtualized cluster.")
     sys.exit(1)
 
   try:
     appscale.init(sys.argv[2])
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 
   cprint("AppScalefile successfully created! Be sure to " +
@@ -45,8 +54,8 @@ if command == "init":
 elif command == "up":
   try:
     appscale.up()
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "ssh":
   if len(sys.argv) < 3:
@@ -56,8 +65,8 @@ elif command == "ssh":
 
   try:
     appscale.ssh(index)
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
@@ -65,22 +74,22 @@ elif command == "ssh":
 elif command == "status":
   try:
     appscale.status()
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "deploy":
   try:
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.deploy(sys.argv[2])
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "undeploy" or command == "remove":
   try:
     # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
     appscale.undeploy(sys.argv[2])
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "tail":
   if len(sys.argv) < 3:
@@ -102,8 +111,8 @@ elif command == "tail":
   except KeyboardInterrupt:
     # don't print the stack trace on a Control-C
     pass
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "logs":
   if len(sys.argv) < 3:
@@ -112,21 +121,24 @@ elif command == "logs":
 
   try:
     appscale.logs(sys.argv[2])
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "destroy" or command == "down":
   try:
     appscale.destroy()
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "clean":
   try:
     appscale.clean()
-  except Exception as e:
-    cprint(e, 'red')
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 else:
   print(AppScale.USAGE)
-  sys.exit(0)
+  if command == "help":
+    sys.exit(0)
+  else:
+    sys.exit(1)

@@ -18,8 +18,6 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
-import local_state
-
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
@@ -81,7 +79,6 @@ class TestParseArgs(unittest.TestCase):
     # the version flag should quit and print the current
     # version of the tools
     argv_2 = ['--version']
-    all_flags_2 = ['version']
     try:
       ParseArgs(argv_2, self.function)
       raise
@@ -163,17 +160,18 @@ class TestParseArgs(unittest.TestCase):
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
+    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
+      'ami-ABCDEFG']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', \
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine',
         'emi-ABCDEFG']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',\
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',
       'boo']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
@@ -183,11 +181,13 @@ class TestParseArgs(unittest.TestCase):
     os.path.should_receive('exists').with_args("ips.yaml").and_return(True)
 
     argv_4 = self.cluster_argv[:] + ['--machine', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_4, self.function)
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
+      self.function)
 
     # Specifying --group when we're not running in a cloud is not acceptable.
     argv_5 = self.cluster_argv[:] + ['--group', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_5, self.function)
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_5,
+      self.function)
 
 
   def test_instance_types(self):
@@ -195,7 +195,7 @@ class TestParseArgs(unittest.TestCase):
     # value.
     argv_1 = self.cloud_argv[:]
     actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(ParseArgs.DEFAULT_INSTANCE_TYPE, \
+    self.assertEquals(ParseArgs.DEFAULT_EC2_INSTANCE_TYPE, \
       actual.args.instance_type)
 
     # Specifying m1.large as the instance type is acceptable.
@@ -232,20 +232,20 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", \
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
         "ami-ABCDEFG"]
     for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
       self.function)
 
 
   def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",\
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",
       "emi-ABCDEFG"]
     for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
       self.function)
 
 
@@ -259,7 +259,7 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_ec2').with_args('baz', 'baz') \
       .and_return(fake_ec2)
 
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",\
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 

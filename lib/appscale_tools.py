@@ -18,6 +18,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -256,7 +257,7 @@ class AppScaleTools():
 
     try:
       uac.change_password(username, encrypted_password)
-      AppScaleLogger.success("The password was successfully changed for the " + \
+      AppScaleLogger.success("The password was successfully changed for the " \
         "given user.")
     except Exception as e:
       AppScaleLogger.warn("Could not change the user's password for the " + \
@@ -349,7 +350,8 @@ class AppScaleTools():
     # up and have started all their API services.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
@@ -374,6 +376,9 @@ class AppScaleTools():
       options.keyname)):
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
+
+    if options.test == False:
+      LocalState.ensure_user_wants_to_terminate()
 
     if LocalState.get_infrastructure(options.keyname) in \
       InfrastructureAgentFactory.VALID_AGENTS:
@@ -406,10 +411,23 @@ class AppScaleTools():
       file_location = options.file
       created_dir = False
 
-    app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    try:
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    except AppEngineConfigException:
+      # Java App Engine users may have specified their war directory. In that
+      # case, just move up one level, back to the app's directory.
+      file_location = file_location + os.sep + ".."
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     AppEngineHelper.validate_app_id(app_id)
+    
+    if app_language == 'java':
+      if AppEngineHelper.is_sdk_mismatch(file_location):
+        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' + 
+          'versions in your app. The current supported ' + 
+          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
