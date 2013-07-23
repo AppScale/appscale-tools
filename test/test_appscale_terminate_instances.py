@@ -6,7 +6,6 @@
 import json
 import os
 import re
-import socket
 import subprocess
 import sys
 import tempfile
@@ -16,8 +15,14 @@ import yaml
 
 
 # Third party libraries
+import apiclient.discovery
+import apiclient.errors
 import boto
 from flexmock import flexmock
+import httplib2
+import oauth2client.client
+import oauth2client.file
+import oauth2client.tools
 import SOAPpy
 
 
@@ -25,14 +30,12 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
-from appcontroller_client import AppControllerClient
+from agents.gce_agent import GCEAgent
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
 from local_state import LocalState
 from parse_args import ParseArgs
-from remote_helper import RemoteHelper
 
 
 class TestAppScaleTerminateInstances(unittest.TestCase):
@@ -40,6 +43,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
   def setUp(self):
     self.keyname = "boobazblargfoo"
+    self.group = "bazboogroup"
     self.function = "appscale-terminate-instances"
 
     # mock out any writing to stdout
@@ -91,7 +95,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_yaml_location(self.keyname)).and_return(False)
 
     argv = [
-      "--keyname", self.keyname
+      "--keyname", self.keyname,
+      "--test"
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.terminate_instances,
@@ -180,6 +185,10 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
 
+    # also mock out asking the user for confirmation on shutting down
+    # their cloud
+    builtins.should_receive('raw_input').and_return('yes')
+
     argv = [
       "--keyname", self.keyname
     ]
@@ -203,7 +212,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_yaml_file = flexmock(name='fake_file')
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'ec2',
-      'group' : 'bazboogroup'
+      'group' : self.group
     }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location(self.keyname), 'r') \
@@ -286,8 +295,337 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
 
+    # also mock out asking the user for confirmation on shutting down
+    # their cloud
+    builtins.should_receive('raw_input').and_return('yes')
+
     argv = [
       "--keyname", self.keyname
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.terminate_instances(options)
+
+
+  def test_terminate_in_gce_and_succeeds(self):
+    # let's say that there is a locations.yaml file, which means appscale is
+    # running, so we should terminate the services on each box
+    flexmock(os.path)
+    os.path.should_call('exists')  # set up the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
+
+    # mock out reading the locations.yaml file, and pretend that we're on
+    # GCE
+    project_id = "1234567890"
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_call('open')
+
+    fake_yaml_file = flexmock(name='fake_file')
+    fake_yaml_file.should_receive('read').and_return(yaml.dump({
+      'infrastructure' : 'gce',
+      'group' : self.group,
+      'project' : project_id
+    }))
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_yaml_location(self.keyname), 'r') \
+      .and_return(fake_yaml_file)
+
+    # mock out reading the json file, and pretend that we're running in a
+    # two node deployment
+    fake_json_file = flexmock(name='fake_file')
+    fake_json_file.should_receive('read').and_return(json.dumps([
+      {
+        'public_ip' : 'public1',
+        'jobs' : ['shadow']
+      },
+      {
+        'public_ip' : 'public2',
+        'jobs' : ['appengine']
+      }
+    ]))
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location(self.keyname), 'r') \
+      .and_return(fake_json_file)
+
+    # and slip in a fake secret file
+    fake_secret_file = flexmock(name='fake_file')
+    fake_secret_file.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(
+      LocalState.get_secret_key_location(self.keyname), 'r') \
+      .and_return(fake_secret_file)
+
+    # also add in a fake client-secrets file for GCE
+    client_secrets = LocalState.get_client_secrets_location(self.keyname)
+
+    # mock out talking to GCE
+    # first, mock out the oauth library calls
+    fake_flow = flexmock(name='fake_flow')
+    flexmock(oauth2client.client)
+    oauth2client.client.should_receive('flow_from_clientsecrets').with_args(
+      client_secrets, scope=str).and_return(fake_flow)
+
+    fake_storage = flexmock(name='fake_storage')
+    fake_storage.should_receive('get').and_return(None)
+
+    flexmock(oauth2client.file)
+    oauth2client.file.should_receive('Storage').with_args(str).and_return(
+      fake_storage)
+
+    fake_credentials = flexmock(name='fake_credentials')
+    flexmock(oauth2client.tools)
+    oauth2client.tools.should_receive('run').with_args(fake_flow,
+      fake_storage).and_return(fake_credentials)
+
+    # next, mock out http calls to GCE
+    fake_http = flexmock(name='fake_http')
+    fake_authorized_http = flexmock(name='fake_authorized_http')
+
+    flexmock(httplib2)
+    httplib2.should_receive('Http').and_return(fake_http)
+    fake_credentials.should_receive('authorize').with_args(fake_http) \
+      .and_return(fake_authorized_http)
+
+    fake_gce = flexmock(name='fake_gce')
+
+    # let's say that two instances are running
+    instance_one_info = {
+      u'status': u'RUNNING',
+      u'kind': u'compute#instance',
+      u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
+      u'name': u'appscale-bazboogroup-one',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'tags': {u'fingerprint': u'42WmSpB8rSM='},
+      u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
+      u'disks': [{
+        u'index': 0,
+        u'kind': u'compute#attachedDisk',
+        u'type': u'EPHEMERAL',
+        u'mode': u'READ_WRITE'
+      }],
+      u'canIpForward': False,
+      u'serviceAccounts': [{
+        u'scopes': [GCEAgent.GCE_SCOPE],
+        u'email': u'961228229472@project.gserviceaccount.com'
+      }],
+      u'metadata': {
+        u'kind': u'compute#metadata',
+        u'fingerprint': u'42WmSpB8rSM='
+      },
+      u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
+      u'id': u'8684033495853907982',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'networkInterfaces': [{
+        u'accessConfigs': [{
+          u'kind': u'compute#accessConfig',
+          u'type': u'ONE_TO_ONE_NAT',
+          u'name': u'External NAT',
+          u'natIP': u'public1'
+        }],
+        u'networkIP': u'private1',
+        u'network': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/networks/bazboogroup',
+        u'name': u'nic0'
+      }]
+    }
+
+    instance_two_info = {
+      u'status': u'RUNNING',
+      u'kind': u'compute#instance',
+      u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
+      u'name': u'appscale-bazboogroup-two',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'tags': {u'fingerprint': u'42WmSpB8rSM='},
+      u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
+      u'disks': [{
+        u'index': 0,
+        u'kind': u'compute#attachedDisk',
+        u'type': u'EPHEMERAL',
+        u'mode': u'READ_WRITE'
+      }],
+      u'canIpForward': False,
+      u'serviceAccounts': [{
+        u'scopes': [GCEAgent.GCE_SCOPE],
+        u'email': u'961228229472@project.gserviceaccount.com'
+      }],
+      u'metadata': {
+        u'kind': u'compute#metadata',
+        u'fingerprint': u'42WmSpB8rSM='
+      },
+      u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
+      u'id': u'8684033495853907982',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'networkInterfaces': [{
+        u'accessConfigs': [{
+          u'kind': u'compute#accessConfig',
+          u'type': u'ONE_TO_ONE_NAT',
+          u'name': u'External NAT',
+          u'natIP': u'public1'
+        }],
+        u'networkIP': u'private1',
+        u'network': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/networks/bazboogroup',
+        u'name': u'nic0'
+      }]
+    }
+
+    list_instance_info = {
+      u'items': [instance_one_info, instance_two_info],
+      u'kind': u'compute#instanceList',
+      u'id': u'projects/appscale.com:appscale/zones/us-central1-a/instances',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/961228229472/zones/us-central1-a/instances'
+    }
+
+    fake_list_instance_request = flexmock(name='fake_list_instance_request')
+    fake_list_instance_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(list_instance_info)
+
+    fake_instances = flexmock(name='fake_instances')
+    fake_instances.should_receive('list').with_args(project=project_id,
+      filter="name eq appscale-bazboogroup-.*", zone=GCEAgent.DEFAULT_ZONE) \
+      .and_return(fake_list_instance_request)
+    fake_gce.should_receive('instances').and_return(fake_instances)
+
+    # And assume that we can kill both of our instances fine
+    delete_instance = u'operation-1369676691806-4ddb6b4ab6f39-a095d3de'
+    delete_instance_info_one = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': delete_instance,
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'startTime': u'2013-05-27T10:44:51.849-07:00',
+      u'insertTime': u'2013-05-27T10:44:51.806-07:00',
+      u'targetId': u'12912855597472179535',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'operationType': u'delete',
+      u'progress': 0,
+      u'id': u'11114355109942058217',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
+      u'user': u'Chris@appscale.com'
+    }
+
+    delete_instance_info_two = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': delete_instance,
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'startTime': u'2013-05-27T10:44:51.849-07:00',
+      u'insertTime': u'2013-05-27T10:44:51.806-07:00',
+      u'targetId': u'12912855597472179535',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'operationType': u'delete',
+      u'progress': 0,
+      u'id': u'11114355109942058217',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
+      u'user': u'Chris@appscale.com'
+    }
+
+    fake_delete_instance_request_one = flexmock(name='fake_delete_instance_request_one')
+    fake_delete_instance_request_one.should_receive('execute').with_args(
+      fake_authorized_http).and_return(delete_instance_info_one)
+    fake_instances.should_receive('delete').with_args(project=project_id,
+      zone=GCEAgent.DEFAULT_ZONE, instance='appscale-bazboogroup-one').and_return(
+      fake_delete_instance_request_one)
+
+    fake_delete_instance_request_two = flexmock(name='fake_delete_instance_request_two')
+    fake_delete_instance_request_two.should_receive('execute').with_args(
+      fake_authorized_http).and_return(delete_instance_info_two)
+    fake_instances.should_receive('delete').with_args(project=project_id,
+      zone=GCEAgent.DEFAULT_ZONE, instance='appscale-bazboogroup-two').and_return(
+      fake_delete_instance_request_two)
+
+    # mock out our waiting for the instances to be deleted
+    all_done = {
+      u'status' : u'DONE'
+    }
+
+    fake_instance_checker = flexmock(name='fake_instance_checker')
+    fake_instance_checker.should_receive('execute').and_return(all_done)
+
+    fake_blocker = flexmock(name='fake_blocker')
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=delete_instance, zone=GCEAgent.DEFAULT_ZONE).and_return(
+      fake_instance_checker)
+    fake_gce.should_receive('zoneOperations').and_return(fake_blocker)
+
+    # mock out the call to delete the firewall
+    delete_firewall = u'operation-1369677695390-4ddb6f07cc611-5a8f1654'
+    fake_delete_firewall_info = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': delete_firewall,
+      u'startTime': u'2013-05-27T11:01:35.482-07:00',
+      u'insertTime': u'2013-05-27T11:01:35.390-07:00',
+      u'targetId': u'11748720697396371259',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/firewalls/appscalecgb20',
+      u'operationType': u'delete',
+      u'progress': 0,
+      u'id': u'15574488986772298961',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/operations/operation-1369677695390-4ddb6f07cc611-5a8f1654',
+      u'user': u'Chris@appscale.com'
+    }
+    fake_delete_firewall_request = flexmock(name='fake_delete_firewall_request')
+    fake_delete_firewall_request.should_receive('execute').and_return(fake_delete_firewall_info)
+
+    fake_firewalls = flexmock(name='fake_firewalls')
+    fake_firewalls.should_receive('delete').with_args(project=project_id,
+      firewall=self.group).and_return(fake_delete_firewall_request)
+    fake_gce.should_receive('firewalls').and_return(fake_firewalls)
+
+    # mock out the call to make sure the firewall was deleted
+    fake_firewall_checker = flexmock(name='fake_firewall_checker')
+    fake_firewall_checker.should_receive('execute').and_return(all_done)
+
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=delete_firewall).and_return(fake_firewall_checker)
+    fake_gce.should_receive('globalOperations').and_return(fake_blocker)
+
+    # and the call to delete the network
+    delete_network = u'operation-1369677749954-4ddb6f3bd1849-056cf8ca'
+    fake_delete_network_info = {
+      u'status': u'PENDING',
+      u'kind': u'compute#operation',
+      u'name': delete_network,
+      u'startTime': u'2013-05-27T11:02:30.012-07:00',
+      u'insertTime': u'2013-05-27T11:02:29.954-07:00',
+      u'targetId': u'17688075350400527692',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/networks/appscalecgb20',
+      u'operationType': u'delete',
+      u'progress': 0,
+      u'id': u'12623697331874594836',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/operations/operation-1369677749954-4ddb6f3bd1849-056cf8ca',
+      u'user': u'Chris@appscale.com'
+    }
+    fake_delete_network_request = flexmock(name='fake_delete_network_request')
+    fake_delete_network_request.should_receive('execute').and_return(fake_delete_network_info)
+
+    fake_networks = flexmock(name='fake_networks')
+    fake_networks.should_receive('delete').with_args(project=project_id,
+      network=self.group).and_return(fake_delete_network_request)
+    fake_gce.should_receive('networks').and_return(fake_networks)
+
+    # mock out the call to make sure the network was deleted
+    fake_network_checker = flexmock(name='fake_network_checker')
+    fake_network_checker.should_receive('execute').and_return(all_done)
+
+    fake_blocker.should_receive('get').with_args(project=project_id,
+      operation=delete_network).and_return(fake_network_checker)
+
+    # finally, inject our fake GCE connection
+    flexmock(apiclient.discovery)
+    apiclient.discovery.should_receive('build').with_args('compute',
+      GCEAgent.API_VERSION).and_return(fake_gce)
+
+    # finally, mock out removing the yaml file, json file, and secret key from
+    # this machine
+    flexmock(os)
+    os.should_receive('remove').with_args(
+      LocalState.get_locations_yaml_location(self.keyname)).and_return()
+    os.should_receive('remove').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return()
+    os.should_receive('remove').with_args(
+      LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    argv = [
+      "--keyname", self.keyname,
+      "--test"
     ]
     options = ParseArgs(argv, self.function).args
     AppScaleTools.terminate_instances(options)
