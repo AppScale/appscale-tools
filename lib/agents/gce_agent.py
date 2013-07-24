@@ -99,7 +99,7 @@ class GCEAgent(BaseAgent):
 
 
   # The version of the Google Compute Engine API that we support.
-  API_VERSION = 'v1beta14'
+  API_VERSION = 'v1beta15'
 
 
   # The URL endpoint that receives Google Compute Engine API requests.
@@ -576,8 +576,8 @@ class GCEAgent(BaseAgent):
     image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL, project_id,
       image_id)
     project_url = '{0}{1}'.format(self.GCE_URL, project_id)
-    machine_type_url = '{0}/global/machineTypes/{1}'.format(project_url,
-      instance_type)
+    machine_type_url = '{0}/zones/{1}/machineTypes/{2}'.format(project_url,
+      self.DEFAULT_ZONE, instance_type)
     network_url = '{0}/global/networks/{1}'.format(project_url, group)
 
     # Construct the request body
