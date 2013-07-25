@@ -37,7 +37,7 @@ class AppEngineHelper():
 
 
   # A list of the appids reserved for internal AppScale use.
-  DISALLOWED_APP_IDS = ("none", "auth", "login", "new_user", "load_balancer")
+  DISALLOWED_APP_IDS = ("none", "apichecker", "appscaledashboard")
 
 
   # A regular expression that matches valid application IDs.
