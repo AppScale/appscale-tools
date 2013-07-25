@@ -830,3 +830,4 @@ class RemoteHelper():
       message = "AppController at {0} crashed because: {1}".format(host,
         file_handle.read())
     os.remove(local_crashlog)
+    return message
