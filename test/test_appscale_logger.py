@@ -55,6 +55,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "EC2_URL" : None,
       "admin_pass" : None,
       "admin_user" : None,
+      "alter_etc_resolv" : False,
       "appengine" : 1,
       "autoscale" : True,
       "client_secrets" : None,
