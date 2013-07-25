@@ -660,6 +660,7 @@ class GCEAgent(BaseAgent):
         instance names that should be deleted.
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+    responses = []
     for instance_id in instance_ids:
       gce_service, credentials = self.open_connection(parameters)
       http = httplib2.Http()
@@ -671,6 +672,12 @@ class GCEAgent(BaseAgent):
       )
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      responses.append(response)
+
+    for response in responses:
+      gce_service, credentials = self.open_connection(parameters)
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
 
