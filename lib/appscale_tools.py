@@ -412,7 +412,8 @@ class AppScaleTools():
       created_dir = False
     else:
       raise AppEngineConfigException('{0} is not a .tar.gz file or a ' \
-        'directory. Please try uploading either a .tar.gz file or a directory.')
+        'directory. Please try uploading either a .tar.gz file or a ' \
+        'directory.'.format(options.file))
 
     try:
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
