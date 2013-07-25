@@ -2,9 +2,10 @@
 
 
 # General-purpose Python library imports
-import os
-import base64
 import argparse
+import base64
+import os
+import uuid
 
 
 # Third-party imports
@@ -12,10 +13,10 @@ import yaml
 
 
 # AppScale-specific imports
-import local_state
-from custom_exceptions import BadConfigurationException
 from agents.base_agent import BaseAgent
 from agents.factory import InfrastructureAgentFactory
+from custom_exceptions import BadConfigurationException
+import local_state
 
 
 class ParseArgs():
@@ -152,6 +153,7 @@ class ParseArgs():
         help="a base64-encoded YAML dictating the placement strategy")
 
       # flags relating to EC2-like cloud infrastructures
+      keyname = "appscale-{0}".format(str(uuid.uuid4()))
       self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
@@ -161,9 +163,9 @@ class ParseArgs():
         default=self.DEFAULT_EC2_INSTANCE_TYPE,
         choices=self.ALLOWED_EC2_INSTANCE_TYPES,
         help="the EC2 instance type to use")
-      self.parser.add_argument('--group', '-g',
+      self.parser.add_argument('--group', '-g', default=keyname,
         help="the security group to use")
-      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=keyname,
         help="the keypair name to use")
       self.parser.add_argument('--use_spot_instances', action='store_true',
         default=False,
@@ -413,12 +415,7 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
-      # make sure we didn't get a group or machine flag, since those are
-      # infrastructure-only
-      if self.args.group:
-        raise BadConfigurationException("Cannot specify a security group " + \
-          "when --infrastructure is not specified.")
-
+      # make sure we didn't get a machine flag, since that's infrastructure-only
       if self.args.machine:
         raise BadConfigurationException("Cannot specify a machine image " + \
           "when --infrastructure is not specified.")

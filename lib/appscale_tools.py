@@ -283,12 +283,13 @@ class AppScaleTools():
         passed in via the command-line interface.
     Raises:
       BadConfigurationException: If the user passes in options that are not
-        sufficient to start an AppScale deplyoment (e.g., running on EC2 but
+        sufficient to start an AppScale deployment (e.g., running on EC2 but
         not specifying the AMI to use), or if the user provides us
         contradictory options (e.g., running on EC2 but not specifying EC2
         credentials).
     """
     LocalState.make_appscale_directory()
+    LocalState.ensure_appscalefile_is_up_to_date(options.keyname, options.group)
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
     if options.infrastructure:

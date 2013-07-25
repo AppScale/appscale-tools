@@ -43,8 +43,8 @@ class TestAppScaleLogger(unittest.TestCase):
 
     # do argument parsing here, since the below tests do it the
     # same way every time
-    argv = ["--min", "1", "--max", "1", "--infrastructure",
-      "ec2", "--machine", "ami-ABCDEFG", "--group", "blargscale"]
+    argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--machine",
+      "ami-ABCDEFG", "--group", "blargscale", "--keyname", "appscale"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
     self.my_id = "12345"
