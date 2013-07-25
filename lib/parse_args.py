@@ -223,6 +223,9 @@ class ParseArgs():
         help="uses the given e-mail instead of prompting for one")
       self.parser.add_argument('--admin_pass',
         help="uses the given password instead of prompting for one")
+      self.parser.add_argument('--alter_etc_resolv', action='store_true',
+        default=False,
+        help="removes all nameservers in /etc/resolv.conf on all VMs")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
