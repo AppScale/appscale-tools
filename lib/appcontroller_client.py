@@ -213,7 +213,7 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
-      except AppControllerException as exception:
+      except (AppControllerException, socket.error) as exception:
         raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \

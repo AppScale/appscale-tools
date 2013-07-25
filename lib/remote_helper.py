@@ -17,6 +17,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
@@ -62,6 +63,9 @@ class RemoteHelper():
   # The message that is sent if we try to log into a VM as the root user but
   # root login isn't enabled yet.
   LOGIN_AS_UBUNTU_USER = "Please login as the ubuntu user rather than root user."
+
+
+  APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
 
 
   @classmethod
@@ -819,7 +823,10 @@ class RemoteHelper():
         crashed.
     """
     local_crashlog = "/tmp/appcontroller-log-" + str(uuid.uuid4())
-    cls.scp_remote_to_local(cls, host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
+    cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
       local_crashlog, is_verbose)
+    message = ""
     with open(local_crashlog, 'r') as file_handle:
-      return file_handle.read()
+      message = "AppController at {0} crashed because: {1}".format(host,
+        file_handle.read())
+    os.remove(local_crashlog)
