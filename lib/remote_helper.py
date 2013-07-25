@@ -83,6 +83,9 @@ class RemoteHelper():
     Returns:
       The public IP and instance ID (a dummy value in non-cloud deployments)
       corresponding to the node that was started.
+    Raises:
+      AppControllerException: If the AppController on the head node crashes.
+        The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
     AppScaleLogger.verbose("Secret key is {0}".format(secret_key),
@@ -154,7 +157,12 @@ class RemoteHelper():
     acc = AppControllerClient(public_ip, secret_key)
     locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
       ":".join(node_layout.head_node().roles), instance_id)]
-    acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
+    try:
+      acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
+    except Exception:
+      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
+        options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     return public_ip, instance_id
 
@@ -790,3 +798,28 @@ class RemoteHelper():
 
     os.remove(local_tarred_app)
     return remote_app_tar
+
+
+  @classmethod
+  def collect_appcontroller_crashlog(cls, host, keyname, is_verbose):
+    """ Reads the crashlog that the AppController writes on its own machine
+    indicating why it crashed, so that we can pass this information on to the
+    user.
+
+    Args:
+      host: A str indicating the FQDN or IP address where the crashed
+        AppController can be found.
+      keyname: The name of the SSH keypair that uniquely identifies this
+        AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands we exec
+        to get the crashlog info.
+
+    Returns:
+      A str corresponding to the message that indicates why the AppController
+        crashed.
+    """
+    local_crashlog = "/tmp/appcontroller-log-" + str(uuid.uuid4())
+    cls.scp_remote_to_local(cls, host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
+      local_crashlog, is_verbose)
+    with open(local_crashlog, 'r') as file_handle:
+      return file_handle.read()

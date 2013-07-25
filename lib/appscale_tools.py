@@ -273,6 +273,9 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     Raises:
+      AppControllerException: If the AppController on the head node crashes.
+        When this occurs, the message in the exception contains the reason why
+        the AppController crashed.
       BadConfigurationException: If the user passes in options that are not
         sufficient to start an AppScale deplyoment (e.g., running on EC2 but
         not specifying the AMI to use), or if the user provides us
@@ -315,7 +318,12 @@ class AppScaleTools():
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
-    uaserver_host = acc.get_uaserver_host(options.verbose)
+    try:
+      uaserver_host = acc.get_uaserver_host(options.verbose)
+    except Exception:
+      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
+        options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
