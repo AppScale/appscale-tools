@@ -675,7 +675,8 @@ class TestAppScale(unittest.TestCase):
       'ips_layout' : {
         'controller': 'public1',
         'servers': ['public2', 'public3']
-      }
+      },
+      'test' : True
     }
     yaml_dumped_contents = yaml.dump(contents)
 
