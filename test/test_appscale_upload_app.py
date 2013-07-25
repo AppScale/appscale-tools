@@ -43,6 +43,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.function = "appscale-upload-app"
     self.app_dir = "/tmp/baz/gbaz"
 
+    # mock out the check to make sure our app is a directory
+    flexmock(os.path)
+    os.path.should_call('isdir')
+    os.path.should_receive('isdir').with_args(self.app_dir).and_return(True)
+
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
