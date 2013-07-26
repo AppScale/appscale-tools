@@ -373,7 +373,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(self.success)
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czhf'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
@@ -576,7 +576,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # and mock out tarring and copying the app
     local_state.should_receive('shell') \
-      .with_args(re.compile('tar -czf'), False) \
+      .with_args(re.compile('tar -czhf'), False) \
       .and_return()
 
     local_state.should_receive('shell') \
@@ -699,7 +699,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(self.success)
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czhf'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
@@ -839,7 +839,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # and mock out tarring and copying the app
     local_state.should_receive('shell') \
-      .with_args(re.compile('tar -czf'), False) \
+      .with_args(re.compile('tar -czhf'), False) \
       .and_return()
 
     local_state.should_receive('shell') \
