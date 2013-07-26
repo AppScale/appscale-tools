@@ -179,6 +179,7 @@ class LocalState():
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
+      "alter_etc_resolv" : str(options.alter_etc_resolv)
     }
     creds.update(additional_creds)
 
