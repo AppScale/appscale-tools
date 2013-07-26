@@ -382,25 +382,18 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.yaml'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.json'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/root/.appscale/locations-bookey.json'), False, 5)
 	
     # and mock out copying the secret file
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*bookey.secret'),False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*bookey.secret'), False, 5)
 
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
