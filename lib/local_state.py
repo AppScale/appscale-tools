@@ -519,6 +519,7 @@ class LocalState():
       else:
         username = raw_input('Enter your desired e-mail address: ')
 
+      username = username.lstrip().rstrip()
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         return username
