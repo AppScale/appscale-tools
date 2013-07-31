@@ -590,7 +590,8 @@ class RemoteHelper():
 
   
   @classmethod
-  def create_user_accounts(cls, email, password, uaserver_host, keyname):
+  def create_user_accounts(cls, email, password, uaserver_host, keyname,
+    clear_datastore):
     """Registers two new user accounts with the UserAppServer.
 
     One account is the standard account that users log in with (via their
@@ -606,12 +607,16 @@ class RemoteHelper():
       uaserver_host: The location of a UserAppClient, that can create new user
         accounts.
       keyname: The name of the SSH keypair used for this AppScale deployment.
+      clear_datastore: ???
     """
     uaserver = UserAppClient(uaserver_host, LocalState.get_secret_key(keyname))
 
     # first, create the standard account
     encrypted_pass = LocalState.encrypt_password(email, password)
-    uaserver.create_user(email, encrypted_pass)
+    if not clear_datastore and uaserver.does_user_exist(email):
+      AppScaleLogger.log("User {0} already exists, so not creating it again.".format(email))
+    else:
+      uaserver.create_user(email, encrypted_pass)
 
     # next, create the XMPP account. if the user's e-mail is a@a.a, then that
     # means their XMPP account name is a@login_ip
@@ -619,7 +624,11 @@ class RemoteHelper():
     username = username_regex.match(email).groups()[0]
     xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
-    uaserver.create_user(xmpp_user, xmpp_pass)
+
+    if not clear_datastore and uaserver.does_user_exist(xmpp_user):
+      AppScaleLogger.log("XMPP User {0} already exists, so not creating it again.".format(xmpp_user))
+    else:
+      uaserver.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
 
 
