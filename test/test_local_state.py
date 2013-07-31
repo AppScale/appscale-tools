@@ -96,8 +96,7 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', keyname='boo',
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False)
+      use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -107,7 +106,6 @@ class TestLocalState(unittest.TestCase):
 
     expected = {
       'alter_etc_resolv' : 'True',
-      'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
       'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
