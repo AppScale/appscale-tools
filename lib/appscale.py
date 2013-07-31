@@ -54,7 +54,7 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
-  TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
+  TERMINATE = "ruby /root/appscale/AppController/terminate.rb"
 
 
   # The usage that should be displayed to users if they call 'appscale'
