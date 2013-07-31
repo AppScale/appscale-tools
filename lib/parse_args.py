@@ -200,6 +200,9 @@ class ParseArgs():
         help="the datastore to use")
       self.parser.add_argument('--replication', '-n', type=int,
         help="the database replication factor")
+      self.parser.add_argument('--clear_datastore', action='store_true',
+        default=False,
+        help="erases all stored user and application data")
 
       # flags relating to application servers
       group = self.parser.add_mutually_exclusive_group()
