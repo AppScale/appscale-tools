@@ -68,6 +68,11 @@ class RemoteHelper():
   APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
 
 
+  # The location on AppScale VMs where Google App Engine applications should be
+  # uploaded to.
+  REMOTE_APP_DIR = "/opt/appscale/apps"
+
+
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -793,11 +798,7 @@ class RemoteHelper():
       A str corresponding to the location on the remote filesystem where the
         application was copied to.
     """
-    AppScaleLogger.log("Creating remote directory to copy app into")
     app_id = AppEngineHelper.get_app_id_from_app_config(app_location)
-    remote_app_dir = "/var/apps/{0}/app".format(app_id)
-    cls.ssh(LocalState.get_login_host(keyname), keyname,
-      'mkdir -p {0}'.format(remote_app_dir), is_verbose)
 
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
@@ -806,7 +807,7 @@ class RemoteHelper():
       local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")
-    remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)
+    remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
     cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
       remote_app_tar, is_verbose)
 
