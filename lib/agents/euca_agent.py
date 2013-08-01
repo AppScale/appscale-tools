@@ -110,12 +110,12 @@ class EucalyptusAgent(EC2Agent):
 
     AppScaleLogger.log('Creating security group: {0}'.format(group))
     conn.create_security_group(group, 'AppScale security group')
-    conn.authorize_security_group_deprecated(group, from_port=1,
-      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group_deprecated(group, from_port=1,
-      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group_deprecated(group, ip_protocol='icmp',
-      cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, from_port=-1,
+      to_port=-1, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, from_port=-1,
+      to_port=-1, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, from_port=-1,
+      to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
 
     return True
 
