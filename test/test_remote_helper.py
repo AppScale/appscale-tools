@@ -427,8 +427,12 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out SOAP interactions with the UserAppServer
     fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('does_user_exist').with_args('boo@foo.goo',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
       'xmpp_user', 'the secret').and_return('true')
+    fake_soap.should_receive('does_user_exist').with_args('boo@public1',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
     flexmock(SOAPpy)
@@ -436,7 +440,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey')
+      'bookey', False)
 
 
   def test_wait_for_machines_to_finish_loading(self):

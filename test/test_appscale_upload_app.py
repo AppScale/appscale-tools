@@ -351,6 +351,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -463,6 +465,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -553,6 +557,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -674,6 +680,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -814,6 +822,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
