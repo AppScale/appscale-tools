@@ -311,7 +311,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args(
-      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+      'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
@@ -517,7 +517,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args(
-      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+      'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
@@ -638,7 +638,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
+      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
@@ -780,7 +780,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
+      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
