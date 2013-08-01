@@ -361,7 +361,7 @@ class AppScaleTools():
       username, password = LocalState.get_credentials()
 
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
-      options.keyname)
+      options.keyname, options.clear_datastore)
     uaserver_client.set_admin_role(username)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
@@ -468,7 +468,7 @@ class AppScaleTools():
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password, userappserver_host,
-        options.keyname)
+        options.keyname, clear_datastore=False)
 
     app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)
