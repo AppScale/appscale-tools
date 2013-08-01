@@ -902,8 +902,8 @@ class LocalState():
     with open(appscalefile_path, 'r') as file_handle:
       old_contents = file_handle.read()
 
-    keyname_string = "keyname: '{0}'".format(keyname)
-    group_string = "group: '{0}'".format(group)
+    keyname_string = "keyname : '{0}'".format(keyname)
+    group_string = "group : '{0}'".format(group)
 
     new_contents = old_contents
     if keyname_string not in old_contents:
