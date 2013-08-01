@@ -607,7 +607,8 @@ class RemoteHelper():
       uaserver_host: The location of a UserAppClient, that can create new user
         accounts.
       keyname: The name of the SSH keypair used for this AppScale deployment.
-      clear_datastore: ???
+      clear_datastore: A bool that indicates if we expect the datastore to be
+        emptied, and thus not contain any user accounts.
     """
     uaserver = UserAppClient(uaserver_host, LocalState.get_secret_key(keyname))
 
