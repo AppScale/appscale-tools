@@ -282,6 +282,10 @@ class TestAppScaleRunInstances(unittest.TestCase):
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@1.2.3.4', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
@@ -523,6 +527,10 @@ appengine:  1.2.3.4
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
@@ -753,6 +761,10 @@ appengine:  1.2.3.4
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
@@ -1315,6 +1327,10 @@ appengine:  1.2.3.4
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
     fake_userappserver = flexmock(name='fake_appcontroller')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
