@@ -118,6 +118,32 @@ class TestAppScaleRunInstances(unittest.TestCase):
       os.environ[credential] = ""
 
 
+  def setup_appcontroller_mocks(self, public_ip, private_ip):
+    # mock out the SOAP call to the AppController and assume it succeeded
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
+      ['none'], 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
+      .and_return(json.dumps([public_ip]))
+    role_info = [{
+      'public_ip' : public_ip,
+      'private_ip' : private_ip,
+      'jobs' : ['shadow', 'login']
+    }]
+    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
+      .and_return(json.dumps(role_info))
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('nothing interesting here') \
+      .and_return('Database is at not-up-yet') \
+      .and_return('Database is at {0}'.format(public_ip))
+    fake_appcontroller.should_receive('is_done_initializing') \
+      .and_return(False) \
+      .and_return(True)
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:17443'.format(
+      public_ip)).and_return(fake_appcontroller)
+
+
   def setup_uaserver_mocks(self, public_uaserver_address):
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
@@ -246,30 +272,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips')\
-      .with_args('the secret') \
-      .and_return(json.dumps(['1.2.3.4']))
-    role_info = [{
-      'public_ip' : '1.2.3.4',
-      'private_ip' : '1.2.3.4',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at 1.2.3.4')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
 
     # mock out reading the locations.json file, and slip in our own json
     local_state.should_receive('get_local_nodes_info').and_return(json.loads(
@@ -488,29 +491,7 @@ appengine:  1.2.3.4
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     local_state.should_receive('get_local_nodes_info').and_return(json.loads(
@@ -704,29 +685,7 @@ appengine:  1.2.3.4
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     local_state.should_receive('get_local_nodes_info').and_return(json.loads(
@@ -1252,29 +1211,7 @@ appengine:  1.2.3.4
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     local_state.should_receive('get_local_nodes_info').and_return(json.loads(
