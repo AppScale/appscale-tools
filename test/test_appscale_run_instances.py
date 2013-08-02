@@ -242,6 +242,32 @@ class TestAppScaleRunInstances(unittest.TestCase):
       public_uaserver_address)).and_return(fake_userappserver)
 
 
+  def setup_socket_mocks(self, host):
+    # assume that ssh comes up on the third attempt
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args((host,
+      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # assume that the AppController comes up on the third attempt
+    fake_socket.should_receive('connect').with_args((host,
+      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # same for the UserAppServer
+    fake_socket.should_receive('connect').with_args((host,
+      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # as well as for the AppDashboard
+    fake_socket.should_receive('connect').with_args((host,
+      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
+      .and_raise(Exception).and_return(None)
+
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
+
+
   def test_appscale_in_one_node_virt_deployment(self):
     # let's say that appscale isn't already running
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
@@ -307,25 +333,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
         stdin=re.compile('^god load .*appcontroller\.god'))\
       .and_return()
 
-    # assume that the AppController comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
+    self.setup_socket_mocks('1.2.3.4')
     self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
 
     # mock out reading the locations.json file, and slip in our own json
@@ -454,30 +462,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
+    self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
@@ -581,30 +566,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
+    self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
@@ -1091,30 +1053,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
+    self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
