@@ -36,6 +36,10 @@ ips_layout :
 # Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
 
+# Whether or not the Datastore should be erased when AppScale starts up.
+# This defaults to False, to persist your data across AppScale runs.
+#clear_datastore: True
+
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
