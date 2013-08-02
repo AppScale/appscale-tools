@@ -118,6 +118,28 @@ class TestAppScaleRunInstances(unittest.TestCase):
       os.environ[credential] = ""
 
 
+  def setup_uaserver_mocks(self, public_uaserver_address):
+    # mock out calls to the UserAppServer and presume that calls to create new
+    # users succeed
+    fake_userappserver = flexmock(name='fake_userappserver')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@' + public_uaserver_address, 'the secret').and_return('false')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@a.com', str, 'xmpp_user', 'the secret') \
+      .and_return('true')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@' + public_uaserver_address, str, 'xmpp_user', 'the secret') \
+      .and_return('true')
+    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
+      'a@a.com', 'true', 'the secret').and_return()
+    fake_userappserver.should_receive('set_capabilities').with_args(
+      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
+    SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:4343'.format(
+      public_uaserver_address)).and_return(fake_userappserver)
+
+
   def test_appscale_in_one_node_virt_deployment(self):
     # let's say that appscale isn't already running
 
@@ -279,25 +301,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return()
 
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@1.2.3.4', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('1.2.3.4')
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
@@ -524,25 +528,7 @@ appengine:  1.2.3.4
     local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
 
     argv = [
       "--min", "1",
@@ -758,25 +744,7 @@ appengine:  1.2.3.4
     local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
 
     argv = [
       "--min", "1",
@@ -1324,25 +1292,7 @@ appengine:  1.2.3.4
     local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
 
     # Finally, pretend we're using a single persistent disk.
     disk_layout = yaml.safe_load("""
