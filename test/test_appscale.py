@@ -3,7 +3,6 @@
 
 
 # General-purpose Python library imports
-import base64
 import json
 import os
 import re
