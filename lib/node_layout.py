@@ -101,11 +101,7 @@ class NodeLayout():
     if not isinstance(options, dict):
       options = vars(options)
 
-    if 'ips' in options:
-      input_yaml = options['ips']
-    else:
-      input_yaml = None
-
+    input_yaml = options.get('ips')
     if isinstance(input_yaml, str):
       with open(input_yaml, 'r') as file_handle:
         self.input_yaml = yaml.safe_load(file_handle.read())
@@ -114,30 +110,12 @@ class NodeLayout():
     else:
       self.input_yaml = None
 
-    if 'infrastructure' in options:
-      self.infrastructure = options['infrastructure']
-    else:
-      self.infrastructure = None
-
-    if 'min' in options:
-      self.min_vms = options['min']
-    else:
-      self.min_vms = None
-
-    if 'max' in options:
-      self.max_vms = options['max']
-    else:
-      self.max_vms = None
-
-    if 'replication' in options:
-      self.replication = options['replication']
-    else:
-      self.replication = None
-
-    if 'table' in options:
-      self.database_type = options['table']
-    else:
-      self.database_type = 'cassandra'
+    self.disks = options.get('disks')
+    self.infrastructure = options.get('infrastructure')
+    self.min_vms = options.get('min')
+    self.max_vms = options.get('max')
+    self.replication = options.get('replication')
+    self.database_type = options.get('table', 'cassandra')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
