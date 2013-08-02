@@ -1344,9 +1344,16 @@ appengine:  1.2.3.4
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
+    disk_layout = yaml.safe_load("""
+disks :
+- node-1: my-persistent-disk-1
+    """)
+
+
     argv = [
       "--min", "1",
       "--max", "1",
+      "--disks", base64.b64encode(yaml.dump(disk_layout)),
       "--group", self.group,
       "--infrastructure", "gce",
       "--gce_instance_type", instance_type,
