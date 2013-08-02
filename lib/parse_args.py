@@ -203,6 +203,8 @@ class ParseArgs():
       self.parser.add_argument('--clear_datastore', action='store_true',
         default=False,
         help="erases all stored user and application data")
+      self.parser.add_argument('--disks',
+        help="a base64-encoded YAML dictating the PD or EBS disks to use")
 
       # flags relating to application servers
       group = self.parser.add_mutually_exclusive_group()
@@ -426,14 +428,20 @@ class ParseArgs():
         raise BadConfigurationException("Cannot specify a machine image " + \
           "when --infrastructure is not specified.")
 
+      # spot instances can only be used in EC2
       if self.args.use_spot_instances or self.args.max_spot_price:
         raise BadConfigurationException("Can't run spot instances when " + \
           "--infrastructure is not specified.")
 
+      # EBS / persistent disks can only be used in EC2 and GCE
+      if self.args.disks:
+        raise BadConfigurationException("Can't specify persistent disks " + \
+          "when not running in a cloud infrastructure.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
-    if self.args.infrastructure and not self.args.machine:
+    if not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
@@ -449,6 +457,15 @@ class ParseArgs():
     if self.args.max_spot_price and not self.args.use_spot_instances:
       raise BadConfigurationException("Can't have a max spot instance price" + \
         " if --use_spot_instances is not set.")
+
+    # if the user does want to use persistent disks, make sure they specified
+    # them in the right format, a dictionary mapping node IDs to disk names
+    if self.args.disks:
+      self.args.disks = yaml.safe_load(base64.b64decode(self.args.disks))
+
+      if not isinstance(self.args.disks, dict):
+        raise BadConfigurationException("--disks must be a dict, but was a " \
+          "{0}".format(type(self.args.disks)))
 
 
   def validate_credentials(self):

@@ -402,3 +402,30 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
     self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
     self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+
+
+  def test_disks_flag(self):
+    # specifying a EBS mount or PD mount is only valid for EC2/Euca/GCE, so
+    # fail on a cluster deployment.
+    argv = self.cluster_argv[:] + ["--disks", "ABCDFEG"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # if we get a --disk flag, fail if it's not a dict (after base64, yaml load)
+    bad_disks_layout = yaml.load("""
+    public1,
+    """)
+    base64ed_bad_disks = base64.b64encode(yaml.dump(bad_disks_layout))
+    cloud_argv1 = self.cloud_argv[:] + ["--disks", base64ed_bad_disks]
+    self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+      self.function)
+
+    # passing in a dict should be fine, and result in us seeing the same value
+    # for --disks that we passed in.
+    disks = {'public1' : 'disk1'}
+    good_disks_layout = yaml.load("""
+    public1 : disk1
+    """)
+    base64ed_good_disks = base64.b64encode(yaml.dump(good_disks_layout))
+    cloud_argv2 = self.cloud_argv[:] + ["--disks", base64ed_good_disks]
+    actual = ParseArgs(cloud_argv2, self.function).args
+    self.assertEquals(disks, actual.disks)
