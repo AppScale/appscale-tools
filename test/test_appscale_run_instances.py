@@ -176,6 +176,24 @@ class TestAppScaleRunInstances(unittest.TestCase):
     boto.should_receive('connect_ec2').and_return(self.fake_ec2)
 
 
+  def setup_appscale_compatibility_mocks(self):
+    # mock out seeing if the image is appscale-compatible, and assume it is
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale')).and_return()
+
+    # mock out our attempts to find /etc/appscale/version and presume it does
+    # exist
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale/{0}'
+      .format(APPSCALE_VERSION)))
+
+    # put in a mock indicating that the database the user wants is supported
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
+      .format(APPSCALE_VERSION, 'cassandra')))
+
+
   def setup_appcontroller_mocks(self, public_ip, private_ip):
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -260,26 +278,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
     self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*.key'),False,5)
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
-      .and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_return()
-
-    # finally, put in a mock indicating that the database the user wants
-    # is supported
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
-          .format(APPSCALE_VERSION, 'cassandra')))\
-      .and_return()
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell')\
@@ -437,21 +436,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
@@ -578,21 +563,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
@@ -1102,21 +1073,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
