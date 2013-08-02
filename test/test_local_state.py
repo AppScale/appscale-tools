@@ -97,7 +97,7 @@ class TestLocalState(unittest.TestCase):
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False)
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'})
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -110,8 +110,9 @@ class TestLocalState(unittest.TestCase):
       'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
-        'db_slave', 'appengine']}),
+      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue',
+        'memcache', 'db_slave', 'appengine']}),
+      'disks' : json.dumps({'node-1' : 'vol-ABCDEFG'}),
       'keyname' : 'boo',
       'replication' : '2',
       'appengine' : '1',

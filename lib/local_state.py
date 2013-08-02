@@ -201,8 +201,10 @@ class LocalState():
         iaas_creds['gce_user'] = getpass.getuser()
         iaas_creds['instance_type'] = options.gce_instance_type
 
-      creds.update(iaas_creds)
+      if options.disks:
+        iaas_creds['disks'] = json.dumps(options.disks)
 
+      creds.update(iaas_creds)
 
     return creds
 
