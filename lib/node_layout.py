@@ -422,6 +422,11 @@ class NodeLayout():
         if node.is_role('login'):
           node.public_ip = self.login_host
 
+    if self.disks:
+      valid, reason = self.is_disks_valid(nodes)
+      if not valid:
+        return self.invalid(reason)
+
     rep = self.is_database_replication_valid(nodes)
 
     if not rep['result']:
@@ -575,6 +580,11 @@ class NodeLayout():
       if node.is_role('appengine') and not node.is_role('taskqueue'):
         node.add_role('taskqueue_slave')
 
+    if self.disks:
+      valid, reason = self.is_disks_valid(nodes)
+      if not valid:
+        return self.invalid(reason)
+
     rep = self.is_database_replication_valid(nodes)
     if not rep['result']:
       return rep
@@ -582,6 +592,28 @@ class NodeLayout():
     self.nodes = nodes
 
     return self.valid()
+
+
+  def is_disks_valid(self, nodes):
+    """ Checks to make sure that the user has specified exactly one persistent
+    disk per node.
+
+    Returns:
+      A tuple of two items. The first item is a bool that indicates if the
+      user specified a valid set of disks to use, and the second item is a str
+      that indicates why the disks given were invalid (which is empty when the
+      disks are valid).
+    """
+    # Make sure that every node has a disk specified.
+    if len(nodes) != len(self.disks.keys()):
+      return False, "Please specify a disk for every node."
+
+    # Next, make sure that there are an equal number of
+    # unique disks and nodes.
+    if len(nodes) != len(set(self.disks.values())):
+      return False, "Please specify a unique disk for every node."
+
+    return True, ""
 
 
   def is_database_replication_valid(self, nodes):

@@ -1076,8 +1076,7 @@ appengine:  1.2.3.4
 
     # Finally, pretend we're using a single persistent disk.
     disk_layout = yaml.safe_load("""
-disks :
-- node-1: my-persistent-disk-1
+node-1: my-persistent-disk-1
     """)
 
     argv = [

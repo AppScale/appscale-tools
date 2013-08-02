@@ -284,3 +284,53 @@ class TestNodeLayout(unittest.TestCase):
     fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
     output = NodeLayout({}).is_database_replication_valid([fake_node])
     self.assertTrue(output['result'])
+
+
+  def test_with_wrong_number_of_disks(self):
+    # suppose that the user has specified two nodes, but only one EBS / PD disk
+    # this should fail.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(False, layout.is_valid())
+
+
+  def test_with_right_number_of_disks_but_not_unique(self):
+    # suppose that the user has specified two nodes, but uses the same name for
+    # both disks. This isn't acceptable.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one',
+      self.ip_2 : 'disk_number_one'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(False, layout.is_valid())
+
+
+  def test_with_right_number_of_unique_disks(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one',
+      self.ip_2 : 'disk_number_two'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(True, layout.is_valid())

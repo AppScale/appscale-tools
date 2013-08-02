@@ -423,7 +423,7 @@ class TestParseArgs(unittest.TestCase):
     # for --disks that we passed in.
     disks = {'public1' : 'disk1'}
     good_disks_layout = yaml.load("""
-    public1 : disk1
+public1 : disk1
     """)
     base64ed_good_disks = base64.b64encode(yaml.dump(good_disks_layout))
     cloud_argv2 = self.cloud_argv[:] + ["--disks", base64ed_good_disks]
