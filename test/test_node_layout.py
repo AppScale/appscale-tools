@@ -39,7 +39,8 @@ class TestNodeLayout(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(
+      fake_ec2)
 
     # add in some instance variables so that we don't have
     # a lot IP addresses everywhere
@@ -91,7 +92,8 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(NodeLayout.NO_CONTROLLER, layout_4.errors())
 
     # Specifying more than one controller is not ok
-    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' : [self.ip_3]}
+    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' :
+      [self.ip_3]}
     options_5 = self.default_options.copy()
     options_5['ips'] = input_yaml_5
     layout_5 = NodeLayout(options_5)
@@ -170,7 +172,8 @@ class TestNodeLayout(unittest.TestCase):
     layout_2 = NodeLayout(options_2)
     self.assertEquals(True, layout_2.is_supported())
 
-    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2, self.ip_3]}
+    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2,
+      self.ip_3]}
     options_3 = self.default_options.copy()
     options_3['ips'] = input_yaml_3
     layout_3 = NodeLayout(options_3)
@@ -272,6 +275,7 @@ class TestNodeLayout(unittest.TestCase):
 
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
+
 
   def test_is_database_replication_valid_with_db_slave(self):
     fake_node = flexmock()
