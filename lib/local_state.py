@@ -868,7 +868,25 @@ class LocalState():
       AppScaleException: If the user does not want to terminate their
         AppScale deployment.
     """
-    AppScaleLogger.warn("Terminating AppScale will delete all stored data.")
+    cls.confirm_or_abort("Terminating AppScale will delete all stored data.")
+
+
+  @classmethod
+  def ensure_user_wants_to_run_without_disks(cls):
+    """ Asks the user for confirmation before we start AppScale in a cloud
+    environment without any persistent disks to save their data.
+
+    Raises:
+      AppScaleException: If the user does not want to start AppScale without
+        persistent disks.
+    """
+    cls.confirm_or_abort("Starting AppScale without specifying persistent " +
+      "disks means your data will not be saved when your cloud is destroyed.")
+
+
+  @classmethod
+  def confirm_or_abort(cls, message):
+    AppScaleLogger.warn(message)
     confirm = raw_input("Are you sure you want to do this? (Y/N) ")
     if confirm.lower() == 'y' or confirm.lower() == 'yes':
       return
