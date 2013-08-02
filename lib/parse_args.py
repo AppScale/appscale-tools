@@ -497,6 +497,15 @@ class ParseArgs():
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
 
+    # Right now, only validate disks for GCE (since a separate pull will add
+    # EBS for EC2).
+    if not self.args.disks or self.args.infrastructure != 'gce':
+      return
+
+    for disk in set(self.args.disks.values()):
+      if not cloud_agent.does_disk_exist(params, disk):
+        raise BadConfigurationException("Couldn't find disk {0}".format(disk))
+
 
   def validate_database_flags(self):
     """Validates the values given to us by the user for any flag

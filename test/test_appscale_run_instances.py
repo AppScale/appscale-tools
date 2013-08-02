@@ -831,6 +831,19 @@ appengine:  1.2.3.4
 
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the persistent disk we want to use exists
+    disk_name = 'my-persistent-disk-1'
+    disk_info = {}
+    fake_disk_request = flexmock(name='fake_disk_request')
+    fake_disk_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(disk_info)
+
+    fake_disks = flexmock(name='fake_disks')
+    fake_disks.should_receive('get').with_args(project=project_id,
+      disk=disk_name).and_return(fake_disk_request)
+
+    fake_gce.should_receive('disks').and_return(fake_disks)
+
     # next, presume that the network doesn't exist yet
     fake_network_request = flexmock(name='fake_network_request')
     fake_network_request.should_receive('execute').with_args(
