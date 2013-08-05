@@ -840,7 +840,7 @@ appengine:  1.2.3.4
 
     fake_disks = flexmock(name='fake_disks')
     fake_disks.should_receive('get').with_args(project=project_id,
-      disk=disk_name).and_return(fake_disk_request)
+      disk=disk_name, zone=GCEAgent.DEFAULT_ZONE).and_return(fake_disk_request)
 
     fake_gce.should_receive('disks').and_return(fake_disks)
 

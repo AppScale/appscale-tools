@@ -723,7 +723,7 @@ class GCEAgent(BaseAgent):
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.disks().get(project=parameters[self.PARAM_PROJECT],
-        disk=disk)
+        disk=disk, zone=self.DEFAULT_ZONE)
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
