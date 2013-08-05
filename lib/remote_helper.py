@@ -711,11 +711,12 @@ class RemoteHelper():
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.
-    # TODO(cgb): Consider running the terminate script (w/o clean) here to
-    # make sure nobody is writing to the persistent disk when we unmount it.
+    cls.terminate_virtualized_cluster(keyname, is_verbose)
     nodes = LocalState.get_local_nodes_info(keyname)
     for node in nodes:
       if node.get('disk'):
+        AppScaleLogger.log("Unmounting persistent disk at {0}".format(
+          node['public_ip']))
         cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
