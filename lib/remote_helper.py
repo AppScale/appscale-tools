@@ -711,10 +711,13 @@ class RemoteHelper():
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.
-    #persistent_disks = LocalState.get_persistent_disk_info(keyname)
-    #if persistent_disks:
-    #  cls.unmount_all_persistent_disks(persistent_disks.keys())
-    #  agent.detach_disks(persistent_disks)
+    # TODO(cgb): Consider running the terminate script (w/o clean) here to
+    # make sure nobody is writing to the persistent disk when we unmount it.
+    nodes = LocalState.get_local_nodes_info(keyname)
+    for node in nodes:
+      if node.get('disk'):
+        cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
+        agent.detach_disk(params, node['disk'], node['instance_id'])
 
     # terminate all the machines
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
@@ -722,6 +725,23 @@ class RemoteHelper():
 
     # delete the keyname and group
     agent.cleanup_state(params)
+
+
+  @classmethod
+  def unmount_persistent_disk(self, host, keyname, is_verbose):
+    """Unmounts the persistent disk that was previously mounted on the named
+    machine.
+
+    Args:
+      host: A str that names the IP address or FQDN where the machine whose
+        disk needs to be unmounted can be found.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    remote_output = cls.ssh(host, keyname, 'umount /opt/appscale', is_verbose)
+    AppScaleLogger.verbose(remote_output, is_verbose)
+    # TODO(cgb): Check the output of the umount command.
 
 
   @classmethod
