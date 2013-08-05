@@ -164,8 +164,13 @@ class RemoteHelper():
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
 
     acc = AppControllerClient(public_ip, secret_key)
-    locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
-      ":".join(node_layout.head_node().roles), instance_id)]
+    locations = [{
+      'public_ip' : public_ip,
+      'private_ip' : private_ip,
+      'jobs' : node_layout.head_node().roles,
+      'instance_id' : instance_id,
+      'persistent_disk' : node_layout.head_node().disk
+    }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
     except Exception:
@@ -664,12 +669,13 @@ class RemoteHelper():
 
   @classmethod
   def terminate_cloud_instance(cls, instance_id, options):
-    """Powers off a single instance in the currently AppScale deployment and
-       cleans up secret key from the local filesystem.
+    """ Powers off a single instance in the currently AppScale deployment and
+    cleans up AppScale metadata from the local filesystem.
 
     Args:
-      instance_id: str containing the instance id.
-      options: namespace containing the run parameters.
+      instance_id: A str containing the instance id that should be terminated.
+      options: A Namespace containing the credentials necessary to terminate
+        the named instance.
     """
     AppScaleLogger.log("About to terminate instance {0}"
       .format(instance_id))
@@ -680,6 +686,7 @@ class RemoteHelper():
     agent.terminate_instances(params)
     agent.cleanup_state(params)
     os.remove(LocalState.get_secret_key_location(options.keyname))
+
 
   @classmethod
   def terminate_cloud_infrastructure(cls, keyname, is_verbose):
@@ -701,6 +708,13 @@ class RemoteHelper():
     params = agent.get_params_from_yaml(keyname)
     params['IS_VERBOSE'] = is_verbose
     _, _, instance_ids = agent.describe_instances(params)
+
+    # If using persistent disks, unmount them and detach them before we blow
+    # away the instances.
+    #persistent_disks = LocalState.get_persistent_disk_info(keyname)
+    #if persistent_disks:
+    #  cls.unmount_all_persistent_disks(persistent_disks.keys())
+    #  agent.detach_disks(persistent_disks)
 
     # terminate all the machines
     params[agent.PARAM_INSTANCE_IDS] = instance_ids

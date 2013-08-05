@@ -427,6 +427,9 @@ class NodeLayout():
       if not valid:
         return self.invalid(reason)
 
+      for node in nodes:
+        node.disk = self.disks.get(node.public_ip)
+
     rep = self.is_database_replication_valid(nodes)
 
     if not rep['result']:
@@ -605,6 +608,7 @@ class NodeLayout():
       disks are valid).
     """
     # Make sure that every node has a disk specified.
+    # TODO(cgb): Amend this to only DB nodes.
     if len(nodes) != len(self.disks.keys()):
       return False, "Please specify a disk for every node."
 
@@ -765,7 +769,7 @@ class Node():
   """
 
 
-  def __init__(self, public_ip, cloud, roles=[]):
+  def __init__(self, public_ip, cloud, roles=[], disk=None):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -775,11 +779,13 @@ class Node():
         we don't know the IP address)
       cloud: The cloud that this Node belongs to.
       roles: A list of roles that this Node will run in an AppScale deployment.
+      disk: The name of the persistent disk that this node backs up data to.
     """
     self.public_ip = public_ip
     self.private_ip = public_ip
     self.cloud = cloud
     self.roles = roles
+    self.disk = disk
     self.expand_roles()
 
 

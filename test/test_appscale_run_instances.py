@@ -197,7 +197,7 @@ class TestAppScaleRunInstances(unittest.TestCase):
   def setup_appcontroller_mocks(self, public_ip, private_ip):
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
+    fake_appcontroller.should_receive('set_parameters').with_args(str, list,
       ['none'], 'the secret').and_return('OK')
     fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
       .and_return(json.dumps([public_ip]))

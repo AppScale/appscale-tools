@@ -334,3 +334,5 @@ class TestNodeLayout(unittest.TestCase):
     }
     layout = NodeLayout(options)
     self.assertEquals(True, layout.is_valid())
+    self.assertEquals('disk_number_one', layout.head_node().disk)
+    self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
