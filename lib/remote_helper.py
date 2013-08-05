@@ -169,7 +169,7 @@ class RemoteHelper():
       'private_ip' : private_ip,
       'jobs' : node_layout.head_node().roles,
       'instance_id' : instance_id,
-      'persistent_disk' : node_layout.head_node().disk
+      'disk' : node_layout.head_node().disk
     }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
