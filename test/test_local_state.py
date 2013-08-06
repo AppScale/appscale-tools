@@ -101,8 +101,8 @@ class TestLocalState(unittest.TestCase):
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 2,
-      'max' : 2
+      'min' : 1,
+      'max' : 1
     })
 
     expected = {
@@ -110,19 +110,17 @@ class TestLocalState(unittest.TestCase):
       'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue',
-        'memcache', 'db_slave', 'appengine']}),
-      'disks' : json.dumps({'node-1' : 'vol-ABCDEFG'}),
+      'ips' : json.dumps({}),
       'keyname' : 'boo',
-      'replication' : '2',
+      'replication' : '1',
       'appengine' : '1',
       'autoscale' : 'False',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : 2,
-      'max_images' : 2,
+      'min_images' : 1,
+      'max_images' : 1,
       'use_spot_instances' : True,
       'max_spot_price' : '1.23'
     }
