@@ -729,7 +729,7 @@ class RemoteHelper():
 
 
   @classmethod
-  def unmount_persistent_disk(self, host, keyname, is_verbose):
+  def unmount_persistent_disk(cls, host, keyname, is_verbose):
     """Unmounts the persistent disk that was previously mounted on the named
     machine.
 

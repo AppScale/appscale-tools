@@ -658,11 +658,11 @@ class NodeLayout():
       Returns:
         A dict that has one controller node and the other nodes set as servers.
     """
-    layout = {'controller' : "node-0"}
+    layout = {'controller' : "node-1"}
     servers = []
     num_slaves = self.min_vms - 1
     for i in xrange(num_slaves):
-      servers.append("node-{0}".format(i+1))
+      servers.append("node-{0}".format(i+2))
 
     layout['servers'] = servers
     return layout
