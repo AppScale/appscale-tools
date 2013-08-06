@@ -717,8 +717,7 @@ class RemoteHelper():
       if node.get('disk'):
         AppScaleLogger.log("Unmounting persistent disk at {0}".format(
           node['public_ip']))
-        # TODO(cgb): See if we need to do this in AWS
-        #cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
+        cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
     # terminate all the machines
@@ -741,9 +740,11 @@ class RemoteHelper():
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    remote_output = cls.ssh(host, keyname, 'umount /opt/appscale', is_verbose)
-    AppScaleLogger.verbose(remote_output, is_verbose)
-    # TODO(cgb): Check the output of the umount command.
+    try:
+      remote_output = cls.ssh(host, keyname, 'umount /opt/appscale', is_verbose)
+      AppScaleLogger.verbose(remote_output, is_verbose)
+    except ShellException:
+      pass
 
 
   @classmethod
