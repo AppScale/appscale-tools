@@ -465,6 +465,19 @@ class EC2Agent(BaseAgent):
       return False
 
 
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the EBS mount specified in disk_name from the named instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to AWS.
+      disk_name: A str naming the EBS volume to detach.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    """
+    conn = self.open_connection(parameters)
+    conn.detach_volume(disk_name, instance_id, device='/dev/sdb')
+
+
   def cleanup_state(self, parameters):
     """ Removes the keyname and security group created during this AppScale
     deployment.
