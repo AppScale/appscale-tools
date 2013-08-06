@@ -717,7 +717,8 @@ class RemoteHelper():
       if node.get('disk'):
         AppScaleLogger.log("Unmounting persistent disk at {0}".format(
           node['public_ip']))
-        cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
+        # TODO(cgb): See if we need to do this in AWS
+        #cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
     # terminate all the machines
