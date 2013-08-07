@@ -110,7 +110,7 @@ class TestLocalState(unittest.TestCase):
       'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({}),
+      'ips' : json.dumps([]),
       'keyname' : 'boo',
       'replication' : '1',
       'appengine' : '1',
