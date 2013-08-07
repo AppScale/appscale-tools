@@ -746,7 +746,7 @@ class NodeLayout():
     return [{
       'ip' : node.public_ip,
       'jobs' : node.roles,
-      'disks' : node.disk
+      'disk' : node.disk
     } for node in self.other_nodes()]
 
 
