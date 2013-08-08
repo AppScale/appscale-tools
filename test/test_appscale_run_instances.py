@@ -110,6 +110,12 @@ class TestAppScaleRunInstances(unittest.TestCase):
     for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[credential] = "baz"
 
+    # mock out interactions with AWS
+    self.fake_ec2 = flexmock(name='fake_ec2')
+
+    # And add in mocks for libraries most of the tests mock out
+    self.local_state = flexmock(LocalState)
+
 
   def tearDown(self):
     # remove the environment variables we set up to not accidentally mess
@@ -118,12 +124,154 @@ class TestAppScaleRunInstances(unittest.TestCase):
       os.environ[credential] = ""
 
 
+  def setup_ec2_mocks(self):
+    # first, pretend that our image does exist in EC2
+    self.fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
+      .and_return()
+
+    # next, assume that our keypair doesn't exist yet
+    self.fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
+      .and_return(None)
+
+    # same for the security group
+    self.fake_ec2.should_receive('get_all_security_groups').and_return([])
+
+    # mock out creating the keypair
+    fake_key = flexmock(name='fake_key', material='baz')
+    self.local_state.should_receive('write_key_file').with_args(
+      re.compile(self.keyname), fake_key.material).and_return()
+    self.fake_ec2.should_receive('create_key_pair').with_args(self.keyname) \
+      .and_return(fake_key)
+
+    # and the same for the security group
+    self.fake_ec2.should_receive('create_security_group').with_args(self.group,
+      str).and_return()
+    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
+      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
+      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
+      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+
+    # assume that there are no instances running initially, and that the
+    # instance we spawn starts as pending, then becomes running
+    no_instances = flexmock(name='no_instances', instances=[])
+
+    pending_instance = flexmock(name='pending_instance', state='pending',
+      key_name=self.keyname, id='i-ABCDEFG')
+    pending_reservation = flexmock(name='pending_reservation',
+      instances=[pending_instance])
+
+    running_instance = flexmock(name='running_instance', state='running',
+      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
+      private_dns_name='private1')
+    running_reservation = flexmock(name='running_reservation',
+      instances=[running_instance])
+
+    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+      .and_return(pending_reservation).and_return(running_reservation)
+
+    # finally, inject the mocked EC2 in
+    flexmock(boto)
+    boto.should_receive('connect_ec2').and_return(self.fake_ec2)
+
+
+  def setup_appscale_compatibility_mocks(self):
+    # mock out seeing if the image is appscale-compatible, and assume it is
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale')).and_return()
+
+    # mock out our attempts to find /etc/appscale/version and presume it does
+    # exist
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale/{0}'
+      .format(APPSCALE_VERSION)))
+
+    # put in a mock indicating that the database the user wants is supported
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
+      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
+      .format(APPSCALE_VERSION, 'cassandra')))
+
+
+  def setup_appcontroller_mocks(self, public_ip, private_ip):
+    # mock out the SOAP call to the AppController and assume it succeeded
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('set_parameters').with_args(str, list,
+      ['none'], 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
+      .and_return(json.dumps([public_ip]))
+    role_info = [{
+      'public_ip' : public_ip,
+      'private_ip' : private_ip,
+      'jobs' : ['shadow', 'login']
+    }]
+    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
+      .and_return(json.dumps(role_info))
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('nothing interesting here') \
+      .and_return('Database is at not-up-yet') \
+      .and_return('Database is at {0}'.format(public_ip))
+    fake_appcontroller.should_receive('is_done_initializing') \
+      .and_return(False) \
+      .and_return(True)
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:17443'.format(
+      public_ip)).and_return(fake_appcontroller)
+
+
+  def setup_uaserver_mocks(self, public_uaserver_address):
+    # mock out calls to the UserAppServer and presume that calls to create new
+    # users succeed
+    fake_userappserver = flexmock(name='fake_userappserver')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@' + public_uaserver_address, 'the secret').and_return('false')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@a.com', str, 'xmpp_user', 'the secret') \
+      .and_return('true')
+    fake_userappserver.should_receive('commit_new_user').with_args(
+      'a@' + public_uaserver_address, str, 'xmpp_user', 'the secret') \
+      .and_return('true')
+    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
+      'a@a.com', 'true', 'the secret').and_return()
+    fake_userappserver.should_receive('set_capabilities').with_args(
+      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
+    SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:4343'.format(
+      public_uaserver_address)).and_return(fake_userappserver)
+
+
+  def setup_socket_mocks(self, host):
+    # assume that ssh comes up on the third attempt
+    fake_socket = flexmock(name='fake_socket')
+    fake_socket.should_receive('connect').with_args((host,
+      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # assume that the AppController comes up on the third attempt
+    fake_socket.should_receive('connect').with_args((host,
+      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # same for the UserAppServer
+    fake_socket.should_receive('connect').with_args((host,
+      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
+      .and_return(None)
+
+    # as well as for the AppDashboard
+    fake_socket.should_receive('connect').with_args((host,
+      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
+      .and_raise(Exception).and_return(None)
+
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
+
+
   def test_appscale_in_one_node_virt_deployment(self):
     # let's say that appscale isn't already running
-
-    local_state = flexmock(LocalState)
-    local_state.should_receive('ensure_appscale_isnt_running').and_return()
-    local_state.should_receive('make_appscale_directory').and_return()
+    self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
+    self.local_state.should_receive('make_appscale_directory').and_return()
 
     rh = flexmock(RemoteHelper)
     rh.should_receive('copy_deployment_credentials').and_return()
@@ -153,104 +301,43 @@ class TestAppScaleRunInstances(unittest.TestCase):
       .and_return(fake_secret)
 
     # mock out copying over the keys
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*.key'),False,5)
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
-      .and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_return()
-
-    # finally, put in a mock indicating that the database the user wants
-    # is supported
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
-          .format(APPSCALE_VERSION, 'cassandra')))\
-      .and_return()
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^openssl'),False,stdin=None)\
       .and_return()
 
     # mock out removing the old json file
-    local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
       .and_return()
 
     # assume that we started god fine
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
       .and_return()
 
 
     # and that we copied over the AppController's god file
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
       .and_return()
 
     # also, that we started the AppController itself
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
         stdin=re.compile('^god load .*appcontroller\.god'))\
       .and_return()
 
-    # assume that the AppController comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('1.2.3.4',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips')\
-      .with_args('the secret') \
-      .and_return(json.dumps(['1.2.3.4']))
-    role_info = [{
-      'public_ip' : '1.2.3.4',
-      'private_ip' : '1.2.3.4',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at 1.2.3.4')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_socket_mocks('1.2.3.4')
+    self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
 
     # mock out reading the locations.json file, and slip in our own json
-    local_state.should_receive('get_local_nodes_info').and_return(json.loads(
+    self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "1.2.3.4",
         "private_ip" : "1.2.3.4",
@@ -258,46 +345,28 @@ class TestAppScaleRunInstances(unittest.TestCase):
       }])))
 
     # copying over the locations yaml and json files should be fine
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
         False,5)\
       .and_return()
 
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
         False,5)\
       .and_return()
 
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
         False,5)\
       .and_return()
 
     # same for the secret key
-    local_state.should_receive('shell')\
+    self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*.secret'),False,5)\
       .and_return()
 
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@1.2.3.4', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@1.2.3.4', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('1.2.3.4')
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
@@ -321,10 +390,8 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_cloud_deployment_auto_spot_price(self):
     # let's say that appscale isn't already running
-
-    local_state = flexmock(LocalState)
-    local_state.should_receive('ensure_appscale_isnt_running').and_return()
-    local_state.should_receive('make_appscale_directory').and_return()
+    self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
+    self.local_state.should_receive('make_appscale_directory').and_return()
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -350,166 +417,56 @@ appengine:  1.2.3.4
     self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
-    # mock out interactions with AWS
-    fake_ec2 = flexmock(name='fake_ec2')
-    
-    # first, pretend that our image does exist in EC2
-    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
-      .and_return()
-
-    # next, assume that our keypair doesn't exist yet
-    fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
-      .and_return(None)
-
-    # same for the security group
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
-
-    # mock out creating the keypair
-    fake_key = flexmock(name='fake_key', material='baz')
-    local_state.should_receive('write_key_file').with_args(
-      re.compile(self.keyname), fake_key.material).and_return()
-    fake_ec2.should_receive('create_key_pair').with_args(self.keyname) \
-      .and_return(fake_key)
-
-    # and the same for the security group
-    fake_ec2.should_receive('create_security_group').with_args(self.group,
-      str).and_return()
-    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    self.setup_ec2_mocks()
 
     # slip in some fake spot instance info
     fake_entry = flexmock(name='fake_entry', price=1)
-    fake_ec2.should_receive('get_spot_price_history').with_args(
+    self.fake_ec2.should_receive('get_spot_price_history').with_args(
       product_description='Linux/UNIX', instance_type='m1.large') \
       .and_return([fake_entry])
 
     # also mock out acquiring a spot instance
-    fake_ec2.should_receive('request_spot_instances').with_args('1.1',
+    self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
       instance_type='m1.large', count=1)
 
-    # assume that there are no instances running initially, and that the
-    # instance we spawn starts as pending, then becomes running
-    no_instances = flexmock(name='no_instances', instances=[])
-
-    pending_instance = flexmock(name='pending_instance', state='pending',
-      key_name=self.keyname, id='i-ABCDEFG')
-    pending_reservation = flexmock(name='pending_reservation',
-      instances=[pending_instance])
-
-    running_instance = flexmock(name='running_instance', state='running',
-      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
-      private_dns_name='private1')
-    running_reservation = flexmock(name='running_reservation',
-      instances=[running_instance])
-
-    fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
-      .and_return(pending_reservation).and_return(running_reservation)
-
-    # finally, inject the mocked EC2 in
-    flexmock(boto)
-    boto.should_receive('connect_ec2').and_return(fake_ec2)
-
     # assume that root login is not enabled
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('sudo cp')).and_return()
 
     # and assume that we can copy over our ssh keys fine
-    local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
       False, 5).and_return()
-    local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    local_state.should_receive('shell').with_args(re.compile('openssl'),
+    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
     # assume that we started god fine
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god &'))
 
     # and that we copied over the AppController's god file
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('appcontroller.god'))
 
     # also, that we started the AppController itself
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_socket_mocks('public1')
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
-    local_state.should_receive('get_local_nodes_info').and_return(json.loads(
+    self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
@@ -517,32 +474,14 @@ appengine:  1.2.3.4
       }])))
 
     # copying over the locations yaml and json files should be fine
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
     # same for the secret key
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
 
     argv = [
       "--min", "1",
@@ -561,10 +500,8 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_cloud_deployment_manual_spot_price(self):
     # let's say that appscale isn't already running
-
-    local_state = flexmock(LocalState)
-    local_state.should_receive('ensure_appscale_isnt_running').and_return()
-    local_state.should_receive('make_appscale_directory').and_return()
+    self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
+    self.local_state.should_receive('make_appscale_directory').and_return()
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -590,160 +527,50 @@ appengine:  1.2.3.4
     self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
-    # mock out interactions with AWS
-    fake_ec2 = flexmock(name='fake_ec2')
-
-    # first, pretend that our image does exist in EC2
-    fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
-      .and_return()
-
-    # next, assume that our keypair doesn't exist yet
-    fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
-      .and_return(None)
-
-    # same for the security group
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
-
-    # mock out creating the keypair
-    fake_key = flexmock(name='fake_key', material='baz')
-    local_state.should_receive('write_key_file').with_args(
-      re.compile(self.keyname), fake_key.material).and_return()
-    fake_ec2.should_receive('create_key_pair').with_args(self.keyname) \
-      .and_return(fake_key)
-
-    # and the same for the security group
-    fake_ec2.should_receive('create_security_group').with_args('bazgroup',
-      str).and_return()
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
-      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
-      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    fake_ec2.should_receive('authorize_security_group').with_args('bazgroup',
-      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    self.setup_ec2_mocks()
 
     # also mock out acquiring a spot instance
-    fake_ec2.should_receive('request_spot_instances').with_args('1.23',
+    self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
       instance_type='m1.large', count=1)
 
-    # assume that there are no instances running initially, and that the
-    # instance we spawn starts as pending, then becomes running
-    no_instances = flexmock(name='no_instances', instances=[])
-
-    pending_instance = flexmock(name='pending_instance', state='pending',
-      key_name=self.keyname, id='i-ABCDEFG')
-    pending_reservation = flexmock(name='pending_reservation',
-      instances=[pending_instance])
-
-    running_instance = flexmock(name='running_instance', state='running',
-      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
-      private_dns_name='private1')
-    running_reservation = flexmock(name='running_reservation',
-      instances=[running_instance])
-
-    fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
-      .and_return(pending_reservation).and_return(running_reservation)
-
-    # finally, inject the mocked EC2 in
-    flexmock(boto)
-    boto.should_receive('connect_ec2').and_return(fake_ec2)
-
     # assume that root login is not enabled
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('sudo cp')).and_return()
 
     # and assume that we can copy over our ssh keys fine
-    local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
       False, 5).and_return()
-    local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    local_state.should_receive('shell').with_args(re.compile('openssl'),
+    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
     # assume that we started god fine
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god &'))
 
     # and that we copied over the AppController's god file
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('appcontroller.god'))
 
     # also, that we started the AppController itself
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_socket_mocks('public1')
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
-    local_state.should_receive('get_local_nodes_info').and_return(json.loads(
+    self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
@@ -751,32 +578,14 @@ appengine:  1.2.3.4
       }])))
 
     # copying over the locations yaml and json files should be fine
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
     # same for the secret key
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
 
     argv = [
       "--min", "1",
@@ -796,17 +605,16 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_virt_deployment_with_login_override(self):
     # let's say that appscale isn't already running
-    local_state = flexmock(LocalState)
-    local_state.should_receive('ensure_appscale_isnt_running').and_return()
-    local_state.should_receive('make_appscale_directory').and_return()
-    local_state.should_receive('update_local_metadata').and_return()
-    local_state.should_receive('get_local_nodes_info').and_return(json.loads(
+    self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
+    self.local_state.should_receive('make_appscale_directory').and_return()
+    self.local_state.should_receive('update_local_metadata').and_return()
+    self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "1.2.3.4",
         "private_ip" : "1.2.3.4",
         "jobs" : ["shadow", "login"]
       }])))
-    local_state.should_receive('get_secret_key').and_return("fookey")
+    self.local_state.should_receive('get_secret_key').and_return("fookey")
 
 
     flexmock(RemoteHelper)
@@ -862,8 +670,7 @@ appengine:  1.2.3.4
     os.path.should_receive('exists').with_args(private_key).and_return(False)
     os.path.should_receive('exists').with_args(public_key).and_return(False)
 
-    local_state = flexmock(LocalState)
-    local_state.should_receive('shell').with_args(re.compile('^ssh-keygen'), False).and_return()
+    self.local_state.should_receive('shell').with_args(re.compile('^ssh-keygen'), False).and_return()
 
     flexmock(os)
     original_private_key = LocalState.LOCAL_APPSCALE_PATH + self.keyname
@@ -878,8 +685,8 @@ appengine:  1.2.3.4
       LocalState.get_client_secrets_location(self.keyname))
 
     # let's say that appscale isn't already running
-    local_state.should_receive('ensure_appscale_isnt_running').and_return()
-    local_state.should_receive('make_appscale_directory').and_return()
+    self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
+    self.local_state.should_receive('make_appscale_directory').and_return()
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -1023,6 +830,19 @@ appengine:  1.2.3.4
       image=image_name).and_return(fake_image_request)
 
     fake_gce.should_receive('images').and_return(fake_images)
+
+    # next, presume that the persistent disk we want to use exists
+    disk_name = 'my-persistent-disk-1'
+    disk_info = {}
+    fake_disk_request = flexmock(name='fake_disk_request')
+    fake_disk_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(disk_info)
+
+    fake_disks = flexmock(name='fake_disks')
+    fake_disks.should_receive('get').with_args(project=project_id,
+      disk=disk_name, zone=GCEAgent.DEFAULT_ZONE).and_return(fake_disk_request)
+
+    fake_gce.should_receive('disks').and_return(fake_disks)
 
     # next, presume that the network doesn't exist yet
     fake_network_request = flexmock(name='fake_network_request')
@@ -1215,101 +1035,42 @@ appengine:  1.2.3.4
       .and_return(fake_gce)
 
     # assume that root login is not enabled
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin='ls').and_raise(ShellException)
 
     # assume that we can enable root login
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('sudo cp')).and_return()
 
     # and assume that we can copy over our ssh keys fine
-    local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
       False, 5).and_return()
-    local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
 
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
-
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
-
-    # put in a mock indicating that the database the user wants is supported
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    local_state.should_receive('shell').with_args(re.compile('openssl'),
+    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
     # assume that we started god fine
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god &'))
 
     # and that we copied over the AppController's god file
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('appcontroller.god'))
 
     # also, that we started the AppController itself
-    local_state.should_receive('shell').with_args(re.compile('ssh'),
+    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('god load'))
 
-    # assume that ssh comes up on the third attempt
-    fake_socket = flexmock(name='fake_socket')
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.SSH_PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # assume that the AppController comes up on the third attempt
-    fake_socket.should_receive('connect').with_args(('public1',
-      AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args(('public1',
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # as well as for the AppDashboard
-    fake_socket.should_receive('connect').with_args(('public1',
-      RemoteHelper.APP_DASHBOARD_PORT)).and_raise(Exception) \
-      .and_raise(Exception).and_return(None)
-
-    flexmock(socket)
-    socket.should_receive('socket').and_return(fake_socket)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(list, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1']))
-    role_info = [{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['shadow', 'login']
-    }]
-    fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
-      .and_return(json.dumps(role_info))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_done_initializing') \
-      .and_return(False) \
-      .and_return(True)
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    self.setup_socket_mocks('public1')
+    self.setup_appcontroller_mocks('public1', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
-    local_state.should_receive('get_local_nodes_info').and_return(json.loads(
+    self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
@@ -1317,36 +1078,24 @@ appengine:  1.2.3.4
       }])))
 
     # copying over the locations yaml and json files should be fine
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
     # same for the secret key
-    local_state.should_receive('shell').with_args(re.compile('scp'),
+    self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_appcontroller')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
+    self.setup_uaserver_mocks('public1')
+
+    # Finally, pretend we're using a single persistent disk.
+    disk_layout = yaml.safe_load("""
+node-1: my-persistent-disk-1
+    """)
 
     argv = [
       "--min", "1",
       "--max", "1",
+      "--disks", base64.b64encode(yaml.dump(disk_layout)),
       "--group", self.group,
       "--infrastructure", "gce",
       "--gce_instance_type", instance_type,

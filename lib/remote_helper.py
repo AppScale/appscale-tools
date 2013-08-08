@@ -68,9 +68,14 @@ class RemoteHelper():
   APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
 
 
+  # The location on AppScale VMs where we should mount and unmount the
+  # persistent disk.
+  PERSISTENT_MOUNT_POINT = "/opt/appscale"
+
+
   # The location on AppScale VMs where Google App Engine applications should be
   # uploaded to.
-  REMOTE_APP_DIR = "/opt/appscale/apps"
+  REMOTE_APP_DIR = "{0}/apps".format(PERSISTENT_MOUNT_POINT)
 
 
   @classmethod
@@ -164,8 +169,13 @@ class RemoteHelper():
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
 
     acc = AppControllerClient(public_ip, secret_key)
-    locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
-      ":".join(node_layout.head_node().roles), instance_id)]
+    locations = [{
+      'public_ip' : public_ip,
+      'private_ip' : private_ip,
+      'jobs' : node_layout.head_node().roles,
+      'instance_id' : instance_id,
+      'disk' : node_layout.head_node().disk
+    }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
     except Exception:
@@ -664,12 +674,13 @@ class RemoteHelper():
 
   @classmethod
   def terminate_cloud_instance(cls, instance_id, options):
-    """Powers off a single instance in the currently AppScale deployment and
-       cleans up secret key from the local filesystem.
+    """ Powers off a single instance in the currently AppScale deployment and
+    cleans up AppScale metadata from the local filesystem.
 
     Args:
-      instance_id: str containing the instance id.
-      options: namespace containing the run parameters.
+      instance_id: A str containing the instance id that should be terminated.
+      options: A Namespace containing the credentials necessary to terminate
+        the named instance.
     """
     AppScaleLogger.log("About to terminate instance {0}"
       .format(instance_id))
@@ -680,6 +691,7 @@ class RemoteHelper():
     agent.terminate_instances(params)
     agent.cleanup_state(params)
     os.remove(LocalState.get_secret_key_location(options.keyname))
+
 
   @classmethod
   def terminate_cloud_infrastructure(cls, keyname, is_verbose):
@@ -702,12 +714,43 @@ class RemoteHelper():
     params['IS_VERBOSE'] = is_verbose
     _, _, instance_ids = agent.describe_instances(params)
 
+    # If using persistent disks, unmount them and detach them before we blow
+    # away the instances.
+    cls.terminate_virtualized_cluster(keyname, is_verbose)
+    nodes = LocalState.get_local_nodes_info(keyname)
+    for node in nodes:
+      if node.get('disk'):
+        AppScaleLogger.log("Unmounting persistent disk at {0}".format(
+          node['public_ip']))
+        cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
+        agent.detach_disk(params, node['disk'], node['instance_id'])
+
     # terminate all the machines
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
     # delete the keyname and group
     agent.cleanup_state(params)
+
+
+  @classmethod
+  def unmount_persistent_disk(cls, host, keyname, is_verbose):
+    """Unmounts the persistent disk that was previously mounted on the named
+    machine.
+
+    Args:
+      host: A str that names the IP address or FQDN where the machine whose
+        disk needs to be unmounted can be found.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    try:
+      remote_output = cls.ssh(host, keyname, 'umount {0}'.format(
+        cls.PERSISTENT_MOUNT_POINT), is_verbose)
+      AppScaleLogger.verbose(remote_output, is_verbose)
+    except ShellException:
+      pass
 
 
   @classmethod

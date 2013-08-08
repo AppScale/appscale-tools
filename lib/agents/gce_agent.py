@@ -706,6 +706,57 @@ class GCEAgent(BaseAgent):
       return False
 
 
+  def does_disk_exist(self, parameters, disk):
+    """ Queries Google Compute Engine to see if the specified persistent disk
+    exists for this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk: A str containing the name of the disk that we should check for
+        existence.
+    Returns:
+      True if the named persistent disk exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.disks().get(project=parameters[self.PARAM_PROJECT],
+        disk=disk, zone=self.DEFAULT_ZONE)
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the persistent disk specified in 'disk_name' from the named
+    instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk_name: A str naming the persistent disk to detach.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    project_id = parameters[self.PARAM_PROJECT]
+    request = gce_service.instances().detachDisk(
+      project=project_id,
+      zone=self.DEFAULT_ZONE,
+      instance=instance_id,
+      deviceName='sdb')
+    response = request.execute(auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
+
+
   def cleanup_state(self, parameters):
     """ Deletes the firewall and network that were created during this AppScale
     deployment.

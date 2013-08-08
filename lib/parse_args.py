@@ -203,6 +203,8 @@ class ParseArgs():
       self.parser.add_argument('--clear_datastore', action='store_true',
         default=False,
         help="erases all stored user and application data")
+      self.parser.add_argument('--disks',
+        help="a base64-encoded YAML dictating the PD or EBS disks to use")
 
       # flags relating to application servers
       group = self.parser.add_mutually_exclusive_group()
@@ -426,29 +428,46 @@ class ParseArgs():
         raise BadConfigurationException("Cannot specify a machine image " + \
           "when --infrastructure is not specified.")
 
+      # Fail if the user is trying to use AWS Spot Instances on a virtualized
+      # cluster.
       if self.args.use_spot_instances or self.args.max_spot_price:
         raise BadConfigurationException("Can't run spot instances when " + \
           "--infrastructure is not specified.")
 
+      # Fail if the user is trying to use persistent disks on a virtualized
+      # cluster.
+      if self.args.disks:
+        raise BadConfigurationException("Can't specify persistent disks " + \
+          "when not running in a cloud infrastructure.")
+
       return
 
     # make sure the user gave us an ami if running in cloud
-    if self.args.infrastructure and not self.args.machine:
+    if not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
-    # if the user wants to use spot instances in a cloud, make sure that it's
-    # EC2 (since Euca doesn't have spot instances)
+    # If the user wants to use spot instances in a cloud, make sure that it's
+    # EC2 (since Euca doesn't have spot instances).
     if self.args.infrastructure != 'ec2' and (self.args.use_spot_instances or \
       self.args.max_spot_price):
       raise BadConfigurationException("Can't run spot instances unless " + \
         "Amazon EC2 is the infrastructure used.")
 
-    # if the user does want to set a max spot price, make sure they told us that
-    # they want to use spot instances in the first place
+    # If the user does want to set a max spot price, make sure they told us that
+    # they want to use spot instances in the first place.
     if self.args.max_spot_price and not self.args.use_spot_instances:
       raise BadConfigurationException("Can't have a max spot instance price" + \
         " if --use_spot_instances is not set.")
+
+    # If the user does want to use persistent disks, make sure they specified
+    # them in the right format, a dictionary mapping node IDs to disk names.
+    if self.args.disks:
+      self.args.disks = yaml.safe_load(base64.b64decode(self.args.disks))
+
+      if not isinstance(self.args.disks, dict):
+        raise BadConfigurationException("--disks must be a dict, but was a " \
+          "{0}".format(type(self.args.disks)))
 
 
   def validate_credentials(self):
@@ -479,6 +498,15 @@ class ParseArgs():
     params = cloud_agent.get_params_from_args(self.args)
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
+
+    # Right now, only validate disks for GCE (since a separate pull will add
+    # EBS for EC2).
+    if not self.args.disks or self.args.infrastructure != 'gce':
+      return
+
+    for disk in set(self.args.disks.values()):
+      if not cloud_agent.does_disk_exist(params, disk):
+        raise BadConfigurationException("Couldn't find disk {0}".format(disk))
 
 
   def validate_database_flags(self):
