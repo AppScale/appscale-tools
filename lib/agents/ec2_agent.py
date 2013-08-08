@@ -467,6 +467,26 @@ class EC2Agent(BaseAgent):
       return False
 
 
+  def does_disk_exist(self, parameters, disk_name):
+    """ Queries Amazon EC2 to see if the specified EBS volume exists.
+
+    Args:
+      parameters: A dict that contains the credentials needed to authenticate
+        with AWS.
+      disk_name: A str naming the EBS volume to check for existence.
+    Returns:
+      True if the named EBS volume exists, and False otherwise.
+    """
+    conn = self.open_connection(parameters)
+    try:
+      conn.get_all_volumes([disk_name])
+      AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
+      return False
+
+
   def detach_disk(self, parameters, disk_name, instance_id):
     """ Detaches the EBS mount specified in disk_name from the named instance.
 

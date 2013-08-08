@@ -499,9 +499,7 @@ class ParseArgs():
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
 
-    # Right now, only validate disks for GCE (since a separate pull will add
-    # EBS for EC2).
-    if not self.args.disks or self.args.infrastructure != 'gce':
+    if not self.args.disks:
       return
 
     for disk in set(self.args.disks.values()):
