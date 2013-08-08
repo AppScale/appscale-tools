@@ -428,12 +428,14 @@ class ParseArgs():
         raise BadConfigurationException("Cannot specify a machine image " + \
           "when --infrastructure is not specified.")
 
-      # spot instances can only be used in EC2
+      # Fail if the user is trying to use AWS Spot Instances on a virtualized
+      # cluster.
       if self.args.use_spot_instances or self.args.max_spot_price:
         raise BadConfigurationException("Can't run spot instances when " + \
           "--infrastructure is not specified.")
 
-      # EBS / persistent disks can only be used in EC2 and GCE
+      # Fail if the user is trying to use persistent disks on a virtualized
+      # cluster.
       if self.args.disks:
         raise BadConfigurationException("Can't specify persistent disks " + \
           "when not running in a cloud infrastructure.")
@@ -445,7 +447,7 @@ class ParseArgs():
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
-    # if the user wants to use spot instances in a cloud, make sure that it's
+    # If the user wants to use spot instances in a cloud, make sure that it's
     # EC2 (since Euca doesn't have spot instances)
     if self.args.infrastructure != 'ec2' and (self.args.use_spot_instances or \
       self.args.max_spot_price):
