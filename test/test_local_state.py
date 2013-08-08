@@ -97,12 +97,12 @@ class TestLocalState(unittest.TestCase):
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False)
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'})
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 2,
-      'max' : 2
+      'min' : 1,
+      'max' : 1
     })
 
     expected = {
@@ -110,18 +110,17 @@ class TestLocalState(unittest.TestCase):
       'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
-        'db_slave', 'appengine']}),
+      'ips' : json.dumps([]),
       'keyname' : 'boo',
-      'replication' : '2',
+      'replication' : '1',
       'appengine' : '1',
       'autoscale' : 'False',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : 2,
-      'max_images' : 2,
+      'min_images' : 1,
+      'max_images' : 1,
       'use_spot_instances' : True,
       'max_spot_price' : '1.23'
     }

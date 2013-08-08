@@ -142,7 +142,8 @@ class AppControllerClient():
       app = 'none'
 
     result = self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, locations, credentials, [app], self.secret)
+      self.server.set_parameters, json.dumps(locations), credentials, [app],
+      self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 

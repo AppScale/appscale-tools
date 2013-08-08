@@ -196,6 +196,9 @@ Available commands:
     if "ips_layout" in contents_as_yaml:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
 
+    if "disks" in contents_as_yaml:
+      disks = base64.b64encode(yaml.dump(contents_as_yaml["disks"]))
+
     if not "infrastructure" in contents_as_yaml:
       # Only run add-keypair if there is no ssh key present,
       # or if it doesn't log into all the machines specified.
@@ -225,6 +228,9 @@ Available commands:
         if key == "ips_layout":
           command.append("--ips_layout")
           command.append(ips_layout)
+        elif key == "disks":
+          command.append("--disks")
+          command.append(disks)
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
