@@ -480,7 +480,7 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     try:
       conn.get_all_volumes([disk_name])
-      AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
+      AppScaleLogger.log('EBS volume {0} does exist'.format(disk_name))
       return True
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
@@ -495,9 +495,17 @@ class EC2Agent(BaseAgent):
       disk_name: A str naming the EBS volume to detach.
       instance_id: A str naming the id of the instance that the disk should be
         detached from.
+    Returns:
+      True if the disk was detached, and False otherwise.
     """
     conn = self.open_connection(parameters)
-    conn.detach_volume(disk_name, instance_id, device='/dev/sdb')
+    try:
+      conn.detach_volume(disk_name, instance_id, device='/dev/sdc')
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log("Could not detach volume with name {0}".format(
+        disk_name))
+      return False
 
 
   def cleanup_state(self, parameters):

@@ -750,7 +750,7 @@ class GCEAgent(BaseAgent):
       project=project_id,
       zone=self.DEFAULT_ZONE,
       instance=instance_id,
-      deviceName='sdb')
+      deviceName='sdc')
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
