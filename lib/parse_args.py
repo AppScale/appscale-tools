@@ -448,20 +448,20 @@ class ParseArgs():
         "when running in a cloud infrastructure.")
 
     # If the user wants to use spot instances in a cloud, make sure that it's
-    # EC2 (since Euca doesn't have spot instances)
+    # EC2 (since Euca doesn't have spot instances).
     if self.args.infrastructure != 'ec2' and (self.args.use_spot_instances or \
       self.args.max_spot_price):
       raise BadConfigurationException("Can't run spot instances unless " + \
         "Amazon EC2 is the infrastructure used.")
 
-    # if the user does want to set a max spot price, make sure they told us that
-    # they want to use spot instances in the first place
+    # If the user does want to set a max spot price, make sure they told us that
+    # they want to use spot instances in the first place.
     if self.args.max_spot_price and not self.args.use_spot_instances:
       raise BadConfigurationException("Can't have a max spot instance price" + \
         " if --use_spot_instances is not set.")
 
-    # if the user does want to use persistent disks, make sure they specified
-    # them in the right format, a dictionary mapping node IDs to disk names
+    # If the user does want to use persistent disks, make sure they specified
+    # them in the right format, a dictionary mapping node IDs to disk names.
     if self.args.disks:
       self.args.disks = yaml.safe_load(base64.b64decode(self.args.disks))
 
