@@ -68,9 +68,14 @@ class RemoteHelper():
   APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
 
 
+  # The location on AppScale VMs where we should mount and unmount the
+  # persistent disk.
+  PERSISTENT_MOUNT_POINT = "/opt/appscale"
+
+
   # The location on AppScale VMs where Google App Engine applications should be
   # uploaded to.
-  REMOTE_APP_DIR = "/opt/appscale/apps"
+  REMOTE_APP_DIR = "{0}/apps".format(PERSISTENT_MOUNT_POINT)
 
 
   @classmethod
@@ -740,9 +745,12 @@ class RemoteHelper():
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    remote_output = cls.ssh(host, keyname, 'umount /opt/appscale', is_verbose)
-    AppScaleLogger.verbose(remote_output, is_verbose)
-    # TODO(cgb): Check the output of the umount command.
+    try:
+      remote_output = cls.ssh(host, keyname, 'umount {0}'.format(
+        cls.PERSISTENT_MOUNT_POINT), is_verbose)
+      AppScaleLogger.verbose(remote_output, is_verbose)
+    except ShellException:
+      pass
 
 
   @classmethod

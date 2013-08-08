@@ -734,12 +734,20 @@ class NodeLayout():
     return None
 
 
-  def to_dict_without_head_node(self):
-    result = {}
-    # Put all nodes except the head node in the hash
-    for node in self.other_nodes():
-      result[node.public_ip] = node.roles
-    return result
+  def to_list_without_head_node(self):
+    """ Converts all of the nodes (except the head node) to a format that can
+    be easily JSON-dumped (a list of dicts).
+
+    Returns:
+      A list, where each member is a dict corresponding to a Node in this
+      AppScale deployment. As callers explicitly specify the head node, we
+      don't include it in this list.
+    """
+    return [{
+      'ip' : node.public_ip,
+      'jobs' : node.roles,
+      'disk' : node.disk
+    } for node in self.other_nodes()]
 
 
   def valid(self, message = None):

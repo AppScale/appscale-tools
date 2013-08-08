@@ -174,7 +174,7 @@ class LocalState():
     creds = {
       "table" : options.table,
       "hostname" : first_host,
-      "ips" : json.dumps(node_layout.to_dict_without_head_node()),
+      "ips" : json.dumps(node_layout.to_list_without_head_node()),
       "keyname" : options.keyname,
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),

@@ -60,6 +60,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "autoscale" : True,
       "client_secrets" : None,
       "clear_datastore" : False,
+      "disks" : None,
       "min" : 1,
       "max" : 1,
       "infrastructure" : "ec2",
