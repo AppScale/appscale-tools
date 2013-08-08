@@ -439,6 +439,8 @@ class EC2Agent(BaseAgent):
     Args:
       instance_id: id of the (stopped) instance to create an image of.
       name: A str containing the human-readable name for the image.
+      parameters: A dict that contains the credentials needed to authenticate
+        with AWS.
     Returns:
       A str containing the ami of the new image.
      """
