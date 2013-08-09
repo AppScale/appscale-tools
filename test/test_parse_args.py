@@ -31,7 +31,8 @@ class TestParseArgs(unittest.TestCase):
 
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
-      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
+      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG', '--zone',
+      'my-zone-1b']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
@@ -429,3 +430,22 @@ public1 : disk1
     cloud_argv2 = self.cloud_argv[:] + ["--disks", base64ed_good_disks]
     actual = ParseArgs(cloud_argv2, self.function).args
     self.assertEquals(disks, actual.disks)
+
+
+  def test_zone_flag(self):
+    # Specifying an availability zone is only valid for EC2/Euca/GCE, so
+    # fail on a cluster deployment.
+    argv = self.cluster_argv[:] + ["--zone", "my-zone-1b"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # If we want to specify the zone on a cloud deployment, but the zone is not
+    # an acceptable value, we should fail.
+    #cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone"]
+    #self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+    #  self.function)
+
+    # passing in a zone on a cloud is fine, and should result in us seeing the
+    # same zone that we passed in.
+    cloud_argv2 = self.cloud_argv[:]
+    actual = ParseArgs(cloud_argv2, self.function).args
+    self.assertEquals('my-zone-1b', actual.zone)

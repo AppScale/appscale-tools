@@ -491,7 +491,8 @@ appengine:  1.2.3.4
       "--use_spot_instances",
       "--keyname", self.keyname,
       "--group", self.group,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -596,7 +597,8 @@ appengine:  1.2.3.4
       "--max_spot_price", "1.23",
       "--keyname", self.keyname,
       "--group", self.group,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -1103,7 +1105,8 @@ node-1: my-persistent-disk-1
       "--keyname", self.keyname,
       "--client_secrets", client_secrets,
       "--project", project_id,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args
