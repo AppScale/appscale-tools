@@ -456,7 +456,7 @@ class ParseArgs():
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
-    # Also make sure they gave us a valid availability zone.
+    # Also make sure they gave us an availability zone.
     if not self.args.zone:
       raise BadConfigurationException("Need an availability zone specified " +
         "when running in a cloud infrastructure.")

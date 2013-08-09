@@ -164,7 +164,8 @@ class EC2Agent(BaseAgent):
         params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
       else:
         params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
-          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE])
+          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
+          params[self.PARAM_ZONE])
 
     return params
 
@@ -268,10 +269,11 @@ class EC2Agent(BaseAgent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
     spot = parameters[self.PARAM_SPOT]
+    zone = parameters[self.PARAM_ZONE]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
-      "instance type {2}, keyname {3}, in security group {4}".format(count,
-      image_id, instance_type, keyname, group))
+      "instance type {2}, keyname {3}, in security group {4}, in availability" \
+      " zone {5}".format(count, image_id, instance_type, keyname, group, zone))
     if spot:
       AppScaleLogger.log("Using spot instances")
     else:
@@ -302,13 +304,14 @@ class EC2Agent(BaseAgent):
       conn = self.open_connection(parameters)
       if spot:
         price = parameters[self.PARAM_SPOT_PRICE] or \
-          self.get_optimal_spot_price(conn, instance_type)
+          self.get_optimal_spot_price(conn, instance_type, zone)
 
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, count=count)
+          security_groups=[group], instance_type=instance_type, count=count,
+          placement=zone)
       else:
         conn.run_instances(image_id, count, count, key_name=keyname,
-          security_groups=[group], instance_type=instance_type)
+          security_groups=[group], instance_type=instance_type, placement=zone)
 
       instance_ids = []
       public_ips = []
@@ -512,7 +515,7 @@ class EC2Agent(BaseAgent):
         time.sleep(5)
 
 
-  def get_optimal_spot_price(self, conn, instance_type):
+  def get_optimal_spot_price(self, conn, instance_type, zone):
     """
     Returns the spot price for an EC2 instance of the specified instance type.
     The returned value is computed by averaging all the spot price history
@@ -520,13 +523,18 @@ class EC2Agent(BaseAgent):
     extra 10%.
 
     Args:
-      instance_type An EC2 instance type
+      conn: A boto.EC2Connection that can be used to communicate with AWS.
+      instance_type: A str representing the instance type whose prices we
+        should speculate for.
+      zone: A str representing the availability zone that the instance will
+        be placed in.
 
     Returns:
-      The estimated spot price for the specified instance type
+      The estimated spot price for the specified instance type, in the
+        specified availability zone.
     """
     history = conn.get_spot_price_history(product_description='Linux/UNIX',
-      instance_type=instance_type)
+      instance_type=instance_type, availability_zone=zone)
     var_sum = 0.0
     for entry in history:
       var_sum += entry.price

@@ -59,6 +59,10 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
 
+    # Pretend that a bad availability zone doesn't exist.
+    fake_ec2.should_receive('get_all_zones').with_args('bad-zone') \
+      .and_raise(boto.exception.EC2ResponseError, 'baz', 'baz')
+
     fake_price = flexmock(name='fake_price', price=1.00)
     fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
 
@@ -444,9 +448,9 @@ public1 : disk1
 
     # If we want to specify the zone on a cloud deployment, but the zone is not
     # an acceptable value, we should fail.
-    #cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone"]
-    #self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
-    #  self.function)
+    cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone"]
+    self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+      self.function)
 
     # passing in a zone on a cloud is fine, and should result in us seeing the
     # same zone that we passed in.
