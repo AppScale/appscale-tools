@@ -43,6 +43,7 @@ class EC2Agent(BaseAgent):
   PARAM_INSTANCE_IDS = 'instance_ids'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
+  PARAM_ZONE = 'zone'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
     PARAM_CREDENTIALS,
@@ -50,7 +51,8 @@ class EC2Agent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
-    PARAM_SPOT
+    PARAM_SPOT,
+    PARAM_ZONE
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
@@ -139,6 +141,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
+      self.PARAM_ZONE : args['zone'],
       'IS_VERBOSE' : args.get('verbose', False)
     }
 
@@ -464,6 +467,26 @@ class EC2Agent(BaseAgent):
       return True
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
+      return False
+
+
+  def does_zone_exist(self, parameters):
+    """ Queries Amazon EC2 to see if the specified availability zone exists.
+
+    Args:
+      parameters: A dict that contains the availability zone to check for
+        existence.
+    Returns:
+      True if the availability zone exists, and False otherwise.
+    """
+    try:
+      conn = self.open_connection(parameters)
+      zone = parameters[self.PARAM_ZONE]
+      conn.get_all_zones(zone)
+      AppScaleLogger.log('Availability zone {0} does exist'.format(zone))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('Availability zone {0} does not exist'.format(zone))
       return False
 
 

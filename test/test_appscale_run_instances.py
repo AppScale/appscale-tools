@@ -129,6 +129,10 @@ class TestAppScaleRunInstances(unittest.TestCase):
     self.fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
 
+    # Also pretend that the availability zone we want to use exists.
+    self.fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
     # next, assume that our keypair doesn't exist yet
     self.fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
       .and_return(None)

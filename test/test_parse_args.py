@@ -55,6 +55,10 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
       .and_return('anything')
 
+    # Also pretend that the availability zone we want to use exists.
+    fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
     fake_price = flexmock(name='fake_price', price=1.00)
     fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
 
