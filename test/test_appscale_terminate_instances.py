@@ -317,6 +317,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # mock out reading the locations.yaml file, and pretend that we're on
     # GCE
     project_id = "1234567890"
+    zone = 'my-zone-1b'
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
@@ -324,7 +325,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'gce',
       'group' : self.group,
-      'project' : project_id
+      'project' : project_id,
+      'zone' : zone
     }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location(self.keyname), 'r') \
@@ -393,7 +395,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'kind': u'compute#instance',
       u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
       u'name': u'appscale-bazboogroup-one',
-      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'tags': {u'fingerprint': u'42WmSpB8rSM='},
       u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
       u'disks': [{
@@ -413,7 +415,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       },
       u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
       u'id': u'8684033495853907982',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
       u'networkInterfaces': [{
         u'accessConfigs': [{
           u'kind': u'compute#accessConfig',
@@ -432,7 +434,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'kind': u'compute#instance',
       u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
       u'name': u'appscale-bazboogroup-two',
-      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'tags': {u'fingerprint': u'42WmSpB8rSM='},
       u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
       u'disks': [{
@@ -452,7 +454,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       },
       u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
       u'id': u'8684033495853907982',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
       u'networkInterfaces': [{
         u'accessConfigs': [{
           u'kind': u'compute#accessConfig',
@@ -469,8 +471,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     list_instance_info = {
       u'items': [instance_one_info, instance_two_info],
       u'kind': u'compute#instanceList',
-      u'id': u'projects/appscale.com:appscale/zones/us-central1-a/instances',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/961228229472/zones/us-central1-a/instances'
+      u'id': u'projects/appscale.com:appscale/zones/my-zone-1b/instances',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/961228229472/zones/my-zone-1b/instances'
     }
 
     fake_list_instance_request = flexmock(name='fake_list_instance_request')
@@ -479,7 +481,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     fake_instances = flexmock(name='fake_instances')
     fake_instances.should_receive('list').with_args(project=project_id,
-      filter="name eq appscale-bazboogroup-.*", zone=GCEAgent.DEFAULT_ZONE) \
+      filter="name eq appscale-bazboogroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
     fake_gce.should_receive('instances').and_return(fake_instances)
 
@@ -489,15 +491,15 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'status': u'PENDING',
       u'kind': u'compute#operation',
       u'name': delete_instance,
-      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'startTime': u'2013-05-27T10:44:51.849-07:00',
       u'insertTime': u'2013-05-27T10:44:51.806-07:00',
       u'targetId': u'12912855597472179535',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
       u'operationType': u'delete',
       u'progress': 0,
       u'id': u'11114355109942058217',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
       u'user': u'Chris@appscale.com'
     }
 
@@ -505,15 +507,15 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'status': u'PENDING',
       u'kind': u'compute#operation',
       u'name': delete_instance,
-      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a',
+      u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'startTime': u'2013-05-27T10:44:51.849-07:00',
       u'insertTime': u'2013-05-27T10:44:51.806-07:00',
       u'targetId': u'12912855597472179535',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
       u'operationType': u'delete',
       u'progress': 0,
       u'id': u'11114355109942058217',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/us-central1-a/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/operations/operation-1369676691806-4ddb6b4ab6f39-a095d3de',
       u'user': u'Chris@appscale.com'
     }
 
@@ -521,14 +523,14 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_delete_instance_request_one.should_receive('execute').with_args(
       fake_authorized_http).and_return(delete_instance_info_one)
     fake_instances.should_receive('delete').with_args(project=project_id,
-      zone=GCEAgent.DEFAULT_ZONE, instance='appscale-bazboogroup-one').and_return(
+      zone=zone, instance='appscale-bazboogroup-one').and_return(
       fake_delete_instance_request_one)
 
     fake_delete_instance_request_two = flexmock(name='fake_delete_instance_request_two')
     fake_delete_instance_request_two.should_receive('execute').with_args(
       fake_authorized_http).and_return(delete_instance_info_two)
     fake_instances.should_receive('delete').with_args(project=project_id,
-      zone=GCEAgent.DEFAULT_ZONE, instance='appscale-bazboogroup-two').and_return(
+      zone=zone, instance='appscale-bazboogroup-two').and_return(
       fake_delete_instance_request_two)
 
     # mock out our waiting for the instances to be deleted
@@ -541,7 +543,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     fake_blocker = flexmock(name='fake_blocker')
     fake_blocker.should_receive('get').with_args(project=project_id,
-      operation=delete_instance, zone=GCEAgent.DEFAULT_ZONE).and_return(
+      operation=delete_instance, zone=zone).and_return(
       fake_instance_checker)
     fake_gce.should_receive('zoneOperations').and_return(fake_blocker)
 

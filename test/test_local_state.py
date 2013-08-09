@@ -97,7 +97,8 @@ class TestLocalState(unittest.TestCase):
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'})
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b')
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -122,7 +123,8 @@ class TestLocalState(unittest.TestCase):
       'min_images' : 1,
       'max_images' : 1,
       'use_spot_instances' : True,
-      'max_spot_price' : '1.23'
+      'max_spot_price' : '1.23',
+      'zone' : 'my-zone-1b'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'max_spot_price':'1.23'})
@@ -185,7 +187,7 @@ class TestLocalState(unittest.TestCase):
       'load_balancer': 'public1', 'instance_id': 'i-ABCDEFG',
       'secret': 'the secret', 'infrastructure': 'ec2',
       'group': 'boogroup', 'ips': 'public1', 'table': 'cassandra',
-      'db_master': 'node-0'
+      'db_master': 'node-0', 'zone' : 'my-zone-1b'
     })).and_return()
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location('booscale'), 'w') \
@@ -200,7 +202,7 @@ class TestLocalState(unittest.TestCase):
       .and_return(fake_locations_json)
 
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
-      keyname='booscale', group='boogroup')
+      keyname='booscale', group='boogroup', zone='my-zone-1b')
     node_layout = NodeLayout(options={
       'min' : 1,
       'max' : 1,
@@ -211,8 +213,8 @@ class TestLocalState(unittest.TestCase):
     instance_id = 'i-ABCDEFG'
     LocalState.update_local_metadata(options, node_layout, host, instance_id)
 
-  def test_extract_app_to_dir(self):
 
+  def test_extract_app_to_dir(self):
     flexmock(os)
     os.should_receive('mkdir').and_return()
     flexmock(os.path)
@@ -225,10 +227,12 @@ class TestLocalState(unittest.TestCase):
       .and_return()
 
     os.should_receive('listdir').and_return(['one_folder'])
-    os.path.should_receive('isdir').with_args(re.compile('one_folder')).and_return(True)
+    os.path.should_receive('isdir').with_args(re.compile('one_folder')) \
+      .and_return(True)
 
     location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
     self.assertEquals(True, 'one_folder' in location)
+
 
   def test_extract_app_to_dir_with_dotfiles(self):
     flexmock(os)
@@ -253,6 +257,7 @@ class TestLocalState(unittest.TestCase):
 
     location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
     self.assertTrue('one_folder' in location)
+
 
   def test_shell_exceptions(self):
     fake_tmp_file = flexmock(name='tempfile')

@@ -17,6 +17,12 @@ instance_type : 'm1.large'
 # AppScale deployment, if running in Google Compute Engine.
 gce_instance_type : 'n1-standard-1'
 
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+zone : 'us-east-1b' # For Amazon EC2
+#zone: 'us-central1-a' # For Google Compute Engine
+
 # The database that your Google App Engine applications will be backed by.
 # Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'

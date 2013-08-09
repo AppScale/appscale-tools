@@ -83,6 +83,9 @@ class GCEAgent(BaseAgent):
   PARAM_VERBOSE = 'is_verbose'
 
 
+  PARAM_ZONE = 'zone'
+
+
   # A set that contains all of the items necessary to run AppScale in Google
   # Compute Engine.
   REQUIRED_CREDENTIALS = (
@@ -90,7 +93,8 @@ class GCEAgent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_KEYNAME,
     PARAM_PROJECT,
-    PARAM_SECRETS
+    PARAM_SECRETS,
+    PARAM_ZONE
   )
 
 
@@ -105,10 +109,6 @@ class GCEAgent(BaseAgent):
   # The URL endpoint that receives Google Compute Engine API requests.
   GCE_URL = 'https://www.googleapis.com/compute/{0}/projects/'.format(
     API_VERSION)
-
-
-  # The zone that instances should be created in and removed from.
-  DEFAULT_ZONE = 'us-central1-a'
 
 
   # The person to contact if there is a problem with the instance. We set this
@@ -445,7 +445,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets'])
+      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets']),
+      self.PARAM_ZONE : args['zone']
     }
 
     if 'verbose' in args:
@@ -471,7 +472,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_KEYNAME : keyname,
       self.PARAM_PROJECT : LocalState.get_project(keyname),
       self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname),
-      self.PARAM_VERBOSE : False  # TODO(cgb): Don't put False in here.
+      self.PARAM_VERBOSE : False,  # TODO(cgb): Don't put False in here.
+      self.PARAM_ZONE : LocalState.get_zone(keyname)
     }
 
 
@@ -521,7 +523,7 @@ class GCEAgent(BaseAgent):
     request = gce_service.instances().list(
       project=parameters[self.PARAM_PROJECT],
       filter="name eq appscale-{0}-.*".format(parameters[self.PARAM_GROUP]),
-      zone=self.DEFAULT_ZONE
+      zone=parameters[self.PARAM_ZONE]
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
@@ -562,10 +564,11 @@ class GCEAgent(BaseAgent):
     instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
+    zone = parameters[self.PARAM_ZONE]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
-      "instance type {2}, keyname {3}, in security group {4}".format(count,
-      image_id, instance_type, keyname, group))
+      "instance type {2}, keyname {3}, in security group {4}, in zone {5}" \
+      .format(count, image_id, instance_type, keyname, group, zone))
 
     # First, see how many instances are running and what their info is.
     start_time = datetime.datetime.now()
@@ -577,7 +580,7 @@ class GCEAgent(BaseAgent):
       image_id)
     project_url = '{0}{1}'.format(self.GCE_URL, project_id)
     machine_type_url = '{0}/zones/{1}/machineTypes/{2}'.format(project_url,
-      self.DEFAULT_ZONE, instance_type)
+      zone, instance_type)
     network_url = '{0}/global/networks/{1}'.format(project_url, group)
 
     # Construct the request body
@@ -604,7 +607,7 @@ class GCEAgent(BaseAgent):
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.instances().insert(
-           project=project_id, body=instances, zone=self.DEFAULT_ZONE)
+           project=project_id, body=instances, zone=zone)
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response,
@@ -667,7 +670,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.instances().delete(
         project=parameters[self.PARAM_PROJECT],
-        zone=self.DEFAULT_ZONE,
+        zone=parameters[self.PARAM_ZONE],
         instance=instance_id
       )
       response = request.execute(auth_http)
@@ -706,6 +709,30 @@ class GCEAgent(BaseAgent):
       return False
 
 
+  def does_zone_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified zone exists for
+    this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        zone that we should check for existence.
+    Returns:
+      True if the named zone exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.zones().get(project=parameters[self.PARAM_PROJECT],
+        zone=parameters[self.PARAM_ZONE])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
   def does_disk_exist(self, parameters, disk):
     """ Queries Google Compute Engine to see if the specified persistent disk
     exists for this user.
@@ -723,7 +750,7 @@ class GCEAgent(BaseAgent):
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.disks().get(project=parameters[self.PARAM_PROJECT],
-        disk=disk, zone=self.DEFAULT_ZONE)
+        disk=disk, zone=parameters[self.PARAM_ZONE])
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
@@ -748,7 +775,7 @@ class GCEAgent(BaseAgent):
     project_id = parameters[self.PARAM_PROJECT]
     request = gce_service.instances().detachDisk(
       project=project_id,
-      zone=self.DEFAULT_ZONE,
+      zone=parameters[self.PARAM_ZONE],
       instance=instance_id,
       deviceName='sdc')
     response = request.execute(auth_http)
