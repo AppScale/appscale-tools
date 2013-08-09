@@ -191,7 +191,8 @@ class LocalState():
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
-        'use_spot_instances' : options.use_spot_instances
+        'use_spot_instances' : options.use_spot_instances,
+        'zone' : options.zone
       }
 
       if options.infrastructure in ["ec2", "euca"]:
