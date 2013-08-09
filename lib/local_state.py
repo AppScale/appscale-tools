@@ -365,8 +365,11 @@ class LocalState():
       'db_master' : node_layout.db_master().public_ip,
       'ips' : all_ips,
       'infrastructure' : infrastructure,
-      'group' : options.group
+      'group' : options.group,
     }
+
+    if infrastructure != "xen":
+      yaml_contents['zone'] = options.zone
 
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
@@ -612,6 +615,21 @@ class LocalState():
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
       return yaml.safe_load(file_handle.read())["project"]
+
+
+  @classmethod
+  def get_zone(cls, keyname):
+    """Reads the locations.yaml file to see what zone instances are running in
+    throughout this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the zone used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["zone"]
 
 
   @classmethod

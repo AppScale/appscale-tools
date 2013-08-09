@@ -664,6 +664,7 @@ appengine:  1.2.3.4
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
+    zone = 'my-zone-1b'
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
 
     # and that the user does not have an ssh key set up, forcing us to create
@@ -859,7 +860,7 @@ appengine:  1.2.3.4
 
     fake_disks = flexmock(name='fake_disks')
     fake_disks.should_receive('get').with_args(project=project_id,
-      disk=disk_name, zone=GCEAgent.DEFAULT_ZONE).and_return(fake_disk_request)
+      disk=disk_name, zone=zone).and_return(fake_disk_request)
 
     fake_gce.should_receive('disks').and_return(fake_disks)
 
@@ -1045,7 +1046,7 @@ appengine:  1.2.3.4
         list_instance_info)
 
     fake_instances.should_receive('list').with_args(project=project_id,
-      filter="name eq appscale-bazgroup-.*", zone=GCEAgent.DEFAULT_ZONE) \
+      filter="name eq appscale-bazgroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
 
     # finally, inject our fake GCE connection
