@@ -83,6 +83,9 @@ class GCEAgent(BaseAgent):
   PARAM_VERBOSE = 'is_verbose'
 
 
+  PARAM_ZONE = 'zone'
+
+
   # A set that contains all of the items necessary to run AppScale in Google
   # Compute Engine.
   REQUIRED_CREDENTIALS = (
@@ -90,7 +93,8 @@ class GCEAgent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_KEYNAME,
     PARAM_PROJECT,
-    PARAM_SECRETS
+    PARAM_SECRETS,
+    PARAM_ZONE
   )
 
 
@@ -445,7 +449,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets'])
+      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets']),
+      self.PARAM_ZONE : args['zone']
     }
 
     if 'verbose' in args:
@@ -699,6 +704,30 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.images().get(project=parameters[self.PARAM_PROJECT],
         image=parameters[self.PARAM_IMAGE_ID])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
+  def does_zone_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified zone exists for
+    this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        zone that we should check for existence.
+    Returns:
+      True if the named zone exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.zones().get(project=parameters[self.PARAM_PROJECT],
+        zone=parameters[self.PARAM_ZONE])
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True

@@ -837,6 +837,19 @@ appengine:  1.2.3.4
 
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the zone we want to use exists
+    zone_name = 'my-zone-1b'
+    zone_info = {}
+    fake_zone_request = flexmock(name='fake_zone_request')
+    fake_zone_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(zone_info)
+
+    fake_zones = flexmock(name='fake_zones')
+    fake_zones.should_receive('get').with_args(project=project_id,
+      zone=zone_name).and_return(fake_zone_request)
+
+    fake_gce.should_receive('zones').and_return(fake_zones)
+
     # next, presume that the persistent disk we want to use exists
     disk_name = 'my-persistent-disk-1'
     disk_info = {}
