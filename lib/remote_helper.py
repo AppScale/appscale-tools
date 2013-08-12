@@ -876,12 +876,16 @@ class RemoteHelper():
       A str corresponding to the message that indicates why the AppController
         crashed.
     """
-    local_crashlog = "/tmp/appcontroller-log-" + str(uuid.uuid4())
-    cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
-      local_crashlog, is_verbose)
     message = ""
-    with open(local_crashlog, 'r') as file_handle:
-      message = "AppController at {0} crashed because: {1}".format(host,
-        file_handle.read())
-    os.remove(local_crashlog)
+    try:
+      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
+      cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
+        local_crashlog, is_verbose)
+      with open(local_crashlog, 'r') as file_handle:
+        message = "AppController at {0} crashed because: {1}".format(host,
+          file_handle.read())
+      os.remove(local_crashlog)
+    except ShellException:
+      message = "AppController at {0} crashed for reasons unknown.".format(host)
+
     return message
