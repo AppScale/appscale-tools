@@ -96,7 +96,6 @@ class GCEAgent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_KEYNAME,
     PARAM_PROJECT,
-    PARAM_SECRETS,
     PARAM_ZONE
   )
 
@@ -440,14 +439,14 @@ class GCEAgent(BaseAgent):
     full_credentials = os.path.expanduser(credentials_file)
     if not os.path.exists(full_credentials):
       raise AgentConfigurationException("Couldn't find your credentials " + \
-        "at {0}".format(client_secrets))
+        "at {0}".format(full_credentials))
 
     if args.get('client_secrets'):
       destination = LocalState.get_client_secrets_location(args['keyname'])
     elif args.get('oauth2_storage'):
       destination = LocalState.get_oauth2_storage_location(args['keyname'])
 
-    shutil.copy(credentials_file, destination)
+    shutil.copy(full_credentials, destination)
 
     params = {
       self.PARAM_GROUP : args['group'],
@@ -455,14 +454,15 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets']),
       self.PARAM_ZONE : args['zone']
     }
 
-    if 'verbose' in args:
-      params[self.PARAM_VERBOSE] = args['verbose']
-    else:
-      params[self.PARAM_VERBOSE] = False
+    if args.get(self.PARAM_SECRETS):
+      params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
+    elif args.get(self.PARAM_STORAGE):
+      params[self.PARAM_STORAGE] = args.get(self.PARAM_STORAGE)
+
+    params[self.PARAM_VERBOSE] = args.get('verbose', False)
 
     return params
 
@@ -477,14 +477,20 @@ class GCEAgent(BaseAgent):
       A dict containing all of the credentials necessary to interact with
         Google Compute Engine.
     """
-    return {
+    params = {
       self.PARAM_GROUP : LocalState.get_group(keyname),
       self.PARAM_KEYNAME : keyname,
       self.PARAM_PROJECT : LocalState.get_project(keyname),
-      self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname),
       self.PARAM_VERBOSE : False,  # TODO(cgb): Don't put False in here.
       self.PARAM_ZONE : LocalState.get_zone(keyname)
     }
+
+    if os.path.exists(LocalState.get_client_secrets_location(keyname)):
+      params[self.PARAM_SECRETS] = LocalState.get_client_secrets_location(keyname)
+    else:
+      params[self.PARAM_STORAGE] = LocalState.get_oauth2_storage_location(keyname)
+
+    return params
 
 
   def assert_required_parameters(self, parameters, _):
@@ -512,7 +518,7 @@ class GCEAgent(BaseAgent):
     # credentials file exists.
     credentials_file = parameters.get(self.PARAM_SECRETS) or parameters.get(
       self.PARAM_STORAGE)
-    if not os.path.exists(credentials_file):
+    if not os.path.exists(os.path.expanduser(credentials_file)):
       raise AgentConfigurationException('Could not find your credentials ' \
         'file at {0}'.format(credentials_file))
 
@@ -822,7 +828,8 @@ class GCEAgent(BaseAgent):
       can be used to sign requests performed with that connection.
     """
     # Perform OAuth 2.0 authorization.
-    if self.PARAM_STORAGE not in parameters:
+    flow = None
+    if self.PARAM_SECRETS in parameters:
       flow = oauth2client.client.flow_from_clientsecrets(
         parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
 

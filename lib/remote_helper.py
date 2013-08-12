@@ -535,8 +535,9 @@ class RemoteHelper():
     # credentials, otherwise the AppScale VMs won't be able to interact with
     # GCE.
     if options.infrastructure and options.infrastructure == 'gce':
-      cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
-        options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
+      if os.path.exists(LocalState.get_client_secrets_location(options.keyname)):
+        cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
+          options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
       cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
         options.keyname) , '/etc/appscale/oauth2.dat', options.verbose)
 
