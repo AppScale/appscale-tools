@@ -152,6 +152,12 @@ class ParseArgs():
       self.parser.add_argument('--ips_layout',
         help="a base64-encoded YAML dictating the placement strategy")
 
+      # Infrastructure-agnostic flags
+      self.parser.add_argument('--disks',
+        help="a base64-encoded YAML dictating the PD or EBS disks to use")
+      self.parser.add_argument('--zone', '-z',
+        help="the availability zone that instances should be deployed to")
+
       # flags relating to EC2-like cloud infrastructures
       keyname = "appscale-{0}".format(str(uuid.uuid4()))
       self.parser.add_argument('--infrastructure', '-i',
@@ -203,8 +209,6 @@ class ParseArgs():
       self.parser.add_argument('--clear_datastore', action='store_true',
         default=False,
         help="erases all stored user and application data")
-      self.parser.add_argument('--disks',
-        help="a base64-encoded YAML dictating the PD or EBS disks to use")
 
       # flags relating to application servers
       group = self.parser.add_mutually_exclusive_group()
@@ -423,28 +427,38 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
-      # make sure we didn't get a machine flag, since that's infrastructure-only
+      # Make sure we didn't get a machine flag, since that's infrastructure-only
       if self.args.machine:
         raise BadConfigurationException("Cannot specify a machine image " + \
-          "when --infrastructure is not specified.")
+          "when infrastructure is not specified.")
+
+      # Also make sure they gave us a valid availability zone.
+      if self.args.zone:
+        raise BadConfigurationException("Cannot specify an availability zone " +
+          "when infrastructure is not specified.")
 
       # Fail if the user is trying to use AWS Spot Instances on a virtualized
       # cluster.
       if self.args.use_spot_instances or self.args.max_spot_price:
         raise BadConfigurationException("Can't run spot instances when " + \
-          "--infrastructure is not specified.")
+          "when infrastructure is not specified.")
 
       # Fail if the user is trying to use persistent disks on a virtualized
       # cluster.
       if self.args.disks:
         raise BadConfigurationException("Can't specify persistent disks " + \
-          "when not running in a cloud infrastructure.")
+          "when infrastructure is not specified.")
 
       return
 
-    # make sure the user gave us an ami if running in cloud
+    # Make sure the user gave us an ami/emi if running in a cloud.
     if not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
+        "when running in a cloud infrastructure.")
+
+    # Also make sure they gave us an availability zone.
+    if not self.args.zone:
+      raise BadConfigurationException("Need an availability zone specified " +
         "when running in a cloud infrastructure.")
 
     # If the user wants to use spot instances in a cloud, make sure that it's
@@ -499,9 +513,10 @@ class ParseArgs():
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
 
-    # Right now, only validate disks for GCE (since a separate pull will add
-    # EBS for EC2).
-    if not self.args.disks or self.args.infrastructure != 'gce':
+    if not cloud_agent.does_zone_exist(params):
+      raise BadConfigurationException("Couldn't find the given zone.")
+
+    if not self.args.disks:
       return
 
     for disk in set(self.args.disks.values()):

@@ -191,7 +191,8 @@ class LocalState():
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
-        'use_spot_instances' : options.use_spot_instances
+        'use_spot_instances' : options.use_spot_instances,
+        'zone' : options.zone
       }
 
       if options.infrastructure in ["ec2", "euca"]:
@@ -365,8 +366,11 @@ class LocalState():
       'db_master' : node_layout.db_master().public_ip,
       'ips' : all_ips,
       'infrastructure' : infrastructure,
-      'group' : options.group
+      'group' : options.group,
     }
+
+    if infrastructure != "xen":
+      yaml_contents['zone'] = options.zone
 
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
@@ -615,6 +619,21 @@ class LocalState():
 
 
   @classmethod
+  def get_zone(cls, keyname):
+    """Reads the locations.yaml file to see what zone instances are running in
+    throughout this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the zone used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["zone"]
+
+
+  @classmethod
   def get_client_secrets_location(cls, keyname):
     """Returns the path on the local filesystem where the client secrets JSON
     file (used to interact with Google Compute Engine) can be found.
@@ -827,12 +846,17 @@ class LocalState():
     crash_log_filename = '{0}log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
-    locale.setlocale(locale.LC_ALL, '')
+    try:
+      locale.setlocale(locale.LC_ALL, '')
+      this_locale = locale.getlocale()[0]
+    except locale.Error:
+      this_locale = "unknown"
+
     log_info = {
       # System-specific information
       'platform' : platform.platform(),
       'runtime' : platform.python_implementation(),
-      'locale' : locale.getlocale()[0],
+      'locale' : this_locale,
 
       # Crash-specific information
       'exception' : exception.__class__.__name__,

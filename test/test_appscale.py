@@ -194,7 +194,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'min' : 1,
-      'max' : 1
+      'max' : 1,
+      'zone' : 'my-zone-1b'
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -208,8 +209,12 @@ class TestAppScale(unittest.TestCase):
     for credential in EC2Agent.REQUIRED_CREDENTIALS:
       os.environ[credential] = "baz"
 
-    # finally, pretend that our ec2 image to use exists
+    # finally, pretend that our ec2 zone and image exists
     fake_ec2 = flexmock(name="fake_ec2")
+
+    fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto)
@@ -236,7 +241,8 @@ class TestAppScale(unittest.TestCase):
       'min' : 1,
       'max' : 1,
       'EC2_ACCESS_KEY' : 'access key',
-      'EC2_SECRET_KEY' : 'secret key'
+      'EC2_SECRET_KEY' : 'secret key',
+      'zone' : 'my-zone-1b'
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -246,8 +252,12 @@ class TestAppScale(unittest.TestCase):
     os.path.should_receive('exists').with_args(
       '/boo/' + appscale.APPSCALEFILE).and_return(True)
 
-    # finally, pretend that our ec2 image to use exists
+    # finally, pretend that our ec2 zone/image to use exist
     fake_ec2 = flexmock(name="fake_ec2")
+
+    fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto)
