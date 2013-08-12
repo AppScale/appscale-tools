@@ -188,9 +188,13 @@ class ParseArgs():
         help="a URL that identifies where an EC2-compatible service runs")
 
       # Google Compute Engine-specific flags
-      self.parser.add_argument('--client_secrets',
+      gce_group = self.parser.add_mutually_exclusive_group()
+      gce_group.add_argument('--client_secrets',
         help="the JSON file that can be used to authenticate with Google " + \
           "APIs via OAuth")
+      gce_group.add_argument('--oauth2_storage',
+        help="the location on the local filesystem where signed OAuth2 " + \
+          "credentials can be found")
       self.parser.add_argument('--project',
         help="the name of the project that is allowed to use Google " + \
           "Compute Engine")

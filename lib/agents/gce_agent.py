@@ -80,6 +80,9 @@ class GCEAgent(BaseAgent):
   PARAM_SECRETS = 'client_secrets'
 
 
+  PARAM_STORAGE = 'oauth2_storage'
+
+
   PARAM_VERBOSE = 'is_verbose'
 
 
@@ -428,16 +431,23 @@ class GCEAgent(BaseAgent):
     if not isinstance(args, dict):
       args = vars(args)
 
-    if not args['client_secrets']:
+    if not args.get('client_secrets') and not args.get('oauth2_storage'):
       raise AgentConfigurationException("Please specify a client_secrets " + \
-        "file in your AppScalefile when running over Google Compute Engine.")
+        "file or a oauth2_storage file in your AppScalefile when running " + \
+        "over Google Compute Engine.")
 
-    client_secrets = os.path.expanduser(args['client_secrets'])
-    if not os.path.exists(client_secrets):
-      raise AgentConfigurationException("Couldn't find your client secrets " + \
-        "file at {0}".format(client_secrets))
-    shutil.copy(client_secrets, LocalState.get_client_secrets_location(
-      args['keyname']))
+    credentials_file = args.get('client_secrets') or args.get('oauth2_storage')
+    full_credentials = os.path.expanduser(credentials_file)
+    if not os.path.exists(full_credentials):
+      raise AgentConfigurationException("Couldn't find your credentials " + \
+        "at {0}".format(client_secrets))
+
+    if args.get('client_secrets'):
+      destination = LocalState.get_client_secrets_location(args['keyname'])
+    elif args.get('oauth2_storage'):
+      destination = LocalState.get_oauth2_storage_location(args['keyname'])
+
+    shutil.copy(credentials_file, destination)
 
     params = {
       self.PARAM_GROUP : args['group'],
@@ -498,10 +508,13 @@ class GCEAgent(BaseAgent):
         raise AgentConfigurationException('The required parameter, {0}, was' \
           ' not specified.'.format(param))
 
-    # Next, make sure that the client_secrets file exists
-    if not os.path.exists(parameters[self.PARAM_SECRETS]):
-      raise AgentConfigurationException('Could not find your client_secrets ' \
-        'file at {0}'.format(parameters[self.PARAM_SECRETS]))
+    # Next, make sure that either the client_secrets file or the oauth2
+    # credentials file exists.
+    credentials_file = parameters.get(self.PARAM_SECRETS) or parameters.get(
+      self.PARAM_STORAGE)
+    if not os.path.exists(credentials_file):
+      raise AgentConfigurationException('Could not find your credentials ' \
+        'file at {0}'.format(credentials_file))
 
 
   def describe_instances(self, parameters):
@@ -809,8 +822,10 @@ class GCEAgent(BaseAgent):
       can be used to sign requests performed with that connection.
     """
     # Perform OAuth 2.0 authorization.
-    flow = oauth2client.client.flow_from_clientsecrets(
-      parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+    if self.PARAM_STORAGE not in parameters:
+      flow = oauth2client.client.flow_from_clientsecrets(
+        parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()
