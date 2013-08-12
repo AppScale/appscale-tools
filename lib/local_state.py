@@ -948,6 +948,8 @@ class LocalState():
     if 'keyname' in yaml_contents and 'group' in yaml_contents:
       return True
 
+    file_contents += "\n# Automatically added by the AppScale Tools: "
+
     cloud_name = "appscale-{0}".format(uuid.uuid4())
     if 'keyname' not in yaml_contents:
       file_contents += "\nkeyname : {0}".format(cloud_name)

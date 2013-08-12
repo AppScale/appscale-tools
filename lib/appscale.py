@@ -194,6 +194,7 @@ Available commands:
     # If running in a cluster environment, we first need to set up SSH keys
     contents_as_yaml = yaml.safe_load(contents)
     if not LocalState.ensure_appscalefile_is_up_to_date():
+      contents = self.read_appscalefile()
       contents_as_yaml = yaml.safe_load(contents)
 
     if "ips_layout" in contents_as_yaml:
@@ -259,10 +260,7 @@ Available commands:
     Raises:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
-    if "keyname" in config:
-      keyname = config["keyname"]
-    else:
-      keyname = "appscale"
+    keyname = config["keyname"]
 
     if 'verbose' in config and config['verbose'] == True:
       verbose = True
