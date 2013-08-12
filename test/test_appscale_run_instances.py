@@ -133,6 +133,10 @@ group: {1}
     self.fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
 
+    # Also pretend that the availability zone we want to use exists.
+    self.fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
     # next, assume that our keypair doesn't exist yet
     self.fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
       .and_return(None)
@@ -426,13 +430,13 @@ appengine:  1.2.3.4
     # slip in some fake spot instance info
     fake_entry = flexmock(name='fake_entry', price=1)
     self.fake_ec2.should_receive('get_spot_price_history').with_args(
-      product_description='Linux/UNIX', instance_type='m1.large') \
-      .and_return([fake_entry])
+      product_description='Linux/UNIX', instance_type='m1.large',
+      availability_zone='my-zone-1b').and_return([fake_entry])
 
     # also mock out acquiring a spot instance
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
-      instance_type='m1.large', count=1)
+      instance_type='m1.large', count=1, placement='my-zone-1b')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -495,7 +499,8 @@ appengine:  1.2.3.4
       "--use_spot_instances",
       "--keyname", self.keyname,
       "--group", self.group,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -536,7 +541,7 @@ appengine:  1.2.3.4
     # also mock out acquiring a spot instance
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
-      instance_type='m1.large', count=1)
+      instance_type='m1.large', count=1, placement='my-zone-1b')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -600,7 +605,8 @@ appengine:  1.2.3.4
       "--max_spot_price", "1.23",
       "--keyname", self.keyname,
       "--group", self.group,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -661,6 +667,7 @@ appengine:  1.2.3.4
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
+    zone = 'my-zone-1b'
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
 
     # and that the user does not have an ssh key set up, forcing us to create
@@ -834,6 +841,19 @@ appengine:  1.2.3.4
 
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the zone we want to use exists
+    zone_name = 'my-zone-1b'
+    zone_info = {}
+    fake_zone_request = flexmock(name='fake_zone_request')
+    fake_zone_request.should_receive('execute').with_args(
+      fake_authorized_http).and_return(zone_info)
+
+    fake_zones = flexmock(name='fake_zones')
+    fake_zones.should_receive('get').with_args(project=project_id,
+      zone=zone_name).and_return(fake_zone_request)
+
+    fake_gce.should_receive('zones').and_return(fake_zones)
+
     # next, presume that the persistent disk we want to use exists
     disk_name = 'my-persistent-disk-1'
     disk_info = {}
@@ -843,7 +863,7 @@ appengine:  1.2.3.4
 
     fake_disks = flexmock(name='fake_disks')
     fake_disks.should_receive('get').with_args(project=project_id,
-      disk=disk_name, zone=GCEAgent.DEFAULT_ZONE).and_return(fake_disk_request)
+      disk=disk_name, zone=zone).and_return(fake_disk_request)
 
     fake_gce.should_receive('disks').and_return(fake_disks)
 
@@ -1029,7 +1049,7 @@ appengine:  1.2.3.4
         list_instance_info)
 
     fake_instances.should_receive('list').with_args(project=project_id,
-      filter="name eq appscale-bazgroup-.*", zone=GCEAgent.DEFAULT_ZONE) \
+      filter="name eq appscale-bazgroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
 
     # finally, inject our fake GCE connection
@@ -1106,7 +1126,8 @@ node-1: my-persistent-disk-1
       "--keyname", self.keyname,
       "--client_secrets", client_secrets,
       "--project", project_id,
-      "--test"
+      "--test",
+      "--zone", "my-zone-1b"
     ]
 
     options = ParseArgs(argv, self.function).args

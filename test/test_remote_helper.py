@@ -51,7 +51,8 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False,
+      zone='my-zone-1b')
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -140,7 +141,6 @@ class TestRemoteHelper(unittest.TestCase):
     self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
-
 
     flexmock(tempfile)
     tempfile.should_receive('NamedTemporaryFile')\
