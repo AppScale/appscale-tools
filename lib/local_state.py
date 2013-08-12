@@ -925,6 +925,10 @@ class LocalState():
     This scenario can occur if the user wants us to automatically generate a
     keyname and group for them (in which case they don't specify either).
 
+    Returns:
+      True if the AppScalefile was up to date, or False if there were changes
+      made to make it up to date.
+
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
         directory.
@@ -942,14 +946,16 @@ class LocalState():
 
     # Don't write to the AppScalefile if there are no changes to make to it.
     if 'keyname' in yaml_contents and 'group' in yaml_contents:
-      return
+      return True
 
     cloud_name = "appscale-{0}".format(uuid.uuid4())
     if 'keyname' not in yaml_contents:
-      file_contents += "\nkeyname : {0}".format(keyname)
+      file_contents += "\nkeyname : {0}".format(cloud_name)
 
     if 'group' not in yaml_contents:
-      file_contents += "\ngroup : {0}".format(group)
+      file_contents += "\ngroup : {0}".format(cloud_name)
 
     with open(appscalefile_path, 'w') as file_handle:
       file_handle.write(file_contents)
+
+    return False
