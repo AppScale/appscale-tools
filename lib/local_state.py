@@ -915,21 +915,19 @@ class LocalState():
       raise AppScalefileException("Couldn't find an AppScale file at {0}" \
         .format(appscalefile_path))
 
-    old_contents = ''
+    yaml_contents = {}
     with open(appscalefile_path, 'r') as file_handle:
-      old_contents = file_handle.read()
+      yaml_contents = yaml.safe_load(file_handle.read())
 
-    keyname_string = "keyname : '{0}'".format(keyname)
-    group_string = "group : '{0}'".format(group)
-
-    new_contents = old_contents
-    if keyname_string not in old_contents:
-      new_contents += "\n" + keyname_string
-    if group_string not in old_contents:
-      new_contents += "\n" + group_string
-
-    if len(old_contents) == len(new_contents):
+    # Don't write to the AppScalefile if no changes need to be written to it.
+    if 'keyname' in yaml_contents and 'group' in yaml_contents:
       return
 
+    if 'keyname' not in yaml_contents:
+      yaml_contents['keyname'] = keyname
+
+    if 'group' not in yaml_contents:
+      yaml_contents['group'] = group
+
     with open(appscalefile_path, 'w') as file_handle:
-      file_handle.write(new_contents)
+      file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
