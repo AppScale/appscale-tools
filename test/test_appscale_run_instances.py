@@ -71,7 +71,11 @@ class TestAppScaleRunInstances(unittest.TestCase):
     os.path.should_receive('exists').with_args(appscalefile_path) \
       .and_return(True)
 
-    appscalefile_contents = ""
+    appscalefile_contents = """
+keyname: {0}
+group: {1}
+""".format(self.keyname, self.group)
+
     self.builtins = flexmock(sys.modules['__builtin__'])
     self.builtins.should_call('open')  # set the fall-through
     fake_appscalefile = flexmock(name="fake_appscalefile")
@@ -653,7 +657,6 @@ appengine:  1.2.3.4
       "--test",
       "--login_host", "www.booscale.com"
     ]
-
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
