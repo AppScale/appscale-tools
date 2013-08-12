@@ -34,8 +34,12 @@ class TestAppScaleLogger(unittest.TestCase):
     for credential in EC2Agent.REQUIRED_CREDENTIALS:
       os.environ[credential] = "baz"
 
-    # finally, pretend that our ec2 image to use exists
+    # Also pretend that the availability zone we want to use exists.
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
+    # finally, pretend that our ec2 image to use exists
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto)
@@ -44,7 +48,8 @@ class TestAppScaleLogger(unittest.TestCase):
     # do argument parsing here, since the below tests do it the
     # same way every time
     argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--machine",
-      "ami-ABCDEFG", "--group", "blargscale", "--keyname", "appscale"]
+      "ami-ABCDEFG", "--group", "blargscale", "--keyname", "appscale", "--zone",
+      "my-zone-1b"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
     self.my_id = "12345"
@@ -81,7 +86,8 @@ class TestAppScaleLogger(unittest.TestCase):
       "test" : False,
       "use_spot_instances" : False,
       "verbose" : False,
-      "version" : False
+      "version" : False,
+      "zone" : "my-zone-1b"
     }
 
     # finally, construct a http payload for mocking that the below

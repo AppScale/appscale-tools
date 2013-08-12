@@ -96,6 +96,18 @@ class BaseAgent:
     """
     raise NotImplementedError
 
+  def does_zone_exist(self, parameters):
+    """
+    Verifies that the specified zone exists in this cloud.
+
+    Args:
+      paramters: A dict that includes a key indicating the zone to check for
+        existence.
+    Returns:
+      True if the zone exists, and False otherwise.
+    """
+    raise NotImplementedError
+
   def cleanup_state(self, parameters):
     """
     Removes any remote state that was created to run AppScale instances
