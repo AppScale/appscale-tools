@@ -96,6 +96,20 @@ class BaseAgent:
     """
     raise NotImplementedError
 
+  def does_disk_exist(self, parameters, disk):
+    """
+    Verifies that the specified persistent disk exists in this cloud.
+
+    Args:
+      parameters: A dict that includes the parameters needed to authenticate
+        with this cloud.
+      disk: A str containing the name of the disk that we should check for
+        existence.
+    Returns:
+      True if the named persistent disk exists, and False otherwise,
+    """
+    raise NotImplementedError
+
   def does_zone_exist(self, parameters):
     """
     Verifies that the specified zone exists in this cloud.
