@@ -55,6 +55,10 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
       .and_return('anything')
 
+    # Slip in mocks that assume our EBS volume exists in EC2.
+    fake_ec2.should_receive('get_all_volumes').with_args(['vol-ABCDEFG']) \
+      .and_return('anything')
+
     # Also pretend that the availability zone we want to use exists.
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -430,9 +434,9 @@ class TestParseArgs(unittest.TestCase):
 
     # passing in a dict should be fine, and result in us seeing the same value
     # for --disks that we passed in.
-    disks = {'public1' : 'disk1'}
+    disks = {'public1' : 'vol-ABCDEFG'}
     good_disks_layout = yaml.load("""
-public1 : disk1
+public1 : vol-ABCDEFG
     """)
     base64ed_good_disks = base64.b64encode(yaml.dump(good_disks_layout))
     cloud_argv2 = self.cloud_argv[:] + ["--disks", base64ed_good_disks]
