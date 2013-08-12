@@ -894,18 +894,13 @@ class LocalState():
 
 
   @classmethod
-  def ensure_appscalefile_is_up_to_date(cls, keyname, group):
+  def ensure_appscalefile_is_up_to_date(cls):
     """ Examines the AppScalefile in the current working directory to make sure
-    it specifies the named keyname and group, updating it if it does not.
+    it specifies a keyname and group, updating it if it does not.
 
     This scenario can occur if the user wants us to automatically generate a
     keyname and group for them (in which case they don't specify either).
 
-    Args:
-      keyname: The SSH keypair name that uniquely identifies this AppScale
-        deployment.
-      group: A str corresponding to the security group to use in this AppScale
-        deployment.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
         directory.
@@ -916,18 +911,19 @@ class LocalState():
         .format(appscalefile_path))
 
     yaml_contents = {}
-    with open(appscalefile_path, 'r') as file_handle:
+    with open(appscalefile_path) as file_handle:
       yaml_contents = yaml.safe_load(file_handle.read())
 
-    # Don't write to the AppScalefile if no changes need to be written to it.
+    # Don't write to the AppScalefile if there are no changes to make to it.
     if 'keyname' in yaml_contents and 'group' in yaml_contents:
       return
 
+    cloud_name = "appscale-{0}".format(uuid.uuid4())
     if 'keyname' not in yaml_contents:
-      yaml_contents['keyname'] = keyname
+      yaml_contents['keyname'] = cloud_name
 
     if 'group' not in yaml_contents:
-      yaml_contents['group'] = group
+      yaml_contents['group'] = cloud_name
 
     with open(appscalefile_path, 'w') as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))

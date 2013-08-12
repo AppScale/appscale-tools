@@ -193,6 +193,8 @@ Available commands:
 
     # If running in a cluster environment, we first need to set up SSH keys
     contents_as_yaml = yaml.safe_load(contents)
+    LocalState.ensure_appscalefile_is_up_to_date()
+
     if "ips_layout" in contents_as_yaml:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
 
