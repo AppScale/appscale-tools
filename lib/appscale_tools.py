@@ -293,7 +293,6 @@ class AppScaleTools():
         credentials).
     """
     LocalState.make_appscale_directory()
-    LocalState.ensure_appscalefile_is_up_to_date(options.keyname, options.group)
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
     if options.infrastructure:

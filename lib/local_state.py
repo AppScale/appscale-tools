@@ -918,18 +918,17 @@ class LocalState():
 
 
   @classmethod
-  def ensure_appscalefile_is_up_to_date(cls, keyname, group):
+  def ensure_appscalefile_is_up_to_date(cls):
     """ Examines the AppScalefile in the current working directory to make sure
-    it specifies the named keyname and group, updating it if it does not.
+    it specifies a keyname and group, updating it if it does not.
 
     This scenario can occur if the user wants us to automatically generate a
     keyname and group for them (in which case they don't specify either).
 
-    Args:
-      keyname: The SSH keypair name that uniquely identifies this AppScale
-        deployment.
-      group: A str corresponding to the security group to use in this AppScale
-        deployment.
+    Returns:
+      True if the AppScalefile was up to date, or False if there were changes
+      made to make it up to date.
+
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
         directory.
@@ -939,19 +938,26 @@ class LocalState():
       raise AppScalefileException("Couldn't find an AppScale file at {0}" \
         .format(appscalefile_path))
 
-    yaml_contents = {}
-    with open(appscalefile_path, 'r') as file_handle:
-      yaml_contents = yaml.safe_load(file_handle.read())
+    file_contents = ''
+    with open(appscalefile_path) as file_handle:
+      file_contents = file_handle.read()
 
-    # Don't write to the AppScalefile if no changes need to be written to it.
+    yaml_contents = yaml.safe_load(file_contents)
+
+    # Don't write to the AppScalefile if there are no changes to make to it.
     if 'keyname' in yaml_contents and 'group' in yaml_contents:
-      return
+      return True
 
+    file_contents += "\n# Automatically added by the AppScale Tools: "
+
+    cloud_name = "appscale-{0}".format(uuid.uuid4())
     if 'keyname' not in yaml_contents:
-      yaml_contents['keyname'] = keyname
+      file_contents += "\nkeyname : {0}".format(cloud_name)
 
     if 'group' not in yaml_contents:
-      yaml_contents['group'] = group
+      file_contents += "\ngroup : {0}".format(cloud_name)
 
     with open(appscalefile_path, 'w') as file_handle:
-      file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
+      file_handle.write(file_contents)
+
+    return False
