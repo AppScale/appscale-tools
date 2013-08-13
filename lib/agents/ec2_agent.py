@@ -43,6 +43,7 @@ class EC2Agent(BaseAgent):
   PARAM_INSTANCE_IDS = 'instance_ids'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
+  PARAM_ZONE = 'zone'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
     PARAM_CREDENTIALS,
@@ -50,7 +51,8 @@ class EC2Agent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
-    PARAM_SPOT
+    PARAM_SPOT,
+    PARAM_ZONE
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
@@ -71,6 +73,7 @@ class EC2Agent(BaseAgent):
 
 
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
+
 
   def configure_instance_security(self, parameters):
     """
@@ -138,31 +141,31 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
+      self.PARAM_ZONE : args['zone'],
+      'IS_VERBOSE' : args.get('verbose', False)
     }
-    if 'verbose' in args:
-      params['IS_VERBOSE'] = args['verbose']
-    else:
-      params['IS_VERBOSE'] = False
+
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if credential in os.environ and os.environ[credential] != '':
+      if os.environ.get(credential):
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
           .format(credential))
 
-    if 'use_spot_instances' in args and args['use_spot_instances'] == True:
+    if args.get('use_spot_instances') == True:
       params[self.PARAM_SPOT] = True
     else:
       params[self.PARAM_SPOT] = False
 
     if params[self.PARAM_SPOT]:
-      if 'max_spot_price' in args and args['max_spot_price'] is not None:
+      if args.get('max_spot_price'):
         params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
       else:
         params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
-          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE])
+          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
+          params[self.PARAM_ZONE])
 
     return params
 
@@ -182,7 +185,7 @@ class EC2Agent(BaseAgent):
     }
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ[credential] and os.environ[credential] != '':
+      if os.environ.get(credential):
         params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
       else:
         raise AgentConfigurationException("no " + credential)
@@ -266,10 +269,11 @@ class EC2Agent(BaseAgent):
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
     spot = parameters[self.PARAM_SPOT]
+    zone = parameters[self.PARAM_ZONE]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
-      "instance type {2}, keyname {3}, in security group {4}".format(count,
-      image_id, instance_type, keyname, group))
+      "instance type {2}, keyname {3}, in security group {4}, in availability" \
+      " zone {5}".format(count, image_id, instance_type, keyname, group, zone))
     if spot:
       AppScaleLogger.log("Using spot instances")
     else:
@@ -299,16 +303,15 @@ class EC2Agent(BaseAgent):
 
       conn = self.open_connection(parameters)
       if spot:
-        if parameters[self.PARAM_SPOT_PRICE]:
-          price = parameters[self.PARAM_SPOT_PRICE]
-        else:
-          price = self.get_optimal_spot_price(conn, instance_type)
+        price = parameters[self.PARAM_SPOT_PRICE] or \
+          self.get_optimal_spot_price(conn, instance_type, zone)
 
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, count=count)
+          security_groups=[group], instance_type=instance_type, count=count,
+          placement=zone)
       else:
         conn.run_instances(image_id, count, count, key_name=keyname,
-          security_groups=[group], instance_type=instance_type)
+          security_groups=[group], instance_type=instance_type, placement=zone)
 
       instance_ids = []
       public_ips = []
@@ -320,10 +323,8 @@ class EC2Agent(BaseAgent):
       while now < end_time:
         time_left = (end_time - now).seconds
         AppScaleLogger.log("Waiting for your instances to start...")
-        instance_info = self.describe_instances(parameters)
-        public_ips = instance_info[0]
-        private_ips = instance_info[1]
-        instance_ids = instance_info[2]
+        public_ips, private_ips, instance_ids = self.describe_instances(
+          parameters)
         public_ips = self.diff(public_ips, active_public_ips)
         private_ips = self.diff(private_ips, active_private_ips)
         instance_ids = self.diff(instance_ids, active_instances)
@@ -370,13 +371,13 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     conn.stop_instances(instance_ids)
     AppScaleLogger.log('Stopping instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'stopped',\
+    if not self.wait_for_status_change(parameters, conn, 'stopped',
            max_wait_time=120):
       AppScaleLogger.log("re-stopping instances: "+' '.join(instance_ids))
       conn.stop_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'stopped',\
+      if not self.wait_for_status_change(parameters, conn, 'stopped',
             max_wait_time=120):
-        self.handle_failure("ERROR: could not stop instances: "+\
+        self.handle_failure("ERROR: could not stop instances: " + \
             ' '.join(instance_ids))
 
 
@@ -393,13 +394,13 @@ class EC2Agent(BaseAgent):
     conn = self.open_connection(parameters)
     conn.terminate_instances(instance_ids)
     AppScaleLogger.log('Terminating instances: '+' '.join(instance_ids))
-    if not self.wait_for_status_change(parameters, conn, 'terminated',\
+    if not self.wait_for_status_change(parameters, conn, 'terminated',
             max_wait_time=120):
       AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
       conn.terminate_instances(instance_ids)
-      if not self.wait_for_status_change(parameters, conn, 'terminated',\
+      if not self.wait_for_status_change(parameters, conn, 'terminated',
                 max_wait_time=120):
-        self.handle_failure("ERROR: could not terminate instances: "+\
+        self.handle_failure("ERROR: could not terminate instances: " + \
             ' '.join(instance_ids))
 
 
@@ -431,36 +432,33 @@ class EC2Agent(BaseAgent):
         if i.state == state_requested and \
            i.key_name == parameters[self.PARAM_KEYNAME]:
           if i.id not in instances_in_state.keys():
-            instances_in_state[i.id] = 1 #mark instance done
+            instances_in_state[i.id] = 1 # mark instance done
       if len(instances_in_state.keys()) >= len(instance_ids):
         return True
-      if time.time()-time_start > max_wait_time:
+      if time.time() - time_start > max_wait_time:
         return False
 
 
-
-
   def create_image(self, instance_id, name, parameters):
-    """
-    Take the instance id and name, and creates a cloud image
+    """ Creates a new cloud image from the given instance id.
     
     Args:
-      instance_id: id of the (stopped) instance to create an image of
-      name: human readable name for the image
-    Return:
-      str containing the id of the new image
+      instance_id: id of the (stopped) instance to create an image of.
+      name: A str containing the human-readable name for the image.
+      parameters: A dict that contains the credentials needed to authenticate
+        with AWS.
+    Returns:
+      A str containing the ami of the new image.
      """
     conn = self.open_connection(parameters)
-    id_str = conn.create_image(instance_id, name)
-    return id_str
+    return conn.create_image(instance_id, name)
 
 
   def does_image_exist(self, parameters):
-    """
-    Queries Amazon EC2 to see if the specified image exists.
+    """ Queries Amazon EC2 to see if the specified image exists.
 
     Args:
-      parameters A dict that contains the machine ID to check for existence.
+      parameters: A dict that contains the machine ID to check for existence.
     Returns:
       True if the machine ID exists, False otherwise.
     """
@@ -474,9 +472,70 @@ class EC2Agent(BaseAgent):
       AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
       return False
 
-  def cleanup_state(self, parameters):
+
+  def does_disk_exist(self, parameters, disk_name):
+    """ Queries Amazon EC2 to see if the specified EBS volume exists.
+
+    Args:
+      parameters: A dict that contains the credentials needed to authenticate
+        with AWS.
+      disk_name: A str naming the EBS volume to check for existence.
+    Returns:
+      True if the named EBS volume exists, and False otherwise.
     """
-    Removes the keyname and security group created during this AppScale
+    conn = self.open_connection(parameters)
+    try:
+      conn.get_all_volumes([disk_name])
+      AppScaleLogger.log('EBS volume {0} does exist'.format(disk_name))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
+      return False
+
+
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the EBS mount specified in disk_name from the named instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to AWS.
+      disk_name: A str naming the EBS volume to detach.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    Returns:
+      True if the disk was detached, and False otherwise.
+    """
+    conn = self.open_connection(parameters)
+    try:
+      conn.detach_volume(disk_name, instance_id, device='/dev/sdc')
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log("Could not detach volume with name {0}".format(
+        disk_name))
+      return False
+
+
+  def does_zone_exist(self, parameters):
+    """ Queries Amazon EC2 to see if the specified availability zone exists.
+
+    Args:
+      parameters: A dict that contains the availability zone to check for
+        existence.
+    Returns:
+      True if the availability zone exists, and False otherwise.
+    """
+    try:
+      conn = self.open_connection(parameters)
+      zone = parameters[self.PARAM_ZONE]
+      conn.get_all_zones(zone)
+      AppScaleLogger.log('Availability zone {0} does exist'.format(zone))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('Availability zone {0} does not exist'.format(zone))
+      return False
+
+
+  def cleanup_state(self, parameters):
+    """ Removes the keyname and security group created during this AppScale
     deployment.
 
     Args:
@@ -492,12 +551,12 @@ class EC2Agent(BaseAgent):
     while True:
       try:
         conn.delete_security_group(parameters[self.PARAM_GROUP])
-        break
+        return
       except EC2ResponseError:
         time.sleep(5)
 
 
-  def get_optimal_spot_price(self, conn, instance_type):
+  def get_optimal_spot_price(self, conn, instance_type, zone):
     """
     Returns the spot price for an EC2 instance of the specified instance type.
     The returned value is computed by averaging all the spot price history
@@ -505,13 +564,18 @@ class EC2Agent(BaseAgent):
     extra 10%.
 
     Args:
-      instance_type An EC2 instance type
+      conn: A boto.EC2Connection that can be used to communicate with AWS.
+      instance_type: A str representing the instance type whose prices we
+        should speculate for.
+      zone: A str representing the availability zone that the instance will
+        be placed in.
 
     Returns:
-      The estimated spot price for the specified instance type
+      The estimated spot price for the specified instance type, in the
+        specified availability zone.
     """
     history = conn.get_spot_price_history(product_description='Linux/UNIX',
-      instance_type=instance_type)
+      instance_type=instance_type, availability_zone=zone)
     var_sum = 0.0
     for entry in history:
       var_sum += entry.price
@@ -547,4 +611,3 @@ class EC2Agent(BaseAgent):
     """
     AppScaleLogger.log(msg)
     raise AgentRuntimeException(msg)
-

@@ -19,6 +19,10 @@ class AppEngineHelper():
   """
 
 
+  # The version of the App Engine SDK that AppScale currently supports.
+  SUPPORTED_SDK_VERSION = '1.8.0'
+
+
   # A regular expression that can be used to see if the given configuration file
   # is a YAML File.
   FILE_IS_YAML = re.compile('\.yaml\Z')
@@ -33,12 +37,16 @@ class AppEngineHelper():
 
 
   # A list of the appids reserved for internal AppScale use.
-  DISALLOWED_APP_IDS = ("none", "auth", "login", "new_user", "load_balancer")
+  DISALLOWED_APP_IDS = ("none", "apichecker", "appscaledashboard")
 
 
   # A regular expression that matches valid application IDs.
   APP_ID_REGEX = re.compile('\A(\d|[a-z]|[A-Z]|-)+\Z')
 
+
+  # The prefix of the GAE Java SDK jar name.
+  JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
+  
 
   @classmethod
   def read_file(cls, path):
@@ -83,6 +91,44 @@ class AppEngineHelper():
     return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
       "appengine-web.xml"
 
+
+  @classmethod
+  def is_sdk_mismatch(cls, app_dir):
+    """Returns if the sdk jars are the right version within an App Engine 
+    application.
+
+    Args:
+      app_dir: The location on the filesystem where the App Engine application
+        is located.
+    Returns:
+      A boolean value indicating if the user may have an sdk version
+      compatibility error with AppScale. 
+    """
+    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir));
+    target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
+      + '.jar'
+    mismatch = True
+    for jar_file in lib_files:
+      if target_jar in jar_file:
+        mismatch = False
+    return mismatch 
+
+  
+  @classmethod
+  def get_appengine_lib_location(cls, app_dir):
+    """Returns the location that we expect the lib folder to be found
+    within an App Engine application.
+
+    Args:
+      app_dir: The location on the filesystem where the App Engine application
+        is located.
+    Returns:
+      The location where we can expect to find the lib folder for the
+      given application.
+    """
+    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
+      "lib"
+  
 
   @classmethod
   def get_app_id_from_app_config(cls, app_dir):

@@ -80,7 +80,13 @@ class GCEAgent(BaseAgent):
   PARAM_SECRETS = 'client_secrets'
 
 
+  PARAM_STORAGE = 'oauth2_storage'
+
+
   PARAM_VERBOSE = 'is_verbose'
+
+
+  PARAM_ZONE = 'zone'
 
 
   # A set that contains all of the items necessary to run AppScale in Google
@@ -90,7 +96,7 @@ class GCEAgent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_KEYNAME,
     PARAM_PROJECT,
-    PARAM_SECRETS
+    PARAM_ZONE
   )
 
 
@@ -99,7 +105,7 @@ class GCEAgent(BaseAgent):
 
 
   # The version of the Google Compute Engine API that we support.
-  API_VERSION = 'v1beta14'
+  API_VERSION = 'v1beta15'
 
 
   # The URL endpoint that receives Google Compute Engine API requests.
@@ -107,23 +113,9 @@ class GCEAgent(BaseAgent):
     API_VERSION)
 
 
-  # The zone that instances should be created in and removed from.
-  DEFAULT_ZONE = 'us-central1-a'
-
-
   # The person to contact if there is a problem with the instance. We set this
   # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
-
-
-  # The location on the local filesystem where SSH private keys used with
-  # Google Compute Engine are stored, by default.
-  GCE_PRIVATE_SSH_KEY = os.path.expanduser("~/.ssh/google_compute_engine")
-
-
-  # The location on the local filesystem where SSH public keys uploaded to
-  # Google Compute Engine are stored, by default.
-  GCE_PUBLIC_SSH_KEY = GCE_PRIVATE_SSH_KEY + ".pub"
 
 
   def configure_instance_security(self, parameters):
@@ -146,20 +138,19 @@ class GCEAgent(BaseAgent):
       GCE.
     """
     AppScaleLogger.log("Verifying that SSH key exists locally")
-    if not os.path.exists(self.GCE_PRIVATE_SSH_KEY):
-      raise AgentRuntimeException("Couldn't find your GCE private key at {0}" \
-        .format(self.GCE_PRIVATE_SSH_KEY))
-
-    if not os.path.exists(self.GCE_PUBLIC_SSH_KEY):
-      raise AgentRuntimeException("Couldn't find your GCE public key at {0}" \
-        .format(self.GCE_PUBLIC_SSH_KEY))
-
-    # Now that we know that the SSH keys exist, copy them to ~/.appscale.
     keyname = parameters[self.PARAM_KEYNAME]
-    private_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    public_key = '{0}{1}.pub'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-    shutil.copy(self.GCE_PRIVATE_SSH_KEY, private_key)
-    shutil.copy(self.GCE_PUBLIC_SSH_KEY, public_key)
+    private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
+
+    if os.path.exists(private_key) or os.path.exists(public_key):
+      raise AgentRuntimeException("SSH key already found locally - please " +
+        "use a different keyname")
+
+    LocalState.generate_rsa_key(keyname, parameters[self.PARAM_VERBOSE])
+
+    ssh_key_exists, all_ssh_keys = self.does_ssh_key_exist(parameters)
+    if not ssh_key_exists:
+      self.create_ssh_key(parameters, all_ssh_keys)
 
     if self.does_network_exist(parameters):
       raise AgentRuntimeException("Network already exists - please use a " + \
@@ -171,6 +162,55 @@ class GCEAgent(BaseAgent):
 
     network_url = self.create_network(parameters)
     self.create_firewall(parameters, network_url)
+
+
+  def does_ssh_key_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified SSH key exists.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine. We don't have an additional key for the name of
+        the SSH key, since we use the one in ~/.ssh.
+    Returns:
+      A tuple of two items. The first item is a bool that is True if
+        our public key's contents are in GCE, and False otherwise, while
+        the second item is the contents of all SSH keys stored in GCE.
+    """
+    our_public_ssh_key = None
+    public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
+      parameters[self.PARAM_KEYNAME] + ".pub"
+    with open(public_ssh_key_location) as file_handle:
+      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.projects().get(
+        project=parameters[self.PARAM_PROJECT])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+      if not 'items' in response['commonInstanceMetadata']:
+        return False, ""
+
+      metadata = response['commonInstanceMetadata']['items']
+      if not metadata:
+        return False, ""
+
+      for item in metadata:
+        if item['key'] != 'sshKeys':
+          continue
+
+        # Now that we know there's one or more SSH keys, just make sure that
+        # ours is in this list.
+        all_ssh_keys = item['value']
+        if our_public_ssh_key in all_ssh_keys:
+          return True, all_ssh_keys
+
+      return False, all_ssh_keys
+    except apiclient.errors.HttpError:
+      return False, ""
 
 
   def does_network_exist(self, parameters):
@@ -221,6 +261,46 @@ class GCEAgent(BaseAgent):
       return False
 
   
+  def create_ssh_key(self, parameters, all_ssh_keys):
+    """ Creates a new SSH key in Google Compute Engine with the contents of
+    our newly generated public key.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      all_ssh_keys: A str that contains all of the SSH keys that are
+        currently passed in to GCE instances.
+    """
+    our_public_ssh_key = None
+    public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
+      parameters[self.PARAM_KEYNAME] + ".pub"
+    with open(public_ssh_key_location) as file_handle:
+      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+
+    if all_ssh_keys:
+      new_all_ssh_keys = our_public_ssh_key + "\n" + all_ssh_keys
+    else:
+      new_all_ssh_keys = our_public_ssh_key
+
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.projects().setCommonInstanceMetadata(
+      project=parameters[self.PARAM_PROJECT],
+      body={
+        "kind": "compute#metadata",
+        "items": [{
+          "key": "sshKeys",
+          "value": new_all_ssh_keys
+        }]
+      }
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
+
+
   def create_network(self, parameters):
     """ Creates a new network in Google Compute Engine with the specified name.
 
@@ -343,16 +423,30 @@ class GCEAgent(BaseAgent):
     Returns:
       A dict containing the location of the client_secrets file and that name
       of the image to use in GCE.
+    Raises:
+      AgentConfigurationException: If the caller fails to specify a
+        client_secrets file, or if it doesn't exist on the local filesystem.
     """
     if not isinstance(args, dict):
       args = vars(args)
 
-    client_secrets = os.path.expanduser(args['client_secrets'])
-    if not os.path.exists(client_secrets):
-      raise AgentConfigurationException("Couldn't find your client secrets " + \
-        "file at {0}".format(client_secrets))
-    shutil.copy(client_secrets, LocalState.get_client_secrets_location(
-      args['keyname']))
+    if not args.get('client_secrets') and not args.get('oauth2_storage'):
+      raise AgentConfigurationException("Please specify a client_secrets " + \
+        "file or a oauth2_storage file in your AppScalefile when running " + \
+        "over Google Compute Engine.")
+
+    credentials_file = args.get('client_secrets') or args.get('oauth2_storage')
+    full_credentials = os.path.expanduser(credentials_file)
+    if not os.path.exists(full_credentials):
+      raise AgentConfigurationException("Couldn't find your credentials " + \
+        "at {0}".format(full_credentials))
+
+    if args.get('client_secrets'):
+      destination = LocalState.get_client_secrets_location(args['keyname'])
+    elif args.get('oauth2_storage'):
+      destination = LocalState.get_oauth2_storage_location(args['keyname'])
+
+    shutil.copy(full_credentials, destination)
 
     params = {
       self.PARAM_GROUP : args['group'],
@@ -360,13 +454,15 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_SECRETS : os.path.expanduser(args['client_secrets'])
+      self.PARAM_ZONE : args['zone']
     }
 
-    if 'verbose' in args:
-      params[self.PARAM_VERBOSE] = args['verbose']
-    else:
-      params[self.PARAM_VERBOSE] = False
+    if args.get(self.PARAM_SECRETS):
+      params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
+    elif args.get(self.PARAM_STORAGE):
+      params[self.PARAM_STORAGE] = args.get(self.PARAM_STORAGE)
+
+    params[self.PARAM_VERBOSE] = args.get('verbose', False)
 
     return params
 
@@ -381,13 +477,20 @@ class GCEAgent(BaseAgent):
       A dict containing all of the credentials necessary to interact with
         Google Compute Engine.
     """
-    return {
+    params = {
       self.PARAM_GROUP : LocalState.get_group(keyname),
       self.PARAM_KEYNAME : keyname,
       self.PARAM_PROJECT : LocalState.get_project(keyname),
-      self.PARAM_SECRETS : LocalState.get_client_secrets_location(keyname),
-      self.PARAM_VERBOSE : False  # TODO(cgb): Don't put False in here.
+      self.PARAM_VERBOSE : False,  # TODO(cgb): Don't put False in here.
+      self.PARAM_ZONE : LocalState.get_zone(keyname)
     }
+
+    if os.path.exists(LocalState.get_client_secrets_location(keyname)):
+      params[self.PARAM_SECRETS] = LocalState.get_client_secrets_location(keyname)
+    else:
+      params[self.PARAM_STORAGE] = LocalState.get_oauth2_storage_location(keyname)
+
+    return params
 
 
   def assert_required_parameters(self, parameters, _):
@@ -411,10 +514,13 @@ class GCEAgent(BaseAgent):
         raise AgentConfigurationException('The required parameter, {0}, was' \
           ' not specified.'.format(param))
 
-    # Next, make sure that the client_secrets file exists
-    if not os.path.exists(parameters[self.PARAM_SECRETS]):
-      raise AgentConfigurationException('Could not find your client_secrets ' \
-        'file at {0}'.format(parameters[self.PARAM_SECRETS]))
+    # Next, make sure that either the client_secrets file or the oauth2
+    # credentials file exists.
+    credentials_file = parameters.get(self.PARAM_SECRETS) or parameters.get(
+      self.PARAM_STORAGE)
+    if not os.path.exists(os.path.expanduser(credentials_file)):
+      raise AgentConfigurationException('Could not find your credentials ' \
+        'file at {0}'.format(credentials_file))
 
 
   def describe_instances(self, parameters):
@@ -436,7 +542,7 @@ class GCEAgent(BaseAgent):
     request = gce_service.instances().list(
       project=parameters[self.PARAM_PROJECT],
       filter="name eq appscale-{0}-.*".format(parameters[self.PARAM_GROUP]),
-      zone=self.DEFAULT_ZONE
+      zone=parameters[self.PARAM_ZONE]
     )
     response = request.execute(auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
@@ -477,10 +583,11 @@ class GCEAgent(BaseAgent):
     instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
+    zone = parameters[self.PARAM_ZONE]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
-      "instance type {2}, keyname {3}, in security group {4}".format(count,
-      image_id, instance_type, keyname, group))
+      "instance type {2}, keyname {3}, in security group {4}, in zone {5}" \
+      .format(count, image_id, instance_type, keyname, group, zone))
 
     # First, see how many instances are running and what their info is.
     start_time = datetime.datetime.now()
@@ -491,8 +598,8 @@ class GCEAgent(BaseAgent):
     image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL, project_id,
       image_id)
     project_url = '{0}{1}'.format(self.GCE_URL, project_id)
-    machine_type_url = '{0}/global/machineTypes/{1}'.format(project_url,
-      instance_type)
+    machine_type_url = '{0}/zones/{1}/machineTypes/{2}'.format(project_url,
+      zone, instance_type)
     network_url = '{0}/global/networks/{1}'.format(project_url, group)
 
     # Construct the request body
@@ -519,7 +626,7 @@ class GCEAgent(BaseAgent):
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.instances().insert(
-           project=project_id, body=instances, zone=self.DEFAULT_ZONE)
+           project=project_id, body=instances, zone=zone)
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response,
@@ -575,17 +682,24 @@ class GCEAgent(BaseAgent):
         instance names that should be deleted.
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+    responses = []
     for instance_id in instance_ids:
       gce_service, credentials = self.open_connection(parameters)
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
       request = gce_service.instances().delete(
         project=parameters[self.PARAM_PROJECT],
-        zone=self.DEFAULT_ZONE,
+        zone=parameters[self.PARAM_ZONE],
         instance=instance_id
       )
       response = request.execute(auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      responses.append(response)
+
+    for response in responses:
+      gce_service, credentials = self.open_connection(parameters)
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
 
@@ -614,6 +728,81 @@ class GCEAgent(BaseAgent):
       return False
 
 
+  def does_zone_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified zone exists for
+    this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        zone that we should check for existence.
+    Returns:
+      True if the named zone exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.zones().get(project=parameters[self.PARAM_PROJECT],
+        zone=parameters[self.PARAM_ZONE])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
+  def does_disk_exist(self, parameters, disk):
+    """ Queries Google Compute Engine to see if the specified persistent disk
+    exists for this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk: A str containing the name of the disk that we should check for
+        existence.
+    Returns:
+      True if the named persistent disk exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.disks().get(project=parameters[self.PARAM_PROJECT],
+        disk=disk, zone=parameters[self.PARAM_ZONE])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
+
+
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the persistent disk specified in 'disk_name' from the named
+    instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk_name: A str naming the persistent disk to detach.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    project_id = parameters[self.PARAM_PROJECT]
+    request = gce_service.instances().detachDisk(
+      project=project_id,
+      zone=parameters[self.PARAM_ZONE],
+      instance=instance_id,
+      deviceName='sdc')
+    response = request.execute(auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
+
+
   def cleanup_state(self, parameters):
     """ Deletes the firewall and network that were created during this AppScale
     deployment.
@@ -639,8 +828,11 @@ class GCEAgent(BaseAgent):
       can be used to sign requests performed with that connection.
     """
     # Perform OAuth 2.0 authorization.
-    flow = oauth2client.client.flow_from_clientsecrets(
-      parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+    flow = None
+    if self.PARAM_SECRETS in parameters:
+      flow = oauth2client.client.flow_from_clientsecrets(
+        parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()

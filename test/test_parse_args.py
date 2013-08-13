@@ -18,8 +18,6 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
-import local_state
-
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
@@ -33,7 +31,8 @@ class TestParseArgs(unittest.TestCase):
 
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
-      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
+      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG', '--zone',
+      'my-zone-1b']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
@@ -55,6 +54,18 @@ class TestParseArgs(unittest.TestCase):
       .and_return()
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
       .and_return('anything')
+
+    # Slip in mocks that assume our EBS volume exists in EC2.
+    fake_ec2.should_receive('get_all_volumes').with_args(['vol-ABCDEFG']) \
+      .and_return('anything')
+
+    # Also pretend that the availability zone we want to use exists.
+    fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
+      .and_return('anything')
+
+    # Pretend that a bad availability zone doesn't exist.
+    fake_ec2.should_receive('get_all_zones').with_args('bad-zone') \
+      .and_raise(boto.exception.EC2ResponseError, 'baz', 'baz')
 
     fake_price = flexmock(name='fake_price', price=1.00)
     fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
@@ -81,7 +92,6 @@ class TestParseArgs(unittest.TestCase):
     # the version flag should quit and print the current
     # version of the tools
     argv_2 = ['--version']
-    all_flags_2 = ['version']
     try:
       ParseArgs(argv_2, self.function)
       raise
@@ -163,17 +173,18 @@ class TestParseArgs(unittest.TestCase):
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG']
+    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
+      'ami-ABCDEFG']
     actual_1 = ParseArgs(argv_1, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine', \
+    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine',
         'emi-ABCDEFG']
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',\
+    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',
       'boo']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
@@ -183,11 +194,8 @@ class TestParseArgs(unittest.TestCase):
     os.path.should_receive('exists').with_args("ips.yaml").and_return(True)
 
     argv_4 = self.cluster_argv[:] + ['--machine', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_4, self.function)
-
-    # Specifying --group when we're not running in a cloud is not acceptable.
-    argv_5 = self.cluster_argv[:] + ['--group', 'boo']
-    self.assertRaises(BadConfigurationException, ParseArgs, argv_5, self.function)
+    self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
+      self.function)
 
 
   def test_instance_types(self):
@@ -232,20 +240,20 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine", \
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
         "ami-ABCDEFG"]
     for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
       self.function)
 
 
   def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",\
+    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",
       "emi-ABCDEFG"]
     for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
       os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv, \
+    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
       self.function)
 
 
@@ -259,7 +267,7 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_ec2').with_args('baz', 'baz') \
       .and_return(fake_ec2)
 
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",\
+    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
@@ -407,3 +415,49 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
     self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
     self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+
+
+  def test_disks_flag(self):
+    # specifying a EBS mount or PD mount is only valid for EC2/Euca/GCE, so
+    # fail on a cluster deployment.
+    argv = self.cluster_argv[:] + ["--disks", "ABCDFEG"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # if we get a --disk flag, fail if it's not a dict (after base64, yaml load)
+    bad_disks_layout = yaml.load("""
+    public1,
+    """)
+    base64ed_bad_disks = base64.b64encode(yaml.dump(bad_disks_layout))
+    cloud_argv1 = self.cloud_argv[:] + ["--disks", base64ed_bad_disks]
+    self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+      self.function)
+
+    # passing in a dict should be fine, and result in us seeing the same value
+    # for --disks that we passed in.
+    disks = {'public1' : 'vol-ABCDEFG'}
+    good_disks_layout = yaml.load("""
+public1 : vol-ABCDEFG
+    """)
+    base64ed_good_disks = base64.b64encode(yaml.dump(good_disks_layout))
+    cloud_argv2 = self.cloud_argv[:] + ["--disks", base64ed_good_disks]
+    actual = ParseArgs(cloud_argv2, self.function).args
+    self.assertEquals(disks, actual.disks)
+
+
+  def test_zone_flag(self):
+    # Specifying an availability zone is only valid for EC2/Euca/GCE, so
+    # fail on a cluster deployment.
+    argv = self.cluster_argv[:] + ["--zone", "my-zone-1b"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # If we want to specify the zone on a cloud deployment, but the zone is not
+    # an acceptable value, we should fail.
+    cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone"]
+    self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+      self.function)
+
+    # passing in a zone on a cloud is fine, and should result in us seeing the
+    # same zone that we passed in.
+    cloud_argv2 = self.cloud_argv[:]
+    actual = ParseArgs(cloud_argv2, self.function).args
+    self.assertEquals('my-zone-1b', actual.zone)

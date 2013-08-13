@@ -7,7 +7,6 @@ import json
 import os
 import re
 import socket
-import subprocess
 import sys
 import tempfile
 import time
@@ -52,7 +51,8 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False,
+      zone='my-zone-1b')
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -142,7 +142,6 @@ class TestRemoteHelper(unittest.TestCase):
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
-
     flexmock(tempfile)
     tempfile.should_receive('NamedTemporaryFile')\
       .and_return(self.fake_temp_file)
@@ -178,6 +177,11 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     local_state = flexmock(LocalState)
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
@@ -196,8 +200,13 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
+    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
@@ -224,6 +233,12 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     local_state = flexmock(LocalState)
+
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
 
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
@@ -367,25 +382,18 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.yaml'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.json'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/root/.appscale/locations-bookey.json'), False, 5)
 	
     # and mock out copying the secret file
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*bookey.secret'),False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*bookey.secret'), False, 5)
 
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
@@ -419,8 +427,12 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out SOAP interactions with the UserAppServer
     fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('does_user_exist').with_args('boo@foo.goo',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
       'xmpp_user', 'the secret').and_return('true')
+    fake_soap.should_receive('does_user_exist').with_args('boo@public1',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
     flexmock(SOAPpy)
@@ -428,7 +440,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey')
+      'bookey', False)
 
 
   def test_wait_for_machines_to_finish_loading(self):
