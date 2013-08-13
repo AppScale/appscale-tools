@@ -313,6 +313,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
+    os.path.should_receive('exists').with_args(
+      LocalState.get_client_secrets_location(self.keyname)).and_return(True)
 
     # mock out reading the locations.yaml file, and pretend that we're on
     # GCE
