@@ -51,8 +51,7 @@ class EC2Agent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
-    PARAM_SPOT,
-    PARAM_ZONE
+    PARAM_SPOT
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
@@ -141,7 +140,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
-      self.PARAM_ZONE : args['zone'],
+      self.PARAM_ZONE : args.get('zone'),
       'IS_VERBOSE' : args.get('verbose', False)
     }
 

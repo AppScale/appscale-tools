@@ -98,7 +98,7 @@ class TestLocalState(unittest.TestCase):
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
-      zone='my-zone-1b')
+      zone='my-zone-1b', verbose=True)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -124,7 +124,8 @@ class TestLocalState(unittest.TestCase):
       'max_images' : 1,
       'use_spot_instances' : True,
       'max_spot_price' : '1.23',
-      'zone' : 'my-zone-1b'
+      'zone' : 'my-zone-1b',
+      'verbose' : 'True'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'max_spot_price':'1.23'})
