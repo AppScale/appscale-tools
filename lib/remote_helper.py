@@ -562,7 +562,8 @@ class RemoteHelper():
 
     # start up god, who will start up the appcontroller once we give it the
     # right config file
-    cls.ssh(host, keyname, 'god &', is_verbose)
+    cls.ssh(host, keyname, 'nohup god --log /var/log/appscale/god.log -D &',
+      is_verbose)
     time.sleep(1)
 
     # scp over that config file
