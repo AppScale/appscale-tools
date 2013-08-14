@@ -454,7 +454,7 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_ZONE : args['zone']
+      self.PARAM_ZONE : args.get('zone')
     }
 
     if args.get(self.PARAM_SECRETS):
