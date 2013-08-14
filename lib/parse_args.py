@@ -461,9 +461,9 @@ class ParseArgs():
         "when running in a cloud infrastructure.")
 
     # Also make sure they gave us an availability zone.
-    if not self.args.zone:
+    if self.args.disks and not self.args.zone:
       raise BadConfigurationException("Need an availability zone specified " +
-        "when running in a cloud infrastructure.")
+        "when persistent disks are specified.")
 
     # If the user wants to use spot instances in a cloud, make sure that it's
     # EC2 (since Euca doesn't have spot instances).
