@@ -662,9 +662,13 @@ class LocalState():
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
     """
-    os.remove(LocalState.get_locations_yaml_location(keyname))
-    os.remove(LocalState.get_locations_json_location(keyname))
-    os.remove(LocalState.get_secret_key_location(keyname))
+    files_to_remove = [LocalState.get_locations_yaml_location(keyname),
+      LocalState.get_locations_json_location(keyname),
+      LocalState.get_secret_key_location(keyname)]
+
+    for file_to_remove in files_to_remove:
+      if os.path.exists(file_to_remove):
+        os.remove(file_to_remove)
 
 
   @classmethod
