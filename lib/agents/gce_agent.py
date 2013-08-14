@@ -113,6 +113,10 @@ class GCEAgent(BaseAgent):
     API_VERSION)
 
 
+  # The zone that instances should be created in and removed from.
+  DEFAULT_ZONE = 'us-central1-a'
+
+
   # The person to contact if there is a problem with the instance. We set this
   # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
@@ -454,7 +458,7 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
-      self.PARAM_ZONE : args.get('zone')
+      self.PARAM_ZONE : args['zone']
     }
 
     if args.get(self.PARAM_SECRETS):
