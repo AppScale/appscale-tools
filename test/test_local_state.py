@@ -124,7 +124,7 @@ class TestLocalState(unittest.TestCase):
       'max_images' : 1,
       'use_spot_instances' : True,
       'max_spot_price' : '1.23',
-      'zone' : 'my-zone-1b',
+      'zone' : json.dumps('my-zone-1b'),
       'verbose' : 'True'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
