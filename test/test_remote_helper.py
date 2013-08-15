@@ -352,7 +352,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume we started god on public1 fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
       .and_return().ordered()
 
     # also assume that we scp'ed over the god config file fine
