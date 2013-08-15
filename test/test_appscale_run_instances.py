@@ -326,7 +326,7 @@ group: {1}
 
     # assume that we started god fine
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
       .and_return()
 
 
@@ -460,7 +460,7 @@ appengine:  1.2.3.4
 
     # assume that we started god fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god &'))
+      False, 5, stdin=re.compile('nohup god'))
 
     # and that we copied over the AppController's god file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
@@ -565,7 +565,7 @@ appengine:  1.2.3.4
 
     # assume that we started god fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god &'))
+      False, 5, stdin=re.compile('nohup god'))
 
     # and that we copied over the AppController's god file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
@@ -1079,7 +1079,7 @@ appengine:  1.2.3.4
 
     # assume that we started god fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god &'))
+      False, 5, stdin=re.compile('nohup god'))
 
     # and that we copied over the AppController's god file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
