@@ -14,6 +14,7 @@ import yaml
 
 # AppScale-specific imports
 from agents.base_agent import BaseAgent
+from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
 import local_state
@@ -460,10 +461,15 @@ class ParseArgs():
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
-    # Also make sure they gave us an availability zone.
+    # Also make sure they gave us an availability zone if they want to use
+    # persistent disks.
     if self.args.disks and not self.args.zone:
       raise BadConfigurationException("Need an availability zone specified " +
         "when persistent disks are specified.")
+
+    # In Google Compute Engine, we have to specify the availability zone.
+    if self.args.infrastructure == 'gce' and not self.args.zone:
+      self.args.zone = GCEAgent.DEFAULT_ZONE
 
     # If the user wants to use spot instances in a cloud, make sure that it's
     # EC2 (since Euca doesn't have spot instances).
