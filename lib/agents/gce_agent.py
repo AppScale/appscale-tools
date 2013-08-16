@@ -831,7 +831,7 @@ class GCEAgent(BaseAgent):
     flow = None
     if self.PARAM_SECRETS in parameters:
       flow = oauth2client.client.flow_from_clientsecrets(
-        parameters[self.PARAM_SECRETS], scope=self.GCE_SCOPE)
+        os.path.expanduser(parameters[self.PARAM_SECRETS]), scope=self.GCE_SCOPE)
 
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))
