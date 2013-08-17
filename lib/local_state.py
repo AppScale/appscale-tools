@@ -430,6 +430,24 @@ class LocalState():
 
 
   @classmethod
+  def are_disks_used(cls, keyname):
+    """Queries the locations.json file to see if any persistent disks are being
+    used in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      True if any persistent disks are used, and False otherwise.
+    """
+    disks = [node.get("disk") for node in cls.get_local_nodes_info(keyname)]
+    for disk in disks:
+      if disk:
+        return True
+    return False
+
+
+  @classmethod
   def encrypt_password(cls, username, password):
     """Salts the given password with the provided username and encrypts it.
 
