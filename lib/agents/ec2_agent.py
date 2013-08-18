@@ -179,7 +179,6 @@ class EC2Agent(BaseAgent):
         conn.authorize_security_group(group, from_port=from_port,
           to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
         group_info = conn.get_all_security_groups(group)[0]
-        is_authorized = False
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
