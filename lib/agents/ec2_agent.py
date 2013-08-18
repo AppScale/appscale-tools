@@ -71,6 +71,11 @@ class EC2Agent(BaseAgent):
   REQUIRED_CREDENTIALS = REQUIRED_EC2_CREDENTIALS
 
 
+  # An int that indicates how many times we should try to create a security
+  # group and authorize it for TCP, UDP, or ICMP traffic.
+  SECURITY_GROUP_RETRY_COUNT = 3
+
+
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
 
@@ -109,16 +114,84 @@ class EC2Agent(BaseAgent):
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     LocalState.write_key_file(ssh_key, key_pair.material)
 
-    AppScaleLogger.log('Creating security group: {0}'.format(group))
-    conn.create_security_group(group, 'AppScale security group')
-    conn.authorize_security_group(group, from_port=1,
-      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group(group, from_port=1,
-      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group(group, ip_protocol='icmp',
-      cidr_ip='0.0.0.0/0')
-
+    self.create_security_group(parameters, group)
+    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
+      ip_protocol='udp', cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
+      ip_protocol='tcp', cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, group, from_port=-1, to_port=-1,
+      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
     return True
+
+
+  def create_security_group(self, parameters, group):
+    """Creates a new security group in AWS with the given name.
+
+    Args:
+      parameters: A dict that contains the credentials necessary to authenticate
+        with AWS.
+      group: A str that names the group that should be created.
+
+    Raises:
+      AgentRuntimeException: If the security group could not be created.
+    """
+    AppScaleLogger.log('Creating security group: {0}'.format(group))
+    conn = self.open_connection(parameters)
+    retries_left = self.SECURITY_GROUP_RETRY_COUNT
+    while retries_left:
+      try:
+        conn.create_security_group(group, 'AppScale security group')
+        conn.get_all_security_groups(group)
+        return
+      except EC2ResponseError:
+        time.sleep(self.SLEEP_TIME)
+        retries_left -= 1
+
+    raise AgentRuntimeException("Couldn't create security group with " \
+      "name {0}".format(group))
+
+
+  def authorize_security_group(self, parameters, group, from_port, to_port,
+    ip_protocol, cidr_ip):
+    """Opens up traffic on the given port range for traffic of the named type.
+
+    Args:
+      parameters: A dict that contains the credentials necessary to authenticate
+        with AWS.
+      group: A str that names the group whose ports should be opened.
+      from_port: An int that names the first port that access should be allowed
+        on.
+      to_port: An int that names the last port that access should be allowed on.
+      ip_protocol: A str that indicates if TCP, UDP, or ICMP traffic should be
+        allowed.
+      cidr_ip: A str that names the IP range that traffic should be allowed
+        from.
+
+    Raises:
+      AgentRuntimeException: If the ports could not be opened on the security
+      group.
+    """
+    AppScaleLogger.log('Authorizing security group {0} for {1} traffic from ' \
+      'port {2} to port {3}'.format(group, ip_protocol, from_port, to_port))
+    conn = self.open_connection(parameters)
+    retries_left = self.SECURITY_GROUP_RETRY_COUNT
+    while retries_left:
+      try:
+        conn.authorize_security_group(group, from_port=from_port,
+          to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
+        group_info = conn.get_all_security_groups(group)[0]
+        is_authorized = False
+        for rule in group_info.rules:
+          if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
+            and rule.ip_protocol == ip_protocol:
+            return
+      except EC2ResponseError:
+        time.sleep(self.SLEEP_TIME)
+        retries_left -= 1
+
+    raise AgentRuntimeException("Couldn't authorize {0} traffic from port " \
+      "{1} to port {2} on CIDR IP {3}".format(ip_protocol, from_port, to_port,
+      cidr_ip))
 
 
   def get_params_from_args(self, args):
