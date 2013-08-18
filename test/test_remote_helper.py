@@ -23,6 +23,7 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.euca_agent import EucalyptusAgent
+from agents.ec2_agent import EC2Agent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -98,12 +99,25 @@ class TestRemoteHelper(unittest.TestCase):
     os.should_receive('chmod').with_args(ssh_key_location, 0600).and_return()
 
     # next, assume there are no security groups up yet
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
+    fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
       'AppScale security group').and_return()
     fake_ec2.should_receive('authorize_security_group').and_return()
+    security_groups = []
+    for group_config in EC2Agent.SECURITY_GROUP_AUTH_CONFIG:
+      if 'from_port' in group_config and 'to_port' in group_config:
+        rule = flexmock(from_port=str(group_config['from_port']),
+                      to_port=str(group_config['to_port']),
+                      ip_protocol=group_config['ip_protocol'],
+                      grants=[group_config['cidr_ip']])
+      else:
+        rule = flexmock(ip_protocol=group_config['ip_protocol'],
+                        grants=[group_config['cidr_ip']])
+      security_groups.append(rule)
+    fake_ec2.should_receive('get_all_security_groups').with_args('boogroup') \
+      .and_return([flexmock(name='boogroup', rules=security_groups)])
 
     # next, add in mocks for run_instances
     # the first time around, let's say that no machines are running

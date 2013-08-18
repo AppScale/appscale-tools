@@ -4,9 +4,10 @@ Helper library for EC2 interaction
 from agents.base_agent import AgentRuntimeException
 from agents.base_agent import BaseAgent 
 from agents.base_agent import AgentConfigurationException
-import boto
 from boto.exception import EC2ResponseError
+import boto
 import datetime
+import logging
 import os
 import time
 from appscale_logger import AppScaleLogger
@@ -73,6 +74,16 @@ class EC2Agent(BaseAgent):
 
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
+  AUTH_GROUP_AUTHORIZE_MAX_ATTEMPTS = 3
+
+  SECURITY_GROUP_AUTH_CONFIG = [
+    {'from_port' : 1, 'to_port' : 65535, 'ip_protocol' : 'udp', 
+      'cidr_ip' : '0.0.0.0/0'},
+    {'from_port' : 1, 'to_port' : 65535, 'ip_protocol' : 'tcp', 
+      'cidr_ip' : '0.0.0.0/0'},
+    {'ip_protocol' : 'icmp', 'cidr_ip' : '0.0.0.0/0'}
+  ]
+
 
   def configure_instance_security(self, parameters):
     """
@@ -110,15 +121,91 @@ class EC2Agent(BaseAgent):
     LocalState.write_key_file(ssh_key, key_pair.material)
 
     AppScaleLogger.log('Creating security group: {0}'.format(group))
-    conn.create_security_group(group, 'AppScale security group')
-    conn.authorize_security_group(group, from_port=1,
-      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group(group, from_port=1,
-      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group(group, ip_protocol='icmp',
-      cidr_ip='0.0.0.0/0')
+    try:
+      conn.create_security_group(group, 'AppScale security group')
+    except boto.exception.EC2ResponseError as ec2error:
+      raise AgentRuntimeException("Failed to create security group")
 
+    for group_config in self.SECURITY_GROUP_AUTH_CONFIG:
+      self.set_security_group_config(conn, group,  group_config)
+      if not self.check_if_security_group_has_config(conn, group, group_config):
+        raise AgentRuntimeException("Failed to authorize security group")
     return True
+
+  def check_if_security_group_has_config(self, conn, group, group_config):
+    """ Check if a security group configuration is already authorized for
+    a group.
+
+    Args:
+      conn:  A boto connection object.
+      group: A str containing the name of the group.
+      group_config: A dict containing the configuration to be checked.
+    Returns:
+      True if the configuration is authorized for the group, otherwise False.
+    """
+    logging.debug("check_if_security_group_has_config() config={0}".format(group_config))
+    try:
+      rules = conn.get_all_security_groups(group)[0].rules
+    except IndexError:
+      logging.debug("got IndexError")
+      return False
+    for perm in rules:
+      if 'ip_protocol' in group_config and \
+        group_config['ip_protocol'] != perm.ip_protocol:
+        logging.debug("ip_protocol mismatch: {0} != {1}".format(group_config['ip_protocol'], perm.ip_protocol))
+        continue
+      if 'from_port' in group_config and \
+        str(group_config['from_port']) != perm.from_port:
+        logging.debug("from_port mismatch: {0} != {1}".format(group_config['from_port'], perm.from_port))
+        continue
+      if 'to_port' in group_config and \
+        str(group_config['to_port']) != perm.to_port:
+        logging.debug("to_port mismatch: {0} != {1}".format(group_config['to_port'], perm.to_port))
+        continue
+      if 'cidr_ip' in group_config and \
+        group_config['cidr_ip'] not in [str(grant) for grant in perm.grants]:
+        logging.debug("cidr_ip mismatch: {0} not in {1}".format(group_config['cidr_ip'], [str(grant) for grant in perm.grants]))
+        continue
+      logging.debug("Found Match")
+      return True
+    return False
+
+  def set_security_group_config(self, conn, group, group_config):
+    """ Authorize a security group configuration for a group.
+
+    Args:
+      conn:  A boto connection object.
+      group: A str containing the name of the group.
+      group_config: A dict containing the configuration to be set.
+    Raises:
+      AgentRuntimeException if there is an error setting the group.
+    """
+    logging.debug("set_security_group_config() config={0}".format(group_config))
+    auth_attempt = 1
+    while True:
+      try:
+        if 'from_port' in group_config and 'to_port' in group_config:
+          conn.authorize_security_group(group,
+            from_port=group_config['from_port'],
+            to_port=group_config['to_port'],
+            ip_protocol=group_config['ip_protocol'],
+            cidr_ip=group_config['cidr_ip'])
+        else:
+          conn.authorize_security_group(group,
+            ip_protocol=group_config['ip_protocol'],
+            cidr_ip=group_config['cidr_ip'])
+        return 
+      except boto.exception.EC2ResponseError as ec2error:
+        if auth_attempt == self.AUTH_GROUP_AUTHORIZE_MAX_ATTEMPTS:
+          AppScaleLogger.log('Error authorizing security group: {0}.' .format(
+            str(ec2error)))
+          raise AgentRuntimeException('Error authorizing security group: {0}.' \
+            .format(str(ec2error)))
+        else:
+          auth_attempt += 1
+          AppScaleLogger.log('Error authorizing security group: {0}. Trying ' \
+            'again in {0} seconds.'.format(str(ec2error), auth_attempt))
+          time.sleep(auth_attempt)
 
 
   def get_params_from_args(self, args):

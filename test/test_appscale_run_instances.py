@@ -160,6 +160,19 @@ group: {1}
       from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
     self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
       ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    security_groups = []
+    for group_config in EC2Agent.SECURITY_GROUP_AUTH_CONFIG:
+      if 'from_port' in group_config and 'to_port' in group_config:
+        rule = flexmock(from_port=str(group_config['from_port']),
+                      to_port=str(group_config['to_port']),
+                      ip_protocol=group_config['ip_protocol'],
+                      grants=[group_config['cidr_ip']])
+      else:
+        rule = flexmock(ip_protocol=group_config['ip_protocol'],
+                        grants=[group_config['cidr_ip']])
+      security_groups.append(rule)
+    self.fake_ec2.should_receive('get_all_security_groups').with_args(self.group) \
+      .and_return([flexmock(name='boogroup', rules=security_groups)])      
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
