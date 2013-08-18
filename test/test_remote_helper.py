@@ -97,8 +97,14 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(os)
     os.should_receive('chmod').with_args(ssh_key_location, 0600).and_return()
 
-    # next, assume there are no security groups up yet
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
+    # next, assume there are no security groups up at first, but then it gets
+    # created.
+    udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
+    tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
+    icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
+    group = flexmock(name='boogroup', rules=[tcp_rule, udp_rule, icmp_rule])
+    fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
+    fake_ec2.should_receive('get_all_security_groups').with_args('boogroup').and_return([group])
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
