@@ -103,7 +103,6 @@ class EC2Agent(BaseAgent):
         "different keyname")
 
     security_groups = conn.get_all_security_groups()
-    group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
         self.handle_failure("Security group already exists - please use a " + \
