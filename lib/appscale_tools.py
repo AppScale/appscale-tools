@@ -397,11 +397,16 @@ class AppScaleTools():
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
-    if options.test == False:
+    infrastructure = LocalState.get_infrastructure(options.keyname)
+
+    # If the user is on a cloud deployment, and not backing their data to
+    # persistent disks, warn them before shutting down AppScale.
+    # Also, if we're in developer mode, skip the warning.
+    if infrastructure != "xen" and not LocalState.are_disks_used(
+      options.keyname) and not options.test:
       LocalState.ensure_user_wants_to_terminate()
 
-    if LocalState.get_infrastructure(options.keyname) in \
-      InfrastructureAgentFactory.VALID_AGENTS:
+    if infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
     else:
