@@ -141,8 +141,15 @@ group: {1}
     self.fake_ec2.should_receive('get_key_pair').with_args(self.keyname) \
       .and_return(None)
 
-    # same for the security group
-    self.fake_ec2.should_receive('get_all_security_groups').and_return([])
+    # next, assume there are no security groups up at first, but then it gets
+    # created.
+    udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
+    tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
+    icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
+    group = flexmock(name=self.group, rules=[tcp_rule, udp_rule, icmp_rule])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args(self.group).and_return([group])
+
 
     # mock out creating the keypair
     fake_key = flexmock(name='fake_key', material='baz')
@@ -159,7 +166,7 @@ group: {1}
     self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
       from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
     self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+      from_port=-1, to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
