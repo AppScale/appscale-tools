@@ -178,14 +178,18 @@ class EC2Agent(BaseAgent):
       try:
         conn.authorize_security_group(group, from_port=from_port,
           to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
+      except EC2ResponseError:
+        pass
+      try:
         group_info = conn.get_all_security_groups(group)[0]
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
             return
       except EC2ResponseError:
-        time.sleep(self.SLEEP_TIME)
-        retries_left -= 1
+        pass
+      time.sleep(self.SLEEP_TIME)
+      retries_left -= 1
 
     raise AgentRuntimeException("Couldn't authorize {0} traffic from port " \
       "{1} to port {2} on CIDR IP {3}".format(ip_protocol, from_port, to_port,
