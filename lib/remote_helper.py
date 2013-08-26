@@ -141,6 +141,13 @@ class RemoteHelper():
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
+    # On Euca, we've seen issues where attaching the EBS volume right after
+    # the instance starts doesn't work. This sleep lets the instance fully
+    # start up and get volumes attached to it correctly.
+    if options.infrastructure and options.infrastructure == 'euca' and \
+      options.disks:
+      time.sleep(30)
+
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
