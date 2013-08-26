@@ -141,6 +141,10 @@ class RemoteHelper():
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
+    if options.infrastructure and options.infrastructure == 'euca' and \
+      options.disks:
+      time.sleep(30)
+
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
