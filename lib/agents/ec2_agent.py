@@ -140,11 +140,15 @@ class EC2Agent(BaseAgent):
     while retries_left:
       try:
         conn.create_security_group(group, 'AppScale security group')
+      except EC2ResponseError:
+        pass
+      try:
         conn.get_all_security_groups(group)
         return
       except EC2ResponseError:
-        time.sleep(self.SLEEP_TIME)
-        retries_left -= 1
+        pass
+      time.sleep(self.SLEEP_TIME)
+      retries_left -= 1
 
     raise AgentRuntimeException("Couldn't create security group with " \
       "name {0}".format(group))
