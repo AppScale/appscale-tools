@@ -22,12 +22,13 @@ import yaml
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppScaleException
+from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.9.0"
+APPSCALE_VERSION = "1.10.0"
 
 
 class LocalState():
@@ -173,11 +174,14 @@ class LocalState():
     creds = {
       "table" : options.table,
       "hostname" : first_host,
-      "ips" : json.dumps(node_layout.to_dict_without_head_node()),
+      "ips" : json.dumps(node_layout.to_list_without_head_node()),
       "keyname" : options.keyname,
       "replication" : str(node_layout.replication_factor()),
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
+      "alter_etc_resolv" : str(options.alter_etc_resolv),
+      "clear_datastore" : str(options.clear_datastore),
+      "verbose" : str(options.verbose)
     }
     creds.update(additional_creds)
 
@@ -188,7 +192,8 @@ class LocalState():
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
-        'use_spot_instances' : options.use_spot_instances
+        'use_spot_instances' : options.use_spot_instances,
+        'zone' : json.dumps(options.zone)
       }
 
       if options.infrastructure in ["ec2", "euca"]:
@@ -199,7 +204,6 @@ class LocalState():
         iaas_creds['instance_type'] = options.gce_instance_type
 
       creds.update(iaas_creds)
-
 
     return creds
 
@@ -363,8 +367,11 @@ class LocalState():
       'db_master' : node_layout.db_master().public_ip,
       'ips' : all_ips,
       'infrastructure' : infrastructure,
-      'group' : options.group
+      'group' : options.group,
     }
+
+    if infrastructure != "xen":
+      yaml_contents['zone'] = options.zone
 
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
@@ -420,6 +427,24 @@ class LocalState():
     for node in cls.get_local_nodes_info(keyname):
       if role in node["jobs"]:
         return node["public_ip"]
+
+
+  @classmethod
+  def are_disks_used(cls, keyname):
+    """Queries the locations.json file to see if any persistent disks are being
+    used in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      True if any persistent disks are used, and False otherwise.
+    """
+    disks = [node.get("disk") for node in cls.get_local_nodes_info(keyname)]
+    for disk in disks:
+      if disk:
+        return True
+    return False
 
 
   @classmethod
@@ -517,6 +542,7 @@ class LocalState():
       else:
         username = raw_input('Enter your desired e-mail address: ')
 
+      username = username.lstrip().rstrip()
       email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         return username
@@ -612,6 +638,21 @@ class LocalState():
 
 
   @classmethod
+  def get_zone(cls, keyname):
+    """Reads the locations.yaml file to see what zone instances are running in
+    throughout this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the zone used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["zone"]
+
+
+  @classmethod
   def get_client_secrets_location(cls, keyname):
     """Returns the path on the local filesystem where the client secrets JSON
     file (used to interact with Google Compute Engine) can be found.
@@ -639,9 +680,13 @@ class LocalState():
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
     """
-    os.remove(LocalState.get_locations_yaml_location(keyname))
-    os.remove(LocalState.get_locations_json_location(keyname))
-    os.remove(LocalState.get_secret_key_location(keyname))
+    files_to_remove = [LocalState.get_locations_yaml_location(keyname),
+      LocalState.get_locations_json_location(keyname),
+      LocalState.get_secret_key_location(keyname)]
+
+    for file_to_remove in files_to_remove:
+      if os.path.exists(file_to_remove):
+        os.remove(file_to_remove)
 
 
   @classmethod
@@ -824,12 +869,17 @@ class LocalState():
     crash_log_filename = '{0}log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
-    locale.setlocale(locale.LC_ALL, '')
+    try:
+      locale.setlocale(locale.LC_ALL, '')
+      this_locale = locale.getlocale()[0]
+    except locale.Error:
+      this_locale = "unknown"
+
     log_info = {
       # System-specific information
       'platform' : platform.platform(),
       'runtime' : platform.python_implementation(),
-      'locale' : locale.getlocale()[0],
+      'locale' : this_locale,
 
       # Crash-specific information
       'exception' : exception.__class__.__name__,
@@ -864,9 +914,73 @@ class LocalState():
       AppScaleException: If the user does not want to terminate their
         AppScale deployment.
     """
-    AppScaleLogger.warn("Terminating AppScale will delete all stored data.")
+    cls.confirm_or_abort("Terminating AppScale will delete all stored data.")
+
+
+  @classmethod
+  def ensure_user_wants_to_run_without_disks(cls):
+    """ Asks the user for confirmation before we start AppScale in a cloud
+    environment without any persistent disks to save their data.
+
+    Raises:
+      AppScaleException: If the user does not want to start AppScale without
+        persistent disks.
+    """
+    cls.confirm_or_abort("Starting AppScale without specifying persistent " +
+      "disks means your data will not be saved when your cloud is destroyed.")
+
+
+  @classmethod
+  def confirm_or_abort(cls, message):
+    AppScaleLogger.warn(message)
     confirm = raw_input("Are you sure you want to do this? (Y/N) ")
     if confirm.lower() == 'y' or confirm.lower() == 'yes':
       return
     else:
       raise AppScaleException('AppScale termination was cancelled.')
+
+
+  @classmethod
+  def ensure_appscalefile_is_up_to_date(cls):
+    """ Examines the AppScalefile in the current working directory to make sure
+    it specifies a keyname and group, updating it if it does not.
+
+    This scenario can occur if the user wants us to automatically generate a
+    keyname and group for them (in which case they don't specify either).
+
+    Returns:
+      True if the AppScalefile was up to date, or False if there were changes
+      made to make it up to date.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+    """
+    appscalefile_path = os.getcwd() + os.sep + "AppScalefile"
+    if not os.path.exists(appscalefile_path):
+      raise AppScalefileException("Couldn't find an AppScale file at {0}" \
+        .format(appscalefile_path))
+
+    file_contents = ''
+    with open(appscalefile_path) as file_handle:
+      file_contents = file_handle.read()
+
+    yaml_contents = yaml.safe_load(file_contents)
+
+    # Don't write to the AppScalefile if there are no changes to make to it.
+    if 'keyname' in yaml_contents and 'group' in yaml_contents:
+      return True
+
+    file_contents += "\n# Automatically added by the AppScale Tools: "
+
+    cloud_name = "appscale-{0}".format(uuid.uuid4())
+    if 'keyname' not in yaml_contents:
+      file_contents += "\nkeyname : {0}".format(cloud_name)
+
+    if 'group' not in yaml_contents:
+      file_contents += "\ngroup : {0}".format(cloud_name)
+
+    with open(appscalefile_path, 'w') as file_handle:
+      file_handle.write(file_contents)
+
+    return False

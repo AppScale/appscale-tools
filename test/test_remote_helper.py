@@ -51,7 +51,8 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False,
+      zone='my-zone-1b')
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -96,8 +97,14 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(os)
     os.should_receive('chmod').with_args(ssh_key_location, 0600).and_return()
 
-    # next, assume there are no security groups up yet
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
+    # next, assume there are no security groups up at first, but then it gets
+    # created.
+    udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
+    tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
+    icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
+    group = flexmock(name='boogroup', rules=[tcp_rule, udp_rule, icmp_rule])
+    fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
+    fake_ec2.should_receive('get_all_security_groups').with_args('boogroup').and_return([group])
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
@@ -140,7 +147,6 @@ class TestRemoteHelper(unittest.TestCase):
     self.fake_temp_file.should_receive('seek').with_args(0).and_return()
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
-
 
     flexmock(tempfile)
     tempfile.should_receive('NamedTemporaryFile')\
@@ -352,7 +358,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume we started god on public1 fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
       .and_return().ordered()
 
     # also assume that we scp'ed over the god config file fine
@@ -382,25 +388,18 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.yaml'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.json'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/root/.appscale/locations-bookey.json'), False, 5)
 	
     # and mock out copying the secret file
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*bookey.secret'),False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*bookey.secret'), False, 5)
 
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
@@ -434,8 +433,12 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out SOAP interactions with the UserAppServer
     fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('does_user_exist').with_args('boo@foo.goo',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
       'xmpp_user', 'the secret').and_return('true')
+    fake_soap.should_receive('does_user_exist').with_args('boo@public1',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
     flexmock(SOAPpy)
@@ -443,7 +446,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey')
+      'bookey', False)
 
 
   def test_wait_for_machines_to_finish_loading(self):

@@ -142,7 +142,8 @@ class AppControllerClient():
       app = 'none'
 
     result = self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, locations, credentials, [app], self.secret)
+      self.server.set_parameters, json.dumps(locations), credentials, [app],
+      self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -213,7 +214,7 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
-      except AppControllerException as exception:
+      except (AppControllerException, socket.error) as exception:
         raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \

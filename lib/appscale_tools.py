@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import sys
 import time
 import uuid
@@ -18,6 +19,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
@@ -191,11 +193,19 @@ class AppScaleTools():
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
 
+    try:
+      all_ips = acc.get_all_public_ips()
+    except socket.error:  # Occurs when the AppController has failed.
+      AppScaleLogger.warn("Couldn't get an up-to-date listing of the " + \
+        "machines in this AppScale deployment. Using our locally cached " + \
+        "info instead.")
+      all_ips = LocalState.get_all_public_ips(options.keyname)
+
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
     os.mkdir(options.location)
 
-    for ip in acc.get_all_public_ips():
+    for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = "{0}/{1}".format(options.location, ip)
       os.mkdir(local_dir)
@@ -273,8 +283,11 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     Raises:
+      AppControllerException: If the AppController on the head node crashes.
+        When this occurs, the message in the exception contains the reason why
+        the AppController crashed.
       BadConfigurationException: If the user passes in options that are not
-        sufficient to start an AppScale deplyoment (e.g., running on EC2 but
+        sufficient to start an AppScale deployment (e.g., running on EC2 but
         not specifying the AMI to use), or if the user provides us
         contradictory options (e.g., running on EC2 but not specifying EC2
         credentials).
@@ -283,6 +296,8 @@ class AppScaleTools():
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
     if options.infrastructure:
+      if not options.disks and not options.test:
+        LocalState.ensure_user_wants_to_run_without_disks()
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over the " + options.infrastructure + " cloud.")
     else:
@@ -315,7 +330,12 @@ class AppScaleTools():
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
-    uaserver_host = acc.get_uaserver_host(options.verbose)
+    try:
+      uaserver_host = acc.get_uaserver_host(options.verbose)
+    except Exception:
+      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
+        options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
@@ -342,7 +362,7 @@ class AppScaleTools():
       username, password = LocalState.get_credentials()
 
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
-      options.keyname)
+      options.keyname, options.clear_datastore)
     uaserver_client.set_admin_role(username)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
@@ -377,11 +397,16 @@ class AppScaleTools():
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
-    if options.test == False:
+    infrastructure = LocalState.get_infrastructure(options.keyname)
+
+    # If the user is on a cloud deployment, and not backing their data to
+    # persistent disks, warn them before shutting down AppScale.
+    # Also, if we're in developer mode, skip the warning.
+    if infrastructure != "xen" and not LocalState.are_disks_used(
+      options.keyname) and not options.test:
       LocalState.ensure_user_wants_to_terminate()
 
-    if LocalState.get_infrastructure(options.keyname) in \
-      InfrastructureAgentFactory.VALID_AGENTS:
+    if infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
     else:
@@ -407,9 +432,13 @@ class AppScaleTools():
       file_location = LocalState.extract_app_to_dir(options.file,
         options.verbose)
       created_dir = True
-    else:
+    elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+    else:
+      raise AppEngineConfigException('{0} is not a .tar.gz file or a ' \
+        'directory. Please try uploading either a .tar.gz file or a ' \
+        'directory.'.format(options.file))
 
     try:
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
@@ -445,7 +474,7 @@ class AppScaleTools():
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password, userappserver_host,
-        options.keyname)
+        options.keyname, clear_datastore=False)
 
     app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)

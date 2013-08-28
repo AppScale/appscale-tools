@@ -43,6 +43,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.function = "appscale-upload-app"
     self.app_dir = "/tmp/baz/gbaz"
 
+    # mock out the check to make sure our app is a directory
+    flexmock(os.path)
+    os.path.should_call('isdir')
+    os.path.should_receive('isdir').with_args(self.app_dir).and_return(True)
+
     # mock out any writing to stdout
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
@@ -306,7 +311,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args(
-      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+      'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
@@ -346,6 +351,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -368,7 +375,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(self.success)
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czhf'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
@@ -458,6 +465,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -508,7 +517,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args(
-      'baz', '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return('OK')
+      'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
     flexmock(SOAPpy)
@@ -548,6 +557,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -571,7 +582,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # and mock out tarring and copying the app
     local_state.should_receive('shell') \
-      .with_args(re.compile('tar -czf'), False) \
+      .with_args(re.compile('tar -czhf'), False) \
       .and_return()
 
     local_state.should_receive('shell') \
@@ -627,7 +638,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
+      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
@@ -669,6 +680,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -694,7 +707,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(self.success)
 
     # and mock out tarring and copying the app
-    subprocess.should_receive('Popen').with_args(re.compile('tar -czf'),
+    subprocess.should_receive('Popen').with_args(re.compile('tar -czhf'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
@@ -767,7 +780,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
+      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
@@ -809,6 +822,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
@@ -834,7 +849,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # and mock out tarring and copying the app
     local_state.should_receive('shell') \
-      .with_args(re.compile('tar -czf'), False) \
+      .with_args(re.compile('tar -czhf'), False) \
       .and_return()
 
     local_state.should_receive('shell') \
