@@ -54,7 +54,7 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
-  TERMINATE = "ruby /root/appscale/AppController/terminate.rb"
+  TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -193,8 +193,15 @@ Available commands:
 
     # If running in a cluster environment, we first need to set up SSH keys
     contents_as_yaml = yaml.safe_load(contents)
+    if not LocalState.ensure_appscalefile_is_up_to_date():
+      contents = self.read_appscalefile()
+      contents_as_yaml = yaml.safe_load(contents)
+
     if "ips_layout" in contents_as_yaml:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
+
+    if "disks" in contents_as_yaml:
+      disks = base64.b64encode(yaml.dump(contents_as_yaml["disks"]))
 
     if not "infrastructure" in contents_as_yaml:
       # Only run add-keypair if there is no ssh key present,
@@ -225,6 +232,9 @@ Available commands:
         if key == "ips_layout":
           command.append("--ips_layout")
           command.append(ips_layout)
+        elif key == "disks":
+          command.append("--disks")
+          command.append(disks)
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
@@ -250,10 +260,7 @@ Available commands:
     Raises:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
-    if "keyname" in config:
-      keyname = config["keyname"]
-    else:
-      keyname = "appscale"
+    keyname = config["keyname"]
 
     if 'verbose' in config and config['verbose'] == True:
       verbose = True
@@ -626,14 +633,13 @@ Available commands:
       keyname = 'appscale'
 
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+
+    if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
+      LocalState.ensure_user_wants_to_terminate()
+
     for ip in all_ips:
       RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
 
-    try:
-      LocalState.cleanup_appscale_files(keyname)
-    except Exception:
-      pass
-
+    LocalState.cleanup_appscale_files(keyname)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
-
     return all_ips

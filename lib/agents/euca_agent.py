@@ -114,8 +114,8 @@ class EucalyptusAgent(EC2Agent):
       to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
     conn.authorize_security_group_deprecated(group, from_port=1,
       to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    conn.authorize_security_group_deprecated(group, ip_protocol='icmp',
-      cidr_ip='0.0.0.0/0')
+    conn.authorize_security_group_deprecated(group, from_port=-1,
+      to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
 
     return True
 
@@ -140,3 +140,48 @@ class EucalyptusAgent(EC2Agent):
     else:
       AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
       return False
+
+
+  def does_zone_exist(self, parameters):
+    """
+    Queries Eucalyptus to see if the specified availability zone exists.
+
+    Args:
+      parameters: A dict that contains the zone to check for existence.
+    Returns:
+      True if the availability zone exists, False otherwise.
+    """
+    # Note that we can't use does_zone_exist in EC2Agent. There, if the image
+    # doesn't exist, it throws an EC2ResponseError, but in Eucalyptus, it
+    # doesn't (and returns None instead).
+    conn = self.open_connection(parameters)
+    zone = parameters[self.PARAM_ZONE]
+    if conn.get_all_zones(zone):
+      AppScaleLogger.log('Availability zone {0} does exist'.format(zone))
+      return True
+    else:
+      AppScaleLogger.log('Availability zone {0} does not exist'.format(zone))
+      return False
+
+
+  def __get_instance_info(self, instances, status, keyname):
+    """
+    Filter out a list of instances by instance status and keyname.
+
+    Args:
+      instances: A list of instances as returned by __describe_instances.
+      status: Status of the VMs (e.g., running, terminated).
+      keyname: Keyname used to spawn instances.
+
+    Returns:
+      A tuple of the form (public ips, private ips, instance ids).
+    """
+    instance_ids = []
+    public_ips = []
+    private_ips = []
+    for i in instances:
+      if i.state == status and i.key_name == keyname:
+        instance_ids.append(i.id)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
+    return public_ips, private_ips, instance_ids

@@ -17,21 +17,33 @@ instance_type : 'm1.large'
 # AppScale deployment, if running in Google Compute Engine.
 gce_instance_type : 'n1-standard-1'
 
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+zone : 'us-east-1b' # For Amazon EC2
+#zone: 'us-central1-a' # For Google Compute Engine
+
 # The database that your Google App Engine applications will be backed by.
 # Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
 
+# Whether or not the Datastore should be erased when AppScale starts up.
+# This defaults to False, to persist your data across AppScale runs.
+# Note that your data is only persisted if you are using non-ephemeral
+# storage (EBS on EC2, and PD on GCE).
+#clear_datastore: True
+
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
-# in your AWS account.
-keyname : 'appscalekey'
+# in your AWS account. By default, we randomly generate a keyname for you.
+#keyname : 'appscalekey'
 
 # The AWS security group name that should be used for all machines in this
 # AppScale deployment. This should refer to a keyname that does not already
 # exist in your AWS account. When running in Google Compute Engine, this is
 # the name that will be used for the network and firewall that is created
-# for your GCE instances.
-group : 'appscalegroup'
+# for your GCE instances. By default, we randomly generate a group for you.
+#group : 'appscalegroup'
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
@@ -72,6 +84,12 @@ max : 1
 # username and password and uses a default set of values. Insecure for
 # a production environment but acceptable for testing.
 # test : True
+
+# AppScale developers only: Removes all nameserver entries from /etc/resolv.conf
+# on each VM running AppScale. This experimental flag may improve performance
+# when resolving public IPs or public DNS is expensive (e.g., a heavily
+# burdened Eucalyptus cloud).
+# alter_etc_resolv : True
 
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start

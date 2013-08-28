@@ -39,7 +39,8 @@ class TestNodeLayout(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(
+      fake_ec2)
 
     # add in some instance variables so that we don't have
     # a lot IP addresses everywhere
@@ -91,7 +92,8 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(NodeLayout.NO_CONTROLLER, layout_4.errors())
 
     # Specifying more than one controller is not ok
-    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' : [self.ip_3]}
+    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' :
+      [self.ip_3]}
     options_5 = self.default_options.copy()
     options_5['ips'] = input_yaml_5
     layout_5 = NodeLayout(options_5)
@@ -170,7 +172,8 @@ class TestNodeLayout(unittest.TestCase):
     layout_2 = NodeLayout(options_2)
     self.assertEquals(True, layout_2.is_supported())
 
-    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2, self.ip_3]}
+    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_2,
+      self.ip_3]}
     options_3 = self.default_options.copy()
     options_3['ips'] = input_yaml_3
     layout_3 = NodeLayout(options_3)
@@ -273,6 +276,7 @@ class TestNodeLayout(unittest.TestCase):
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
 
+
   def test_is_database_replication_valid_with_db_slave(self):
     fake_node = flexmock()
     fake_node.should_receive('is_role').with_args('database').and_return(False)
@@ -280,3 +284,55 @@ class TestNodeLayout(unittest.TestCase):
     fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
     output = NodeLayout({}).is_database_replication_valid([fake_node])
     self.assertTrue(output['result'])
+
+
+  def test_with_wrong_number_of_disks(self):
+    # suppose that the user has specified two nodes, but only one EBS / PD disk
+    # this should fail.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(False, layout.is_valid())
+
+
+  def test_with_right_number_of_disks_but_not_unique(self):
+    # suppose that the user has specified two nodes, but uses the same name for
+    # both disks. This isn't acceptable.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one',
+      self.ip_2 : 'disk_number_one'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(False, layout.is_valid())
+
+
+  def test_with_right_number_of_unique_disks(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = {
+      'controller' : self.ip_1,
+      'servers' : [self.ip_2]
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    options['disks'] = {
+      self.ip_1 : 'disk_number_one',
+      self.ip_2 : 'disk_number_two'
+    }
+    layout = NodeLayout(options)
+    self.assertEquals(True, layout.is_valid())
+    self.assertEquals('disk_number_one', layout.head_node().disk)
+    self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
