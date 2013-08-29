@@ -222,6 +222,11 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be passed
         in via the command-line interface.
+    Raises:
+      AppScaleException: If the named application isn't running in this AppScale
+        cloud, if the destination port is in use by a different application, or
+        if the AppController rejects the request to relocate the application (in
+        which case it includes the reason why the rejection occurred).
     """
     login_host = LocalState.get_login_host(options.keyname)
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
