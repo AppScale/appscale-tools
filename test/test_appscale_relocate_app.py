@@ -72,27 +72,19 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       .and_return(fake_secret)
 
 
-  def add_appcontroller_mocks(self):
+  def add_appcontroller_mocks(self, app_running):
     fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('Database is at 1.2.3.4')
+
+    if app_running:
+      fake_appcontroller.should_receive('get_app_info_map').with_args(
+        'the secret').and_return(json.dumps({}))
+    else:
+      fake_appcontroller.should_receive('get_app_info_map').with_args(
+        'the secret').and_return(json.dumps({}))
+
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
       .and_return(fake_appcontroller)
-
-
-  def add_userappserver_mocks(self, app_running):
-    fake_userappserver = flexmock(name='fake_uaserver')
-
-    if app_running:
-      fake_userappserver.should_receive('get_app_data').with_args(
-        self.appid, 'the secret').and_return('num_ports:1')
-    else:
-      fake_userappserver.should_receive('get_app_data').with_args(
-        self.appid, 'the secret').and_return('Error: app does not exist')
-
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
-      .and_return(fake_userappserver)
 
 
   def test_fails_if_destination_port_invalid(self):
@@ -109,11 +101,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     # If the user wants to relocate their app to port X, but their app isn't
     # even running, this should fail.
 
-    # Assume that the AppController is running and knows where the UAServer is.
-    self.add_appcontroller_mocks()
-
-    # Assume the UAServer is up and tells us the app isn't running.
-    self.add_userappserver_mocks(app_running=False)
+    # Assume that the AppController is running but our app isn't.
+    self.add_appcontroller_mocks(app_running=False)
 
     argv = [
       '--keyname', self.keyname,

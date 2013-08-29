@@ -305,3 +305,16 @@ class AppControllerClient():
     """
     return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.update, apps_to_run, self.secret)
+
+
+  def get_app_info_map(self):
+    """Asks the AppController for a list of all the applications it is proxying
+    via nginx, haproxy, or running itself.
+
+    Returns:
+      A dict that maps application IDs (strs) to a dict indicating what nginx,
+        haproxy, or dev_appserver ports host that app, with an additional field
+        indicating what language the app is written in.
+    """
+    return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
+      self.server.get_app_info_map, self.secret))

@@ -226,15 +226,13 @@ class AppScaleTools():
     login_host = LocalState.get_login_host(options.keyname)
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
       options.keyname))
-    userappserver_host = acc.get_uaserver_host(options.verbose)
-    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
-      options.keyname))
-    if not userappclient.does_app_exist(options.appname):
-      raise AppScaleException("The given application, {0} is not currently " \
+
+    app_info_map = acc.get_app_info_map()
+    if options.appname not in app_info_map.keys():
+      raise AppScaleException("The given application, {0}, is not currently " \
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    # get a list of all the apps running in the cloud
     # if any of them are running on the named port, fail
 
     # get the login host
