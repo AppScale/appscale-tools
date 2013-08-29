@@ -311,6 +311,13 @@ class ParseArgs():
     elif function == "appscale-describe-instances":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-relocate-app":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--appname',
+        help="the name of the application to relocate")
+      self.parser.add_argument('--port', type=int,
+        help="the port that the application should now serve traffic on")
     else:
       raise SystemExit
 
@@ -358,6 +365,8 @@ class ParseArgs():
           self.args.ips = yaml.safe_load(file_handle.read())
       else:
         raise SystemExit
+    elif function == "appscale-relocate-app":
+      pass
     else:
       raise SystemExit
 

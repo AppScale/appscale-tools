@@ -3,7 +3,6 @@
 
 
 # General-purpose Python library imports
-import getpass
 import json
 import os
 import sys
@@ -43,5 +42,21 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     time.should_receive('sleep').and_return()
 
 
-  def test_nothing_yet(self):
+  def test_fails_if_destination_port_invalid(self):
+    # If the user wants to relocate their app to port X, X should be a port
+    # number that apps can actually be served on (e.g., between 1 and 65535).
+    pass
+
+
+  def test_fails_if_app_isnt_running(self):
+    # If the user wants to relocate their app to port X, but their app isn't
+    # even running, this should fail.
+    argv = [
+
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.relocate_app(options)
+
+
+  def test_fails_if_destination_port_in_use(self):
     pass
