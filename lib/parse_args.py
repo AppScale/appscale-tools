@@ -366,7 +366,17 @@ class ParseArgs():
       else:
         raise SystemExit
     elif function == "appscale-relocate-app":
-      pass
+      if not self.args.appname:
+        raise BadConfigurationException("Need to specify the application to " +
+          "relocate with --appname.")
+
+      if not self.args.port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --port.")
+
+      if self.args.port < 1 or self.args.port > 65535:
+        raise BadConfigurationException("Need to specify a port between 1 " +
+          "and 65535. Please change --port accordingly.")
     else:
       raise SystemExit
 
