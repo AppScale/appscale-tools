@@ -72,21 +72,6 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       .and_return(fake_secret)
 
 
-  def add_appcontroller_mocks(self, app_running):
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-
-    if app_running:
-      fake_appcontroller.should_receive('get_app_info_map').with_args(
-        'the secret').and_return(json.dumps({}))
-    else:
-      fake_appcontroller.should_receive('get_app_info_map').with_args(
-        'the secret').and_return(json.dumps({}))
-
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
-      .and_return(fake_appcontroller)
-
-
   def test_fails_if_destination_port_invalid(self):
     # If the user wants to relocate their app to port X, X should be a port
     # number that apps can actually be served on (e.g., between 1 and 65535).
@@ -102,7 +87,12 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     # even running, this should fail.
 
     # Assume that the AppController is running but our app isn't.
-    self.add_appcontroller_mocks(app_running=False)
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
+      'the secret').and_return(json.dumps({}))
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
+      .and_return(fake_appcontroller)
 
     argv = [
       '--keyname', self.keyname,
@@ -116,7 +106,30 @@ class TestAppScaleRelocateApp(unittest.TestCase):
   def test_fails_if_destination_port_in_use(self):
     # If the user wants to relocate their app to port X, but something else
     # is running on port X, this should fail.
-    pass
+
+    # Assume that the AppController is running, so is our app, but that a
+    # different app runs on port 80.
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
+      'the secret').and_return(json.dumps({
+      self.appid : {
+        'nginx' : 8080
+      },
+      'a-different-app' : {
+        'nginx' : 80
+      }
+    }))
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
+      .and_return(fake_appcontroller)
+
+    argv = [
+      '--keyname', self.keyname,
+      '--appname', self.appid,
+      '--port', '80'
+    ]
+    options = ParseArgs(argv, self.function).args
+    self.assertRaises(AppScaleException, AppScaleTools.relocate_app, options)
 
 
   def test_all_ok(self):

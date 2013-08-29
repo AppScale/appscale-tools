@@ -233,9 +233,12 @@ class AppScaleTools():
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    # if any of them are running on the named port, fail
+    for appid, app_info in app_info_map.iteritems():
+      if options.port == app_info['nginx']:
+        raise AppScaleException("{0} is already running on port {1}, so we " \
+          "can't relocate {2} to that port. Please relocate {0} off of port " \
+          "{1} and try again.".format(appid, options.port, options.appname))
 
-    # get the login host
     # tell the AC there to relocate this app
 
 
