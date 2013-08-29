@@ -216,6 +216,23 @@ class AppScaleTools():
 
 
   @classmethod
+  def relocate_app(cls, options):
+    """Instructs AppScale to move the named application to a different port.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    """
+    pass
+    # get a list of all the apps running in the cloud
+    # if ours isn't running, fail
+    # if any of them are running on the named port, fail
+
+    # get the login host
+    # tell the AC there to relocate this app
+
+
+  @classmethod
   def remove_app(cls, options):
     """Instructs AppScale to no longer host the named application.
 
