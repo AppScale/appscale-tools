@@ -223,9 +223,18 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be passed
         in via the command-line interface.
     """
-    pass
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+    userappserver_host = acc.get_uaserver_host(options.verbose)
+    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+      options.keyname))
+    if not userappclient.does_app_exist(options.appname):
+      raise AppScaleException("The given application, {0} is not currently " \
+        "running in this AppScale cloud, so we can't move it to a different " \
+        "port.".format(options.appname))
+
     # get a list of all the apps running in the cloud
-    # if ours isn't running, fail
     # if any of them are running on the named port, fail
 
     # get the login host

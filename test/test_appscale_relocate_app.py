@@ -20,6 +20,7 @@ lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState
 from parse_args import ParseArgs
@@ -43,6 +44,56 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     flexmock(time)
     time.should_receive('sleep').and_return()
 
+    # mock out reading the locations.json file, and slip in our own json
+    flexmock(os.path)
+    os.path.should_call('exists')  # set the fall-through
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
+    fake_nodes_json = flexmock(name="fake_nodes_json")
+    fake_nodes_json.should_receive('read').and_return(json.dumps([{
+      "public_ip" : "public1",
+      "private_ip" : "private1",
+      "jobs" : ["shadow", "login"]
+    }]))
+    fake_nodes_json.should_receive('write').and_return()
+    builtins = flexmock(sys.modules['__builtin__'])
+    builtins.should_receive('open').with_args(
+      LocalState.get_locations_json_location(self.keyname), 'r') \
+      .and_return(fake_nodes_json)
+
+    # put in a mock for reading the secret file
+    builtins.should_call('open')  # set the fall-through
+
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+
+
+  def add_appcontroller_mocks(self):
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('status').with_args('the secret') \
+      .and_return('Database is at 1.2.3.4')
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
+      .and_return(fake_appcontroller)
+
+
+  def add_userappserver_mocks(self, app_running):
+    fake_userappserver = flexmock(name='fake_uaserver')
+
+    if app_running:
+      fake_userappserver.should_receive('get_app_data').with_args(
+        self.appid, 'the secret').and_return('num_ports:1')
+    else:
+      fake_userappserver.should_receive('get_app_data').with_args(
+        self.appid, 'the secret').and_return('Error: app does not exist')
+
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:4343') \
+      .and_return(fake_userappserver)
+
 
   def test_fails_if_destination_port_invalid(self):
     # If the user wants to relocate their app to port X, X should be a port
@@ -57,12 +108,20 @@ class TestAppScaleRelocateApp(unittest.TestCase):
   def test_fails_if_app_isnt_running(self):
     # If the user wants to relocate their app to port X, but their app isn't
     # even running, this should fail.
+
+    # Assume that the AppController is running and knows where the UAServer is.
+    self.add_appcontroller_mocks()
+
+    # Assume the UAServer is up and tells us the app isn't running.
+    self.add_userappserver_mocks(app_running=False)
+
     argv = [
+      '--keyname', self.keyname,
       '--appname', self.appid,
       '--port', '80'
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.relocate_app(options)
+    self.assertRaises(AppScaleException, AppScaleTools.relocate_app, options)
 
 
   def test_fails_if_destination_port_in_use(self):
