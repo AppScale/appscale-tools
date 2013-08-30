@@ -102,8 +102,6 @@ Available commands:
     Returns:
       The contents of the AppScalefile in the current working directory.
     """
-    # Don't check for existence and then open it later - this lack of
-    # atomicity is potentially a TOCTOU vulnerability.
     try:
       with open(self.get_appscalefile_location()) as file_handle:
         return file_handle.read()
@@ -261,11 +259,7 @@ Available commands:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
     keyname = config["keyname"]
-
-    if 'verbose' in config and config['verbose'] == True:
-      verbose = True
-    else:
-      verbose = False
+    verbose = config.get('verbose', False)
 
     if not isinstance(config["ips_layout"], dict):
       raise BadConfigurationException("ips_layout should be a dictionary. " \
@@ -560,6 +554,18 @@ Available commands:
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args
     AppScaleTools.gather_logs(options)
+
+
+  def relocate(self, appid, new_port):
+    """'relocate' provides a nicer experience for users than the
+    appscale-terminate-instances command, by using the configuration options
+    present in the AppScalefile found in the current working directory.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
+    contents = self.read_appscalefile()
 
 
   def destroy(self):
