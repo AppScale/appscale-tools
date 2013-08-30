@@ -135,4 +135,29 @@ class TestAppScaleRelocateApp(unittest.TestCase):
   def test_all_ok(self):
     # If the user wants to relocate their app to port X, and nothing else
     # runs on that port, this should succeed.
-    pass
+
+    # Assume that the AppController is running, so is our app, and that other
+    # apps are not running on port 80.
+    fake_appcontroller = flexmock(name='fake_appcontroller')
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
+      'the secret').and_return(json.dumps({
+      self.appid : {
+        'nginx' : 8080
+      },
+      'a-different-app' : {
+        'nginx' : 81
+      }
+    }))
+    fake_appcontroller.should_receive('relocate_app').with_args(self.appid, 80,
+      'the secret').and_return("OK")
+    flexmock(SOAPpy)
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
+      .and_return(fake_appcontroller)
+
+    argv = [
+      '--keyname', self.keyname,
+      '--appname', self.appid,
+      '--port', '80'
+    ]
+    options = ParseArgs(argv, self.function).args
+    AppScaleTools.relocate_app(options)

@@ -244,7 +244,14 @@ class AppScaleTools():
           "can't relocate {2} to that port. Please relocate {0} off of port " \
           "{1} and try again.".format(appid, options.port, options.appname))
 
-    # tell the AC there to relocate this app
+    relocate_result = acc.relocate_app(options.appname, options.port)
+    if relocate_result == "OK":
+      AppScaleLogger.success("Successfully issued request to move {0} port " \
+        "{1}. Please wait for a few seconds for traffic to be served from " \
+        "the new port.".format(options.appname, options.port))
+    else:
+      AppScaleLogger.warn(relocate_result)
+      sys.exit(1)
 
 
   @classmethod
