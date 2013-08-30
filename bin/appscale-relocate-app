@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# Programmer: Chris Bunch (chris@appscale.com)
+
+
+# General-purpose Python library imports
+import os
+import sys
+import traceback
+
+
+# AppScale library imports
+lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+sys.path.append(lib)
+
+
+# Make sure we're on Python 2.6 or greater before importing any code
+# that's incompatible with older versions.
+import version_helper
+version_helper.ensure_valid_python_is_used()
+
+
+from appscale_logger import AppScaleLogger
+from appscale_tools import AppScaleTools
+from local_state import LocalState
+from parse_args import ParseArgs
+
+
+if __name__ == "__main__":
+  options = ParseArgs(sys.argv[1:], "appscale-relocate-app").args
+  try:
+    AppScaleTools.relocate_app(options)
+    sys.exit(0)
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
+    sys.exit(1)
