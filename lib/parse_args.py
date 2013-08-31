@@ -316,8 +316,12 @@ class ParseArgs():
         help="the keypair name to use")
       self.parser.add_argument('--appname',
         help="the name of the application to relocate")
-      self.parser.add_argument('--port', type=int,
-        help="the port that the application should now serve traffic on")
+      self.parser.add_argument('--http_port', type=int,
+        help="the port that the application should now serve unencrypted " \
+        "traffic on")
+      self.parser.add_argument('--https_port', type=int,
+        help="the port that the application should now serve encrypted " \
+        "traffic on")
     else:
       raise SystemExit
 
@@ -370,11 +374,15 @@ class ParseArgs():
         raise BadConfigurationException("Need to specify the application to " +
           "relocate with --appname.")
 
-      if not self.args.port:
+      if not self.args.http_port:
         raise BadConfigurationException("Need to specify the port to move " +
-          "the app to with --port.")
+          "the app to with --http_port.")
 
-      if self.args.port < 1 or self.args.port > 65535:
+      if not self.args.https_port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --https_port.")
+
+      if self.args.http_port < 1 or self.args.http_port > 65535:
         raise BadConfigurationException("Need to specify a port between 1 " +
           "and 65535. Please change --port accordingly.")
     else:

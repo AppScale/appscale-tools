@@ -77,7 +77,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     # number that apps can actually be served on (e.g., between 1 and 65535).
     argv = [
       '--appname', self.appid,
-      '--port', '100000'
+      '--http_port', '100000',
+      '--https_port', '443'
     ]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
@@ -97,7 +98,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     argv = [
       '--keyname', self.keyname,
       '--appname', self.appid,
-      '--port', '80'
+      '--http_port', '80',
+      '--https_port', '443'
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.relocate_app, options)
@@ -126,7 +128,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     argv = [
       '--keyname', self.keyname,
       '--appname', self.appid,
-      '--port', '80'
+      '--http_port', '80',
+      '--https_port', '443'
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.relocate_app, options)
@@ -149,7 +152,7 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       }
     }))
     fake_appcontroller.should_receive('relocate_app').with_args(self.appid, 80,
-      'the secret').and_return("OK")
+      443, 'the secret').and_return("OK")
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
       .and_return(fake_appcontroller)
@@ -157,7 +160,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     argv = [
       '--keyname', self.keyname,
       '--appname', self.appid,
-      '--port', '80'
+      '--http_port', '80',
+      '--https_port', '443'
     ]
     options = ParseArgs(argv, self.function).args
     AppScaleTools.relocate_app(options)

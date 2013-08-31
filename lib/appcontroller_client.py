@@ -320,19 +320,22 @@ class AppControllerClient():
       self.server.get_app_info_map, self.secret))
 
 
-  def relocate_app(self, appid, new_port):
+  def relocate_app(self, appid, http_port, https_port):
     """Asks the AppController to start serving traffic for the named application
-    on the given port, instead of the port that it was previously serving at.
+    on the given ports, instead of the ports that it was previously serving at.
 
     Args:
       appid: A str that names the already deployed application that we want to
         move to a different port.
-      new_port: An int between 1 and 65535 that names the port that traffic
-        should be served from for this app.
+      http_port: An int between 80 and 90, or between 1024 and 65535, that names
+        the port that unencrypted traffic should be served from for this app.
+      https_port: An int between 443 and 453, or between 1024 and 65535, that
+        names the port that encrypted traffic should be served from for this
+        app.
     Returns:
       A str that indicates if the operation was successful, and in unsuccessful
       cases, the reason why the operation failed.
     """
     return self.run_with_timeout(10, "Relocate request timed out.",
-      self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, new_port,
-      self.secret)
+      self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
+        https_port, self.secret)

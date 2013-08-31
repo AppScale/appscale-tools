@@ -239,16 +239,25 @@ class AppScaleTools():
         "port.".format(options.appname))
 
     for appid, app_info in app_info_map.iteritems():
-      if options.port == app_info['nginx']:
+      if options.http_port == app_info['nginx']:
         raise AppScaleException("{0} is already running on port {1}, so we " \
           "can't relocate {2} to that port. Please relocate {0} off of port " \
-          "{1} and try again.".format(appid, options.port, options.appname))
+          "{1} and try again.".format(appid, options.http_port,
+          options.appname))
 
-    relocate_result = acc.relocate_app(options.appname, options.port)
+      if options.https_port == app_info['nginx']:
+        raise AppScaleException("{0} is already running on port {1}, so we " \
+          "can't relocate {2} to that port. Please relocate {0} off of port " \
+          "{1} and try again.".format(appid, options.https_port,
+          options.appname))
+
+    relocate_result = acc.relocate_app(options.appname, options.http_port,
+      options.https_port)
     if relocate_result == "OK":
-      AppScaleLogger.success("Successfully issued request to move {0} port " \
-        "{1}. Please wait for a few seconds for traffic to be served from " \
-        "the new port.".format(options.appname, options.port))
+      AppScaleLogger.success("Successfully issued request to move {0} to " \
+        "ports {1} and {2}. Please wait for a few seconds for traffic to be " \
+        "served from the new ports.".format(options.appname, options.http_port,
+        options.https_port))
     else:
       AppScaleLogger.warn(relocate_result)
       sys.exit(1)
