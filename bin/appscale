@@ -137,12 +137,12 @@ elif command == "clean":
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "relocate":
-  if len(sys.argv) != 4:
-    cprint("Usage: appscale relocate appid port", 'red')
+  if len(sys.argv) != 5:
+    cprint("Usage: appscale relocate appid http_port https_port", 'red')
     sys.exit(1)
 
   try:
-    appscale.relocate(sys.argv[2], sys.argv[3])
+    appscale.relocate(sys.argv[2], sys.argv[3], sys.argv[4])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)

@@ -608,7 +608,7 @@ class TestAppScale(unittest.TestCase):
     # should throw up and die
     appscale = AppScale()
     self.addMockForNoAppScalefile(appscale)
-    self.assertRaises(AppScalefileException, appscale.relocate, 'myapp', 80)
+    self.assertRaises(AppScalefileException, appscale.relocate, 'myapp', 80, 443)
 
 
   def testRelocateWithAppScalefile(self):
@@ -634,7 +634,7 @@ class TestAppScale(unittest.TestCase):
     # finally, mock out the actual appscale-relocate-app call
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('relocate_app')
-    appscale.relocate('myapp', 80)
+    appscale.relocate('myapp', 80, 443)
 
 
   def testDestroyWithNoAppScalefile(self):

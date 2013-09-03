@@ -251,6 +251,9 @@ class AppScaleTools():
           "{1} and try again.".format(appid, options.https_port,
           options.appname))
 
+      # TODO(cgb): Also check haproxy and appengine, but tell the user that
+      # those ports can't be relocated off of.
+
     relocate_result = acc.relocate_app(options.appname, options.http_port,
       options.https_port)
     if relocate_result == "OK":
