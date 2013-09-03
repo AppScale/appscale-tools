@@ -172,7 +172,8 @@ class AppScaleTools():
         AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
 
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(login_host))
+      "deployment at http://{0}:{1}/status".format(login_host,
+      RemoteHelper.APP_DASHBOARD_PORT))
 
 
   @classmethod
@@ -242,9 +243,12 @@ class AppScaleTools():
       options.https_port)
     if relocate_result == "OK":
       AppScaleLogger.success("Successfully issued request to move {0} to " \
-        "ports {1} and {2}. Please wait for a few seconds for traffic to be " \
-        "served from the new ports.".format(options.appname, options.http_port,
+        "ports {1} and {2}.".format(options.appname, options.http_port,
         options.https_port))
+      AppScaleLogger.success("Your app serves unencrypted traffic at: " +
+        "http://{0}:{1}".format(login_host, options.http_port))
+      AppScaleLogger.success("Your app serves encrypted traffic at: " +
+        "https://{0}:{1}".format(login_host, options.https_port))
     else:
       raise AppScaleException(relocate_result)
 
@@ -411,8 +415,8 @@ class AppScaleTools():
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(LocalState.get_login_host(
-      options.keyname)))
+      "deployment at http://{0}:{1}/status".format(LocalState.get_login_host(
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
