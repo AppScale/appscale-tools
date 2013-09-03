@@ -238,22 +238,6 @@ class AppScaleTools():
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    for appid, app_info in app_info_map.iteritems():
-      if options.http_port == app_info['nginx']:
-        raise AppScaleException("{0} is already running on port {1}, so we " \
-          "can't relocate {2} to that port. Please relocate {0} off of port " \
-          "{1} and try again.".format(appid, options.http_port,
-          options.appname))
-
-      if options.https_port == app_info['nginx']:
-        raise AppScaleException("{0} is already running on port {1}, so we " \
-          "can't relocate {2} to that port. Please relocate {0} off of port " \
-          "{1} and try again.".format(appid, options.https_port,
-          options.appname))
-
-      # TODO(cgb): Also check haproxy and appengine, but tell the user that
-      # those ports can't be relocated off of.
-
     relocate_result = acc.relocate_app(options.appname, options.http_port,
       options.https_port)
     if relocate_result == "OK":
@@ -262,8 +246,7 @@ class AppScaleTools():
         "served from the new ports.".format(options.appname, options.http_port,
         options.https_port))
     else:
-      AppScaleLogger.warn(relocate_result)
-      sys.exit(1)
+      raise AppScaleException(relocate_result)
 
 
   @classmethod
