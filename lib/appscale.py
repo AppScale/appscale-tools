@@ -574,7 +574,8 @@ Available commands:
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
-    # construct the appscale-gather-logs command
+    # Construct the appscale-relocate-app command from argv and the contents of
+    # the AppScalefile.
     command = []
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")

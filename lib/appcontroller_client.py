@@ -313,8 +313,8 @@ class AppControllerClient():
 
     Returns:
       A dict that maps application IDs (strs) to a dict indicating what nginx,
-        haproxy, or dev_appserver ports host that app, with an additional field
-        indicating what language the app is written in.
+      haproxy, or dev_appserver ports host that app, with an additional field
+      indicating what language the app is written in.
     """
     return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
       self.server.get_app_info_map, self.secret))

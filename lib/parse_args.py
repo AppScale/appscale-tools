@@ -383,8 +383,12 @@ class ParseArgs():
           "the app to with --https_port.")
 
       if self.args.http_port < 1 or self.args.http_port > 65535:
-        raise BadConfigurationException("Need to specify a port between 1 " +
-          "and 65535. Please change --port accordingly.")
+        raise BadConfigurationException("Need to specify a http port between " +
+          "1 and 65535. Please change --http_port accordingly.")
+
+      if self.args.https_port < 1 or self.args.https_port > 65535:
+        raise BadConfigurationException("Need to specify a https port " +
+          "between 1 and 65535. Please change --https_port accordingly.")
     else:
       raise SystemExit
 
