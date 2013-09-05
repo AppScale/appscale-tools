@@ -526,7 +526,7 @@ Available commands:
         " in the currently running AppScale deployment.")
 
     # construct the ssh command to exec with that IP address
-    tail = "tail -f /var/log/appscale/" + str(file_regex)
+    tail = "tail -F /var/log/appscale/{0}".format(file_regex)
     command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
       self.get_key_location(keyname), "root@" + ip, tail]
 
