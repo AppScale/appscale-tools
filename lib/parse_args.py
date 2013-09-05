@@ -267,7 +267,7 @@ class ParseArgs():
         help='if we should add the given nodes to an existing deployment')
       self.parser.add_argument('--root_password',
         default=False,
-        help='the root password of the host appscale is to run on')
+        help='the root password of the host AppScale is to run on')
     elif function == "appscale-add-instances":
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
