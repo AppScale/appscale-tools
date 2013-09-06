@@ -39,7 +39,7 @@ class RemoteHelper():
 
 
   # The port the AppDashboard runs on, by default.
-  APP_DASHBOARD_PORT = 1080
+  APP_DASHBOARD_PORT = 80
 
 
   # The default port that the ssh daemon runs on.
