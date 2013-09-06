@@ -602,6 +602,40 @@ class TestAppScale(unittest.TestCase):
     AppScaleTools.should_receive('run_instances')
     self.assertRaises(BadConfigurationException, appscale.logs, '/baz')
 
+  
+  def testRelocateWithNoAppScalefile(self):
+    # calling 'appscale relocate' with no AppScalefile in the local directory
+    # should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.relocate, 'myapp', 80, 443)
+
+
+  def testRelocateWithAppScalefile(self):
+    # calling 'appscale relocate' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-relocate-app' command and then exec it
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-relocate-app call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('relocate_app')
+    appscale.relocate('myapp', 80, 443)
+
 
   def testDestroyWithNoAppScalefile(self):
     # calling 'appscale destroy' with no AppScalefile in the local
