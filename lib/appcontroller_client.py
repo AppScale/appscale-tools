@@ -336,6 +336,6 @@ class AppControllerClient():
       A str that indicates if the operation was successful, and in unsuccessful
       cases, the reason why the operation failed.
     """
-    return self.run_with_timeout(10, "Relocate request timed out.",
+    return self.run_with_timeout(20, "Relocate request timed out.",
       self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
         https_port, self.secret)
