@@ -102,8 +102,6 @@ Available commands:
     Returns:
       The contents of the AppScalefile in the current working directory.
     """
-    # Don't check for existence and then open it later - this lack of
-    # atomicity is potentially a TOCTOU vulnerability.
     try:
       with open(self.get_appscalefile_location()) as file_handle:
         return file_handle.read()
@@ -261,11 +259,7 @@ Available commands:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
     keyname = config["keyname"]
-
-    if 'verbose' in config and config['verbose'] == True:
-      verbose = True
-    else:
-      verbose = False
+    verbose = config.get('verbose', False)
 
     if not isinstance(config["ips_layout"], dict):
       raise BadConfigurationException("ips_layout should be a dictionary. " \
@@ -560,6 +554,45 @@ Available commands:
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args
     AppScaleTools.gather_logs(options)
+
+
+  def relocate(self, appid, http_port, https_port):
+    """'relocate' provides a nicer experience for users than the
+    appscale-terminate-instances command, by using the configuration options
+    present in the AppScalefile found in the current working directory.
+
+    Args:
+      appid: A str indicating the name of the application to relocate.
+      http_port: An int that indicates what port should serve HTTP traffic for
+        this application.
+      https_port: An int that indicates what port should serve HTTPS traffic for
+        this application.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # Construct the appscale-relocate-app command from argv and the contents of
+    # the AppScalefile.
+    command = []
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml["keyname"])
+
+    command.append("--appname")
+    command.append(appid)
+
+    command.append("--http_port")
+    command.append(str(http_port))
+
+    command.append("--https_port")
+    command.append(str(https_port))
+
+    # and exec it
+    options = ParseArgs(command, "appscale-relocate-app").args
+    AppScaleTools.relocate_app(options)
 
 
   def destroy(self):
