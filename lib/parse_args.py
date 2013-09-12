@@ -163,7 +163,7 @@ class ParseArgs():
       # Don't use dashes in the random suffix, since network names on Google
       # Compute Engine aren't allowed to have dashes in them.
       random_suffix = str(uuid.uuid4()).replace('-', '')
-      keyname = "appscale-{0}".format(random_suffix)
+      keyname = "appscale{0}".format(random_suffix)
       self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
