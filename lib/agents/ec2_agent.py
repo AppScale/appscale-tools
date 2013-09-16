@@ -362,6 +362,15 @@ class EC2Agent(BaseAgent):
     active_private_ips = []
     active_instances = []
 
+    # Make sure we do not have terminated instances using the same keyname.
+    instances = self.__describe_instances(parameters)
+    term_instance_info = self.__get_instance_info(instances,
+       'terminated', keyname)
+    if len(term_instance_info[2]):
+      self.handle_failure('One or more nodes started with key {0} have '\
+                          'been terminated. Please use a different key '\
+                          'name'.format(keyname))
+
     try:
       attempts = 1
       while True:
@@ -399,7 +408,6 @@ class EC2Agent(BaseAgent):
       now = datetime.datetime.now()
 
       while now < end_time:
-        time_left = (end_time - now).seconds
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
