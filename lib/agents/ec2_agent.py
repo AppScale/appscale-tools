@@ -363,7 +363,7 @@ class EC2Agent(BaseAgent):
     active_instances = []
 
     # Make sure we do not have terminated instances using the same keyname.
-    instances = self.__describe_instances(parameters)
+    instances = self.describe_instances(parameters)
     term_instance_info = self.__get_instance_info(instances,
        'terminated', keyname)
     if len(term_instance_info[2]):
@@ -697,3 +697,26 @@ class EC2Agent(BaseAgent):
     """
     AppScaleLogger.log(msg)
     raise AgentRuntimeException(msg)
+
+  def __get_instance_info(self, instances, status, keyname):
+    """
+    Filter out a list of instances by instance status and keyname.
+
+    Args:
+      instances A list of instances as returned by __describe_instances
+      status  Status of the VMs (eg: running, terminated)
+      keyname Keyname used to spawn instances
+
+     Returns:
+      A tuple of the form (public ips, private ips, instance ids)
+    """
+    instance_ids = []
+    public_ips = []
+    private_ips = []
+    for i in instances:
+      if i.state == status and i.key_name == keyname:
+        instance_ids.append(i.id)
+        public_ips.append(i.public_dns_name)
+        private_ips.append(i.private_dns_name)
+    return public_ips, private_ips, instance_ids
+
