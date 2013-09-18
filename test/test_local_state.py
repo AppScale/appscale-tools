@@ -4,13 +4,16 @@
 
 # General-purpose Python library imports
 import json
+import locale
 import os
+import platform
 import re
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
+import uuid
 import yaml
 
 
@@ -22,6 +25,7 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import LocalState
@@ -92,31 +96,36 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', keyname='boo',
       appengine='1', autoscale=False, group='bazgroup',
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23)
+      use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b', verbose=True)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 2,
-      'max' : 2
+      'min' : 1,
+      'max' : 1
     })
 
     expected = {
+      'alter_etc_resolv' : 'True',
+      'clear_datastore' : 'False',
       'table' : 'cassandra',
       'hostname' : 'public1',
-      'ips' : json.dumps({'node-1': ['database', 'taskqueue_slave', 'taskqueue', 'memcache',
-        'db_slave', 'appengine']}),
+      'ips' : json.dumps([]),
       'keyname' : 'boo',
-      'replication' : '2',
+      'replication' : '1',
       'appengine' : '1',
       'autoscale' : 'False',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : 2,
-      'max_images' : 2,
+      'min_images' : 1,
+      'max_images' : 1,
       'use_spot_instances' : True,
-      'max_spot_price' : '1.23'
+      'max_spot_price' : '1.23',
+      'zone' : json.dumps('my-zone-1b'),
+      'verbose' : 'True'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'max_spot_price':'1.23'})
@@ -179,7 +188,7 @@ class TestLocalState(unittest.TestCase):
       'load_balancer': 'public1', 'instance_id': 'i-ABCDEFG',
       'secret': 'the secret', 'infrastructure': 'ec2',
       'group': 'boogroup', 'ips': 'public1', 'table': 'cassandra',
-      'db_master': 'node-0'
+      'db_master': 'node-0', 'zone' : 'my-zone-1b'
     })).and_return()
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location('booscale'), 'w') \
@@ -194,7 +203,7 @@ class TestLocalState(unittest.TestCase):
       .and_return(fake_locations_json)
 
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
-      keyname='booscale', group='boogroup')
+      keyname='booscale', group='boogroup', zone='my-zone-1b')
     node_layout = NodeLayout(options={
       'min' : 1,
       'max' : 1,
@@ -205,8 +214,8 @@ class TestLocalState(unittest.TestCase):
     instance_id = 'i-ABCDEFG'
     LocalState.update_local_metadata(options, node_layout, host, instance_id)
 
-  def test_extract_app_to_dir(self):
 
+  def test_extract_app_to_dir(self):
     flexmock(os)
     os.should_receive('mkdir').and_return()
     flexmock(os.path)
@@ -219,10 +228,37 @@ class TestLocalState(unittest.TestCase):
       .and_return()
 
     os.should_receive('listdir').and_return(['one_folder'])
-    os.path.should_receive('isdir').with_args(re.compile('one_folder')).and_return(True)
+    os.path.should_receive('isdir').with_args(re.compile('one_folder')) \
+      .and_return(True)
 
     location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
     self.assertEquals(True, 'one_folder' in location)
+
+
+  def test_extract_app_to_dir_with_dotfiles(self):
+    flexmock(os)
+    os.should_receive('mkdir').and_return()
+    flexmock(os.path)
+    os.path.should_receive('abspath').with_args('relative/app.tar.gz') \
+      .and_return('/tmp/relative/app.tar.gz')
+
+    flexmock(LocalState)
+    LocalState.should_receive('shell') \
+      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'), False) \
+      .and_return()
+
+    os.should_receive('listdir').and_return(['one_folder', '.dot_file',
+      '.dot_folder'])
+    os.path.should_receive('isdir').with_args(re.compile('one_folder')) \
+      .and_return(True)
+    os.path.should_receive('isdir').with_args(re.compile('.dot_file')) \
+      .and_return(False)
+    os.path.should_receive('isdir').with_args(re.compile('.dot_folder')) \
+      .and_return(True)
+
+    location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
+    self.assertTrue('one_folder' in location)
+
 
   def test_shell_exceptions(self):
     fake_tmp_file = flexmock(name='tempfile')
@@ -252,3 +288,83 @@ class TestLocalState(unittest.TestCase):
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
         stdin='fake_stdin')
+
+
+  def test_generate_crash_log(self):
+    crashlog_suffix = '123456'
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return(crashlog_suffix)
+
+    exception_class = 'Exception'
+    exception_message = 'baz message'
+    exception = Exception(exception_message)
+    stacktrace = "\n".join(['Traceback (most recent call last):',
+      '  File "<stdin>", line 2, in <module>',
+      '{0}: {1}'.format(exception_class, exception_message)])
+
+    # Mock out grabbing our system's information
+    flexmock(platform)
+    platform.should_receive('platform').and_return("MyOS")
+    platform.should_receive('python_implementation').and_return("MyPython")
+
+    flexmock(locale)
+    locale.should_receive('getlocale').and_return(("'Murica", None))
+
+    # Mock out writing it to the crash log file
+    expected = '{0}log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
+      crashlog_suffix)
+
+    fake_file = flexmock(name='fake_file')
+    fake_file.should_receive('write').with_args(str)
+
+    fake_builtins = flexmock(sys.modules['__builtin__'])
+    fake_builtins.should_call('open')  # set the fall-through
+    fake_builtins.should_receive('open').with_args(expected, 'w').and_return(
+      fake_file)
+
+    # mock out printing the crash log message
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('warn')
+
+    actual = LocalState.generate_crash_log(exception, stacktrace)
+    self.assertEquals(expected, actual)
+
+
+  def test_generate_crash_log_on_unsupported_locale(self):
+    crashlog_suffix = '123456'
+    flexmock(uuid)
+    uuid.should_receive('uuid4').and_return(crashlog_suffix)
+
+    exception_class = 'Exception'
+    exception_message = 'baz message'
+    exception = Exception(exception_message)
+    stacktrace = "\n".join(['Traceback (most recent call last):',
+      '  File "<stdin>", line 2, in <module>',
+      '{0}: {1}'.format(exception_class, exception_message)])
+
+    # Mock out grabbing our system's information
+    flexmock(platform)
+    platform.should_receive('platform').and_return("MyOS")
+    platform.should_receive('python_implementation').and_return("MyPython")
+
+    flexmock(locale)
+    locale.should_receive('setlocale').and_raise(locale.Error)
+
+    # Mock out writing it to the crash log file
+    expected = '{0}log-{1}'.format(LocalState.LOCAL_APPSCALE_PATH,
+      crashlog_suffix)
+
+    fake_file = flexmock(name='fake_file')
+    fake_file.should_receive('write').with_args(str)
+
+    fake_builtins = flexmock(sys.modules['__builtin__'])
+    fake_builtins.should_call('open')  # set the fall-through
+    fake_builtins.should_receive('open').with_args(expected, 'w').and_return(
+      fake_file)
+
+    # mock out printing the crash log message
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('warn')
+
+    actual = LocalState.generate_crash_log(exception, stacktrace)
+    self.assertEquals(expected, actual)

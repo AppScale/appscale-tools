@@ -4,24 +4,19 @@
 
 # General-purpose Python library imports
 import base64
-import httplib
-import json
 import os
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
-import uuid
 import yaml
 
 
 # Third party libraries
 from flexmock import flexmock
-import SOAPpy
 
 
 # AppScale import, the library that we're testing here
@@ -30,11 +25,8 @@ sys.path.append(lib)
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
 from custom_exceptions import BadConfigurationException
-from local_state import APPSCALE_VERSION
 from local_state import LocalState
-from node_layout import NodeLayout
 from parse_args import ParseArgs
-from remote_helper import RemoteHelper
 
 
 class TestAppScaleAddKeypair(unittest.TestCase):

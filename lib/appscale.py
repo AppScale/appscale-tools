@@ -7,7 +7,6 @@ import base64
 import json
 import os
 import shutil
-import socket
 import subprocess
 
 
@@ -21,7 +20,6 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
-from custom_exceptions import UsageException
 
 
 # AppScale-specific imports
@@ -56,7 +54,7 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
-  TERMINATE = "ruby /root/appscale/AppController/terminate.rb"
+  TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
   # The usage that should be displayed to users if they call 'appscale'
@@ -104,8 +102,6 @@ Available commands:
     Returns:
       The contents of the AppScalefile in the current working directory.
     """
-    # Don't check for existence and then open it later - this lack of
-    # atomicity is potentially a TOCTOU vulnerability.
     try:
       with open(self.get_appscalefile_location()) as file_handle:
         return file_handle.read()
@@ -195,8 +191,15 @@ Available commands:
 
     # If running in a cluster environment, we first need to set up SSH keys
     contents_as_yaml = yaml.safe_load(contents)
+    if not LocalState.ensure_appscalefile_is_up_to_date():
+      contents = self.read_appscalefile()
+      contents_as_yaml = yaml.safe_load(contents)
+
     if "ips_layout" in contents_as_yaml:
       ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
+
+    if "disks" in contents_as_yaml:
+      disks = base64.b64encode(yaml.dump(contents_as_yaml["disks"]))
 
     if not "infrastructure" in contents_as_yaml:
       # Only run add-keypair if there is no ssh key present,
@@ -227,6 +230,9 @@ Available commands:
         if key == "ips_layout":
           command.append("--ips_layout")
           command.append(ips_layout)
+        elif key == "disks":
+          command.append("--disks")
+          command.append(disks)
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
@@ -252,15 +258,8 @@ Available commands:
     Raises:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
-    if "keyname" in config:
-      keyname = config["keyname"]
-    else:
-      keyname = "appscale"
-
-    if 'verbose' in config and config['verbose'] == True:
-      verbose = True
-    else:
-      verbose = False
+    keyname = config["keyname"]
+    verbose = config.get('verbose', False)
 
     if not isinstance(config["ips_layout"], dict):
       raise BadConfigurationException("ips_layout should be a dictionary. " \
@@ -290,7 +289,7 @@ Available commands:
         duplicates.
     """
     all_ips = []
-    for role, ip_or_ips in ips_layout.items():
+    for _, ip_or_ips in ips_layout.items():
       if isinstance(ip_or_ips, str):
         if not ip_or_ips in all_ips:
           all_ips.append(ip_or_ips)
@@ -355,7 +354,7 @@ Available commands:
     try:
       with open(self.get_locations_json_file(keyname)) as f:
         nodes_json_raw = f.read()
-    except IOError as e:
+    except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
 
@@ -507,7 +506,7 @@ Available commands:
     try:
       with open(self.get_locations_json_file(keyname)) as f:
         nodes_json_raw = f.read()
-    except IOError as e:
+    except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
 
@@ -522,8 +521,8 @@ Available commands:
 
     # construct the ssh command to exec with that IP address
     tail = "tail -f /var/log/appscale/" + str(file_regex)
-    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",\
-        self.get_key_location(keyname), "root@" + ip, tail]
+    command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
+      self.get_key_location(keyname), "root@" + ip, tail]
 
     # exec the ssh command
     subprocess.call(command)
@@ -557,6 +556,45 @@ Available commands:
     AppScaleTools.gather_logs(options)
 
 
+  def relocate(self, appid, http_port, https_port):
+    """'relocate' provides a nicer experience for users than the
+    appscale-terminate-instances command, by using the configuration options
+    present in the AppScalefile found in the current working directory.
+
+    Args:
+      appid: A str indicating the name of the application to relocate.
+      http_port: An int that indicates what port should serve HTTP traffic for
+        this application.
+      https_port: An int that indicates what port should serve HTTPS traffic for
+        this application.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # Construct the appscale-relocate-app command from argv and the contents of
+    # the AppScalefile.
+    command = []
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml["keyname"])
+
+    command.append("--appname")
+    command.append(appid)
+
+    command.append("--http_port")
+    command.append(str(http_port))
+
+    command.append("--https_port")
+    command.append(str(https_port))
+
+    # and exec it
+    options = ParseArgs(command, "appscale-relocate-app").args
+    AppScaleTools.relocate_app(options)
+
+
   def destroy(self):
     """'destroy' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
@@ -587,6 +625,9 @@ Available commands:
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
+
+    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
+      command.append("--test")
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-terminate-instances will do that for us.
@@ -625,14 +666,13 @@ Available commands:
       keyname = 'appscale'
 
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+
+    if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
+      LocalState.ensure_user_wants_to_terminate()
+
     for ip in all_ips:
       RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
 
-    try:
-      LocalState.cleanup_appscale_files(keyname)
-    except Exception:
-      pass
-
+    LocalState.cleanup_appscale_files(keyname)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
-
     return all_ips

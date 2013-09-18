@@ -1,29 +1,49 @@
 ---
 # The underlying cloud infrastructure to deploy AppScale over.
-# Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus.
+# Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
+# or 'gce' if running on Google Compute Engine.
 infrastructure : 'ec2'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
-# installed on it.
+# installed on it. When running on Google Compute Engine, set this to the name
+# of the image you set when you ran 'gcutil addimage'.
 machine : 'ami-ABCDEFG'
 
 # The instance type that should be used for all virtual machines in your
-# AppScale deployment.
+# AppScale deployment, if running in Amazon EC2 or Eucalyptus.
 instance_type : 'm1.large'
+
+# The instance type that should be used for all virtual machines in your
+# AppScale deployment, if running in Google Compute Engine.
+gce_instance_type : 'n1-standard-1'
+
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+zone : 'us-east-1b' # For Amazon EC2
+#zone: 'us-central1-a' # For Google Compute Engine
 
 # The database that your Google App Engine applications will be backed by.
 # Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
 
+# Whether or not the Datastore should be erased when AppScale starts up.
+# This defaults to False, to persist your data across AppScale runs.
+# Note that your data is only persisted if you are using non-ephemeral
+# storage (EBS on EC2, and PD on GCE).
+#clear_datastore: True
+
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
-# in your AWS account.
-keyname : 'appscalekey'
+# in your AWS account. By default, we randomly generate a keyname for you.
+#keyname : 'appscalekey'
 
 # The AWS security group name that should be used for all machines in this
 # AppScale deployment. This should refer to a keyname that does not already
-# exist in your AWS account.
-group : 'appscalegroup'
+# exist in your AWS account. When running in Google Compute Engine, this is
+# the name that will be used for the network and firewall that is created
+# for your GCE instances. By default, we randomly generate a group for you.
+#group : 'appscalegroup'
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
@@ -37,6 +57,15 @@ min : 1
 # The maximum number of machines that should be used for your AppScale
 # deployment.
 max : 1
+
+# The location on your computer where an OAuth2.0 client ID for an installed
+# application can be found, which enables the AppScale Tools to talk to Google
+# Compute Engine on your behalf.
+#client_secrets: '~/client_secrets.json'
+
+# The project number associated with your Google Compute Engine account, used
+# to uniquely identify you when communicating with Google Compute Engine.
+#project: '123456789'
 
 # The number of copies (replicas) of each piece of data stored in the
 # specified database. By default, we determine the optimal value based
@@ -55,6 +84,12 @@ max : 1
 # username and password and uses a default set of values. Insecure for
 # a production environment but acceptable for testing.
 # test : True
+
+# AppScale developers only: Removes all nameserver entries from /etc/resolv.conf
+# on each VM running AppScale. This experimental flag may improve performance
+# when resolving public IPs or public DNS is expensive (e.g., a heavily
+# burdened Eucalyptus cloud).
+# alter_etc_resolv : True
 
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start
