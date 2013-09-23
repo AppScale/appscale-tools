@@ -922,7 +922,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/var/apps/baz/app/baz.tar.gz', 'the secret').and_return()
+      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
@@ -964,6 +964,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
+    fake_userappserver.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('false')
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('commit_new_user').with_args(
