@@ -71,6 +71,7 @@ Available commands:
   remove: An alias for 'undeploy'.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
+  relocate: Moves a hosted app to different HTTP and HTTPS ports.
   destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
   clean: Forcefully terminates all services in a cluster AppScale deployment.
