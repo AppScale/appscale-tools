@@ -575,7 +575,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(["ssh", "-o",
       "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'),
-      "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
+      "root@blarg2", "tail -F /var/log/appscale/c*"]).and_return().once()
     appscale.tail(1, "c*")
 
 
