@@ -172,7 +172,8 @@ class AppScaleTools():
         AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
 
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(login_host))
+      "deployment at http://{0}:{1}/status".format(login_host,
+      RemoteHelper.APP_DASHBOARD_PORT))
 
 
   @classmethod
@@ -213,6 +214,43 @@ class AppScaleTools():
         local_dir, options.verbose)
     AppScaleLogger.success("Successfully copied logs to {0}".format(
       options.location))
+
+
+  @classmethod
+  def relocate_app(cls, options):
+    """Instructs AppScale to move the named application to a different port.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    Raises:
+      AppScaleException: If the named application isn't running in this AppScale
+        cloud, if the destination port is in use by a different application, or
+        if the AppController rejects the request to relocate the application (in
+        which case it includes the reason why the rejection occurred).
+    """
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+
+    app_info_map = acc.get_app_info_map()
+    if options.appname not in app_info_map.keys():
+      raise AppScaleException("The given application, {0}, is not currently " \
+        "running in this AppScale cloud, so we can't move it to a different " \
+        "port.".format(options.appname))
+
+    relocate_result = acc.relocate_app(options.appname, options.http_port,
+      options.https_port)
+    if relocate_result == "OK":
+      AppScaleLogger.success("Successfully issued request to move {0} to " \
+        "ports {1} and {2}.".format(options.appname, options.http_port,
+        options.https_port))
+      AppScaleLogger.success("Your app serves unencrypted traffic at: " +
+        "http://{0}:{1}".format(login_host, options.http_port))
+      AppScaleLogger.success("Your app serves encrypted traffic at: " +
+        "https://{0}:{1}".format(login_host, options.https_port))
+    else:
+      raise AppScaleException(relocate_result)
 
 
   @classmethod
@@ -296,7 +334,7 @@ class AppScaleTools():
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
     if options.infrastructure:
-      if not options.disks and not options.test:
+      if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over the " + options.infrastructure + " cloud.")
@@ -377,8 +415,8 @@ class AppScaleTools():
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(LocalState.get_login_host(
-      options.keyname)))
+      "deployment at http://{0}:{1}/status".format(LocalState.get_login_host(
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
