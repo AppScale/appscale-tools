@@ -99,14 +99,18 @@ class EC2Agent(BaseAgent):
       " is not already registered.")
     conn = self.open_connection(parameters)
     if conn.get_key_pair(keyname):
-      self.handle_failure("SSH key already registered - please use a " + \
-        "different keyname")
+      self.handle_failure("SSH keyname {0} is already registered. Please " \
+        "change the 'keyname' specified in your AppScalefile to a different " \
+        "value, or erase it to have one automatically generated for you." \
+        .format(keyname))
 
     security_groups = conn.get_all_security_groups()
     for security_group in security_groups:
       if security_group.name == group:
-        self.handle_failure("Security group already exists - please use a " + \
-          "different group name")
+        self.handle_failure("Security group {0} is already registered. Please" \
+          " change the 'group' specified in your AppScalefile to a different " \
+          "value, or erase it to have one automatically generated for you." \
+          .format(group))
 
     AppScaleLogger.log("Creating key pair: {0}".format(keyname))
     key_pair = conn.create_key_pair(keyname)
