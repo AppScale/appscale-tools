@@ -366,6 +366,16 @@ class EC2Agent(BaseAgent):
     active_private_ips = []
     active_instances = []
 
+    # Make sure we do not have terminated instances using the same keyname.
+    instances = self.__describe_instances(parameters)
+    term_instance_info = self.__get_instance_info(instances,
+       'terminated', keyname)
+    if len(term_instance_info[2]):
+      self.handle_failure('SSH keyname {0} is already registered. '\
+                          'Please change the "keyname" specified in your '\
+                          'AppScalefile to a different value, or erase it '\
+                          'to have one generated for you.'.format(keyname))
+
     try:
       attempts = 1
       while True:
@@ -403,7 +413,6 @@ class EC2Agent(BaseAgent):
       now = datetime.datetime.now()
 
       while now < end_time:
-        time_left = (end_time - now).seconds
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
@@ -693,3 +702,45 @@ class EC2Agent(BaseAgent):
     """
     AppScaleLogger.log(msg)
     raise AgentRuntimeException(msg)
+
+  def __describe_instances(self, parameters):
+    """
+    Query the back-end EC2 services for instance details and return
+    a list of instances. This is equivalent to running the standard
+    ec2-describe-instances command. The returned list of instances
+    will contain all the running and pending instances and it might
+    also contain some recently terminated instances.
+
+    Args:
+      parameters  A dictionary of parameters
+
+    Returns:
+      A list of instances (element type definition in boto.ec2 package)
+    """
+    conn = self.open_connection(parameters)
+    reservations = conn.get_all_instances()
+    instances = [i for r in reservations for i in r.instances]
+    return instances
+
+  def __get_instance_info(self, instances, status, keyname):
+    """
+    Filter out a list of instances by instance status and keyname.
+
+    Args:
+      instances: A list of instances as returned by describe_instances.
+      status: Status of the VMs (eg: running, terminated).
+      keyname: Keyname used to spawn instances.
+
+    Returns:
+      A tuple of the form (public ips, private ips, instance ids).
+    """
+    instance_ids = []
+    public_ips = []
+    private_ips = []
+    for i in instances:
+      if i.state == status and i.key_name == keyname:
+        instance_ids.append(i.id)
+        public_ips.append(i.public_dns_name)
+        private_ips.append(i.private_dns_name)
+    return public_ips, private_ips, instance_ids
+
