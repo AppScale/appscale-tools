@@ -92,7 +92,10 @@ class EucalyptusAgent(EC2Agent):
     conn = self.open_connection(parameters)
     try:
       conn.get_key_pair(keyname)
-      self.handle_failure('SSH key found locally - please use a different keyname')
+      self.handle_failure("SSH keyname {0} is already registered. Please " \
+        "change the 'keyname' specified in your AppScalefile to a different " \
+        "value, or erase it to have one automatically generated for you." \
+        .format(keyname))
     except IndexError:  # in euca, this means the key doesn't exist
       pass
 
@@ -100,8 +103,10 @@ class EucalyptusAgent(EC2Agent):
     group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
-        self.handle_failure("Security group already exists - please use a " + \
-          "different group name")
+        self.handle_failure("Security group {0} is already registered. Please" \
+          " change the 'group' specified in your AppScalefile to a different " \
+          "value, or erase it to have one automatically generated for you." \
+          .format(group))
 
     AppScaleLogger.log('Creating key pair: ' + keyname)
     key_pair = conn.create_key_pair(keyname)
