@@ -367,9 +367,10 @@ class EC2Agent(BaseAgent):
     term_instance_info = self.__get_instance_info(instances,
        'terminated', keyname)
     if len(term_instance_info[2]):
-      self.handle_failure('One or more nodes started with key {0} have '\
-                          'been terminated. Please use a different key '\
-                          'name'.format(keyname))
+      self.handle_failure('SSH keyname {0} is already registered. '\
+                          'Please change the "keyname" specified in your '\
+                          'AppScaleFile to a different value, or erase it '\
+                          'to have one generated for you.'.format(keyname))
 
     try:
       attempts = 1
