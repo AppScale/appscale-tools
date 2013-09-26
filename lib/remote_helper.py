@@ -582,9 +582,12 @@ class RemoteHelper():
     cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
       '/etc/monit/conf.d/controller-17443.cfg', is_verbose)
 
-    # Start up monit, which will automatically start up the AppController since
-    # we copied the config file before starting it.
+    # Start up monit.
     cls.ssh(host, keyname, 'monit', is_verbose)
+    time.sleep(1)
+
+    # Finally, start the AppController.
+    cls.ssh(host, keyname, 'monit start -g controller', is_verbose)
     time.sleep(1)
 
     AppScaleLogger.log("Please wait for the AppController to finish " + \
