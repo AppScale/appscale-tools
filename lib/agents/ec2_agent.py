@@ -369,7 +369,7 @@ class EC2Agent(BaseAgent):
     if len(term_instance_info[2]):
       self.handle_failure('SSH keyname {0} is already registered. '\
                           'Please change the "keyname" specified in your '\
-                          'AppScaleFile to a different value, or erase it '\
+                          'AppScalefile to a different value, or erase it '\
                           'to have one generated for you.'.format(keyname))
 
     try:
