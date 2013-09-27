@@ -44,8 +44,8 @@ class TestVersionHelper(unittest.TestCase):
       fake_sys)
 
 
-  def test_running_on_python_26(self):
-    # Python 2.6 is the oldest version we support in the AppScale Tools, so
+  def test_running_on_python_27(self):
+    # Python 2.7 is the oldest version we support in the AppScale Tools, so
     # don't fail in this case.
-    fake_sys = flexmock(name='fake_sys', version_info=[2, 6])
+    fake_sys = flexmock(name='fake_sys', version_info=[2, 7])
     version_helper.ensure_valid_python_is_used(fake_sys)

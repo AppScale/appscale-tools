@@ -28,15 +28,15 @@ def ensure_valid_python_is_used(system=sys):
       flexmock is difficult).
   Raises:
     SystemExit: If the version of Python that is running the AppScale Tools is
-      older than 2.6.
+      older than 2.7.
   """
   if not hasattr(system, 'version_info'):
     sys.stderr.write("Very old versions of Python are not supported. Please "
-      "use version 2.6 or newer.\n")
+      "use version 2.7 or newer.\n")
     sys.exit(1)
 
   version_tuple = tuple(system.version_info[:2])
-  if version_tuple < (2, 6):
+  if version_tuple < (2, 7):
     sys.stderr.write("Error: Python %d.%d is not supported. Please use "
-      "version 2.6 or newer.\n" % version_tuple)
+      "version 2.7 or newer.\n" % version_tuple)
     sys.exit(1)
