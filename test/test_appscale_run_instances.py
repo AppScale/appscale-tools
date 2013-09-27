@@ -184,7 +184,8 @@ group: {1}
       instances=[running_instance])
 
     self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
-      .and_return(pending_reservation).and_return(running_reservation)
+      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(running_reservation)
 
     # finally, inject the mocked EC2 in
     flexmock(boto)
