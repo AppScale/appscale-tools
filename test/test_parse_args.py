@@ -47,9 +47,12 @@ class TestParseArgs(unittest.TestCase):
       os.environ[credential] = "baz"
     os.environ['EC2_URL'] = "http://boo"
 
+    # pretend that our credentials are valid.
+    fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
+
     # similarly, pretend that our image does exist in EC2
     # and Euca
-    fake_ec2 = flexmock(name="fake_ec2")
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     fake_ec2.should_receive('get_image').with_args('emi-ABCDEFG') \
@@ -260,6 +263,7 @@ class TestParseArgs(unittest.TestCase):
   def test_failure_when_ami_doesnt_exist(self):
     # mock out boto calls to EC2 and put in that the image doesn't exist
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_raise(boto.exception.EC2ResponseError, '', '')
 

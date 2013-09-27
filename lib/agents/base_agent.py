@@ -14,6 +14,21 @@ class BaseAgent:
   OPERATION_TERMINATE = 'terminate'
 
 
+  def assert_credentials_are_valid(self, parameters):
+    """Checks with the given cloud to ensure that the given credentials can be
+    used to interact with it.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud.
+
+    Raises:
+      AgentConfigurationException: If the given credentials cannot be used to
+        make requests to the underlying cloud.
+    """
+    raise NotImplementedError
+
+
   def configure_instance_security(self, parameters):
     """Configure and setup security features for the VMs spawned via this
     agent.

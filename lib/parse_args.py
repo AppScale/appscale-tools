@@ -542,6 +542,7 @@ class ParseArgs():
       self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
     cloud_agent.assert_required_parameters(params, BaseAgent.OPERATION_RUN)
+    cloud_agent.assert_credentials_are_valid(params)
 
 
   def validate_machine_image(self):
