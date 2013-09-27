@@ -838,7 +838,7 @@ class GCEAgent(BaseAgent):
     version_tuple = tuple(sys.version_info[:2])
     if version_tuple == (2, 6):
       AppScaleLogger.warn('The Python Google Compute Engine client libraries '
-        'require Python 2.7 or newer. If you run into issues, please update '
+        'require Python 2.7. If you run into issues, please update '
         'Python and try again.')
 
     # Perform OAuth 2.0 authorization.
