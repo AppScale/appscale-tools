@@ -9,6 +9,7 @@ interact with Google Compute Engine.
 import datetime
 import os.path
 import shutil
+import sys
 import time
 import uuid
 
@@ -831,6 +832,15 @@ class GCEAgent(BaseAgent):
       to Google Compute Engine for the given user, and a Credentials object that
       can be used to sign requests performed with that connection.
     """
+    # Since updating to v1beta15, Python 2.6 no longer works with GCE. It
+    # complains about having too many positional arguments on all GCE calls,
+    # so require the user to have Python 2.7 or newer.
+    version_tuple = tuple(sys.version_info[:2])
+    if version_tuple == (2, 6):
+      raise AgentConfigurationException('The Python Google Compute Engine '
+        'client libraries require Python 2.7 or newer. Please update your '
+        'Python and try again.')
+
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
