@@ -79,6 +79,25 @@ class EC2Agent(BaseAgent):
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
 
+  def assert_credentials_are_valid(self, parameters):
+    """Contacts AWS to see if the given access key and secret key represent a
+    valid set of credentials.
+
+    Args:
+      parameters: A dict containing the user's AWS access key and secret key.
+
+    Raises:
+      AgentConfigurationException: If the given AWS access key and secret key
+      cannot be used to make requests to AWS.
+    """
+    conn = self.open_connection(parameters)
+    try:
+      conn.get_all_instances()
+    except EC2ResponseError:
+      raise AgentConfigurationException("We couldn't validate your EC2 " + \
+        "access key and EC2 secret key. Are your credentials valid?")
+
+
   def configure_instance_security(self, parameters):
     """
     Setup EC2 security keys and groups. Required input values are read from
@@ -235,6 +254,7 @@ class EC2Agent(BaseAgent):
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
           .format(credential))
+    self.assert_credentials_are_valid(params)
 
     if args.get('use_spot_instances') == True:
       params[self.PARAM_SPOT] = True

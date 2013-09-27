@@ -34,8 +34,11 @@ class TestAppScaleLogger(unittest.TestCase):
     for credential in EC2Agent.REQUIRED_CREDENTIALS:
       os.environ[credential] = "baz"
 
-    # Also pretend that the availability zone we want to use exists.
+    # pretend that our credentials are valid.
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
+
+    # Also pretend that the availability zone we want to use exists.
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
 
