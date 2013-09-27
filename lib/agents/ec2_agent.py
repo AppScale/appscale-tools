@@ -254,6 +254,7 @@ class EC2Agent(BaseAgent):
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
           .format(credential))
+    self.assert_credentials_are_valid(params)
 
     if args.get('use_spot_instances') == True:
       params[self.PARAM_SPOT] = True
