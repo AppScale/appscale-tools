@@ -102,8 +102,6 @@ class AppControllerClient():
     except socket.error as exception:
       signal.alarm(0)  # turn off the alarm before we retry
       if num_retries > 0:
-        AppScaleLogger.log("Saw exception {0} when communicating with the " \
-          "AppController, retrying momentarily.".format(str(exception)))
         time.sleep(1)
         return self.run_with_timeout(timeout_time, default, num_retries - 1,
           function, *args)
@@ -142,7 +140,8 @@ class AppControllerClient():
       app = 'none'
 
     result = self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, locations, credentials, [app], self.secret)
+      self.server.set_parameters, json.dumps(locations), credentials, [app],
+      self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -213,7 +212,7 @@ class AppControllerClient():
           else:
             AppScaleLogger.log('Waiting for AppScale nodes to complete '
                              'the initialization process')
-      except AppControllerException as exception:
+      except (AppControllerException, socket.error) as exception:
         raise exception
       except Exception as exception:
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
@@ -304,3 +303,37 @@ class AppControllerClient():
     """
     return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.update, apps_to_run, self.secret)
+
+
+  def get_app_info_map(self):
+    """Asks the AppController for a list of all the applications it is proxying
+    via nginx, haproxy, or running itself.
+
+    Returns:
+      A dict that maps application IDs (strs) to a dict indicating what nginx,
+      haproxy, or dev_appserver ports host that app, with an additional field
+      indicating what language the app is written in.
+    """
+    return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
+      self.server.get_app_info_map, self.secret))
+
+
+  def relocate_app(self, appid, http_port, https_port):
+    """Asks the AppController to start serving traffic for the named application
+    on the given ports, instead of the ports that it was previously serving at.
+
+    Args:
+      appid: A str that names the already deployed application that we want to
+        move to a different port.
+      http_port: An int between 80 and 90, or between 1024 and 65535, that names
+        the port that unencrypted traffic should be served from for this app.
+      https_port: An int between 443 and 453, or between 1024 and 65535, that
+        names the port that encrypted traffic should be served from for this
+        app.
+    Returns:
+      A str that indicates if the operation was successful, and in unsuccessful
+      cases, the reason why the operation failed.
+    """
+    return self.run_with_timeout(20, "Relocate request timed out.",
+      self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
+        https_port, self.secret)

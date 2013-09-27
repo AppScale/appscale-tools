@@ -3,20 +3,21 @@
 
 
 # General-purpose Python library imports
+import getpass
 import os
 import re
 import socket
-import subprocess
-import sys
-import tempfile
 import threading
 import time
+import uuid
+
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
@@ -37,8 +38,8 @@ class RemoteHelper():
   DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
 
 
-  # The port the AppLoadBalancer runs on, by default.
-  APP_LOAD_BALANCER_PORT = 80
+  # The port the AppDashboard runs on, by default.
+  APP_DASHBOARD_PORT = 1080
 
 
   # The default port that the ssh daemon runs on.
@@ -64,6 +65,19 @@ class RemoteHelper():
   LOGIN_AS_UBUNTU_USER = "Please login as the ubuntu user rather than root user."
 
 
+  APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
+
+
+  # The location on AppScale VMs where we should mount and unmount the
+  # persistent disk.
+  PERSISTENT_MOUNT_POINT = "/opt/appscale"
+
+
+  # The location on AppScale VMs where Google App Engine applications should be
+  # uploaded to.
+  REMOTE_APP_DIR = "{0}/apps".format(PERSISTENT_MOUNT_POINT)
+
+
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -83,6 +97,9 @@ class RemoteHelper():
     Returns:
       The public IP and instance ID (a dummy value in non-cloud deployments)
       corresponding to the node that was started.
+    Raises:
+      AppControllerException: If the AppController on the head node crashes.
+        The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
     AppScaleLogger.verbose("Secret key is {0}".format(secret_key),
@@ -102,32 +119,45 @@ class RemoteHelper():
       cls.ensure_machine_is_compatible(public_ip, options.keyname,
         options.table, options.verbose)
     except AppScaleException as ase:
-       # On failure shutdown the cloud instances, cleanup the keys, but only 
-       # if --test is not set.
-       if options.infrastructure:
-         if not options.test:
-           try:
-             cls.terminate_cloud_instance(instance_id, options)
-           except Exception as tcie:
-             AppScaleLogger.log("Error terminating instances: {0}"
-               .format(str(tcie)))
-         raise AppScaleException("{0} Please ensure that the "\
-           "image {1} has AppScale {2} installed on it."
-           .format(str(ase),options.machine,APPSCALE_VERSION))
-       else:
-         raise AppScaleException("{0} Please login to that machine and ensure "\
-           "that AppScale {1} is installed on it."
-           .format(str(ase),APPSCALE_VERSION))
+      # On failure shutdown the cloud instances, cleanup the keys, but only
+      # if --test is not set.
+      if options.infrastructure:
+        if not options.test:
+          try:
+            cls.terminate_cloud_instance(instance_id, options)
+          except Exception as tcie:
+            AppScaleLogger.log("Error terminating instances: {0}"
+              .format(str(tcie)))
+        raise AppScaleException("{0} Please ensure that the "\
+          "image {1} has AppScale {2} installed on it."
+          .format(str(ase), options.machine, APPSCALE_VERSION))
+      else:
+        raise AppScaleException("{0} Please login to that machine and ensure "\
+          "that AppScale {1} is installed on it."
+          .format(str(ase), APPSCALE_VERSION))
 
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
         options.scp))
       cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
+    # On Euca, we've seen issues where attaching the EBS volume right after
+    # the instance starts doesn't work. This sleep lets the instance fully
+    # start up and get volumes attached to it correctly.
+    if options.infrastructure and options.infrastructure == 'euca' and \
+      options.disks:
+      time.sleep(30)
+
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
-      additional_params = params[agent.PARAM_CREDENTIALS]
+      additional_params = {}
+
+      if agent.PARAM_CREDENTIALS in params:
+        additional_params = params[agent.PARAM_CREDENTIALS]
+
+      if options.use_spot_instances:
+        additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])
     else:
       additional_params = {}
 
@@ -146,9 +176,19 @@ class RemoteHelper():
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
 
     acc = AppControllerClient(public_ip, secret_key)
-    locations = ["{0}:{1}:{2}:{3}:cloud1".format(public_ip, private_ip,
-      ":".join(node_layout.head_node().roles), instance_id)]
-    acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
+    locations = [{
+      'public_ip' : public_ip,
+      'private_ip' : private_ip,
+      'jobs' : node_layout.head_node().roles,
+      'instance_id' : instance_id,
+      'disk' : node_layout.head_node().disk
+    }]
+    try:
+      acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
+    except Exception:
+      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
+        options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     return public_ip, instance_id
 
@@ -238,7 +278,21 @@ class RemoteHelper():
     """
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
-    output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    try:
+      output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
+    except ShellException as exception:
+      # Google Compute Engine creates a user with the same name as the currently
+      # logged-in user, so log in as that user to enable root login.
+      if infrastructure == "gce":
+        AppScaleLogger.log("Root login not enabled - enabling it now.")
+        cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+          is_verbose, user=getpass.getuser())
+        return
+      else:
+        raise exception
+
+    # Amazon EC2 rejects a root login request and tells the user to log in as
+    # the ubuntu user, so do that to enable root login.
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
       cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
@@ -264,8 +318,6 @@ class RemoteHelper():
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
-    #return LocalState.shell("ssh -i {0} {1} {2}@{3} '{4}'".format(ssh_key,
-    #  cls.SSH_OPTIONS, user, host, command), is_verbose, num_retries)
     return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
       cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
 
@@ -423,8 +475,7 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppLoadBalancer", "AppMonitoring", "Neptune", "InfrastructureManager",
-      "AppTaskQueue", "XMPPReceiver"]
+      "AppDashboard", "InfrastructureManager", "AppTaskQueue", "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
       if not os.path.exists(local_path):
@@ -438,13 +489,18 @@ class RemoteHelper():
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
     # (e.g., built database binaries).
     local_app_db = os.path.expanduser(local_appscale_dir) + os.sep + "AppDB/*"
-    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' --exclude='hadoop-*' --exclude='hbase/hbase-*' --exclude='voldemort/voldemort/*' --exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB".format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv --exclude='logs/*' " \
+      "--exclude='hadoop-*' --exclude='hbase/hbase-*' " \
+      "--exclude='cassandra/cassandra/*' {2} root@{3}:/root/appscale/AppDB" \
+      .format(ssh_key, cls.SSH_OPTIONS, local_app_db, host), is_verbose)
 
     # And rsync the firewall configuration file separately, as it's not a
     # directory (which the above all are).
-    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + "firewall.conf"
-    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} root@{3}:/root/appscale/firewall.conf" \
-      .format(ssh_key, cls.SSH_OPTIONS, local_firewall, host), is_verbose)
+    local_firewall = os.path.expanduser(local_appscale_dir) + os.sep + \
+      "firewall.conf"
+    LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2} root@{3}:" \
+      "/root/appscale/firewall.conf".format(ssh_key, cls.SSH_OPTIONS,
+      local_firewall, host), is_verbose)
 
 
   @classmethod
@@ -470,12 +526,8 @@ class RemoteHelper():
       options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
-    if options.infrastructure:
-      cert = os.environ["EC2_CERT"]
-      private_key = os.environ["EC2_PRIVATE_KEY"]
-    else:
-      cert = LocalState.get_certificate_location(options.keyname)
-      private_key = LocalState.get_private_key_location(options.keyname)
+    cert = LocalState.get_certificate_location(options.keyname)
+    private_key = LocalState.get_private_key_location(options.keyname)
 
     cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1',
       options.verbose)
@@ -483,6 +535,17 @@ class RemoteHelper():
       options.verbose)
     cls.scp(host, options.keyname, private_key,
       "/etc/appscale/keys/cloud1/mykey.pem", options.verbose)
+
+    # In Google Compute Engine, we also need to copy over our client_secrets
+    # file and the OAuth2 file that the user has approved for use with their
+    # credentials, otherwise the AppScale VMs won't be able to interact with
+    # GCE.
+    if options.infrastructure and options.infrastructure == 'gce':
+      if os.path.exists(LocalState.get_client_secrets_location(options.keyname)):
+        cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
+          options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
+      cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
+        options.keyname) , '/etc/appscale/oauth2.dat', options.verbose)
 
 
   @classmethod
@@ -505,7 +568,8 @@ class RemoteHelper():
 
     # start up god, who will start up the appcontroller once we give it the
     # right config file
-    cls.ssh(host, keyname, 'god &', is_verbose)
+    cls.ssh(host, keyname, 'nohup god --log /var/log/appscale/god.log -D &',
+      is_verbose)
     time.sleep(1)
 
     # scp over that config file
@@ -549,7 +613,8 @@ class RemoteHelper():
 
   
   @classmethod
-  def create_user_accounts(cls, email, password, uaserver_host, keyname):
+  def create_user_accounts(cls, email, password, uaserver_host, keyname,
+    clear_datastore):
     """Registers two new user accounts with the UserAppServer.
 
     One account is the standard account that users log in with (via their
@@ -565,12 +630,17 @@ class RemoteHelper():
       uaserver_host: The location of a UserAppClient, that can create new user
         accounts.
       keyname: The name of the SSH keypair used for this AppScale deployment.
+      clear_datastore: A bool that indicates if we expect the datastore to be
+        emptied, and thus not contain any user accounts.
     """
     uaserver = UserAppClient(uaserver_host, LocalState.get_secret_key(keyname))
 
     # first, create the standard account
     encrypted_pass = LocalState.encrypt_password(email, password)
-    uaserver.create_user(email, encrypted_pass)
+    if not clear_datastore and uaserver.does_user_exist(email):
+      AppScaleLogger.log("User {0} already exists, so not creating it again.".format(email))
+    else:
+      uaserver.create_user(email, encrypted_pass)
 
     # next, create the XMPP account. if the user's e-mail is a@a.a, then that
     # means their XMPP account name is a@login_ip
@@ -578,7 +648,11 @@ class RemoteHelper():
     username = username_regex.match(email).groups()[0]
     xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
-    uaserver.create_user(xmpp_user, xmpp_pass)
+
+    if not clear_datastore and uaserver.does_user_exist(xmpp_user):
+      AppScaleLogger.log("XMPP User {0} already exists, so not creating it again.".format(xmpp_user))
+    else:
+      uaserver.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
 
 
@@ -608,12 +682,13 @@ class RemoteHelper():
 
   @classmethod
   def terminate_cloud_instance(cls, instance_id, options):
-    """Powers off a single instance in the currently AppScale deployment and
-       cleans up secret key from the local filesystem.
+    """ Powers off a single instance in the currently AppScale deployment and
+    cleans up AppScale metadata from the local filesystem.
 
     Args:
-      instance_id: str containing the instance id.
-      options: namespace containing the run parameters.
+      instance_id: A str containing the instance id that should be terminated.
+      options: A Namespace containing the credentials necessary to terminate
+        the named instance.
     """
     AppScaleLogger.log("About to terminate instance {0}"
       .format(instance_id))
@@ -624,6 +699,7 @@ class RemoteHelper():
     agent.terminate_instances(params)
     agent.cleanup_state(params)
     os.remove(LocalState.get_secret_key_location(options.keyname))
+
 
   @classmethod
   def terminate_cloud_infrastructure(cls, keyname, is_verbose):
@@ -646,12 +722,43 @@ class RemoteHelper():
     params['IS_VERBOSE'] = is_verbose
     _, _, instance_ids = agent.describe_instances(params)
 
+    # If using persistent disks, unmount them and detach them before we blow
+    # away the instances.
+    cls.terminate_virtualized_cluster(keyname, is_verbose)
+    nodes = LocalState.get_local_nodes_info(keyname)
+    for node in nodes:
+      if node.get('disk'):
+        AppScaleLogger.log("Unmounting persistent disk at {0}".format(
+          node['public_ip']))
+        cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
+        agent.detach_disk(params, node['disk'], node['instance_id'])
+
     # terminate all the machines
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
     # delete the keyname and group
     agent.cleanup_state(params)
+
+
+  @classmethod
+  def unmount_persistent_disk(cls, host, keyname, is_verbose):
+    """Unmounts the persistent disk that was previously mounted on the named
+    machine.
+
+    Args:
+      host: A str that names the IP address or FQDN where the machine whose
+        disk needs to be unmounted can be found.
+      keyname: The name of the SSH keypair used for this AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands executed
+        to stdout.
+    """
+    try:
+      remote_output = cls.ssh(host, keyname, 'umount {0}'.format(
+        cls.PERSISTENT_MOUNT_POINT), is_verbose)
+      AppScaleLogger.verbose(remote_output, is_verbose)
+    except ShellException:
+      pass
 
 
   @classmethod
@@ -670,7 +777,11 @@ class RemoteHelper():
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
-    all_ips = acc.get_all_public_ips()
+
+    try:
+      all_ips = acc.get_all_public_ips()
+    except Exception:
+      all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
     for ip in all_ips:
@@ -685,7 +796,8 @@ class RemoteHelper():
     boxes_shut_down = 0
     is_running_regex = re.compile("appscale-controller stop")
     for ip in all_ips:
-      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(ip))
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(
+        ip))
       while True:
         remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
         AppScaleLogger.verbose(remote_output, is_verbose)
@@ -722,8 +834,8 @@ class RemoteHelper():
 
   @classmethod
   def copy_app_to_host(cls, app_location, keyname, is_verbose):
-    """Copies the given application to a machine running the Login service within
-    an AppScale deployment.
+    """Copies the given application to a machine running the Login service
+    within an AppScale deployment.
 
     Args:
       app_location: The location on the local filesystem where the application
@@ -737,21 +849,51 @@ class RemoteHelper():
       A str corresponding to the location on the remote filesystem where the
         application was copied to.
     """
-    AppScaleLogger.log("Creating remote directory to copy app into")
     app_id = AppEngineHelper.get_app_id_from_app_config(app_location)
-    remote_app_dir = "/var/apps/{0}/app".format(app_id)
-    cls.ssh(LocalState.get_login_host(keyname), keyname,
-      'mkdir -p {0}'.format(remote_app_dir), is_verbose)
 
     AppScaleLogger.log("Tarring application")
-    local_tarred_app = "/tmp/appscale-app-{0}.tar.gz".format(app_id)
-    LocalState.shell("cd {0} && tar -czf {1} *".format(app_location,
+    rand = str(uuid.uuid4()).replace('-', '')[:8]
+    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
+    LocalState.shell("cd {0} && tar -czhf {1} *".format(app_location,
       local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")
-    remote_app_tar = "{0}/{1}.tar.gz".format(remote_app_dir, app_id)
+    remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
     cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
       remote_app_tar, is_verbose)
 
     os.remove(local_tarred_app)
     return remote_app_tar
+
+
+  @classmethod
+  def collect_appcontroller_crashlog(cls, host, keyname, is_verbose):
+    """ Reads the crashlog that the AppController writes on its own machine
+    indicating why it crashed, so that we can pass this information on to the
+    user.
+
+    Args:
+      host: A str indicating the FQDN or IP address where the crashed
+        AppController can be found.
+      keyname: The name of the SSH keypair that uniquely identifies this
+        AppScale deployment.
+      is_verbose: A bool that indicates if we should print the commands we exec
+        to get the crashlog info.
+
+    Returns:
+      A str corresponding to the message that indicates why the AppController
+        crashed.
+    """
+    message = ""
+    try:
+      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
+      cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
+        local_crashlog, is_verbose)
+      with open(local_crashlog, 'r') as file_handle:
+        message = "AppController at {0} crashed because: {1}".format(host,
+          file_handle.read())
+      os.remove(local_crashlog)
+    except ShellException:
+      message = "AppController at {0} crashed for reasons unknown.".format(host)
+
+    return message

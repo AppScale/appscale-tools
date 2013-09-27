@@ -33,9 +33,12 @@ ips_layout :
 #   - 192.168.1.9
 
 # The database that your Google App Engine applications will be backed by.
-# Defaults to 'cassandra', but 'hbase', 'hypertable', and 'mysql' are
-# also supported.
+# Defaults to 'cassandra', but 'hypertable' is also supported.
 table : 'cassandra'
+
+# Whether or not the Datastore should be erased when AppScale starts up.
+# This defaults to False, to persist your data across AppScale runs.
+#clear_datastore: True
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
@@ -59,6 +62,12 @@ table : 'cassandra'
 # username and password and uses a default set of values. Insecure for
 # a production environment but acceptable for testing.
 # test : True
+
+# AppScale developers only: Removes all nameserver entries from /etc/resolv.conf
+# on each VM running AppScale. This experimental flag may improve performance
+# when resolving public IPs or public DNS is expensive (e.g., a heavily
+# burdened Eucalyptus cloud).
+# alter_etc_resolv : True
 
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start

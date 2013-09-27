@@ -2,9 +2,10 @@
 
 
 # General-purpose Python library imports
-import os
-import base64
 import argparse
+import base64
+import os
+import uuid
 
 
 # Third-party imports
@@ -12,10 +13,11 @@ import yaml
 
 
 # AppScale-specific imports
-import local_state
-from custom_exceptions import BadConfigurationException
 from agents.base_agent import BaseAgent
+from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
+from custom_exceptions import BadConfigurationException
+import local_state
 
 
 class ParseArgs():
@@ -36,15 +38,15 @@ class ParseArgs():
   ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
 
 
-  # The instance type that should be used if the user does not specify one.
-  DEFAULT_INSTANCE_TYPE = "m1.large"
+  # The EC2 instance type that should be used if the user does not specify one.
+  DEFAULT_EC2_INSTANCE_TYPE = "m1.large"
 
 
-  # A list of the instance types we allow users to run AppScale over.
+  # A list of the instance types we allow users to run AppScale over in EC2.
   # TODO(cgb): Change this to a map that maps to the number of each type that
   # users can spawn without having to contact Amazon, and enforce this
   # limitation.
-  ALLOWED_INSTANCE_TYPES = [
+  ALLOWED_EC2_INSTANCE_TYPES = [
     # Standard Instances (First Generation)
     "m1.small", "m1.medium", "m1.large", "m1.xlarge",
 
@@ -73,6 +75,21 @@ class ParseArgs():
     "hs1.8xlarge",
     ]
 
+  # The GCE instance type that should be used if the user does not specify one.
+  DEFAULT_GCE_INSTANCE_TYPE = "n1-standard-1"
+
+  ALLOWED_GCE_INSTANCE_TYPES = [
+    "n1-standard-1",
+    "n1-standard-2",
+    "n1-standard-4",
+    "n1-standard-8",
+    "n1-highcpu-2",
+    "n1-highcpu-4",
+    "n1-highcpu-8",
+    "n1-highmem-2",
+    "n1-highmem-4",
+    "n1-highmem-8"
+  ]
 
   # The default security group to create and use for AppScale cloud deployments.
   DEFAULT_SECURITY_GROUP = "appscale"
@@ -136,25 +153,59 @@ class ParseArgs():
       self.parser.add_argument('--ips_layout',
         help="a base64-encoded YAML dictating the placement strategy")
 
-      # flags relating to cloud infrastructures
+      # Infrastructure-agnostic flags
+      self.parser.add_argument('--disks',
+        help="a base64-encoded YAML dictating the PD or EBS disks to use")
+      self.parser.add_argument('--zone', '-z',
+        help="the availability zone that instances should be deployed to")
+
+      # flags relating to EC2-like cloud infrastructures
+      # Don't use dashes in the random suffix, since network names on Google
+      # Compute Engine aren't allowed to have dashes in them.
+      random_suffix = str(uuid.uuid4()).replace('-', '')
+      keyname = "appscale{0}".format(random_suffix)
       self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
       self.parser.add_argument('--machine', '-m',
         help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type', '-t',
-        default=self.DEFAULT_INSTANCE_TYPE,
-        choices=self.ALLOWED_INSTANCE_TYPES,
-        help="the instance type to use")
-      self.parser.add_argument('--group', '-g',
+        default=self.DEFAULT_EC2_INSTANCE_TYPE,
+        choices=self.ALLOWED_EC2_INSTANCE_TYPES,
+        help="the EC2 instance type to use")
+      self.parser.add_argument('--group', '-g', default=keyname,
         help="the security group to use")
-      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+      self.parser.add_argument('--keyname', '-k', default=keyname,
         help="the keypair name to use")
       self.parser.add_argument('--use_spot_instances', action='store_true',
         default=False,
         help="use spot instances instead of on-demand instances (EC2 only)")
       self.parser.add_argument('--max_spot_price', type=float,
         help="the maximum price to pay for spot instances in EC2")
+      self.parser.add_argument('--EC2_ACCESS_KEY',
+        help="the access key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_SECRET_KEY',
+        help="the secret key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_URL',
+        help="a URL that identifies where an EC2-compatible service runs")
+
+      # Google Compute Engine-specific flags
+      gce_group = self.parser.add_mutually_exclusive_group()
+      gce_group.add_argument('--client_secrets',
+        help="the JSON file that can be used to authenticate with Google " + \
+          "APIs via OAuth")
+      gce_group.add_argument('--oauth2_storage',
+        help="the location on the local filesystem where signed OAuth2 " + \
+          "credentials can be found")
+      self.parser.add_argument('--project',
+        help="the name of the project that is allowed to use Google " + \
+          "Compute Engine")
+      self.parser.add_argument('--gce_instance_type',
+        default=self.DEFAULT_GCE_INSTANCE_TYPE,
+        choices=self.ALLOWED_GCE_INSTANCE_TYPES,
+        help="the Google Compute Engine instance type to use")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
@@ -163,6 +214,9 @@ class ParseArgs():
         help="the datastore to use")
       self.parser.add_argument('--replication', '-n', type=int,
         help="the database replication factor")
+      self.parser.add_argument('--clear_datastore', action='store_true',
+        default=False,
+        help="erases all stored user and application data")
 
       # flags relating to application servers
       group = self.parser.add_mutually_exclusive_group()
@@ -188,6 +242,9 @@ class ParseArgs():
         help="uses the given e-mail instead of prompting for one")
       self.parser.add_argument('--admin_pass',
         help="uses the given password instead of prompting for one")
+      self.parser.add_argument('--alter_etc_resolv', action='store_true',
+        default=False,
+        help="removes all nameservers in /etc/resolv.conf on all VMs")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -211,6 +268,9 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+      self.parser.add_argument('--root_password',
+        default=False,
+        help='the root password of the host AppScale is to run on')
     elif function == "appscale-add-instances":
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
@@ -231,6 +291,17 @@ class ParseArgs():
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+      self.parser.add_argument('--EC2_ACCESS_KEY',
+        help="the access key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_SECRET_KEY',
+        help="the secret key that identifies this user in an EC2-compatible" + \
+          " service")
+      self.parser.add_argument('--EC2_URL',
+        help="a URL that identifies where an EC2-compatible service runs")
+      self.parser.add_argument('--test', action='store_true',
+        default=False,
+        help="uses a default username and password for cloud admin")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -246,6 +317,17 @@ class ParseArgs():
     elif function == "appscale-describe-instances":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-relocate-app":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--appname',
+        help="the name of the application to relocate")
+      self.parser.add_argument('--http_port', type=int,
+        help="the port that the application should now serve unencrypted " \
+        "traffic on")
+      self.parser.add_argument('--https_port', type=int,
+        help="the port that the application should now serve encrypted " \
+        "traffic on")
     else:
       raise SystemExit
 
@@ -264,6 +346,7 @@ class ParseArgs():
       self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
+      self.validate_environment_flags()
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
@@ -271,7 +354,6 @@ class ParseArgs():
       self.validate_admin_flags()
     elif function == "appscale-add-keypair":
       self.validate_ips_flags()
-      pass
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
@@ -279,7 +361,7 @@ class ParseArgs():
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      pass
+      self.validate_environment_flags()
     elif function == "appscale-remove-app":
       if not self.args.appname:
         raise SystemExit("Must specify appname")
@@ -293,6 +375,26 @@ class ParseArgs():
           self.args.ips = yaml.safe_load(file_handle.read())
       else:
         raise SystemExit
+    elif function == "appscale-relocate-app":
+      if not self.args.appname:
+        raise BadConfigurationException("Need to specify the application to " +
+          "relocate with --appname.")
+
+      if not self.args.http_port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --http_port.")
+
+      if not self.args.https_port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --https_port.")
+
+      if self.args.http_port < 1 or self.args.http_port > 65535:
+        raise BadConfigurationException("Need to specify a http port between " +
+          "1 and 65535. Please change --http_port accordingly.")
+
+      if self.args.https_port < 1 or self.args.https_port > 65535:
+        raise BadConfigurationException("Need to specify a https port " +
+          "between 1 and 65535. Please change --https_port accordingly.")
     else:
       raise SystemExit
 
@@ -314,7 +416,7 @@ class ParseArgs():
 
     if self.args.ips:
       if not os.path.exists(self.args.ips):
-        raise BadConfigurationException("The given ips.yaml file did not exist.")
+        raise BadConfigurationException("The given ips.yaml file didn't exist.")
     elif self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
@@ -329,10 +431,34 @@ class ParseArgs():
 
 
   def validate_ips_flags(self):
-    """Sets up the ips flag if the ips_layout flag is given.
-    """
+    """Sets up the ips flag if the ips_layout flag is given."""
     if self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
+
+
+  def validate_environment_flags(self):
+    """Validates flags dealing with setting environment variables.
+
+    Raises:
+      BadConfigurationException: If the user gives us either EC2_ACCESS_KEY
+        or EC2_SECRET_KEY, but forgets to also specify the other.
+    """
+    if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
+      raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
+        "EC2_SECRET_KEY must also be specified.")
+
+    if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
+      raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
+        "EC2_ACCESS_KEY must also be specified.")
+
+    if self.args.EC2_ACCESS_KEY:
+      os.environ['EC2_ACCESS_KEY'] = self.args.EC2_ACCESS_KEY
+
+    if self.args.EC2_SECRET_KEY:
+      os.environ['EC2_SECRET_KEY'] = self.args.EC2_SECRET_KEY
+
+    if self.args.EC2_URL:
+      os.environ['EC2_URL'] = self.args.EC2_URL
 
 
   def validate_infrastructure_flags(self):
@@ -343,42 +469,72 @@ class ParseArgs():
         infrastructure-related flags were invalid.
     """
     if not self.args.infrastructure:
-      # make sure we didn't get a group or machine flag, since those are
-      # infrastructure-only
-      if self.args.group:
-        raise BadConfigurationException("Cannot specify a security group " + \
-          "when --infrastructure is not specified.")
-
+      # Make sure we didn't get a machine flag, since that's infrastructure-only
       if self.args.machine:
         raise BadConfigurationException("Cannot specify a machine image " + \
-          "when --infrastructure is not specified.")
+          "when infrastructure is not specified.")
 
+      # Also make sure they gave us a valid availability zone.
+      if self.args.zone:
+        raise BadConfigurationException("Cannot specify an availability zone " +
+          "when infrastructure is not specified.")
+
+      # Fail if the user is trying to use AWS Spot Instances on a virtualized
+      # cluster.
       if self.args.use_spot_instances or self.args.max_spot_price:
         raise BadConfigurationException("Can't run spot instances when " + \
-          "--infrastructure is not specified.")
+          "when infrastructure is not specified.")
+
+      # Fail if the user is trying to use persistent disks on a virtualized
+      # cluster.
+      if self.args.disks:
+        raise BadConfigurationException("Can't specify persistent disks " + \
+          "when infrastructure is not specified.")
 
       return
 
-    # make sure the user gave us an ami if running in cloud
-    if self.args.infrastructure and not self.args.machine:
+    # Make sure the user gave us an ami/emi if running in a cloud.
+    if not self.args.machine:
       raise BadConfigurationException("Need a machine image (ami) " +
         "when running in a cloud infrastructure.")
 
-    # if the user wants to use spot instances in a cloud, make sure that it's
-    # EC2 (since Euca doesn't have spot instances)
+    # Also make sure they gave us an availability zone if they want to use
+    # persistent disks.
+    if self.args.disks and not self.args.zone:
+      raise BadConfigurationException("Need an availability zone specified " +
+        "when persistent disks are specified.")
+
+    # In Google Compute Engine, we have to specify the availability zone.
+    if self.args.infrastructure == 'gce' and not self.args.zone:
+      self.args.zone = GCEAgent.DEFAULT_ZONE
+
+    # If the user wants to use spot instances in a cloud, make sure that it's
+    # EC2 (since Euca doesn't have spot instances).
     if self.args.infrastructure != 'ec2' and (self.args.use_spot_instances or \
       self.args.max_spot_price):
       raise BadConfigurationException("Can't run spot instances unless " + \
         "Amazon EC2 is the infrastructure used.")
 
-    # if the user does want to set a max spot price, make sure they told us that
-    # they want to use spot instances in the first place
+    # If the user does want to set a max spot price, make sure they told us that
+    # they want to use spot instances in the first place.
     if self.args.max_spot_price and not self.args.use_spot_instances:
       raise BadConfigurationException("Can't have a max spot instance price" + \
         " if --use_spot_instances is not set.")
 
+    # If the user does want to use persistent disks, make sure they specified
+    # them in the right format, a dictionary mapping node IDs to disk names.
+    if self.args.disks:
+      self.args.disks = yaml.safe_load(base64.b64decode(self.args.disks))
+
+      if not isinstance(self.args.disks, dict):
+        raise BadConfigurationException("--disks must be a dict, but was a " \
+          "{0}".format(type(self.args.disks)))
+
 
   def validate_credentials(self):
+    """If running over a cloud infrastructure, makes sure that all of the
+    necessary credentials have been specified.
+    """
     if not self.args.infrastructure:
       return
 
@@ -403,6 +559,16 @@ class ParseArgs():
     params = cloud_agent.get_params_from_args(self.args)
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
+
+    if not cloud_agent.does_zone_exist(params):
+      raise BadConfigurationException("Couldn't find the given zone.")
+
+    if not self.args.disks:
+      return
+
+    for disk in set(self.args.disks.values()):
+      if not cloud_agent.does_disk_exist(params, disk):
+        raise BadConfigurationException("Couldn't find disk {0}".format(disk))
 
 
   def validate_database_flags(self):

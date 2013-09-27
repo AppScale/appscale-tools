@@ -7,7 +7,6 @@ import json
 import os
 import re
 import socket
-import subprocess
 import sys
 import tempfile
 import time
@@ -23,6 +22,7 @@ import SOAPpy
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from agents.euca_agent import EucalyptusAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -51,9 +51,17 @@ class TestRemoteHelper(unittest.TestCase):
     # ParseArgs
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False)
+      table='cassandra', verbose=False, test=False, use_spot_instances=False,
+      zone='my-zone-1b')
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
+
+    # set up phony AWS credentials for each test
+    # ones that test not having them present can
+    # remove them
+    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
+      os.environ[credential] = "baz"
+    os.environ['EC2_URL'] = "http://boo"
 
     # mock out calls to EC2
     # begin by assuming that our ssh keypair doesn't exist, and thus that we
@@ -89,8 +97,14 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(os)
     os.should_receive('chmod').with_args(ssh_key_location, 0600).and_return()
 
-    # next, assume there are no security groups up yet
-    fake_ec2.should_receive('get_all_security_groups').and_return([])
+    # next, assume there are no security groups up at first, but then it gets
+    # created.
+    udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
+    tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
+    icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
+    group = flexmock(name='boogroup', rules=[tcp_rule, udp_rule, icmp_rule])
+    fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
+    fake_ec2.should_receive('get_all_security_groups').with_args('boogroup').and_return([group])
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
@@ -109,6 +123,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
+      .and_return([]) \
       .and_return([fake_pending_reservation]) \
       .and_return([fake_running_reservation])
 
@@ -134,7 +149,6 @@ class TestRemoteHelper(unittest.TestCase):
     self.fake_temp_file.should_receive('read').and_return('boo out')
     self.fake_temp_file.should_receive('close').and_return()
 
-
     flexmock(tempfile)
     tempfile.should_receive('NamedTemporaryFile')\
       .and_return(self.fake_temp_file)
@@ -147,8 +161,8 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume that root login isn't already enabled
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh .*root'), False, 5, stdin='ls')\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
       .and_return('Please login as the ubuntu user rather than root user.')
 
     # and assume that we can ssh in as ubuntu to enable root login
@@ -170,6 +184,11 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
     # mock out our attempts to find /etc/appscale and presume it doesn't exist
     local_state = flexmock(LocalState)
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
@@ -188,21 +207,26 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale')) \
       .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
       .and_raise(ShellException).ordered()
 
@@ -215,30 +239,37 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
+
+    # mock out our attempts to enable the root login. 
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='ls') \
+      .and_return('Please login as the ubuntu user rather than root user.')
+
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale')) \
       .and_return().ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION))) \
       .and_return().ordered()
 
     # finally, put in a mock indicating that the database the user wants
     # isn't supported
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'\
-          .format(APPSCALE_VERSION, 'cassandra')))\
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('ls /etc/appscale/{0}/{1}'
+          .format(APPSCALE_VERSION, 'cassandra'))) \
       .and_raise(ShellException).ordered()
 
     # check that the cleanup routine is called on error
@@ -328,7 +359,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # assume we started god on public1 fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('god &'))\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
       .and_return().ordered()
 
     # also assume that we scp'ed over the god config file fine
@@ -358,25 +389,18 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_local_metadata(self):
     # mock out the copying of the two files
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.yaml'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/etc/appscale/locations-bookey.json'), False, 5)
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
-        False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*/root/.appscale/locations-bookey.json'), False, 5)
 	
     # and mock out copying the secret file
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*bookey.secret'),False,5)\
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^scp .*bookey.secret'), False, 5)
 
     RemoteHelper.copy_local_metadata('public1', 'bookey', False)
 
@@ -410,8 +434,12 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out SOAP interactions with the UserAppServer
     fake_soap = flexmock(name='fake_soap')
+    fake_soap.should_receive('does_user_exist').with_args('boo@foo.goo',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
       'xmpp_user', 'the secret').and_return('true')
+    fake_soap.should_receive('does_user_exist').with_args('boo@public1',
+      'the secret').and_return('false')
     fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
     flexmock(SOAPpy)
@@ -419,7 +447,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey')
+      'bookey', False)
 
 
   def test_wait_for_machines_to_finish_loading(self):

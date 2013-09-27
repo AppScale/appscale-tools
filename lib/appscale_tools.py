@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import sys
 import time
 import uuid
@@ -18,6 +19,8 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
+from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -169,7 +172,8 @@ class AppScaleTools():
         AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
 
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(login_host))
+      "deployment at http://{0}:{1}/status".format(login_host,
+      RemoteHelper.APP_DASHBOARD_PORT))
 
 
   @classmethod
@@ -190,11 +194,19 @@ class AppScaleTools():
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
 
+    try:
+      all_ips = acc.get_all_public_ips()
+    except socket.error:  # Occurs when the AppController has failed.
+      AppScaleLogger.warn("Couldn't get an up-to-date listing of the " + \
+        "machines in this AppScale deployment. Using our locally cached " + \
+        "info instead.")
+      all_ips = LocalState.get_all_public_ips(options.keyname)
+
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
     os.mkdir(options.location)
 
-    for ip in acc.get_all_public_ips():
+    for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = "{0}/{1}".format(options.location, ip)
       os.mkdir(local_dir)
@@ -202,6 +214,43 @@ class AppScaleTools():
         local_dir, options.verbose)
     AppScaleLogger.success("Successfully copied logs to {0}".format(
       options.location))
+
+
+  @classmethod
+  def relocate_app(cls, options):
+    """Instructs AppScale to move the named application to a different port.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    Raises:
+      AppScaleException: If the named application isn't running in this AppScale
+        cloud, if the destination port is in use by a different application, or
+        if the AppController rejects the request to relocate the application (in
+        which case it includes the reason why the rejection occurred).
+    """
+    login_host = LocalState.get_login_host(options.keyname)
+    acc = AppControllerClient(login_host, LocalState.get_secret_key(
+      options.keyname))
+
+    app_info_map = acc.get_app_info_map()
+    if options.appname not in app_info_map.keys():
+      raise AppScaleException("The given application, {0}, is not currently " \
+        "running in this AppScale cloud, so we can't move it to a different " \
+        "port.".format(options.appname))
+
+    relocate_result = acc.relocate_app(options.appname, options.http_port,
+      options.https_port)
+    if relocate_result == "OK":
+      AppScaleLogger.success("Successfully issued request to move {0} to " \
+        "ports {1} and {2}.".format(options.appname, options.http_port,
+        options.https_port))
+      AppScaleLogger.success("Your app serves unencrypted traffic at: " +
+        "http://{0}:{1}".format(login_host, options.http_port))
+      AppScaleLogger.success("Your app serves encrypted traffic at: " +
+        "https://{0}:{1}".format(login_host, options.https_port))
+    else:
+      raise AppScaleException(relocate_result)
 
 
   @classmethod
@@ -256,7 +305,7 @@ class AppScaleTools():
 
     try:
       uac.change_password(username, encrypted_password)
-      AppScaleLogger.success("The password was successfully changed for the " + \
+      AppScaleLogger.success("The password was successfully changed for the " \
         "given user.")
     except Exception as e:
       AppScaleLogger.warn("Could not change the user's password for the " + \
@@ -272,8 +321,11 @@ class AppScaleTools():
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     Raises:
+      AppControllerException: If the AppController on the head node crashes.
+        When this occurs, the message in the exception contains the reason why
+        the AppController crashed.
       BadConfigurationException: If the user passes in options that are not
-        sufficient to start an AppScale deplyoment (e.g., running on EC2 but
+        sufficient to start an AppScale deployment (e.g., running on EC2 but
         not specifying the AMI to use), or if the user provides us
         contradictory options (e.g., running on EC2 but not specifying EC2
         credentials).
@@ -282,6 +334,8 @@ class AppScaleTools():
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
     if options.infrastructure:
+      if not options.disks and not options.test and not options.force:
+        LocalState.ensure_user_wants_to_run_without_disks()
       AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
         " over the " + options.infrastructure + " cloud.")
     else:
@@ -314,7 +368,12 @@ class AppScaleTools():
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
-    uaserver_host = acc.get_uaserver_host(options.verbose)
+    try:
+      uaserver_host = acc.get_uaserver_host(options.verbose)
+    except Exception:
+      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
+        options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
       options.verbose)
@@ -341,7 +400,7 @@ class AppScaleTools():
       username, password = LocalState.get_credentials()
 
     RemoteHelper.create_user_accounts(username, password, uaserver_host,
-      options.keyname)
+      options.keyname, options.clear_datastore)
     uaserver_client.set_admin_role(username)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
@@ -349,14 +408,15 @@ class AppScaleTools():
     # up and have started all their API services.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname, options.verbose)
+    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
+      options.verbose)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_LOAD_BALANCER_PORT, options.verbose)
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}/status".format(LocalState.get_login_host(
-      options.keyname)))
+      "deployment at http://{0}:{1}/status".format(LocalState.get_login_host(
+      options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
@@ -374,8 +434,16 @@ class AppScaleTools():
       raise AppScaleException("AppScale is not running with the keyname {0}".
         format(options.keyname))
 
-    if LocalState.get_infrastructure(options.keyname) in \
-      InfrastructureAgentFactory.VALID_AGENTS:
+    infrastructure = LocalState.get_infrastructure(options.keyname)
+
+    # If the user is on a cloud deployment, and not backing their data to
+    # persistent disks, warn them before shutting down AppScale.
+    # Also, if we're in developer mode, skip the warning.
+    if infrastructure != "xen" and not LocalState.are_disks_used(
+      options.keyname) and not options.test:
+      LocalState.ensure_user_wants_to_terminate()
+
+    if infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
     else:
@@ -393,19 +461,39 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_app_to_dir(options.file,
         options.verbose)
       created_dir = True
-    else:
+    elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+    else:
+      raise AppEngineConfigException('{0} is not a .tar.gz file or a ' \
+        'directory. Please try uploading either a .tar.gz file or a ' \
+        'directory.'.format(options.file))
 
-    app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    try:
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    except AppEngineConfigException:
+      # Java App Engine users may have specified their war directory. In that
+      # case, just move up one level, back to the app's directory.
+      file_location = file_location + os.sep + ".."
+      app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     AppEngineHelper.validate_app_id(app_id)
+    
+    if app_language == 'java':
+      if AppEngineHelper.is_sdk_mismatch(file_location):
+        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' + 
+          'versions in your app. The current supported ' + 
+          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
@@ -423,30 +511,34 @@ class AppScaleTools():
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password, userappserver_host,
-        options.keyname)
+        options.keyname, clear_datastore=False)
 
-    if userappclient.does_app_exist(app_id):
-      raise AppScaleException("The given application is already running in " + \
-        "AppScale. Please choose a different application ID or use " + \
-        "appscale-remove-app to take down the existing application.")
-
+    app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)
     if app_admin is not None and username != app_admin:
       raise AppScaleException("The given user doesn't own this application" + \
         ", so they can't upload an app with that application ID. Please " + \
         "change the application ID and try again.")
 
-    AppScaleLogger.log("Uploading {0}".format(app_id))
-    userappclient.reserve_app_id(username, app_id, app_language)
+    if app_exists:
+      AppScaleLogger.log("Uploading new version of app {0}".format(app_id))
+    else:
+      AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
+      userappclient.reserve_app_id(username, app_id, app_language)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
+
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
+
+    if app_exists:
+      time.sleep(20)  # give the AppController time to restart the app
+
     serving_host, serving_port = userappclient.get_serving_info(app_id,
       options.keyname)
     RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
@@ -456,3 +548,5 @@ class AppScaleTools():
 
     if created_dir:
       shutil.rmtree(file_location)
+
+    return (serving_host, serving_port)

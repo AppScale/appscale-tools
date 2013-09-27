@@ -81,9 +81,10 @@ class NodeLayout():
   INPUT_YAML_REQUIRED = "A YAML file is required for virtualized clusters"
 
 
-  # The message to display if the user mixes advanced and simple tags 
-  # in their deployment
-  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not to mix simple and advance deployment methods"
+  # The message to display if the user mixes advanced and simple tags in their
+  # deployment.
+  USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not " \
+    "to mix simple and advanced deployment methods."
   
 
   def __init__(self, options):
@@ -100,11 +101,7 @@ class NodeLayout():
     if not isinstance(options, dict):
       options = vars(options)
 
-    if 'ips' in options:
-      input_yaml = options['ips']
-    else:
-      input_yaml = None
-
+    input_yaml = options.get('ips')
     if isinstance(input_yaml, str):
       with open(input_yaml, 'r') as file_handle:
         self.input_yaml = yaml.safe_load(file_handle.read())
@@ -113,30 +110,12 @@ class NodeLayout():
     else:
       self.input_yaml = None
 
-    if 'infrastructure' in options:
-      self.infrastructure = options['infrastructure']
-    else:
-      self.infrastructure = None
-
-    if 'min' in options:
-      self.min_vms = options['min']
-    else:
-      self.min_vms = None
-
-    if 'max' in options:
-      self.max_vms = options['max']
-    else:
-      self.max_vms = None
-
-    if 'replication' in options:
-      self.replication = options['replication']
-    else:
-      self.replication = None
-
-    if 'table' in options:
-      self.database_type = options['table']
-    else:
-      self.database_type = 'cassandra'
+    self.disks = options.get('disks')
+    self.infrastructure = options.get('infrastructure')
+    self.min_vms = options.get('min')
+    self.max_vms = options.get('max')
+    self.replication = options.get('replication')
+    self.database_type = options.get('table', 'cassandra')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
@@ -322,12 +301,12 @@ class NodeLayout():
     return True
 
 
-  def parse_ip(self, ip):
+  def parse_ip(self, ip_address):
     """Parses the given IP address or node ID and returns it and a str
     indicating whether or not we are in a cloud deployment.
 
     Args:
-      ip: A str that represents the IP address or node ID (of the format
+      ip_address: A str that represents the IP address or node ID (of the format
         node-int) to parse.
     Returns:
       id: A str that represents the IP address of this machine (if running in a
@@ -335,9 +314,9 @@ class NodeLayout():
       cloud: A str that indicates if we believe that machine is in a virtualized
         cluster or in a cloud.
     """
-    match = self.NODE_ID_REGEX.match(ip)
+    match = self.NODE_ID_REGEX.match(ip_address)
     if not match:
-      return ip, "not-cloud"
+      return ip_address, "not-cloud"
     else:
       return match.group(0), match.group(1)
 
@@ -370,7 +349,7 @@ class NodeLayout():
     nodes = []
     for role, ips in self.input_yaml.iteritems():
       if not ips:
-        next
+        continue
 
       if isinstance(ips, str):
         ips = [ips]
@@ -386,7 +365,7 @@ class NodeLayout():
         node.add_taskqueue_role(is_master)
 
         if not node.is_valid():
-          return self.invalid(node.errors().join(","))
+          return self.invalid(",".join(node.errors()))
 
         if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
           if not self.NODE_ID_REGEX.match(node.public_ip):
@@ -395,7 +374,8 @@ class NodeLayout():
         else:
           # Virtualized cluster deployments use IP addresses as node IDs
           if not self.IP_REGEX.match(node.public_ip):
-            return self.invalid("{0} must be an IP address".format(node.public_ip))
+            return self.invalid("{0} must be an IP address".format(
+              node.public_ip))
 
         nodes.append(node)
 
@@ -442,6 +422,14 @@ class NodeLayout():
         if node.is_role('login'):
           node.public_ip = self.login_host
 
+    if self.disks:
+      valid, reason = self.is_disks_valid(nodes)
+      if not valid:
+        return self.invalid(reason)
+
+      for node in nodes:
+        node.disk = self.disks.get(node.public_ip)
+
     rep = self.is_database_replication_valid(nodes)
 
     if not rep['result']:
@@ -468,13 +456,13 @@ class NodeLayout():
       if isinstance(ips, str):
         ips = [ips]
 
-      for index, ip in enumerate(ips):
+      for index, ip_addr in enumerate(ips):
         node = None
-        if ip in node_hash:
-          node = node_hash[ip]
+        if ip_addr in node_hash:
+          node = node_hash[ip_addr]
         else:
-          ip, cloud = self.parse_ip(ip)
-          node = AdvancedNode(ip, cloud)
+          ip_addr, cloud = self.parse_ip(ip_addr)
+          node = AdvancedNode(ip_addr, cloud)
 
         if role == 'database':
           # The first database node is the master
@@ -497,7 +485,7 @@ class NodeLayout():
         else:
           node.add_role(role)
         
-        node_hash[ip] = node
+        node_hash[ip_addr] = node
 
     # Dont need the hash any more, make a nodes list
     nodes = node_hash.values()
@@ -513,7 +501,8 @@ class NodeLayout():
       else:
         # Virtualized cluster deployments use IP addresses as node IDs
         if not self.IP_REGEX.match(node.public_ip):
-          return self.invalid("{0} must be an IP address".format(node.public_ip))
+          return self.invalid("{0} must be an IP address".format(
+            node.public_ip))
 
     master_nodes = []
     for node in nodes:
@@ -594,6 +583,11 @@ class NodeLayout():
       if node.is_role('appengine') and not node.is_role('taskqueue'):
         node.add_role('taskqueue_slave')
 
+    if self.disks:
+      valid, reason = self.is_disks_valid(nodes)
+      if not valid:
+        return self.invalid(reason)
+
     rep = self.is_database_replication_valid(nodes)
     if not rep['result']:
       return rep
@@ -601,6 +595,29 @@ class NodeLayout():
     self.nodes = nodes
 
     return self.valid()
+
+
+  def is_disks_valid(self, nodes):
+    """ Checks to make sure that the user has specified exactly one persistent
+    disk per node.
+
+    Returns:
+      A tuple of two items. The first item is a bool that indicates if the
+      user specified a valid set of disks to use, and the second item is a str
+      that indicates why the disks given were invalid (which is empty when the
+      disks are valid).
+    """
+    # Make sure that every node has a disk specified.
+    # TODO(cgb): Amend this to only DB nodes.
+    if len(nodes) != len(self.disks.keys()):
+      return False, "Please specify a disk for every node."
+
+    # Next, make sure that there are an equal number of
+    # unique disks and nodes.
+    if len(nodes) != len(set(self.disks.values())):
+      return False, "Please specify a unique disk for every node."
+
+    return True, ""
 
 
   def is_database_replication_valid(self, nodes):
@@ -613,7 +630,8 @@ class NodeLayout():
     """
     database_node_count = 0
     for node in nodes:
-      if node.is_role('database') or node.is_role('db_master'):
+      if node.is_role('database') or node.is_role('db_master') or \
+        node.is_role('db_slave'):
         database_node_count += 1
 
     if not database_node_count:
@@ -630,11 +648,6 @@ class NodeLayout():
     if self.replication > database_node_count:
       return self.invalid("Replication factor cannot exceed # of databases")
 
-    # Perform all the database specific checks here
-    if self.database_type == 'mysql' and database_node_count % self.replication:
-      return self.invalid("MySQL requires that the amount of replication " + \
-        "be divisible by the number of nodes") 
-
     return self.valid()
 
 
@@ -645,11 +658,11 @@ class NodeLayout():
       Returns:
         A dict that has one controller node and the other nodes set as servers.
     """
-    layout = {'controller' : "node-0"}
+    layout = {'controller' : "node-1"}
     servers = []
     num_slaves = self.min_vms - 1
     for i in xrange(num_slaves):
-      servers.append("node-{0}".format(i+1))
+      servers.append("node-{0}".format(i+2))
 
     layout['servers'] = servers
     return layout
@@ -669,6 +682,13 @@ class NodeLayout():
 
 
   def head_node(self):
+    """ Searches through the nodes in this NodeLayout for the node with the
+    'shadow' role.
+
+    Returns:
+      The node running the 'shadow' role, or None if (1) the NodeLayout isn't
+      acceptable for use with AppScale, or (2) no shadow node was specified.
+    """
     if not self.is_valid():
       return None
 
@@ -680,6 +700,13 @@ class NodeLayout():
 
 
   def other_nodes(self):
+    """ Searches through the nodes in this NodeLayout for all nodes without the
+    'shadow' role.
+
+    Returns:
+      A list of nodes not running the 'shadow' role, or the empty list if the
+      NodeLayout isn't acceptable for use with AppScale.
+    """
     if not self.is_valid():
       return []
 
@@ -691,6 +718,13 @@ class NodeLayout():
 
 
   def db_master(self):
+    """ Searches through the nodes in this NodeLayout for the node with the
+    'db_master' role.
+
+    Returns:
+      The node running the 'db_master' role, or None if (1) the NodeLayout isn't
+      acceptable for use with AppScale, or (2) no db_master node was specified.
+    """
     if not self.is_valid():
       return None
 
@@ -700,12 +734,20 @@ class NodeLayout():
     return None
 
 
-  def to_dict_without_head_node(self):
-    result = {}
-    # Put all nodes except the head node in the hash
-    for node in self.other_nodes():
-      result[node.public_ip] = node.roles
-    return result
+  def to_list_without_head_node(self):
+    """ Converts all of the nodes (except the head node) to a format that can
+    be easily JSON-dumped (a list of dicts).
+
+    Returns:
+      A list, where each member is a dict corresponding to a Node in this
+      AppScale deployment. As callers explicitly specify the head node, we
+      don't include it in this list.
+    """
+    return [{
+      'ip' : node.public_ip,
+      'jobs' : node.roles,
+      'disk' : node.disk
+    } for node in self.other_nodes()]
 
 
   def valid(self, message = None):
@@ -735,7 +777,7 @@ class Node():
   """
 
 
-  def __init__(self, public_ip, cloud, roles=[]):
+  def __init__(self, public_ip, cloud, roles=[], disk=None):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -745,11 +787,13 @@ class Node():
         we don't know the IP address)
       cloud: The cloud that this Node belongs to.
       roles: A list of roles that this Node will run in an AppScale deployment.
+      disk: The name of the persistent disk that this node backs up data to.
     """
     self.public_ip = public_ip
     self.private_ip = public_ip
     self.cloud = cloud
     self.roles = roles
+    self.disk = disk
     self.expand_roles()
 
 
