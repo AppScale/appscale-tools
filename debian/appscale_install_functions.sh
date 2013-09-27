@@ -78,6 +78,7 @@ installpylibs()
   easy_install google-api-python-client
   easy_install httplib2
   easy_install argparse
+  easy_install python-gflags
 }
 
 installappscaletools()
