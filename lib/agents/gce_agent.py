@@ -9,7 +9,6 @@ interact with Google Compute Engine.
 import datetime
 import os.path
 import shutil
-import sys
 import time
 import uuid
 
@@ -637,7 +636,9 @@ class GCEAgent(BaseAgent):
     # Construct the request body
     for index in range(count):
       instances = {
-        'name': "appscale-{0}-{1}".format(group, uuid.uuid4()),
+        # Truncate the name down to the first 62 characters, since GCE doesn't
+        # let us use arbitrarily long instance names.
+        'name': "appscale-{0}-{1}".format(group, uuid.uuid4())[:62],
         'machineType': machine_type_url,
         'image': image_url,
         'networkInterfaces': [{
@@ -859,15 +860,6 @@ class GCEAgent(BaseAgent):
       to Google Compute Engine for the given user, and a Credentials object that
       can be used to sign requests performed with that connection.
     """
-    # Since updating to v1beta15, Python 2.6 no longer works with GCE. It
-    # complains about having too many positional arguments on all GCE calls,
-    # so require the user to have Python 2.7 or newer.
-    version_tuple = tuple(sys.version_info[:2])
-    if version_tuple == (2, 6):
-      AppScaleLogger.warn('The Python Google Compute Engine client libraries '
-        'require Python 2.7. If you run into issues, please update '
-        'Python and try again.')
-
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
