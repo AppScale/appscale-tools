@@ -9,6 +9,7 @@ interact with Google Compute Engine.
 import datetime
 import os.path
 import shutil
+import sys
 import time
 import uuid
 
@@ -120,6 +121,22 @@ class GCEAgent(BaseAgent):
   # The person to contact if there is a problem with the instance. We set this
   # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
+
+
+  def assert_credentials_are_valid(self, parameters):
+    """Contacts GCE to see if the given credentials are valid.
+
+    Currently does nothing, but eventually should be rewritten to see if the
+      user's OAuth credential file is valid and not expired.
+
+    Args:
+      parameters: A dict containing the credentials necessary to interact with
+      GCE.
+
+    Raises:
+      AgentConfigurationException: If the given GCE credentials are invalid.
+    """
+    return
 
 
   def configure_instance_security(self, parameters):
@@ -831,6 +848,15 @@ class GCEAgent(BaseAgent):
       to Google Compute Engine for the given user, and a Credentials object that
       can be used to sign requests performed with that connection.
     """
+    # Since updating to v1beta15, Python 2.6 no longer works with GCE. It
+    # complains about having too many positional arguments on all GCE calls,
+    # so require the user to have Python 2.7 or newer.
+    version_tuple = tuple(sys.version_info[:2])
+    if version_tuple == (2, 6):
+      AppScaleLogger.warn('The Python Google Compute Engine client libraries '
+        'require Python 2.7. If you run into issues, please update '
+        'Python and try again.')
+
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:

@@ -211,6 +211,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, pretend that our ec2 zone and image exists
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
 
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -254,6 +255,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, pretend that our ec2 zone/image to use exist
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
 
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
