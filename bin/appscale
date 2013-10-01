@@ -26,6 +26,7 @@ from appscale import AppScale
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
+from local_state import APPSCALE_VERSION
 from local_state import LocalState
 
 
@@ -136,6 +137,19 @@ elif command == "clean":
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
+elif command == "relocate":
+  if len(sys.argv) != 5:
+    cprint("Usage: appscale relocate appid http_port https_port", 'red')
+    sys.exit(1)
+
+  try:
+    appscale.relocate(sys.argv[2], sys.argv[3], sys.argv[4])
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
+    sys.exit(1)
+elif command in ["--version", "-v"]:
+  print APPSCALE_VERSION
+  sys.exit(0)
 else:
   print(AppScale.USAGE)
   if command == "help":

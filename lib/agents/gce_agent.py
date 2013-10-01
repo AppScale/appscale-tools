@@ -122,6 +122,22 @@ class GCEAgent(BaseAgent):
   DEFAULT_SERVICE_EMAIL = 'default'
 
 
+  def assert_credentials_are_valid(self, parameters):
+    """Contacts GCE to see if the given credentials are valid.
+
+    Currently does nothing, but eventually should be rewritten to see if the
+      user's OAuth credential file is valid and not expired.
+
+    Args:
+      parameters: A dict containing the credentials necessary to interact with
+      GCE.
+
+    Raises:
+      AgentConfigurationException: If the given GCE credentials are invalid.
+    """
+    return
+
+
   def configure_instance_security(self, parameters):
     """ Creates a GCE network and firewall with the specified name, and opens
     the ports on that firewall as needed for AppScale.
@@ -609,7 +625,9 @@ class GCEAgent(BaseAgent):
     # Construct the request body
     for index in range(count):
       instances = {
-        'name': "appscale-{0}-{1}".format(group, uuid.uuid4()),
+        # Truncate the name down to the first 62 characters, since GCE doesn't
+        # let us use arbitrarily long instance names.
+        'name': "appscale-{0}-{1}".format(group, uuid.uuid4())[:62],
         'machineType': machine_type_url,
         'image': image_url,
         'networkInterfaces': [{

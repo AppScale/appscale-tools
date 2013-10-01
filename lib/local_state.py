@@ -28,7 +28,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "1.10.0"
+APPSCALE_VERSION = "1.11.0"
 
 
 class LocalState():
@@ -973,7 +973,8 @@ class LocalState():
 
     file_contents += "\n# Automatically added by the AppScale Tools: "
 
-    cloud_name = "appscale-{0}".format(uuid.uuid4())
+    random_suffix = str(uuid.uuid4()).replace('-', '')
+    cloud_name = "appscale{0}".format(random_suffix)
     if 'keyname' not in yaml_contents:
       file_contents += "\nkeyname : {0}".format(cloud_name)
 
