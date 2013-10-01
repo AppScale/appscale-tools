@@ -160,7 +160,10 @@ class ParseArgs():
         help="the availability zone that instances should be deployed to")
 
       # flags relating to EC2-like cloud infrastructures
-      keyname = "appscale-{0}".format(str(uuid.uuid4()))
+      # Don't use dashes in the random suffix, since network names on Google
+      # Compute Engine aren't allowed to have dashes in them.
+      random_suffix = str(uuid.uuid4()).replace('-', '')
+      keyname = "appscale{0}".format(random_suffix)
       self.parser.add_argument('--infrastructure', '-i',
         choices=InfrastructureAgentFactory.VALID_AGENTS,
         help="the cloud infrastructure to use")
@@ -265,6 +268,9 @@ class ParseArgs():
         default=False,
         action='store_true',
         help='if we should add the given nodes to an existing deployment')
+      self.parser.add_argument('--root_password',
+        default=False,
+        help='the root password of the host AppScale is to run on')
     elif function == "appscale-add-instances":
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
@@ -311,6 +317,17 @@ class ParseArgs():
     elif function == "appscale-describe-instances":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-relocate-app":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--appname',
+        help="the name of the application to relocate")
+      self.parser.add_argument('--http_port', type=int,
+        help="the port that the application should now serve unencrypted " \
+        "traffic on")
+      self.parser.add_argument('--https_port', type=int,
+        help="the port that the application should now serve encrypted " \
+        "traffic on")
     else:
       raise SystemExit
 
@@ -358,6 +375,26 @@ class ParseArgs():
           self.args.ips = yaml.safe_load(file_handle.read())
       else:
         raise SystemExit
+    elif function == "appscale-relocate-app":
+      if not self.args.appname:
+        raise BadConfigurationException("Need to specify the application to " +
+          "relocate with --appname.")
+
+      if not self.args.http_port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --http_port.")
+
+      if not self.args.https_port:
+        raise BadConfigurationException("Need to specify the port to move " +
+          "the app to with --https_port.")
+
+      if self.args.http_port < 1 or self.args.http_port > 65535:
+        raise BadConfigurationException("Need to specify a http port between " +
+          "1 and 65535. Please change --http_port accordingly.")
+
+      if self.args.https_port < 1 or self.args.https_port > 65535:
+        raise BadConfigurationException("Need to specify a https port " +
+          "between 1 and 65535. Please change --https_port accordingly.")
     else:
       raise SystemExit
 

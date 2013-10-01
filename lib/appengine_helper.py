@@ -33,7 +33,7 @@ class AppEngineHelper():
 
 
   # A list of language runtimes that App Engine apps can be written in.
-  ALLOWED_RUNTIMES = ("python", "python27", "java", "go")
+  ALLOWED_RUNTIMES = ("python", "python27", "java", "go", "php")
 
 
   # A list of the appids reserved for internal AppScale use.

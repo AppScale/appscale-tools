@@ -211,6 +211,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, pretend that our ec2 zone and image exists
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
 
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -254,6 +255,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, pretend that our ec2 zone/image to use exist
     fake_ec2 = flexmock(name="fake_ec2")
+    fake_ec2.should_receive('get_all_instances')
 
     fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -575,7 +577,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(subprocess)
     subprocess.should_receive('call').with_args(["ssh", "-o",
       "StrictHostkeyChecking=no", "-i", appscale.get_key_location('boo'),
-      "root@blarg2", "tail -f /var/log/appscale/c*"]).and_return().once()
+      "root@blarg2", "tail -F /var/log/appscale/c*"]).and_return().once()
     appscale.tail(1, "c*")
 
 
@@ -601,6 +603,40 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('run_instances')
     self.assertRaises(BadConfigurationException, appscale.logs, '/baz')
+
+  
+  def testRelocateWithNoAppScalefile(self):
+    # calling 'appscale relocate' with no AppScalefile in the local directory
+    # should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.relocate, 'myapp', 80, 443)
+
+
+  def testRelocateWithAppScalefile(self):
+    # calling 'appscale relocate' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-relocate-app' command and then exec it
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-relocate-app call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('relocate_app')
+    appscale.relocate('myapp', 80, 443)
 
 
   def testDestroyWithNoAppScalefile(self):
