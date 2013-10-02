@@ -223,6 +223,15 @@ class RemoteHelper():
       parameters=params, security_configured=True)
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
+
+    # Since GCE v1beta15, SSH keys don't immediately get injected to newly
+    # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
+    # sure.
+    if options.infrastructure == 'gce':
+      AppScaleLogger.log("Waiting for SSH keys to get injected to your "
+        "machine.")
+      time.sleep(60)
+
     cls.enable_root_login(public_ips[0], options.keyname,
       options.infrastructure, options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
