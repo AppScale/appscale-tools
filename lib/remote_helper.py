@@ -62,7 +62,7 @@ class RemoteHelper():
 
   # The message that is sent if we try to log into a VM as the root user but
   # root login isn't enabled yet.
-  LOGIN_AS_UBUNTU_USER = "Please login as the ubuntu user rather than root user."
+  LOGIN_AS_UBUNTU_USER = 'Please login as the user "ubuntu" rather than the user "root".'
 
 
   APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
