@@ -135,8 +135,18 @@ class GCEAgent(BaseAgent):
     Raises:
       AgentConfigurationException: If the given GCE credentials are invalid.
     """
-    return
-
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.instances().list(project=parameters[self.PARAM_PROJECT],
+        zone=parameters[self.PARAM_ZONE])
+      response = request.execute(auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      raise AgentConfigurationException("We couldn't validate your GCE" + \
+        "credentials. Are your credentials valid?")
 
   def configure_instance_security(self, parameters):
     """ Creates a GCE network and firewall with the specified name, and opens
@@ -483,6 +493,7 @@ class GCEAgent(BaseAgent):
       params[self.PARAM_STORAGE] = args.get(self.PARAM_STORAGE)
 
     params[self.PARAM_VERBOSE] = args.get('verbose', False)
+    self.assert_credentials_are_valid(params)
 
     return params
 
