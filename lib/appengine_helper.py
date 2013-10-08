@@ -36,6 +36,10 @@ class AppEngineHelper():
   ALLOWED_RUNTIMES = ("python27", "java", "go", "php")
 
 
+  # A list of language runtimes that AppScale no longer supports.
+  DEPRECATED_RUNTIMES = ("python")
+
+
   # A list of the appids reserved for internal AppScale use.
   DISALLOWED_APP_IDS = ("none", "apichecker", "appscaledashboard")
 
@@ -183,6 +187,10 @@ class AppEngineHelper():
       if 'runtime' in yaml_contents and yaml_contents['runtime'] in \
         cls.ALLOWED_RUNTIMES:
         return yaml_contents['runtime']
+      elif 'runtime' in yaml_contents and yaml_contents['runtime'] in \
+        cls.DEPRECATED_RUNTIMES:
+        raise AppEngineConfigException("This runtime is deprecated and no " + \
+          "longer supported.")
       else:
         raise AppEngineConfigException("No runtime set in your app.yaml")
     else:
