@@ -51,12 +51,6 @@ class RemoteHelper():
     "-o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
-  # By default, monit is disabled. To enable monit, this configuration file must
-  # be copied over to the machine where monit runs.
-  MONIT_INIT_FILE = os.path.dirname(__file__) + os.sep + \
-    ".." + os.sep + "templates" + os.sep + "monit"
-
-
   # The location on the local filesystem where a monit configuration file can
   # be found that can be used to start the AppController service.
   MONIT_APPCONTROLLER_CONFIG_FILE = os.path.dirname(__file__) + os.sep + \
