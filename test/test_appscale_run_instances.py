@@ -1054,11 +1054,14 @@ appengine:  1.2.3.4
     fake_list_instance_request = flexmock(name='fake_list_instance_request')
     fake_list_instance_request.should_receive('execute').with_args(
       fake_authorized_http).and_return(no_instance_info).and_return(
-        list_instance_info)
+        no_instance_info).and_return(list_instance_info)
 
     fake_instances.should_receive('list').with_args(project=project_id,
       filter="name eq appscale-bazgroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
+
+    fake_instances.should_receive('list').with_args(project=project_id,
+      zone=zone).and_return(fake_list_instance_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
