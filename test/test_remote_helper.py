@@ -163,7 +163,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state = flexmock(LocalState)
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # and assume that we can ssh in as ubuntu to enable root login
     local_state = flexmock(LocalState)
@@ -188,7 +188,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
@@ -212,7 +212,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
@@ -245,7 +245,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
@@ -355,23 +355,23 @@ class TestRemoteHelper(unittest.TestCase):
     local_state = flexmock(LocalState)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
-      .and_return().ordered()
+      .and_return()
 
-    # assume we started god on public1 fine
+    # assume we started monit on public1 fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
-      .and_return().ordered()
+      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('monit'))\
+      .and_return()
 
     # also assume that we scp'ed over the god config file fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
-      .and_return().ordered()
+      .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
+      .and_return()
 
     # and assume we started the AppController on public1 fine
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('^god load .*appcontroller\.god'))\
-      .and_return().ordered()
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('^monit start -g controller'))\
+      .and_return()
 
     # finally, assume the appcontroller comes up after a few tries
     # assume that ssh comes up on the third attempt
@@ -380,8 +380,6 @@ class TestRemoteHelper(unittest.TestCase):
       AppControllerClient.PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
-
-    
 
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 

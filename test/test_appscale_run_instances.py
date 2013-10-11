@@ -332,21 +332,14 @@ group: {1}
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
       .and_return()
 
-    # assume that we started god fine
+    # assume that we started monit fine
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('nohup god'))\
+      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('monit'))\
       .and_return()
 
-
-    # and that we copied over the AppController's god file
+    # and that we copied over the AppController's monit file
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('scp .*appcontroller\.god.*'),False,5)\
-      .and_return()
-
-    # also, that we started the AppController itself
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('^god load .*appcontroller\.god'))\
+      .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
       .and_return()
 
     self.setup_socket_mocks('1.2.3.4')
@@ -466,17 +459,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
-    # assume that we started god fine
+    # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('nohup god'))
+      False, 5, stdin=re.compile('monit'))
 
-    # and that we copied over the AppController's god file
+    # and that we copied over the AppController's monit file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('appcontroller.god'))
-
-    # also, that we started the AppController itself
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god load'))
+      False, 5, stdin=re.compile('controller-17443.cfg'))
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
@@ -571,17 +560,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
-    # assume that we started god fine
+    # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('nohup god'))
+      False, 5, stdin=re.compile('monit'))
 
-    # and that we copied over the AppController's god file
+    # and that we copied over the AppController's monit file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('appcontroller.god'))
-
-    # also, that we started the AppController itself
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god load'))
+      False, 5, stdin=re.compile('controller-17443.cfg'))
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
@@ -1054,11 +1039,14 @@ appengine:  1.2.3.4
     fake_list_instance_request = flexmock(name='fake_list_instance_request')
     fake_list_instance_request.should_receive('execute').with_args(
       fake_authorized_http).and_return(no_instance_info).and_return(
-        list_instance_info)
+        no_instance_info).and_return(list_instance_info)
 
     fake_instances.should_receive('list').with_args(project=project_id,
       filter="name eq appscale-bazgroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
+
+    fake_instances.should_receive('list').with_args(project=project_id,
+      zone=zone).and_return(fake_list_instance_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
@@ -1085,17 +1073,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
-    # assume that we started god fine
+    # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('nohup god'))
+      False, 5, stdin=re.compile('monit'))
 
-    # and that we copied over the AppController's god file
+    # and that we copied over the AppController's monit file
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('appcontroller.god'))
-
-    # also, that we started the AppController itself
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('god load'))
+      False, 5, stdin=re.compile('controller-17443.cfg'))
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')

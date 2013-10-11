@@ -125,9 +125,6 @@ class GCEAgent(BaseAgent):
   def assert_credentials_are_valid(self, parameters):
     """Contacts GCE to see if the given credentials are valid.
 
-    Currently does nothing, but eventually should be rewritten to see if the
-      user's OAuth credential file is valid and not expired.
-
     Args:
       parameters: A dict containing the credentials necessary to interact with
       GCE.
