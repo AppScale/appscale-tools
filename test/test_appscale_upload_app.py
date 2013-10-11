@@ -301,7 +301,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml = flexmock(name="fake_app_yaml")
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'application' : 'baz',
-      'runtime' : 'python'
+      'runtime' : 'python27'
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
@@ -426,7 +426,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml = flexmock(name="fake_app_yaml")
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'application' : 'baz',
-      'runtime' : 'python'
+      'runtime' : 'python27'
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
@@ -507,7 +507,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml = flexmock(name="fake_app_yaml")
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'application' : 'baz',
-      'runtime' : 'python'
+      'runtime' : 'python27'
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
@@ -628,7 +628,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml = flexmock(name="fake_app_yaml")
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'application' : 'baz',
-      'runtime' : 'python'
+      'runtime' : 'python27'
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
@@ -690,7 +690,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return('\n\nnum_ports:0\n') \
       .and_return(app_data).and_return(app_data).and_return(app_data)
     fake_userappserver.should_receive('commit_new_app').with_args(
-      'baz', 'a@a.com', 'python', 'the secret').and_return('true')
+      'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -770,7 +770,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml = flexmock(name="fake_app_yaml")
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'application' : 'baz',
-      'runtime' : 'python'
+      'runtime' : 'python27'
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
@@ -832,7 +832,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return('\n\nnum_ports:0\n') \
       .and_return(app_data).and_return(app_data).and_return(app_data)
     fake_userappserver.should_receive('commit_new_app').with_args(
-      'baz', 'a@a.com', 'python', 'the secret').and_return('true')
+      'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 

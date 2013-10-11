@@ -163,7 +163,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state = flexmock(LocalState)
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # and assume that we can ssh in as ubuntu to enable root login
     local_state = flexmock(LocalState)
@@ -188,7 +188,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
       .and_return().ordered()
@@ -212,7 +212,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
@@ -245,7 +245,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
-      .and_return('Please login as the ubuntu user rather than root user.')
+      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
