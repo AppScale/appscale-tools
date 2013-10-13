@@ -181,6 +181,7 @@ class LocalState():
       "autoscale" : str(options.autoscale),
       "alter_etc_resolv" : str(options.alter_etc_resolv),
       "clear_datastore" : str(options.clear_datastore),
+      "user_commands" : json.dumps(options.user_commands),
       "verbose" : str(options.verbose)
     }
     creds.update(additional_creds)
