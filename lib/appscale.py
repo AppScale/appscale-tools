@@ -202,6 +202,10 @@ Available commands:
     if "disks" in contents_as_yaml:
       disks = base64.b64encode(yaml.dump(contents_as_yaml["disks"]))
 
+    if "user_commands" in contents_as_yaml:
+      user_commands = base64.b64encode(yaml.dump(
+        contents_as_yaml["user_commands"]))
+
     if not "infrastructure" in contents_as_yaml:
       # Only run add-keypair if there is no ssh key present,
       # or if it doesn't log into all the machines specified.
@@ -234,6 +238,9 @@ Available commands:
         elif key == "disks":
           command.append("--disks")
           command.append(disks)
+        elif key == "user_commands":
+          command.append("--user_commands")
+          command.append(user_commands)
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
