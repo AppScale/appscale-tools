@@ -173,6 +173,8 @@ class RemoteHelper():
     time.sleep(10)  # gives machines in cloud extra time to boot up
 
     cls.copy_deployment_credentials(public_ip, options)
+    cls.run_user_commands(public_ip, options.user_commands, options.keyname,
+      options.verbose)
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
 
     acc = AppControllerClient(public_ip, secret_key)
@@ -555,6 +557,27 @@ class RemoteHelper():
           options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
       cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
         options.keyname) , '/etc/appscale/oauth2.dat', options.verbose)
+
+
+  @classmethod
+  def run_user_commands(cls, host, commands, keyname, is_verbose):
+    """Runs any commands specified by the user before the AppController is
+    started.
+
+    Args:
+      host: A str representing the host to start the AppController on.
+      commands: A list of strs, where each str is a command that will be
+        executed on the remote machine.
+      keyname: A str representing the name of the SSH keypair that can log into
+        the specified host.
+      is_verbose: A bool that indicates if we should print the commands needed
+        to start the AppController to stdout.
+    """
+    if commands:
+      AppScaleLogger.log("Running user-specified commands at {0}".format(host))
+
+    for command in commands:
+      cls.ssh(host, keyname, command, is_verbose)
 
 
   @classmethod
