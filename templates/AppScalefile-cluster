@@ -38,12 +38,12 @@ table : 'cassandra'
 
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.
-#clear_datastore: True
+# clear_datastore: True
 
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
-#verbose : True
+# verbose : True
 
 # The number of copies (replicas) of each piece of data stored in the
 # specified database. By default, we determine the optimal value based
@@ -76,3 +76,9 @@ table : 'cassandra'
 # # requests, but this setting can be used to turn off this autoscaling
 # and instead use a statically defined number of AppServers.
 # appengine : 3
+
+# AppScale developers only: Runs the following commands before starting the
+# AppController on each machine.
+# user_commands:
+# - 'apt-get install -y htop'
+# - 'apt-get install -y vim'
