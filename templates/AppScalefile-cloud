@@ -100,7 +100,8 @@ max : 1
 # appengine : 3
 
 # AppScale developers only: Runs the following commands before starting the
-# AppController on each machine.
+# AppController on each machine. Note that these commands do not support
+# redirecting stdout or stderr.
 # user_commands:
 # - 'apt-get install -y htop'
 # - 'apt-get install -y vim'
