@@ -89,6 +89,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "table" : "cassandra",
       "test" : False,
       "use_spot_instances" : False,
+      "user_commands" : [],
       "verbose" : False,
       "version" : False,
       "zone" : "my-zone-1b"

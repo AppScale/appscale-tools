@@ -98,3 +98,10 @@ max : 1
 # requests, but this setting can be used to turn off this autoscaling
 # and instead use a statically defined number of AppServers.
 # appengine : 3
+
+# AppScale developers only: Runs the following commands before starting the
+# AppController on each machine. Note that these commands do not support
+# redirecting stdout or stderr.
+# user_commands:
+# - 'apt-get install -y htop'
+# - 'apt-get install -y vim'

@@ -98,7 +98,7 @@ class TestLocalState(unittest.TestCase):
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
-      zone='my-zone-1b', verbose=True)
+      zone='my-zone-1b', verbose=True, user_commands=[])
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -123,6 +123,7 @@ class TestLocalState(unittest.TestCase):
       'min_images' : 1,
       'max_images' : 1,
       'use_spot_instances' : True,
+      'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
       'zone' : json.dumps('my-zone-1b'),
       'verbose' : 'True'

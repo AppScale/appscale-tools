@@ -245,6 +245,9 @@ class ParseArgs():
       self.parser.add_argument('--alter_etc_resolv', action='store_true',
         default=False,
         help="removes all nameservers in /etc/resolv.conf on all VMs")
+      self.parser.add_argument('--user_commands',
+        help="a base64-encoded YAML dictating the commands to run before " +
+          "starting each AppController")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -351,7 +354,7 @@ class ParseArgs():
       self.validate_machine_image()
       self.validate_database_flags()
       self.validate_appengine_flags()
-      self.validate_admin_flags()
+      self.validate_developer_flags()
     elif function == "appscale-add-keypair":
       self.validate_ips_flags()
     elif function == "appscale-upload-app":
@@ -604,14 +607,25 @@ class ParseArgs():
       self.args.autoscale = True
 
 
-  def validate_admin_flags(self):
-    """Validates the flags that correspond to setting administrator e-mails
+  def validate_developer_flags(self):
+    """Validates the flags that correspond to flags typically used only by
+    AppScale developers, such as automatically setting administrator e-mails
     and passwords.
 
     Raises:
       BadConfigurationException: If admin_user, admin_pass, and test are all
-        set, or if admin_user (or admin_pass) is set but the other isn't.
+        set, or if admin_user (or admin_pass) is set but the other isn't. This
+        exception can also be thrown if user_commands is not a list.
     """
+    if self.args.user_commands:
+      self.args.user_commands = yaml.safe_load(base64.b64decode(
+        self.args.user_commands))
+      if not isinstance(self.args.user_commands, list):
+        raise BadConfigurationException("user_commands must be a list. " +
+          "Please make it a list and try again.")
+    else:
+      self.args.user_commands = []
+
     if self.args.admin_user and not self.args.admin_pass:
       raise BadConfigurationException("If admin_user is set, admin_pass " + \
         "must also be set.")
