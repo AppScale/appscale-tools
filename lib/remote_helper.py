@@ -51,8 +51,10 @@ class RemoteHelper():
     "-o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
-  TEMPLATE_GOD_CONFIG_FILE = os.path.dirname(__file__) + os.sep + ".." + \
-    os.sep + "templates" + os.sep + "appcontroller.god"
+  # The location on the local filesystem where a monit configuration file can
+  # be found that can be used to start the AppController service.
+  MONIT_APPCONTROLLER_CONFIG_FILE = os.path.dirname(__file__) + os.sep + \
+    ".." + os.sep + "templates" + os.sep + "appcontroller.cfg"
 
 
   # The amount of time to wait when waiting for all API services to start on
@@ -598,18 +600,21 @@ class RemoteHelper():
     cls.ssh(host, keyname, 'rm -rf /etc/appscale/appcontroller-state.json',
       is_verbose)
 
-    # start up god, who will start up the appcontroller once we give it the
-    # right config file
-    cls.ssh(host, keyname, 'nohup god --log /var/log/appscale/god.log -D &',
-      is_verbose)
+    # Remove any monit configuration files from previous AppScale deployments.
+    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/*.cfg', is_verbose)
+
+    # Copy over the config file that indicates how the AppController should be
+    # started up.
+    cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
+      '/etc/monit/conf.d/controller-17443.cfg', is_verbose)
+
+    # Start up monit.
+    cls.ssh(host, keyname, 'monit', is_verbose)
     time.sleep(1)
 
-    # scp over that config file
-    cls.scp(host, keyname, cls.TEMPLATE_GOD_CONFIG_FILE,
-      '/tmp/appcontroller.god', is_verbose)
-
-    # finally, tell god to start the appcontroller and then wait for it to start
-    cls.ssh(host, keyname, 'god load /tmp/appcontroller.god', is_verbose)
+    # Finally, start the AppController.
+    cls.ssh(host, keyname, 'monit start -g controller', is_verbose)
+    time.sleep(1)
 
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
