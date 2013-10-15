@@ -528,7 +528,7 @@ class RemoteHelper():
     cls.scp(host, options.keyname, LocalState.get_key_path_from_name(
       options.keyname), '/etc/appscale/ssh.key', options.verbose)
 
-    LocalState.generate_ssl_cert(options.keyname, options.verbose)
+    LocalState.generate_ssl_cert(host, options.keyname, options.verbose)
     cls.scp(host, options.keyname, LocalState.get_certificate_location(
       options.keyname), '/etc/appscale/certs/mycert.pem', options.verbose)
     cls.scp(host, options.keyname, LocalState.get_private_key_location(

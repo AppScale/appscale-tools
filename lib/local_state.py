@@ -249,20 +249,23 @@ class LocalState():
 
 
   @classmethod
-  def generate_ssl_cert(cls, keyname, is_verbose):
+  def generate_ssl_cert(cls, host, keyname, is_verbose):
     """Generates a self-signed SSL certificate that AppScale services can use
     to encrypt traffic with.
 
     Args:
+      host: A str representing the IP address or FQDN of the machine that we are
+        generating a SSL certificate for.
       keyname: A str representing the SSH keypair name used for this AppScale
         deployment.
       is_verbose: A bool that indicates if we want to print out the certificate
         generation to stdout or not.
     """
-    cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
-      "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
-      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
-      LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
+    cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " \
+      "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN={0}' " \
+      "-keyout {1} -out {2}".format(host,
+        LocalState.get_private_key_location(keyname),
+        LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
 
 
   @classmethod
