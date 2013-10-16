@@ -817,18 +817,42 @@ class LocalState():
 
   @classmethod
   def extract_tgz_app_to_dir(cls, tar_location, is_verbose):
+    """Extracts the given tar.gz file to a randomly generated location and
+    returns that location.
+
+    Args:
+      archive_location: The location on the local filesystem where the tar.gz
+        file to extract can be found.
+      is_verbose: A bool that indicates if we should print the command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the file was extracted
+        to.
+    """
     return cls.extract_app_to_dir(tar_location, "tar zxvf", is_verbose)
 
 
   @classmethod
   def extract_zip_app_to_dir(cls, zip_location, is_verbose):
+    """Extracts the given zip file to a randomly generated location and
+    returns that location.
+
+    Args:
+      archive_location: The location on the local filesystem where the zip file
+        to extract can be found.
+      is_verbose: A bool that indicates if we should print the command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the file was extracted
+        to.
+    """
     return cls.extract_app_to_dir(zip_location, "unzip", is_verbose)
 
 
   @classmethod
   def extract_app_to_dir(cls, archive_location, extract_command, is_verbose):
-    """Extracts the given file to a randomly generated location and
-    returns that location.
+    """Extracts the given file to a randomly generated location and returns that
+    location.
 
     Args:
       archive_location: The location on the local filesystem where the file
