@@ -816,26 +816,61 @@ class LocalState():
 
 
   @classmethod
-  def extract_app_to_dir(cls, tar_location, is_verbose):
+  def extract_tgz_app_to_dir(cls, tar_location, is_verbose):
     """Extracts the given tar.gz file to a randomly generated location and
     returns that location.
 
     Args:
-      tar_location: The location on the local filesystem where the tar.gz file
-        to extract can be found.
-      is_verbose: A bool that indicates if we should print the tar command we
+      archive_location: The location on the local filesystem where the tar.gz
+        file to extract can be found.
+      is_verbose: A bool that indicates if we should print the command we
         execute to stdout.
     Returns:
-      The location on the local filesystem where the tar.gz file was extracted
+      The location on the local filesystem where the file was extracted
+        to.
+    """
+    return cls.extract_app_to_dir(tar_location, "tar zxvf", is_verbose)
+
+
+  @classmethod
+  def extract_zip_app_to_dir(cls, zip_location, is_verbose):
+    """Extracts the given zip file to a randomly generated location and
+    returns that location.
+
+    Args:
+      archive_location: The location on the local filesystem where the zip file
+        to extract can be found.
+      is_verbose: A bool that indicates if we should print the command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the file was extracted
+        to.
+    """
+    return cls.extract_app_to_dir(zip_location, "unzip", is_verbose)
+
+
+  @classmethod
+  def extract_app_to_dir(cls, archive_location, extract_command, is_verbose):
+    """Extracts the given file to a randomly generated location and returns that
+    location.
+
+    Args:
+      archive_location: The location on the local filesystem where the file
+        to extract can be found.
+      extract_command: The command and flags necessary to extract the archived
+        file.
+      is_verbose: A bool that indicates if we should print the command we
+        execute to stdout.
+    Returns:
+      The location on the local filesystem where the file was extracted
         to.
     """
     extracted_location = "/tmp/appscale-app-{0}".format(str(uuid.uuid4()) \
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && tar zxvf {1}".format(extracted_location, 
-        os.path.abspath(tar_location)),
-      is_verbose)
+    cls.shell("cd {0} && {1} {2}".format(extracted_location, extract_command,
+      os.path.abspath(archive_location)), is_verbose)
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
