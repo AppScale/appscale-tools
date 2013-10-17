@@ -81,7 +81,7 @@ class RemoteHelper():
 
 
   # A regular expression that matches AppScale version numbers.
-  VERSION_REGEX = "\d+\.\d+\.\d+"
+  VERSION_REGEX = "\A\d+\.\d+\.\d+\Z"
 
 
   @classmethod
