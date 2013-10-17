@@ -53,8 +53,12 @@ class AppScaleTools():
     "templates" + os.sep + "sshcopyid"
 
 
-  # A regular expression that matches compressed App Engine apps.
+  # A regular expression that matches files compressed in the tar.gz format.
   TAR_GZ_REGEX = re.compile('.tar.gz\Z')
+
+
+  # A regular expression that matches files compressed in the zip format.
+  ZIP_REGEX = re.compile('.zip\Z')
 
 
   @classmethod
@@ -466,16 +470,20 @@ class AppScaleTools():
         traffic from.
     """
     if cls.TAR_GZ_REGEX.search(options.file):
-      file_location = LocalState.extract_app_to_dir(options.file,
+      file_location = LocalState.extract_tgz_app_to_dir(options.file,
+        options.verbose)
+      created_dir = True
+    elif cls.ZIP_REGEX.search(options.file):
+      file_location = LocalState.extract_zip_app_to_dir(options.file,
         options.verbose)
       created_dir = True
     elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
     else:
-      raise AppEngineConfigException('{0} is not a .tar.gz file or a ' \
-        'directory. Please try uploading either a .tar.gz file or a ' \
-        'directory.'.format(options.file))
+      raise AppEngineConfigException('{0} is not a tar.gz file, a zip file, ' \
+        'or a directory. Please try uploading either a tar.gz file, a zip ' \
+        'file, or a directory.'.format(options.file))
 
     try:
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)

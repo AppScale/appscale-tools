@@ -216,7 +216,7 @@ class TestLocalState(unittest.TestCase):
     LocalState.update_local_metadata(options, node_layout, host, instance_id)
 
 
-  def test_extract_app_to_dir(self):
+  def test_extract_tgz_app_to_dir(self):
     flexmock(os)
     os.should_receive('mkdir').and_return()
     flexmock(os.path)
@@ -232,11 +232,11 @@ class TestLocalState(unittest.TestCase):
     os.path.should_receive('isdir').with_args(re.compile('one_folder')) \
       .and_return(True)
 
-    location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
+    location = LocalState.extract_tgz_app_to_dir('relative/app.tar.gz', False)
     self.assertEquals(True, 'one_folder' in location)
 
 
-  def test_extract_app_to_dir_with_dotfiles(self):
+  def test_extract_tgz_app_to_dir_with_dotfiles(self):
     flexmock(os)
     os.should_receive('mkdir').and_return()
     flexmock(os.path)
@@ -257,7 +257,7 @@ class TestLocalState(unittest.TestCase):
     os.path.should_receive('isdir').with_args(re.compile('.dot_folder')) \
       .and_return(True)
 
-    location = LocalState.extract_app_to_dir('relative/app.tar.gz', False)
+    location = LocalState.extract_tgz_app_to_dir('relative/app.tar.gz', False)
     self.assertTrue('one_folder' in location)
 
 
