@@ -221,7 +221,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale')) \
-      .and_return("{0}\nabc\ndef".format(APPSCALE_VERSION))
+      .and_return()
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist

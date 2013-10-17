@@ -499,7 +499,14 @@ class RemoteHelper():
     """
     try:
       etc_appscale_files = cls.ssh(host, keyname, 'ls /etc/appscale',
-        is_verbose).split()
+        is_verbose)
+
+      # If the user doesn't have an /etc/appscale directory, then the ls command
+      # will be empty, so catch that special case here.
+      if etc_appscale_files:
+        etc_appscale_files = etc_appscale_files.split()
+      else:
+        return None
 
       # Non-version files are in /etc/appscale, so filter them out.
       versions_installed = [name for name in etc_appscale_files
