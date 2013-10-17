@@ -216,23 +216,23 @@ class TestRemoteHelper(unittest.TestCase):
     # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
-      .and_return().ordered()
+      .and_return()
 
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale')) \
-      .and_return().ordered()
+      .and_return("{0}\nabc\ndef".format(APPSCALE_VERSION))
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_raise(ShellException).ordered()
+      .and_raise(ShellException)
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return().ordered()
+      .and_return()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)

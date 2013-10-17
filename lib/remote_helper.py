@@ -80,6 +80,10 @@ class RemoteHelper():
   REMOTE_APP_DIR = "{0}/apps".format(PERSISTENT_MOUNT_POINT)
 
 
+  # A regular expression that matches AppScale version numbers.
+  VERSION_REGEX = "\d+\.\d+\.\d+"
+
+
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
@@ -433,8 +437,16 @@ class RemoteHelper():
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
       '/etc/appscale/{0}'.format(APPSCALE_VERSION), is_verbose):
-      raise AppScaleException("The machine at {0} does not have AppScale "  \
-        "{1} installed.".format(host, APPSCALE_VERSION))
+      host_version = cls.get_host_appscale_version(host, keyname, is_verbose)
+      if host_version:
+        raise AppScaleException("The machine at {0} has AppScale {1} installed,"
+          " but you are trying to use it with version {2} of the AppScale "
+          "Tools. Please use the same version of the AppScale Tools that the "
+          "host machine runs.".format(host, host_version, APPSCALE_VERSION))
+      else:
+        raise AppScaleException("The machine at {0} does not have AppScale "  \
+          "{1} installed.".format(host, APPSCALE_VERSION))
+
 
     # finally, make sure it has the database installed that the user requests
     if not cls.does_host_have_location(host, keyname,
@@ -466,6 +478,38 @@ class RemoteHelper():
       return True
     except ShellException:
       return False
+
+
+  @classmethod
+  def get_host_appscale_version(cls, host, keyname, is_verbose):
+    """Logs into the specified host with the given keyname and checks to see
+    what version of AppScale is installed there.
+
+    Args:
+      host: A str representing a host that should be accessible from this
+        machine.
+      keyname: A str representing the name of the SSH keypair that can log into
+        the specified machine.
+      is_verbose: A bool that indicates if we should print the command we
+        execute to check the remote host's location to stdout.
+    Returns:
+      A str containing the version of AppScale installed on host, or None if
+      (1) AppScale isn't installed on host, or (2) host has more than one
+      version of AppScale installed.
+    """
+    try:
+      etc_appscale_files = cls.ssh(host, keyname, 'ls /etc/appscale',
+        is_verbose).split()
+
+      # Non-version files are in /etc/appscale, so filter them out.
+      versions_installed = [name for name in etc_appscale_files
+        if re.match(cls.VERSION_REGEX, name)]
+      if len(versions_installed) == 1:
+        return versions_installed[0]
+      else:
+        return None
+    except ShellException:
+      return None
 
   
   @classmethod
