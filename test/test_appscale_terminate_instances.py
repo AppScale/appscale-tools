@@ -212,7 +212,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_yaml_file = flexmock(name='fake_file')
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'ec2',
-      'group' : self.group
+      'group' : self.group,
     }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location(self.keyname), 'r') \

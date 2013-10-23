@@ -46,8 +46,8 @@ class TestAppScaleLogger(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto.ec2)
-    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1', 'baz',
-      'baz').and_return(fake_ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
 
     # do argument parsing here, since the below tests do it the
     # same way every time

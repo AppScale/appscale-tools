@@ -5,6 +5,7 @@ from agents.base_agent import AgentRuntimeException
 from agents.base_agent import BaseAgent 
 from agents.base_agent import AgentConfigurationException
 import boto
+import boto.ec2
 from boto.exception import EC2ResponseError
 import datetime
 import os
@@ -725,7 +726,8 @@ class EC2Agent(BaseAgent):
     """
     credentials = parameters[self.PARAM_CREDENTIALS]
     return boto.ec2.connect_to_region(parameters[self.PARAM_REGION],
-      credentials['EC2_ACCESS_KEY'], credentials['EC2_SECRET_KEY'])
+      aws_access_key_id=credentials['EC2_ACCESS_KEY'],
+      aws_secret_access_key=credentials['EC2_SECRET_KEY'])
 
   def handle_failure(self, msg):
     """

@@ -219,8 +219,8 @@ class TestAppScale(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
     flexmock(boto.ec2)
-    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1', 'baz',
-      'baz').and_return(fake_ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(AppScaleTools)
@@ -265,7 +265,8 @@ class TestAppScale(unittest.TestCase):
       .and_return()
     flexmock(boto.ec2)
     boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
-      'access key', 'secret key').and_return(fake_ec2)
+      aws_access_key_id='access key',
+      aws_secret_access_key='secret key').and_return(fake_ec2)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(AppScaleTools)

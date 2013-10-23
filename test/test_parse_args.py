@@ -75,10 +75,10 @@ class TestParseArgs(unittest.TestCase):
 
     flexmock(boto)
     flexmock(boto.ec2)
-    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1', 'baz',
-      'baz').and_return(fake_ec2)
-    boto.ec2.should_receive('connect_to_region').with_args('bad-zone-1', 'baz',
-      'baz').and_return(fake_ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('bad-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
@@ -271,7 +271,8 @@ class TestParseArgs(unittest.TestCase):
       .and_raise(boto.exception.EC2ResponseError, '', '')
 
     flexmock(boto.ec2)
-    boto.ec2.should_receive('connect_to_region').with_args(str, 'baz', 'baz') \
+    boto.ec2.should_receive('connect_to_region').with_args(str,
+      aws_access_key_id='baz', aws_secret_access_key='baz') \
       .and_return(fake_ec2)
 
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",

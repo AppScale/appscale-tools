@@ -76,6 +76,9 @@ class GCEAgent(BaseAgent):
 
   PARAM_PROJECT = 'project'
 
+
+  PARAM_REGION = 'region'
+
   
   PARAM_SECRETS = 'client_secrets'
 
