@@ -164,6 +164,9 @@ class RemoteHelper():
 
       if options.use_spot_instances:
         additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])
+
+      if agent.PARAM_REGION in params:
+        additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
     else:
       additional_params = {}
 

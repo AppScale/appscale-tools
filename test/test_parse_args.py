@@ -67,15 +67,18 @@ class TestParseArgs(unittest.TestCase):
       .and_return('anything')
 
     # Pretend that a bad availability zone doesn't exist.
-    fake_ec2.should_receive('get_all_zones').with_args('bad-zone') \
+    fake_ec2.should_receive('get_all_zones').with_args('bad-zone-1b') \
       .and_raise(boto.exception.EC2ResponseError, 'baz', 'baz')
 
     fake_price = flexmock(name='fake_price', price=1.00)
     fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
 
     flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
-      .and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('bad-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
@@ -267,8 +270,9 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_raise(boto.exception.EC2ResponseError, '', '')
 
-    flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz') \
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').with_args(str,
+      aws_access_key_id='baz', aws_secret_access_key='baz') \
       .and_return(fake_ec2)
 
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
@@ -456,7 +460,7 @@ public1 : vol-ABCDEFG
 
     # If we want to specify the zone on a cloud deployment, but the zone is not
     # an acceptable value, we should fail.
-    cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone"]
+    cloud_argv1 = self.cloud_argv[:] + ["--zone", "bad-zone-1b"]
     self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
       self.function)
 

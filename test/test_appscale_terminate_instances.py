@@ -17,7 +17,7 @@ import yaml
 # Third party libraries
 import apiclient.discovery
 import apiclient.errors
-import boto
+import boto.ec2
 from flexmock import flexmock
 import httplib2
 import oauth2client.client
@@ -212,7 +212,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_yaml_file = flexmock(name='fake_file')
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'ec2',
-      'group' : self.group
+      'group' : self.group,
     }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_yaml_location(self.keyname), 'r') \
@@ -270,8 +270,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_ec2.should_receive('get_all_instances').and_return(fake_reservation_running) \
       .and_return(fake_reservation_terminated)
 
-    flexmock(boto)
-    boto.should_receive('connect_ec2').and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').and_return(fake_ec2)
 
     # and mock out the call to kill the instances
     fake_ec2.should_receive('terminate_instances').with_args(['i-ONE',

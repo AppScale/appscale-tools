@@ -14,7 +14,7 @@ import yaml
 
 
 # Third party testing libraries
-import boto
+import boto.ec2
 from flexmock import flexmock
 
 
@@ -218,8 +218,9 @@ class TestAppScale(unittest.TestCase):
 
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
-    flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='baz', aws_secret_access_key='baz').and_return(fake_ec2)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(AppScaleTools)
@@ -262,9 +263,10 @@ class TestAppScale(unittest.TestCase):
 
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
-    flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('access key', 'secret key') \
-      .and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1',
+      aws_access_key_id='access key',
+      aws_secret_access_key='secret key').and_return(fake_ec2)
 
     # finally, mock out the actual appscale-run-instances call
     flexmock(AppScaleTools)
