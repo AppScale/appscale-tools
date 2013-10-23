@@ -14,7 +14,7 @@ import unittest
 
 
 # Third party libraries
-import boto
+import boto.ec2
 from flexmock import flexmock
 import SOAPpy
 
@@ -131,8 +131,8 @@ class TestRemoteHelper(unittest.TestCase):
     fake_ec2.should_receive('run_instances').and_return()
 
     # finally, inject our mocked EC2
-    flexmock(boto)
-    boto.should_receive('connect_ec2').and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').and_return(fake_ec2)
 
     # assume that ssh comes up on the third attempt
     fake_socket = flexmock(name='fake_socket')

@@ -45,8 +45,9 @@ class TestAppScaleLogger(unittest.TestCase):
     # finally, pretend that our ec2 image to use exists
     fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
-    flexmock(boto)
-    boto.should_receive('connect_ec2').with_args('baz', 'baz').and_return(fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').with_args('my-zone-1', 'baz',
+      'baz').and_return(fake_ec2)
 
     # do argument parsing here, since the below tests do it the
     # same way every time

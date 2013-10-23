@@ -41,6 +41,7 @@ class EC2Agent(BaseAgent):
   PARAM_INSTANCE_TYPE = 'instance_type'
   PARAM_KEYNAME = 'keyname'
   PARAM_INSTANCE_IDS = 'instance_ids'
+  PARAM_REGION = 'region'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
   PARAM_ZONE = 'zone'
@@ -77,6 +78,11 @@ class EC2Agent(BaseAgent):
 
 
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
+
+
+  # The region that instances should be started in and terminated from, if the
+  # user does not specify a zone.
+  DEFAULT_REGION = "us-east-1"
 
 
   def assert_credentials_are_valid(self, parameters):
@@ -246,6 +252,10 @@ class EC2Agent(BaseAgent):
       'IS_VERBOSE' : args.get('verbose', False)
     }
 
+    if params[self.PARAM_ZONE]:
+      params[self.PARAM_REGION] = params[self.PARAM_ZONE][:-1]
+    else:
+      params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     for credential in self.REQUIRED_CREDENTIALS:
       if os.environ.get(credential):
@@ -285,6 +295,13 @@ class EC2Agent(BaseAgent):
       self.PARAM_GROUP : LocalState.get_group(keyname),
       self.PARAM_KEYNAME : keyname
     }
+
+    zone = LocalState.get_zone(keyname)
+    if zone:
+      params[self.PARAM_REGION] = zone[:-1]
+    else:
+      params[self.PARAM_REGION] = self.DEFAULT_REGION
+
 
     for credential in self.REQUIRED_CREDENTIALS:
       if os.environ.get(credential):
@@ -707,8 +724,8 @@ class EC2Agent(BaseAgent):
       An instance of Boto EC2Connection
     """
     credentials = parameters[self.PARAM_CREDENTIALS]
-    return boto.connect_ec2(str(credentials['EC2_ACCESS_KEY']),
-      str(credentials['EC2_SECRET_KEY']))
+    return boto.ec2.connect_to_region(parameters[self.PARAM_REGION],
+      credentials['EC2_ACCESS_KEY'], credentials['EC2_SECRET_KEY'])
 
   def handle_failure(self, msg):
     """

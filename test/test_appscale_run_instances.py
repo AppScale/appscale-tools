@@ -21,7 +21,7 @@ import yaml
 # Third party libraries
 import apiclient.discovery
 import apiclient.errors
-import boto
+import boto.ec2
 from flexmock import flexmock
 import httplib2
 import oauth2client.client
@@ -188,8 +188,8 @@ group: {1}
       .and_return(running_reservation)
 
     # finally, inject the mocked EC2 in
-    flexmock(boto)
-    boto.should_receive('connect_ec2').and_return(self.fake_ec2)
+    flexmock(boto.ec2)
+    boto.ec2.should_receive('connect_to_region').and_return(self.fake_ec2)
 
 
   def setup_appscale_compatibility_mocks(self):
