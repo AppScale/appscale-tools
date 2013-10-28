@@ -141,7 +141,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.instances().list(project=parameters[self.PARAM_PROJECT],
         zone=parameters[self.PARAM_ZONE])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -218,7 +218,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.projects().get(
         project=parameters[self.PARAM_PROJECT])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
 
       if not 'items' in response['commonInstanceMetadata']:
@@ -260,7 +260,7 @@ class GCEAgent(BaseAgent):
       request = gce_service.networks().get(
         project=parameters[self.PARAM_PROJECT],
         network=parameters[self.PARAM_GROUP])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -284,7 +284,7 @@ class GCEAgent(BaseAgent):
       request = gce_service.firewalls().get(
         project=parameters[self.PARAM_PROJECT],
         firewall=parameters[self.PARAM_GROUP])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -325,7 +325,7 @@ class GCEAgent(BaseAgent):
         }]
       }
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -353,7 +353,7 @@ class GCEAgent(BaseAgent):
         "IPv4Range" : "10.240.0.0/16"
       }
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -379,7 +379,7 @@ class GCEAgent(BaseAgent):
       project=parameters[self.PARAM_PROJECT],
       network=parameters[self.PARAM_GROUP]
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -413,7 +413,7 @@ class GCEAgent(BaseAgent):
         ]
       }
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -437,7 +437,7 @@ class GCEAgent(BaseAgent):
       project=parameters[self.PARAM_PROJECT],
       firewall=parameters[self.PARAM_GROUP]
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -575,7 +575,7 @@ class GCEAgent(BaseAgent):
       filter="name eq appscale-{0}-.*".format(parameters[self.PARAM_GROUP]),
       zone=parameters[self.PARAM_ZONE]
     )
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
 
     instance_ids = []
@@ -660,7 +660,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.instances().insert(
            project=project_id, body=instances, zone=zone)
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
@@ -725,7 +725,7 @@ class GCEAgent(BaseAgent):
         zone=parameters[self.PARAM_ZONE],
         instance=instance_id
       )
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       responses.append(response)
 
@@ -754,7 +754,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.images().get(project=parameters[self.PARAM_PROJECT],
         image=parameters[self.PARAM_IMAGE_ID])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -778,7 +778,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.zones().get(project=parameters[self.PARAM_PROJECT],
         zone=parameters[self.PARAM_ZONE])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -803,7 +803,7 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       request = gce_service.disks().get(project=parameters[self.PARAM_PROJECT],
         disk=disk, zone=parameters[self.PARAM_ZONE])
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
     except apiclient.errors.HttpError:
@@ -830,7 +830,7 @@ class GCEAgent(BaseAgent):
       zone=parameters[self.PARAM_ZONE],
       instance=instance_id,
       deviceName='sdb')
-    response = request.execute(auth_http)
+    response = request.execute(http=auth_http)
     AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
@@ -915,7 +915,7 @@ class GCEAgent(BaseAgent):
         request = gce_service.globalOperations().get(
              project=project_id, operation=operation_id)
 
-      response = request.execute(auth_http)
+      response = request.execute(http=auth_http)
       if response:
         status = response['status']
 

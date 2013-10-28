@@ -479,7 +479,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     fake_list_instance_request = flexmock(name='fake_list_instance_request')
     fake_list_instance_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(list_instance_info)
+      http=fake_authorized_http).and_return(list_instance_info)
 
     fake_instances = flexmock(name='fake_instances')
     fake_instances.should_receive('list').with_args(project=project_id,
@@ -523,14 +523,14 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     fake_delete_instance_request_one = flexmock(name='fake_delete_instance_request_one')
     fake_delete_instance_request_one.should_receive('execute').with_args(
-      fake_authorized_http).and_return(delete_instance_info_one)
+      http=fake_authorized_http).and_return(delete_instance_info_one)
     fake_instances.should_receive('delete').with_args(project=project_id,
       zone=zone, instance='appscale-bazboogroup-one').and_return(
       fake_delete_instance_request_one)
 
     fake_delete_instance_request_two = flexmock(name='fake_delete_instance_request_two')
     fake_delete_instance_request_two.should_receive('execute').with_args(
-      fake_authorized_http).and_return(delete_instance_info_two)
+      http=fake_authorized_http).and_return(delete_instance_info_two)
     fake_instances.should_receive('delete').with_args(project=project_id,
       zone=zone, instance='appscale-bazboogroup-two').and_return(
       fake_delete_instance_request_two)

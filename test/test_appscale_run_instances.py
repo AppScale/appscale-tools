@@ -755,7 +755,7 @@ appengine:  1.2.3.4
     }
     fake_metadata_request = flexmock(name='fake_metadata_request')
     fake_metadata_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(metadata_info)
+      http=fake_authorized_http).and_return(metadata_info)
 
     fake_projects = flexmock(name='fake_projects')
     fake_projects.should_receive('get').with_args(project=project_id) \
@@ -826,7 +826,7 @@ appengine:  1.2.3.4
     }
     fake_image_request = flexmock(name='fake_image_request')
     fake_image_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(image_info)
+      http=fake_authorized_http).and_return(image_info)
 
     fake_images = flexmock(name='fake_images')
     fake_images.should_receive('get').with_args(project=project_id,
@@ -839,7 +839,7 @@ appengine:  1.2.3.4
     zone_info = {}
     fake_zone_request = flexmock(name='fake_zone_request')
     fake_zone_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(zone_info)
+      http=fake_authorized_http).and_return(zone_info)
 
     fake_zones = flexmock(name='fake_zones')
     fake_zones.should_receive('get').with_args(project=project_id,
@@ -852,7 +852,7 @@ appengine:  1.2.3.4
     disk_info = {}
     fake_disk_request = flexmock(name='fake_disk_request')
     fake_disk_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(disk_info)
+      http=fake_authorized_http).and_return(disk_info)
 
     fake_disks = flexmock(name='fake_disks')
     fake_disks.should_receive('get').with_args(project=project_id,
@@ -863,7 +863,8 @@ appengine:  1.2.3.4
     # next, presume that the network doesn't exist yet
     fake_network_request = flexmock(name='fake_network_request')
     fake_network_request.should_receive('execute').with_args(
-      fake_authorized_http).and_raise(apiclient.errors.HttpError, None, None)
+      http=fake_authorized_http).and_raise(apiclient.errors.HttpError, None,
+      None)
 
     fake_networks = flexmock(name='fake_networks')
     fake_networks.should_receive('get').with_args(project=project_id,
@@ -873,7 +874,8 @@ appengine:  1.2.3.4
     # next, presume that the firewall doesn't exist yet
     fake_firewall_request = flexmock(name='fake_firewall_request')
     fake_firewall_request.should_receive('execute').with_args(
-      fake_authorized_http).and_raise(apiclient.errors.HttpError, None, None)
+      http=fake_authorized_http).and_raise(apiclient.errors.HttpError, None,
+      None)
 
     fake_firewalls = flexmock(name='fake_firewalls')
     fake_firewalls.should_receive('get').with_args(project=project_id,
@@ -901,7 +903,7 @@ appengine:  1.2.3.4
 
     fake_network_insert_request = flexmock(name='fake_network_insert_request')
     fake_network_insert_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(network_info)
+      http=fake_authorized_http).and_return(network_info)
     fake_networks.should_receive('insert').with_args(project=project_id,
       body=dict).and_return(fake_network_insert_request)
 
@@ -937,7 +939,7 @@ appengine:  1.2.3.4
 
     fake_firewall_insert_request = flexmock(name='fake_firewall_insert_request')
     fake_firewall_insert_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(firewall_info)
+      http=fake_authorized_http).and_return(firewall_info)
     fake_firewalls.should_receive('insert').with_args(project=project_id,
       body=dict).and_return(fake_firewall_insert_request)
 
@@ -970,7 +972,7 @@ appengine:  1.2.3.4
 
     fake_add_instance_request = flexmock(name='fake_add_instance_request')
     fake_add_instance_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(add_instance_info)
+      http=fake_authorized_http).and_return(add_instance_info)
 
     fake_instances = flexmock(name='fake_instances')
     fake_gce.should_receive('instances').and_return(fake_instances)
@@ -1038,7 +1040,7 @@ appengine:  1.2.3.4
 
     fake_list_instance_request = flexmock(name='fake_list_instance_request')
     fake_list_instance_request.should_receive('execute').with_args(
-      fake_authorized_http).and_return(no_instance_info).and_return(
+      http=fake_authorized_http).and_return(no_instance_info).and_return(
         no_instance_info).and_return(list_instance_info)
 
     fake_instances.should_receive('list').with_args(project=project_id,
