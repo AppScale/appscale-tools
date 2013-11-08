@@ -83,6 +83,9 @@ class GCEAgent(BaseAgent):
   PARAM_SECRETS = 'client_secrets'
 
 
+  PARAM_STATIC_IP = 'static_ip'
+
+
   PARAM_STORAGE = 'oauth2_storage'
 
 
@@ -120,6 +123,10 @@ class GCEAgent(BaseAgent):
   DEFAULT_ZONE = 'us-central1-a'
 
 
+  # The region that instances should be created in and removed from.
+  DEFAULT_REGION = 'us-central1'
+
+
   # The person to contact if there is a problem with the instance. We set this
   # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
@@ -147,6 +154,7 @@ class GCEAgent(BaseAgent):
     except apiclient.errors.HttpError:
       raise AgentConfigurationException("We couldn't validate your GCE" + \
         "credentials. Are your credentials valid?")
+
 
   def configure_instance_security(self, parameters):
     """ Creates a GCE network and firewall with the specified name, and opens
@@ -484,8 +492,17 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
+      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args['zone']
     }
+
+    # A zone in GCE looks like 'us-central2-a', which is in the region
+    # 'us-central2'. Therefore, strip off the last two characters from the zone
+    # to get the region name.
+    if params[self.PARAM_ZONE]:
+      params[self.PARAM_REGION] = params[self.PARAM_ZONE][:-2]
+    else:
+      params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     if args.get(self.PARAM_SECRETS):
       params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
@@ -735,6 +752,32 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
+
+
+  def does_address_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified static IP address
+    exists for this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        static IP address that we should check for existence.
+    Returns:
+      True if the named address exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    try:
+      http = httplib2.Http()
+      auth_http = credentials.authorize(http)
+      request = gce_service.addresses().get(
+        region=parameters[self.PARAM_REGION],
+        project=parameters[self.PARAM_PROJECT],
+        address=parameters[self.PARAM_STATIC_IP])
+      response = request.execute(http=auth_http)
+      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+      return True
+    except apiclient.errors.HttpError:
+      return False
 
 
   def does_image_exist(self, parameters):

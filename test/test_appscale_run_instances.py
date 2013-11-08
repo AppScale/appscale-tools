@@ -671,7 +671,7 @@ appengine:  1.2.3.4
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
-    zone = 'my-zone-1b'
+    zone = 'my-zone1-b'
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
 
     # and that the user does not have an ssh key set up, forcing us to create
@@ -845,8 +845,22 @@ appengine:  1.2.3.4
 
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the static ip we want to use exists
+    address_name = 'static-ip'
+    address_info = {}
+    region_name = 'my-zone1'
+    fake_address_request = flexmock(name='fake_address_request')
+    fake_address_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return(address_info)
+
+    fake_addresses = flexmock(name='fake_addresses')
+    fake_addresses.should_receive('get').with_args(project=project_id,
+      address=address_name, region=region_name).and_return(fake_address_request)
+
+    fake_gce.should_receive('addresses').and_return(fake_addresses)
+
     # next, presume that the zone we want to use exists
-    zone_name = 'my-zone-1b'
+    zone_name = 'my-zone1-b'
     zone_info = {}
     fake_zone_request = flexmock(name='fake_zone_request')
     fake_zone_request.should_receive('execute').with_args(
@@ -1094,13 +1108,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('controller-17443.cfg'))
 
-    self.setup_socket_mocks('public1')
-    self.setup_appcontroller_mocks('public1', 'private1')
+    self.setup_socket_mocks('static-ip')
+    self.setup_appcontroller_mocks('static-ip', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "public1",
+        "public_ip" : "static-ip",
         "private_ip" : "private1",
         "jobs" : ["shadow", "login"]
       }])))
@@ -1113,7 +1127,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    self.setup_uaserver_mocks('public1')
+    self.setup_uaserver_mocks('static-ip')
 
     # Finally, pretend we're using a single persistent disk.
     disk_layout = yaml.safe_load("""
@@ -1132,7 +1146,8 @@ node-1: my-persistent-disk-1
       "--client_secrets", client_secrets,
       "--project", project_id,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone1-b",
+      "--static_ip", "static-ip"
     ]
 
     options = ParseArgs(argv, self.function).args
