@@ -469,3 +469,16 @@ public1 : vol-ABCDEFG
     cloud_argv2 = self.cloud_argv[:]
     actual = ParseArgs(cloud_argv2, self.function).args
     self.assertEquals('my-zone-1b', actual.zone)
+
+
+  def test_static_ip_flag(self):
+    # Specifying a static IP is only valid for EC2/Euca/GCE, so fail on a
+    # cluster deployment.
+    argv = self.cluster_argv[:] + ["--static_ip", "1.2.3.4"]
+    self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
+
+    # Specifying a static IP when running on a cloud is fine - we should see it
+    # in the args we get back.
+    argv2 = self.cloud_argv[:] + ["--static_ip", "1.2.3.4"]
+    actual = ParseArgs(argv2, self.function).args
+    self.assertEquals('1.2.3.4', actual.static_ip)

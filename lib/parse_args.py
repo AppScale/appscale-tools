@@ -158,6 +158,9 @@ class ParseArgs():
         help="a base64-encoded YAML dictating the PD or EBS disks to use")
       self.parser.add_argument('--zone', '-z',
         help="the availability zone that instances should be deployed to")
+      self.parser.add_argument('--static_ip',
+        help="the static IP address that should be used for the login node " +
+          "in cloud deployments")
 
       # flags relating to EC2-like cloud infrastructures
       # Don't use dashes in the random suffix, since network names on Google
@@ -492,6 +495,12 @@ class ParseArgs():
       # cluster.
       if self.args.disks:
         raise BadConfigurationException("Can't specify persistent disks " + \
+          "when infrastructure is not specified.")
+
+      # Fail if the user is trying to use an Elastic IP / Static IP on a
+      # virtualized cluster.
+      if self.args.static_ip:
+        raise BadConfigurationException("Can't specify a static IP " + \
           "when infrastructure is not specified.")
 
       return
