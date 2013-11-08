@@ -45,6 +45,7 @@ class EC2Agent(BaseAgent):
   PARAM_REGION = 'region'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
+  PARAM_STATIC_IP = 'static_ip'
   PARAM_ZONE = 'zone'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
@@ -249,6 +250,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_IMAGE_ID : args['machine'],
       self.PARAM_INSTANCE_TYPE : args['instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
+      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
       'IS_VERBOSE' : args.get('verbose', False)
     }
@@ -581,6 +583,27 @@ class EC2Agent(BaseAgent):
      """
     conn = self.open_connection(parameters)
     return conn.create_image(instance_id, name)
+
+
+  def does_address_exist(self, parameters):
+    """ Queries Amazon EC2 to see if the specified Elastic IP address has been
+    allocated with the given credentials.
+
+    Args:
+      parameters: A dict that contains the Elastic IP to check for existence.
+    Returns:
+      True if the given Elastic IP has been allocated, and False otherwise.
+    """
+    try:
+      conn = self.open_connection(parameters)
+      elastic_ip = parameters[self.PARAM_STATIC_IP]
+      conn.get_all_addresses(elastic_ip)
+      AppScaleLogger.log('Elastic IP {0} can be used for this AppScale ' \
+        'deployment.'.format(elastic_ip))
+      return True
+    except boto.exception.EC2ResponseError:
+      AppScaleLogger.log('Elastic IP {0} does not exist.'.format(elastic_ip))
+      return False
 
 
   def does_image_exist(self, parameters):

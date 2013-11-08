@@ -569,11 +569,18 @@ class ParseArgs():
     cloud_agent = InfrastructureAgentFactory.create_agent(
       self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
+
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
 
     if not cloud_agent.does_zone_exist(params):
       raise BadConfigurationException("Couldn't find the given zone.")
+
+    # Make sure that if the user gives us an Elastic IP / static IP, that they
+    # actually own it.
+    if self.args.static_ip:
+      if not cloud_agent.does_address_exist(params):
+        raise BadConfigurationException("Couldn't find the given static IP.")
 
     if not self.args.disks:
       return

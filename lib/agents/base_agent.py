@@ -97,6 +97,21 @@ class BaseAgent:
     raise NotImplementedError
 
 
+  def does_address_exist(self, parameters):
+    """Verifies that the specified static IP address has been allocated, and
+    belongs to the user with the given credentials.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud, as well as a key indicating which static IP address
+        should be validated.
+    Returns:
+      A bool that indicates if the given static IP address exists, and belongs
+      to this user.
+    """
+    raise NotImplementedError
+
+
   def does_image_exist(self, parameters):
     """Verifies that the specified machine image exists in this cloud.
 

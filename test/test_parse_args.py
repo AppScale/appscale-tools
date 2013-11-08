@@ -70,6 +70,14 @@ class TestParseArgs(unittest.TestCase):
     fake_ec2.should_receive('get_all_zones').with_args('bad-zone-1b') \
       .and_raise(boto.exception.EC2ResponseError, 'baz', 'baz')
 
+    # Pretend that we have one elastic IP allocated for use.
+    fake_ec2.should_receive('get_all_addresses').with_args('GOOD.IP.ADDRESS') \
+      .and_return('anything')
+
+    # Pretend that asking for a bad elastic IP doesn't work.
+    fake_ec2.should_receive('get_all_addresses').with_args('BAD.IP.ADDRESS') \
+      .and_raise(boto.exception.EC2ResponseError, 'baz', 'baz')
+
     fake_price = flexmock(name='fake_price', price=1.00)
     fake_ec2.should_receive('get_spot_price_history').and_return([fake_price])
 
@@ -477,8 +485,14 @@ public1 : vol-ABCDEFG
     argv = self.cluster_argv[:] + ["--static_ip", "1.2.3.4"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
-    # Specifying a static IP when running on a cloud is fine - we should see it
-    # in the args we get back.
-    argv2 = self.cloud_argv[:] + ["--static_ip", "1.2.3.4"]
-    actual = ParseArgs(argv2, self.function).args
-    self.assertEquals('1.2.3.4', actual.static_ip)
+    # Specifying a static IP that the user has not allocated when on a cloud
+    # is not fine - it should raise an exception.
+    cloud_argv1 = self.cloud_argv[:] + ["--static_ip", "BAD.IP.ADDRESS"]
+    self.assertRaises(BadConfigurationException, ParseArgs, cloud_argv1,
+      self.function)
+
+    # Specifying a static IP that the user has allocated when running on a cloud
+    # is fine - we should see it in the args we get back.
+    cloud_argv2 = self.cloud_argv[:] + ["--static_ip", "GOOD.IP.ADDRESS"]
+    actual = ParseArgs(cloud_argv2, self.function).args
+    self.assertEquals('GOOD.IP.ADDRESS', actual.static_ip)
