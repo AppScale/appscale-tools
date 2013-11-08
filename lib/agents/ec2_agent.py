@@ -489,6 +489,27 @@ class EC2Agent(BaseAgent):
       self.handle_failure('EC2 response error while starting VMs: ' +
                           exception.error_message)
 
+
+  def associate_static_ip(self, parameters, instance_id, elastic_ip):
+    """Associates the given Elastic IP address with the given instance ID.
+
+    Args:
+      parameters: A dict that includes the credentials necessary to communicate
+        with Amazon Web Services.
+      instance_id: A str naming the running instance to associate an Elastic IP
+        with.
+      elastic_ip: A str naming the already allocated Elastic IP address that
+        will be associated.
+    """
+    try:
+      conn = self.open_connection(parameters)
+      conn.associate_address(instance_id, elastic_ip)
+    except EC2ResponseError as exception:
+      self.handle_failure('Unable to associate Elastic IP {0} with instance ' \
+        'ID {1} because: {2}'.format(elastic_ip, instance_id,
+        exception.error_message))
+
+
   def stop_instances(self, parameters):
     """
     Stop one of more EC2 instances. The input instance IDs are

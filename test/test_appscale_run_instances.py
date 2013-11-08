@@ -133,6 +133,16 @@ group: {1}
     self.fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
 
+    # Next, pretend that if the user wants to use an Elastic IP / Static IP,
+    # that it has already been allocated for them.
+    self.fake_ec2.should_receive('get_all_addresses').with_args('elastic-ip') \
+      .and_return()
+
+    # Associating the Elastic IP should work fine (since we validate that the
+    # user owns it above).
+    self.fake_ec2.should_receive('associate_address').with_args('i-ABCDEFG',
+      'elastic-ip').and_return()
+
     # Also pretend that the availability zone we want to use exists.
     self.fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -467,13 +477,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('controller-17443.cfg'))
 
-    self.setup_socket_mocks('public1')
-    self.setup_appcontroller_mocks('public1', 'private1')
+    self.setup_socket_mocks('elastic-ip')
+    self.setup_appcontroller_mocks('elastic-ip', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "public1",
+        "public_ip" : "elastic-ip",
         "private_ip" : "private1",
         "jobs" : ["shadow", "login"]
       }])))
@@ -486,7 +496,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    self.setup_uaserver_mocks('public1')
+    self.setup_uaserver_mocks('elastic-ip')
 
     argv = [
       "--min", "1",
@@ -497,7 +507,8 @@ appengine:  1.2.3.4
       "--keyname", self.keyname,
       "--group", self.group,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone-1b",
+      "--static_ip", "elastic-ip"
     ]
 
     options = ParseArgs(argv, self.function).args

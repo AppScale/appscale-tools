@@ -87,6 +87,19 @@ class BaseAgent:
     raise NotImplementedError
 
 
+  def associate_static_ip(self, instance_id, static_ip):
+    """Associates the given static IP address (Elastic IP in AWS parlance)
+    with the given instance ID.
+
+    Args:
+      instance_id: A str that names the instance that the static IP should be
+        bound to.
+      static_ip: A str naming the static IP / Elastic IP to bind to the given
+        instance.
+    """
+    raise NotImplementedError
+
+
   def terminate_instances(self, parameters):
     """Terminate a set of virtual machines using the parameters given.
 
