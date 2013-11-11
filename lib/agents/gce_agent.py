@@ -722,6 +722,86 @@ class GCEAgent(BaseAgent):
     return instance_ids, public_ips, private_ips
 
 
+  def associate_static_ip(self, parameters, instance_id, static_ip):
+    """ Associates the given static IP address with the given instance ID.
+
+    In Google Compute Engine, this is done by removing the route from the
+    outside world to the instance's public IP address, then adding a new route
+    from the outside world to the static IP address the caller has provided.
+
+    Args:
+      parameters: A dict that includes the credentials necessary to communicate
+        with Google Compute Engine.
+      instance_id: A str naming the running instance to associate a static IP
+        with.
+      static_ip: A str naming the already allocated static IP address that will
+        be associated.
+    """
+    self.delete_access_config(parameters, instance_id)
+    self.add_access_config(parameters, instance_id, static_ip)
+
+
+  def delete_access_config(self, parameters, instance_id):
+    """ Instructs Google Compute Engine to remove the public IP address from
+    the named instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key mapping to a list of
+        instance names that should be deleted.
+      instance_id: A str naming the running instance that the new public IP
+        address should be added to.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.instances().deleteAccessConfig(
+      project=parameters[self.PARAM_PROJECT],
+      accessConfig="External NAT",
+      instance=instance_id,
+      networkInterface="nic0",
+      zone=parameters[self.PARAM_ZONE]
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+
+  def add_access_config(self, parameters, instance_id, static_ip):
+    """ Instructs Google Compute Engine to use the given IP address as the
+    public IP for the named instance.
+
+    This assumes that there is no existing public IP address for the named
+    instance. If this is not the case, callers should use delete_access_config
+    first to remove it.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key mapping to a list of
+        instance names that should be deleted.
+      instance_id: A str naming the running instance that the new public IP
+        address should be added to.
+      static_ip: A str naming the already allocated static IP address that
+        will be used for the named instance.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.instances().addAccessConfig(
+      project=parameters[self.PARAM_PROJECT],
+      instance=instance_id,
+      networkInterface="nic0",
+      zone=parameters[self.PARAM_ZONE],
+      body={
+        "kind": "compute#accessConfig",
+        "type" : "ONE_TO_ONE_NAT",
+        "name" : "External NAT",
+        "natIP" : static_ip
+      }
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+
   def terminate_instances(self, parameters):
     """ Deletes the instances specified in 'parameters' running in Google
     Compute Engine.
@@ -766,17 +846,19 @@ class GCEAgent(BaseAgent):
       True if the named address exists, and False otherwise.
     """
     gce_service, credentials = self.open_connection(parameters)
-    try:
-      http = httplib2.Http()
-      auth_http = credentials.authorize(http)
-      request = gce_service.addresses().get(
-        region=parameters[self.PARAM_REGION],
-        project=parameters[self.PARAM_PROJECT],
-        address=parameters[self.PARAM_STATIC_IP])
-      response = request.execute(http=auth_http)
-      AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.addresses().list(
+      project=parameters[self.PARAM_PROJECT],
+      filter="address eq {0}".format(parameters[self.PARAM_STATIC_IP]),
+      region=parameters[self.PARAM_REGION]
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+    if 'items' in response:
       return True
-    except apiclient.errors.HttpError:
+    else:
       return False
 
 

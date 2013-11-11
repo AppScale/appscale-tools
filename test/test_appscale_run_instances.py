@@ -847,15 +847,16 @@ appengine:  1.2.3.4
 
     # next, presume that the static ip we want to use exists
     address_name = 'static-ip'
-    address_info = {}
+    address_info = {'items':[]}
     region_name = 'my-zone1'
     fake_address_request = flexmock(name='fake_address_request')
     fake_address_request.should_receive('execute').with_args(
       http=fake_authorized_http).and_return(address_info)
 
     fake_addresses = flexmock(name='fake_addresses')
-    fake_addresses.should_receive('get').with_args(project=project_id,
-      address=address_name, region=region_name).and_return(fake_address_request)
+    fake_addresses.should_receive('list').with_args(project=project_id,
+      filter="address eq static-ip", region=region_name).and_return(
+      fake_address_request)
 
     fake_gce.should_receive('addresses').and_return(fake_addresses)
 
@@ -980,6 +981,7 @@ appengine:  1.2.3.4
 
     # we only need to create one node, so set up mocks for that
     add_instance = u'operation-1369248752891-4dd5311848461-afc55a20'
+    instance_id = 'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d'
     add_instance_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
@@ -987,7 +989,7 @@ appengine:  1.2.3.4
       u'azone': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a',
       u'startTime': u'2013-05-22T11:52:32.939-07:00',
       u'insertTime': u'2013-05-22T11:52:32.891-07:00',
-      u'targetLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'targetLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
       u'operationType': u'insert',
       u'progress': 0,
       u'id': u'6663616273628949255',
@@ -1024,7 +1026,7 @@ appengine:  1.2.3.4
         u'status': u'RUNNING',
         u'kind': u'compute#instance',
         u'machineType': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/machineTypes/' + instance_type,
-        u'name': u'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'name': instance_id,
         u'zone': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a',
         u'tags': {u'fingerprint': u'42WmSpB8rSM='},
         u'image': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/images/lucid64',
@@ -1045,7 +1047,7 @@ appengine:  1.2.3.4
         },
         u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
         u'id': u'8684033495853907982',
-        u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
         u'networkInterfaces': [{
           u'accessConfigs': [{
             u'kind': u'compute#accessConfig',
@@ -1074,6 +1076,24 @@ appengine:  1.2.3.4
 
     fake_instances.should_receive('list').with_args(project=project_id,
       zone=zone).and_return(fake_list_instance_request)
+
+    # mock out deleting the public IP from the instance
+    fake_delete_access_request = flexmock(name='fake_delete_access_request')
+    fake_delete_access_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return()
+
+    fake_instances.should_receive('deleteAccessConfig').with_args(
+      project=project_id, accessConfig=str, instance=instance_id,
+      networkInterface=str, zone=zone).and_return(fake_delete_access_request)
+
+    # as well as adding in the new, static IP to the instance
+    fake_add_access_request = flexmock(name='fake_add_access_request')
+    fake_add_access_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return()
+
+    fake_instances.should_receive('addAccessConfig').with_args(
+      project=project_id, instance=instance_id, networkInterface=str,
+      zone=zone, body=dict).and_return(fake_add_access_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
