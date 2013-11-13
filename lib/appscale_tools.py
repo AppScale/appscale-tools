@@ -446,6 +446,26 @@ class AppScaleTools():
 
 
   @classmethod
+  def set_property(cls, options):
+    """Instructs AppScale to replace the value it uses for a particular
+    AppController instance variable (property) with a new value.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    """
+    shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
+      options.keyname))
+    result = acc.set_property(options.property_name, options.property_value)
+    if result == 'OK':
+      AppScaleLogger.success("Successfully updated the given property.")
+    else:
+      raise AppControllerException("Unable to update the given property " +
+        "because: {0}".format(result))
+
+
+  @classmethod
   def terminate_instances(cls, options):
     """Stops all services running in an AppScale deployment, and in cloud
     deployments, also powers off the instances previously spawned.

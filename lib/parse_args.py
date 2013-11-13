@@ -336,7 +336,13 @@ class ParseArgs():
         help="the keypair name to use")
       self.parser.add_argument('--property',
         help="a regular expression indicating which properties to retrieve")
-
+    elif function == "appscale-set-property":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--property_name',
+        help="the name of the AppController property to set")
+      self.parser.add_argument('--property_value',
+        help="the value of the AppController property to set")
     else:
       raise SystemExit
 
@@ -405,6 +411,8 @@ class ParseArgs():
         raise BadConfigurationException("Need to specify a https port " +
           "between 1 and 65535. Please change --https_port accordingly.")
     elif function == "appscale-get-property":
+      pass
+    elif function == "appscale-set-property":
       pass
     else:
       raise SystemExit

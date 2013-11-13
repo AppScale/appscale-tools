@@ -70,6 +70,7 @@ Available commands:
   undeploy: Removes a Google App Engine app from AppScale.
   remove: An alias for 'undeploy'.
   get: Gets all AppController properties matching the provided regex.
+  set: Sets an AppController property to the provided value.
   tail: Follows the output of log files in a currently running AppScale deployment.
   logs: Collects the logs produced by an AppScale deployment.
   relocate: Moves a hosted app to different HTTP and HTTPS ports.
@@ -507,7 +508,40 @@ Available commands:
 
     # and exec it
     options = ParseArgs(command, "appscale-get-property").args
-    AppScaleTools.get_property(options)
+    return AppScaleTools.get_property(options)
+
+
+  def set(self, property_name, property_value):
+    """'set' provides a cleaner experience for users than the
+    appscale-set-property command, by using the configuration options present in
+    the AppScalefile found in the current working directory.
+
+    Args:
+      property_name: A str naming the AppController instance variable that
+        should be overwritten.
+      property_value: The new value that should be used for the named property.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+    """
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    # construct the appscale-set-property command
+    command = []
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml["keyname"])
+
+    command.append("--property_name")
+    command.append(property_name)
+
+    command.append("--property_value")
+    command.append(property_value)
+
+    # and exec it
+    options = ParseArgs(command, "appscale-set-property").args
+    AppScaleTools.set_property(options)
 
 
   def tail(self, node, file_regex):
