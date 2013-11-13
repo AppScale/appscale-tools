@@ -221,6 +221,26 @@ class AppScaleTools():
 
 
   @classmethod
+  def get_property(cls, options):
+    """Queries AppScale for a list of system properties matching the provided
+    regular expression, as well as the values associated with each matching
+    property.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    Returns:
+      A dict mapping each property matching the given regex to its associated
+      value.
+    """
+    shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
+      options.keyname))
+
+    return acc.get_property(options.property)
+
+
+  @classmethod
   def relocate_app(cls, options):
     """Instructs AppScale to move the named application to a different port.
 

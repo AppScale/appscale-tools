@@ -11,6 +11,7 @@ from test_appscale_describe_instances import TestAppScaleDescribeInstances
 from test_appscale_add_instances import TestAppScaleAddInstances
 from test_appscale_add_keypair import TestAppScaleAddKeypair
 from test_appscale_gather_logs import TestAppScaleGatherLogs
+from test_appscale_get_property import TestAppScaleGetProperty
 from test_appscale_relocate_app import TestAppScaleRelocateApp
 from test_appscale_remove_app import TestAppScaleRemoveApp
 from test_appscale_reset_pwd import TestAppScaleResetPassword
@@ -30,7 +31,7 @@ from test_version_helper import TestVersionHelper
 
 
 test_cases = [TestAppScale, TestAppScaleAddInstances, TestAppScaleAddKeypair,
-  TestAppScaleDescribeInstances, TestAppScaleGatherLogs,
+  TestAppScaleDescribeInstances, TestAppScaleGatherLogs, TestAppScaleGetProperty,
   TestAppScaleRelocateApp,TestAppScaleRemoveApp,
   TestAppScaleResetPassword, TestAppScaleRunInstances,
   TestAppScaleTerminateInstances, TestAppScaleUploadApp, TestAppScaleLogger,

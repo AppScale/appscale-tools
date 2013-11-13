@@ -331,6 +331,12 @@ class ParseArgs():
       self.parser.add_argument('--https_port', type=int,
         help="the port that the application should now serve encrypted " \
         "traffic on")
+    elif function == "appscale-get-property":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--property',
+        help="a regular expression indicating which properties to retrieve")
+
     else:
       raise SystemExit
 
@@ -398,6 +404,8 @@ class ParseArgs():
       if self.args.https_port < 1 or self.args.https_port > 65535:
         raise BadConfigurationException("Need to specify a https port " +
           "between 1 and 65535. Please change --https_port accordingly.")
+    elif function == "appscale-get-property":
+      pass
     else:
       raise SystemExit
 
