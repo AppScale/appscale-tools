@@ -87,6 +87,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "project" : None,
       "replication" : None,
       "scp" : None,
+      "static_ip" : None,
       "table" : "cassandra",
       "test" : False,
       "use_spot_instances" : False,
