@@ -14,10 +14,13 @@ import yaml
 
 # AppScale-specific imports
 from agents.base_agent import BaseAgent
+from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
-import local_state
+from appscale_logger import AppScaleLogger
+from local_state import APPSCALE_VERSION
+from local_state import LocalState
 
 
 class ParseArgs():
@@ -119,7 +122,7 @@ class ParseArgs():
     self.args = self.parser.parse_args(argv)
 
     if self.args.version:
-      raise SystemExit(local_state.APPSCALE_VERSION)
+      raise SystemExit(APPSCALE_VERSION)
 
     self.validate_allowed_flags(function)
 
@@ -541,6 +544,20 @@ class ParseArgs():
       if not isinstance(self.args.disks, dict):
         raise BadConfigurationException("--disks must be a dict, but was a " \
           "{0}".format(type(self.args.disks)))
+
+    if self.args.instance_type in EC2Agent.DISALLOWED_INSTANCE_TYPES and \
+      not self.args.force:
+      LocalState.confirm_or_abort("The {0} instance type does not have " \
+        "enough RAM to run Cassandra in a production setting. Please " \
+        "consider using a larger instance type.".format(
+        self.args.instance_type))
+
+    if self.args.gce_instance_type in GCEAgent.DISALLOWED_INSTANCE_TYPES and \
+      not self.args.force:
+      LocalState.confirm_or_abort("The {0} instance type does not have " \
+        "enough RAM to run Cassandra in a production setting. Please " \
+        "consider using a larger instance type.".format(
+        self.args.gce_instance_type))
 
 
   def validate_credentials(self):
