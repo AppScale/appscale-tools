@@ -546,14 +546,14 @@ class ParseArgs():
           "{0}".format(type(self.args.disks)))
 
     if self.args.instance_type in EC2Agent.DISALLOWED_INSTANCE_TYPES and \
-      not self.args.force:
+      not (self.args.force or self.args.test):
       LocalState.confirm_or_abort("The {0} instance type does not have " \
         "enough RAM to run Cassandra in a production setting. Please " \
         "consider using a larger instance type.".format(
         self.args.instance_type))
 
     if self.args.gce_instance_type in GCEAgent.DISALLOWED_INSTANCE_TYPES and \
-      not self.args.force:
+      not (self.args.force or self.args.test):
       LocalState.confirm_or_abort("The {0} instance type does not have " \
         "enough RAM to run Cassandra in a production setting. Please " \
         "consider using a larger instance type.".format(
