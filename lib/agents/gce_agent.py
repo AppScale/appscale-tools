@@ -132,6 +132,14 @@ class GCEAgent(BaseAgent):
   DEFAULT_SERVICE_EMAIL = 'default'
 
 
+  # A list of GCE instance types that have less than 4 GB of RAM, the amount
+  # recommended by Cassandra. AppScale will still run on these instance types,
+  # but is likely to crash after a day or two of use (as Cassandra will attempt
+  # to malloc ~800MB of memory, which will fail on these instance types).
+  DISALLOWED_INSTANCE_TYPES = ["n1-highcpu-2", "n1-highcpu-2-d", "f1-micro",
+    "g1-small"]
+
+
   def assert_credentials_are_valid(self, parameters):
     """Contacts GCE to see if the given credentials are valid.
 

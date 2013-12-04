@@ -87,6 +87,13 @@ class EC2Agent(BaseAgent):
   DEFAULT_REGION = "us-east-1"
 
 
+  # A list of EC2 instance types that have less than 4 GB of RAM, the amount
+  # recommended by Cassandra. AppScale will still run on these instance types,
+  # but is likely to crash after a day or two of use (as Cassandra will attempt
+  # to malloc ~800MB of memory, which will fail on these instance types).
+  DISALLOWED_INSTANCE_TYPES = ["m1.small", "c1.medium", "t1.micro"]
+
+
   def assert_credentials_are_valid(self, parameters):
     """Contacts AWS to see if the given access key and secret key represent a
     valid set of credentials.
