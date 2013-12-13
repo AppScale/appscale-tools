@@ -337,3 +337,37 @@ class AppControllerClient():
     return self.run_with_timeout(20, "Relocate request timed out.",
       self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
         https_port, self.secret)
+
+
+  def get_property(self, property_regex):
+    """Queries the AppController for a dictionary of its instance variables
+    whose names match the given regular expression, along with their associated
+    values.
+
+    Args:
+      property_regex: A str that names a regex of instance variables whose
+        values should be retrieved from the AppController.
+    Returns:
+      A dict mapping each instance variable matched by the given regex to its
+      value. This dict is empty when (1) no matches are found, or (2) if the
+      SOAP call times out.
+    """
+    return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
+      self.server.get_property, property_regex, self.secret))
+
+
+  def set_property(self, property_name, property_value):
+    """Instructs the AppController to update one of its instance variables with
+    a new value, provided by the caller.
+
+    Args:
+      property_name: A str naming the instance variable to overwrite.
+      property_value: The new value that should be set for the given property.
+    Returns:
+      A str indicating that the request either succeeded (the string literal
+      'OK'), or the reason why the request failed (e.g., the property name
+      referred to a non-existent instance variable).
+    """
+    return self.run_with_timeout(10, 'Set property request timed out.',
+      self.DEFAULT_NUM_RETRIES, self.server.set_property, property_name,
+      property_value, self.secret)

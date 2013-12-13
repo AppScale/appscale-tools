@@ -641,6 +641,74 @@ class TestAppScale(unittest.TestCase):
     appscale.relocate('myapp', 80, 443)
 
 
+  def testGetPropertyWithNoAppScalefile(self):
+    # calling 'appscale get' with no AppScalefile in the local directory
+    # should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.get, '.*')
+
+
+  def testGetPropertyWithAppScalefile(self):
+    # calling 'appscale get' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-get-property' command and then exec it
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-get-property call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('get_property')
+    appscale.get('.*')
+
+
+  def testSetPropertyWithNoAppScalefile(self):
+    # calling 'appscale set' with no AppScalefile in the local directory
+    # should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.set, 'key', 'value')
+
+
+  def testSetPropertyWithAppScalefile(self):
+    # calling 'appscale set' with an AppScalefile in the local
+    # directory should collect any parameters needed for the
+    # 'appscale-get-property' command and then exec it
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure' : 'ec2',
+      'machine' : 'ami-ABCDEFG',
+      'keyname' : 'bookey',
+      'group' : 'boogroup',
+      'verbose' : True,
+      'min' : 1,
+      'max' : 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-set-property call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('set_property')
+    appscale.set('key', 'value')
+
+
   def testDestroyWithNoAppScalefile(self):
     # calling 'appscale destroy' with no AppScalefile in the local
     # directory should throw up and die

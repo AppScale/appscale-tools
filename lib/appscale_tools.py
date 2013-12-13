@@ -221,6 +221,26 @@ class AppScaleTools():
 
 
   @classmethod
+  def get_property(cls, options):
+    """Queries AppScale for a list of system properties matching the provided
+    regular expression, as well as the values associated with each matching
+    property.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    Returns:
+      A dict mapping each property matching the given regex to its associated
+      value.
+    """
+    shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
+      options.keyname))
+
+    return acc.get_property(options.property)
+
+
+  @classmethod
   def relocate_app(cls, options):
     """Instructs AppScale to move the named application to a different port.
 
@@ -423,6 +443,26 @@ class AppScaleTools():
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
+
+
+  @classmethod
+  def set_property(cls, options):
+    """Instructs AppScale to replace the value it uses for a particular
+    AppController instance variable (property) with a new value.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be passed
+        in via the command-line interface.
+    """
+    shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
+    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
+      options.keyname))
+    result = acc.set_property(options.property_name, options.property_value)
+    if result == 'OK':
+      AppScaleLogger.success("Successfully updated the given property.")
+    else:
+      raise AppControllerException("Unable to update the given property " +
+        "because: {0}".format(result))
 
 
   @classmethod
