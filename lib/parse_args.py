@@ -14,10 +14,13 @@ import yaml
 
 # AppScale-specific imports
 from agents.base_agent import BaseAgent
+from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
-import local_state
+from appscale_logger import AppScaleLogger
+from local_state import APPSCALE_VERSION
+from local_state import LocalState
 
 
 class ParseArgs():
@@ -119,7 +122,7 @@ class ParseArgs():
     self.args = self.parser.parse_args(argv)
 
     if self.args.version:
-      raise SystemExit(local_state.APPSCALE_VERSION)
+      raise SystemExit(APPSCALE_VERSION)
 
     self.validate_allowed_flags(function)
 
@@ -158,6 +161,9 @@ class ParseArgs():
         help="a base64-encoded YAML dictating the PD or EBS disks to use")
       self.parser.add_argument('--zone', '-z',
         help="the availability zone that instances should be deployed to")
+      self.parser.add_argument('--static_ip',
+        help="the static IP address that should be used for the login node " +
+          "in cloud deployments")
 
       # flags relating to EC2-like cloud infrastructures
       # Don't use dashes in the random suffix, since network names on Google
@@ -510,6 +516,12 @@ class ParseArgs():
         raise BadConfigurationException("Can't specify persistent disks " + \
           "when infrastructure is not specified.")
 
+      # Fail if the user is trying to use an Elastic IP / Static IP on a
+      # virtualized cluster.
+      if self.args.static_ip:
+        raise BadConfigurationException("Can't specify a static IP " + \
+          "when infrastructure is not specified.")
+
       return
 
     # Make sure the user gave us an ami/emi if running in a cloud.
@@ -549,6 +561,20 @@ class ParseArgs():
         raise BadConfigurationException("--disks must be a dict, but was a " \
           "{0}".format(type(self.args.disks)))
 
+    if self.args.instance_type in EC2Agent.DISALLOWED_INSTANCE_TYPES and \
+      not (self.args.force or self.args.test):
+      LocalState.confirm_or_abort("The {0} instance type does not have " \
+        "enough RAM to run Cassandra in a production setting. Please " \
+        "consider using a larger instance type.".format(
+        self.args.instance_type))
+
+    if self.args.gce_instance_type in GCEAgent.DISALLOWED_INSTANCE_TYPES and \
+      not (self.args.force or self.args.test):
+      LocalState.confirm_or_abort("The {0} instance type does not have " \
+        "enough RAM to run Cassandra in a production setting. Please " \
+        "consider using a larger instance type.".format(
+        self.args.gce_instance_type))
+
 
   def validate_credentials(self):
     """If running over a cloud infrastructure, makes sure that all of the
@@ -576,11 +602,18 @@ class ParseArgs():
     cloud_agent = InfrastructureAgentFactory.create_agent(
       self.args.infrastructure)
     params = cloud_agent.get_params_from_args(self.args)
+
     if not cloud_agent.does_image_exist(params):
       raise BadConfigurationException("Couldn't find the given machine image.")
 
     if not cloud_agent.does_zone_exist(params):
       raise BadConfigurationException("Couldn't find the given zone.")
+
+    # Make sure that if the user gives us an Elastic IP / static IP, that they
+    # actually own it.
+    if self.args.static_ip:
+      if not cloud_agent.does_address_exist(params):
+        raise BadConfigurationException("Couldn't find the given static IP.")
 
     if not self.args.disks:
       return

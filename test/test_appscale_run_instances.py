@@ -133,6 +133,16 @@ group: {1}
     self.fake_ec2.should_receive('get_image').with_args('ami-ABCDEFG') \
       .and_return()
 
+    # Next, pretend that if the user wants to use an Elastic IP / Static IP,
+    # that it has already been allocated for them.
+    self.fake_ec2.should_receive('get_all_addresses').with_args('elastic-ip') \
+      .and_return()
+
+    # Associating the Elastic IP should work fine (since we validate that the
+    # user owns it above).
+    self.fake_ec2.should_receive('associate_address').with_args('i-ABCDEFG',
+      'elastic-ip').and_return()
+
     # Also pretend that the availability zone we want to use exists.
     self.fake_ec2.should_receive('get_all_zones').with_args('my-zone-1b') \
       .and_return('anything')
@@ -467,13 +477,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('controller-17443.cfg'))
 
-    self.setup_socket_mocks('public1')
-    self.setup_appcontroller_mocks('public1', 'private1')
+    self.setup_socket_mocks('elastic-ip')
+    self.setup_appcontroller_mocks('elastic-ip', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "public1",
+        "public_ip" : "elastic-ip",
         "private_ip" : "private1",
         "jobs" : ["shadow", "login"]
       }])))
@@ -486,7 +496,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    self.setup_uaserver_mocks('public1')
+    self.setup_uaserver_mocks('elastic-ip')
 
     argv = [
       "--min", "1",
@@ -497,7 +507,8 @@ appengine:  1.2.3.4
       "--keyname", self.keyname,
       "--group", self.group,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone-1b",
+      "--static_ip", "elastic-ip"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -660,7 +671,7 @@ appengine:  1.2.3.4
     project_id = "1234567890"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
-    zone = 'my-zone-1b'
+    zone = 'my-zone1-b'
     os.path.should_receive('exists').with_args(client_secrets).and_return(True)
 
     # and that the user does not have an ssh key set up, forcing us to create
@@ -834,8 +845,23 @@ appengine:  1.2.3.4
 
     fake_gce.should_receive('images').and_return(fake_images)
 
+    # next, presume that the static ip we want to use exists
+    address_name = 'static-ip'
+    address_info = {'items':[]}
+    region_name = 'my-zone1'
+    fake_address_request = flexmock(name='fake_address_request')
+    fake_address_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return(address_info)
+
+    fake_addresses = flexmock(name='fake_addresses')
+    fake_addresses.should_receive('list').with_args(project=project_id,
+      filter="address eq static-ip", region=region_name).and_return(
+      fake_address_request)
+
+    fake_gce.should_receive('addresses').and_return(fake_addresses)
+
     # next, presume that the zone we want to use exists
-    zone_name = 'my-zone-1b'
+    zone_name = 'my-zone1-b'
     zone_info = {}
     fake_zone_request = flexmock(name='fake_zone_request')
     fake_zone_request.should_receive('execute').with_args(
@@ -955,6 +981,7 @@ appengine:  1.2.3.4
 
     # we only need to create one node, so set up mocks for that
     add_instance = u'operation-1369248752891-4dd5311848461-afc55a20'
+    instance_id = 'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d'
     add_instance_info = {
       u'status': u'PENDING',
       u'kind': u'compute#operation',
@@ -962,7 +989,7 @@ appengine:  1.2.3.4
       u'azone': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a',
       u'startTime': u'2013-05-22T11:52:32.939-07:00',
       u'insertTime': u'2013-05-22T11:52:32.891-07:00',
-      u'targetLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'targetLink': unicode(GCEAgent.GCE_URL) + u'appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
       u'operationType': u'insert',
       u'progress': 0,
       u'id': u'6663616273628949255',
@@ -999,7 +1026,7 @@ appengine:  1.2.3.4
         u'status': u'RUNNING',
         u'kind': u'compute#instance',
         u'machineType': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/machineTypes/' + instance_type,
-        u'name': u'appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'name': instance_id,
         u'zone': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a',
         u'tags': {u'fingerprint': u'42WmSpB8rSM='},
         u'image': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/images/lucid64',
@@ -1020,7 +1047,7 @@ appengine:  1.2.3.4
         },
         u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
         u'id': u'8684033495853907982',
-        u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/instances/appscale-bazgroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+        u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
         u'networkInterfaces': [{
           u'accessConfigs': [{
             u'kind': u'compute#accessConfig',
@@ -1049,6 +1076,24 @@ appengine:  1.2.3.4
 
     fake_instances.should_receive('list').with_args(project=project_id,
       zone=zone).and_return(fake_list_instance_request)
+
+    # mock out deleting the public IP from the instance
+    fake_delete_access_request = flexmock(name='fake_delete_access_request')
+    fake_delete_access_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return()
+
+    fake_instances.should_receive('deleteAccessConfig').with_args(
+      project=project_id, accessConfig=str, instance=instance_id,
+      networkInterface=str, zone=zone).and_return(fake_delete_access_request)
+
+    # as well as adding in the new, static IP to the instance
+    fake_add_access_request = flexmock(name='fake_add_access_request')
+    fake_add_access_request.should_receive('execute').with_args(
+      http=fake_authorized_http).and_return()
+
+    fake_instances.should_receive('addAccessConfig').with_args(
+      project=project_id, instance=instance_id, networkInterface=str,
+      zone=zone, body=dict).and_return(fake_add_access_request)
 
     # finally, inject our fake GCE connection
     flexmock(apiclient.discovery)
@@ -1083,13 +1128,13 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('controller-17443.cfg'))
 
-    self.setup_socket_mocks('public1')
-    self.setup_appcontroller_mocks('public1', 'private1')
+    self.setup_socket_mocks('static-ip')
+    self.setup_appcontroller_mocks('static-ip', 'private1')
 
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "public1",
+        "public_ip" : "static-ip",
         "private_ip" : "private1",
         "jobs" : ["shadow", "login"]
       }])))
@@ -1102,7 +1147,7 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    self.setup_uaserver_mocks('public1')
+    self.setup_uaserver_mocks('static-ip')
 
     # Finally, pretend we're using a single persistent disk.
     disk_layout = yaml.safe_load("""
@@ -1121,7 +1166,8 @@ node-1: my-persistent-disk-1
       "--client_secrets", client_secrets,
       "--project", project_id,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone1-b",
+      "--static_ip", "static-ip"
     ]
 
     options = ParseArgs(argv, self.function).args

@@ -99,9 +99,7 @@ max : 1
 # and instead use a statically defined number of AppServers.
 # appengine : 3
 
-# AppScale developers only: Runs the following commands before starting the
-# AppController on each machine. Note that these commands do not support
-# redirecting stdout or stderr.
+# Runs the following commands before starting the AppController on each machine.
 # user_commands:
 # - 'apt-get install -y htop'
 # - 'apt-get install -y vim'

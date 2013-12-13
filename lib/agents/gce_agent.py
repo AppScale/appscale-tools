@@ -83,6 +83,9 @@ class GCEAgent(BaseAgent):
   PARAM_SECRETS = 'client_secrets'
 
 
+  PARAM_STATIC_IP = 'static_ip'
+
+
   PARAM_STORAGE = 'oauth2_storage'
 
 
@@ -108,7 +111,7 @@ class GCEAgent(BaseAgent):
 
 
   # The version of the Google Compute Engine API that we support.
-  API_VERSION = 'v1beta15'
+  API_VERSION = 'v1beta16'
 
 
   # The URL endpoint that receives Google Compute Engine API requests.
@@ -120,9 +123,21 @@ class GCEAgent(BaseAgent):
   DEFAULT_ZONE = 'us-central1-a'
 
 
+  # The region that instances should be created in and removed from.
+  DEFAULT_REGION = 'us-central1'
+
+
   # The person to contact if there is a problem with the instance. We set this
   # to 'default' to not have to actually put anyone's personal information in.
   DEFAULT_SERVICE_EMAIL = 'default'
+
+
+  # A list of GCE instance types that have less than 4 GB of RAM, the amount
+  # recommended by Cassandra. AppScale will still run on these instance types,
+  # but is likely to crash after a day or two of use (as Cassandra will attempt
+  # to malloc ~800MB of memory, which will fail on these instance types).
+  DISALLOWED_INSTANCE_TYPES = ["n1-highcpu-2", "n1-highcpu-2-d", "f1-micro",
+    "g1-small"]
 
 
   def assert_credentials_are_valid(self, parameters):
@@ -147,6 +162,7 @@ class GCEAgent(BaseAgent):
     except apiclient.errors.HttpError:
       raise AgentConfigurationException("We couldn't validate your GCE" + \
         "credentials. Are your credentials valid?")
+
 
   def configure_instance_security(self, parameters):
     """ Creates a GCE network and firewall with the specified name, and opens
@@ -484,8 +500,17 @@ class GCEAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
+      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args['zone']
     }
+
+    # A zone in GCE looks like 'us-central2-a', which is in the region
+    # 'us-central2'. Therefore, strip off the last two characters from the zone
+    # to get the region name.
+    if params[self.PARAM_ZONE]:
+      params[self.PARAM_REGION] = params[self.PARAM_ZONE][:-2]
+    else:
+      params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     if args.get(self.PARAM_SECRETS):
       params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
@@ -705,6 +730,86 @@ class GCEAgent(BaseAgent):
     return instance_ids, public_ips, private_ips
 
 
+  def associate_static_ip(self, parameters, instance_id, static_ip):
+    """ Associates the given static IP address with the given instance ID.
+
+    In Google Compute Engine, this is done by removing the route from the
+    outside world to the instance's public IP address, then adding a new route
+    from the outside world to the static IP address the caller has provided.
+
+    Args:
+      parameters: A dict that includes the credentials necessary to communicate
+        with Google Compute Engine.
+      instance_id: A str naming the running instance to associate a static IP
+        with.
+      static_ip: A str naming the already allocated static IP address that will
+        be associated.
+    """
+    self.delete_access_config(parameters, instance_id)
+    self.add_access_config(parameters, instance_id, static_ip)
+
+
+  def delete_access_config(self, parameters, instance_id):
+    """ Instructs Google Compute Engine to remove the public IP address from
+    the named instance.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key mapping to a list of
+        instance names that should be deleted.
+      instance_id: A str naming the running instance that the new public IP
+        address should be added to.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.instances().deleteAccessConfig(
+      project=parameters[self.PARAM_PROJECT],
+      accessConfig="External NAT",
+      instance=instance_id,
+      networkInterface="nic0",
+      zone=parameters[self.PARAM_ZONE]
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+
+  def add_access_config(self, parameters, instance_id, static_ip):
+    """ Instructs Google Compute Engine to use the given IP address as the
+    public IP for the named instance.
+
+    This assumes that there is no existing public IP address for the named
+    instance. If this is not the case, callers should use delete_access_config
+    first to remove it.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key mapping to a list of
+        instance names that should be deleted.
+      instance_id: A str naming the running instance that the new public IP
+        address should be added to.
+      static_ip: A str naming the already allocated static IP address that
+        will be used for the named instance.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.instances().addAccessConfig(
+      project=parameters[self.PARAM_PROJECT],
+      instance=instance_id,
+      networkInterface="nic0",
+      zone=parameters[self.PARAM_ZONE],
+      body={
+        "kind": "compute#accessConfig",
+        "type" : "ONE_TO_ONE_NAT",
+        "name" : "External NAT",
+        "natIP" : static_ip
+      }
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+
   def terminate_instances(self, parameters):
     """ Deletes the instances specified in 'parameters' running in Google
     Compute Engine.
@@ -735,6 +840,34 @@ class GCEAgent(BaseAgent):
       auth_http = credentials.authorize(http)
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
+
+
+  def does_address_exist(self, parameters):
+    """ Queries Google Compute Engine to see if the specified static IP address
+    exists for this user.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine, and an additional key indicating the name of the
+        static IP address that we should check for existence.
+    Returns:
+      True if the named address exists, and False otherwise.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    request = gce_service.addresses().list(
+      project=parameters[self.PARAM_PROJECT],
+      filter="address eq {0}".format(parameters[self.PARAM_STATIC_IP]),
+      region=parameters[self.PARAM_REGION]
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+
+    if 'items' in response:
+      return True
+    else:
+      return False
 
 
   def does_image_exist(self, parameters):

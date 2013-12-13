@@ -52,7 +52,7 @@ class TestRemoteHelper(unittest.TestCase):
     self.options = flexmock(infrastructure='ec2', group='boogroup',
       machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
       table='cassandra', verbose=False, test=False, use_spot_instances=False,
-      zone='my-zone-1b')
+      zone='my-zone-1b', static_ip=None)
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 

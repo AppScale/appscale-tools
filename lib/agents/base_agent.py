@@ -87,12 +87,38 @@ class BaseAgent:
     raise NotImplementedError
 
 
+  def associate_static_ip(self, instance_id, static_ip):
+    """Associates the given static IP address with the given instance ID.
+
+    Args:
+      instance_id: A str that names the instance that the static IP should be
+        bound to.
+      static_ip: A str naming the static IP to bind to the given instance.
+    """
+    raise NotImplementedError
+
+
   def terminate_instances(self, parameters):
     """Terminate a set of virtual machines using the parameters given.
 
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
+    """
+    raise NotImplementedError
+
+
+  def does_address_exist(self, parameters):
+    """Verifies that the specified static IP address has been allocated, and
+    belongs to the user with the given credentials.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud, as well as a key indicating which static IP address
+        should be validated.
+    Returns:
+      A bool that indicates if the given static IP address exists, and belongs
+      to this user.
     """
     raise NotImplementedError
 

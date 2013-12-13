@@ -224,6 +224,11 @@ class RemoteHelper():
     agent.configure_instance_security(params)
     instance_ids, public_ips, private_ips = agent.run_instances(count=1,
       parameters=params, security_configured=True)
+
+    if options.static_ip:
+      agent.associate_static_ip(params, instance_ids[0], options.static_ip)
+      public_ips[0] = options.static_ip
+
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
 
@@ -542,7 +547,8 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
-      "AppDashboard", "InfrastructureManager", "AppTaskQueue", "XMPPReceiver"]
+      "AppServer_Java", "AppDashboard", "InfrastructureManager", "AppTaskQueue",
+      "XMPPReceiver"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
       if not os.path.exists(local_path):
