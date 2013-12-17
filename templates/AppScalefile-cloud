@@ -67,6 +67,10 @@ max : 1
 # to uniquely identify you when communicating with Google Compute Engine.
 #project: '123456789'
 
+# The Elastic IP (in Amazon Web Services) or Static IP (in Google Compute Engine)
+# that should be used for your first machine's public IP address.
+#static_ip: '1.2.3.4'
+
 # The number of copies (replicas) of each piece of data stored in the
 # specified database. By default, we determine the optimal value based
 # on the number of virtual machines running the 'database' role, by the
