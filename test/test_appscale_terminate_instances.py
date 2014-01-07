@@ -312,6 +312,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
+      LocalState.get_secret_key_location(self.keyname)).and_return(True)
+    os.path.should_receive('exists').with_args(
       LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
     os.path.should_receive('exists').with_args(
       LocalState.get_client_secrets_location(self.keyname)).and_return(True)
