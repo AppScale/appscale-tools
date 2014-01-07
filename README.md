@@ -26,3 +26,5 @@ and install the tools in /usr/local/appscale-tools.
 
 ## Main Branch ##
 See http://github.com/AppScale/appscale for the main branch.
+
+[![Analytics](https://ga-beacon.appspot.com/UA-39403730-2/appscale/appscale-tools)](https://github.com/appscale/appscale-tools)
