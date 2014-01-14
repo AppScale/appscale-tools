@@ -102,6 +102,11 @@ class ParseArgs():
   DEFAULT_KEYNAME = "appscale"
 
 
+  # The default password that should be used to log into the celery web
+  # interface (flower).
+  DEFAULT_FLOWER_PASSWORD = "appscale"
+
+
   def __init__(self, argv, function):
     """Creates a new ParseArgs for a set of acceptable flags.
 
@@ -236,6 +241,10 @@ class ParseArgs():
         help="override the provided login host with this one")
 
       # developer flags
+      self.parser.add_argument('--flower_password',
+        default=self.DEFAULT_FLOWER_PASSWORD,
+        help="the password that should be used to log into the flower web " \
+          "interface")
       self.parser.add_argument('--force', action='store_true',
         default=False,
         help="forces tools to continue if keyname or group exist")
