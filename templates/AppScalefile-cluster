@@ -77,6 +77,11 @@ table : 'cassandra'
 # and instead use a statically defined number of AppServers.
 # appengine : 3
 
+# The maximum amount of memory (in megabytes) to use for each Google App Engine
+# application running in this deployment. By default, we limit each app server
+# to 500 MB of memory.
+# max_memory: 500
+
 # Runs the following commands before starting the AppController on each machine.
 # user_commands:
 # - 'apt-get install -y htop'

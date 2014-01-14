@@ -496,3 +496,15 @@ public1 : vol-ABCDEFG
     cloud_argv2 = self.cloud_argv[:] + ["--static_ip", "GOOD.IP.ADDRESS"]
     actual = ParseArgs(cloud_argv2, self.function).args
     self.assertEquals('GOOD.IP.ADDRESS', actual.static_ip)
+
+
+  def test_no_max_memory_flag_gets_set_to_default(self):
+    argv = self.cluster_argv[:]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals(ParseArgs.DEFAULT_MAX_MEMORY, actual.max_memory)
+
+
+  def test_max_memory_flag_gets_passed_through(self):
+    argv = self.cluster_argv[:] + ["--max_memory", "800"]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals(800, actual.max_memory)

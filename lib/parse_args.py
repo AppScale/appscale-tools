@@ -102,6 +102,11 @@ class ParseArgs():
   DEFAULT_KEYNAME = "appscale"
 
 
+  # The amount of memory to use for App Engine apps if the user does not
+  # explicitly provide a value, in megabytes.
+  DEFAULT_MAX_MEMORY = 500
+
+
   def __init__(self, argv, function):
     """Creates a new ParseArgs for a set of acceptable flags.
 
@@ -225,6 +230,11 @@ class ParseArgs():
         help="erases all stored user and application data")
 
       # flags relating to application servers
+      self.parser.add_argument('--max_memory', type=int,
+        default=self.DEFAULT_MAX_MEMORY,
+        help="the maximum amount of memory to use for App Engine apps " \
+        "(in megabytes)")
+
       group = self.parser.add_mutually_exclusive_group()
       group.add_argument('--appengine', type=int,
         help="the number of application servers to use per app")
