@@ -216,6 +216,14 @@ class AppScaleTools():
       os.mkdir(local_dir)
       RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
         local_dir, options.verbose)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/cassandra',
+        local_dir, options.verbose)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/zookeeper',
+        local_dir, options.verbose)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/kern.log',
+        local_dir, options.verbose)
+      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/syslog',
+        local_dir, options.verbose)
     AppScaleLogger.success("Successfully copied logs to {0}".format(
       options.location))
 
