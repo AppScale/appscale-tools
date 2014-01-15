@@ -23,6 +23,7 @@ from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
+from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
@@ -216,10 +217,18 @@ class AppScaleTools():
       os.mkdir(local_dir)
       RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
         local_dir, options.verbose)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/cassandra',
-        local_dir, options.verbose)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/zookeeper',
-        local_dir, options.verbose)
+      try:
+        RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/cassandra',
+          local_dir, options.verbose)
+      except ShellException:
+        pass
+
+      try:
+        RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/zookeeper',
+          local_dir, options.verbose)
+      except ShellException:
+        pass
+
       RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/kern.log',
         local_dir, options.verbose)
       RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/syslog',
