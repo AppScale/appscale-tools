@@ -7,6 +7,7 @@ import base64
 import os
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -92,6 +93,18 @@ appengine:  public3
 
 
   def test_appscale_with_ips_layout_flag_and_success(self):
+    # assume that ssh is running on each machine
+    fake_socket = flexmock(name='socket')
+    fake_socket.should_receive('connect').with_args(('1.2.3.4', 22)) \
+      .and_return(None)
+    fake_socket.should_receive('connect').with_args(('1.2.3.5', 22)) \
+      .and_return(None)
+    fake_socket.should_receive('connect').with_args(('1.2.3.6', 22)) \
+      .and_return(None)
+
+    flexmock(socket)
+    socket.should_receive('socket').and_return(fake_socket)
+
     # assume that we have ssh-keygen and ssh-copy-id
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('which ssh-keygen'),

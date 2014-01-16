@@ -106,6 +106,9 @@ class AppScaleTools():
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
+    Raises:
+      AppScaleException: If any of the machines named in the ips_layout are
+        not running, or do not have the SSH daemon running.
     """
     LocalState.require_ssh_commands(options.auto, options.verbose)
     LocalState.make_appscale_directory()
@@ -135,7 +138,13 @@ class AppScaleTools():
 
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
-      # first, set up passwordless ssh
+      # first, make sure ssh is actually running on the host machine
+      if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT,
+        options.verbose):
+        raise AppScaleException("SSH does not appear to be running at {0}. " \
+          "Is the machine at {0} up and running?".format(ip))
+
+      # next, set up passwordless ssh
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
       if options.auto:
         LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
