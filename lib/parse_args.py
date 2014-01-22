@@ -109,7 +109,7 @@ class ParseArgs():
 
   # The amount of memory to use for App Engine apps if the user does not
   # explicitly provide a value, in megabytes.
-  DEFAULT_MAX_MEMORY = 500
+  DEFAULT_MAX_MEMORY = 400
 
 
   def __init__(self, argv, function):
