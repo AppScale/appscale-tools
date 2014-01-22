@@ -30,6 +30,7 @@ from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import LocalState
 from node_layout import NodeLayout
+from parse_args import ParseArgs
 
 
 class TestLocalState(unittest.TestCase):
@@ -99,6 +100,7 @@ class TestLocalState(unittest.TestCase):
       use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc")
+      max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -128,6 +130,7 @@ class TestLocalState(unittest.TestCase):
       'zone' : json.dumps('my-zone-1b'),
       'verbose' : 'True',
       'flower_password' : 'abc'
+      'max_memory' : ParseArgs.DEFAULT_MAX_MEMORY
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       'public1', {'max_spot_price':'1.23'})
