@@ -83,8 +83,8 @@ table : 'cassandra'
 
 # The maximum amount of memory (in megabytes) to use for each Google App Engine
 # application running in this deployment. By default, we limit each app server
-# to 500 MB of memory.
-# max_memory: 500
+# to 400 MB of memory.
+# max_memory: 400
 
 # Runs the following commands before starting the AppController on each machine.
 # user_commands:
