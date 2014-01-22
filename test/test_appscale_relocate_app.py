@@ -58,12 +58,13 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     }]))
     fake_nodes_json.should_receive('write').and_return()
     builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
 
     # put in a mock for reading the secret file
+    builtins.should_call('open')  # set the fall-through
+
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
@@ -87,16 +88,11 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     # even running, this should fail.
 
     # Assume that the AppController is running but our app isn't.
-    flexmock(os.path)
-    os.path.should_call('exists')  # set the fall-through
-    os.path.should_receive('exists').with_args(
-      LocalState.get_locations_json_location(self.keyname)).and_return(True)
-
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps({}))
     flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
       .and_return(fake_appcontroller)
 
     argv = [
@@ -128,7 +124,7 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     fake_appcontroller.should_receive('relocate_app').with_args(self.appid, 80,
       443, 'the secret').and_return("OK")
     flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+    SOAPpy.should_receive('SOAPProxy').with_args('https://1.2.3.4:17443') \
       .and_return(fake_appcontroller)
 
     argv = [
