@@ -496,3 +496,16 @@ public1 : vol-ABCDEFG
     cloud_argv2 = self.cloud_argv[:] + ["--static_ip", "GOOD.IP.ADDRESS"]
     actual = ParseArgs(cloud_argv2, self.function).args
     self.assertEquals('GOOD.IP.ADDRESS', actual.static_ip)
+
+
+  def test_no_password_for_flower_results_in_default(self):
+    argv = self.cluster_argv[:]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals(ParseArgs.DEFAULT_FLOWER_PASSWORD, actual.flower_password)
+
+
+  def test_password_for_flower_gets_passed_through(self):
+    password = "abcdefg"
+    argv = self.cluster_argv[:] + ["--flower_password", password]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals(password, actual.flower_password)

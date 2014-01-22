@@ -52,6 +52,10 @@ table : 'cassandra'
 # performance, at the cost of fault-tolerance, and vice-versa.
 # n : 1
 
+# The password that should be used for the flower web interface that displays
+# information about Task Queue tasks.
+# flower_password: 'appscale'
+
 # AppScale developers only: The location of an AppScale source tree on
 # the local filesystem, that should be used in place of what is present
 # on the AppScale VMs. Useful to test changes on multiple VMs without

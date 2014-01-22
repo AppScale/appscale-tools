@@ -74,6 +74,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "max" : 1,
       "infrastructure" : "ec2",
       "machine" : "ami-ABCDEFG",
+      "flower_password" : ParseArgs.DEFAULT_FLOWER_PASSWORD,
       "force" : False,
       "group" : "blargscale",
       "gce_instance_type" : "n1-standard-1",
