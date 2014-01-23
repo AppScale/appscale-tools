@@ -441,6 +441,7 @@ appengine:  1.2.3.4
     # slip in some fake spot instance info
     fake_entry = flexmock(name='fake_entry', price=1)
     self.fake_ec2.should_receive('get_spot_price_history').with_args(
+      start_time=str, end_time=str,
       product_description='Linux/UNIX', instance_type='m1.large',
       availability_zone='my-zone-1b').and_return([fake_entry])
 

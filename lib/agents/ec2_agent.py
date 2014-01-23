@@ -754,7 +754,10 @@ class EC2Agent(BaseAgent):
       The estimated spot price for the specified instance type, in the
         specified availability zone.
     """
-    history = conn.get_spot_price_history(product_description='Linux/UNIX',
+    end_time = datetime.datetime.now()
+    start_time = end_time - datetime.timedelta(days=7)
+    history = conn.get_spot_price_history(start_time=start_time.isoformat(),
+      end_time=end_time.isoformat(), product_description='Linux/UNIX',
       instance_type=instance_type, availability_zone=zone)
     var_sum = 0.0
     for entry in history:
