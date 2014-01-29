@@ -54,13 +54,16 @@ class ParseArgs():
     "m1.small", "m1.medium", "m1.large", "m1.xlarge",
 
     # Standard Instances (Second Generation)
-    "m3.xlarge", "m3.2xlarge",
+    "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
 
     # High-Memory Instances
     "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
 
-    # High-CPU Instances
+    # High-CPU Compute Instances (First Generation)
     "c1.medium", "c1.xlarge",
+
+    # High-CPU Compute Instance (Second Generation)
+    "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
 
     # Cluster Compute Instances
     "cc2.8xlarge",
