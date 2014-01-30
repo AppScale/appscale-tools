@@ -33,7 +33,7 @@ ips_layout :
 #   - 192.168.1.9
 
 # The database that your Google App Engine applications will be backed by.
-# Defaults to 'cassandra', but 'hypertable' is also supported.
+# Currently only support cassandra.
 table : 'cassandra'
 
 # Whether or not the Datastore should be erased when AppScale starts up.

@@ -24,7 +24,7 @@ zone : 'us-east-1b' # For Amazon EC2
 #zone: 'us-central1-a' # For Google Compute Engine
 
 # The database that your Google App Engine applications will be backed by.
-# Defaults to 'cassandra', but 'hypertable' is also supported.
+# Currently only supports cassandra.
 table : 'cassandra'
 
 # Whether or not the Datastore should be erased when AppScale starts up.
