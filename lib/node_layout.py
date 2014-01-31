@@ -588,6 +588,9 @@ class NodeLayout():
       if not valid:
         return self.invalid(reason)
 
+      for node in nodes:
+        node.disk = self.disks.get(node.public_ip)
+
     rep = self.is_database_replication_valid(nodes)
     if not rep['result']:
       return rep
