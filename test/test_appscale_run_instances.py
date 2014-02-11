@@ -967,8 +967,8 @@ appengine:  1.2.3.4
     fake_firewall_insert_request = flexmock(name='fake_firewall_insert_request')
     fake_firewall_insert_request.should_receive('execute').with_args(
       http=fake_authorized_http).and_return(firewall_info)
-    fake_firewalls.should_receive('insert').with_args(project=project_id,
-      body=dict).and_return(fake_firewall_insert_request)
+    fake_firewalls.should_receive('insert').with_args(project=
+      u'appscale.com:appscale', body=dict).and_return(fake_firewall_insert_request)
 
     created_firewall_info = {
       u'status': u'DONE'
@@ -1026,11 +1026,11 @@ appengine:  1.2.3.4
       u'items': [{
         u'status': u'RUNNING',
         u'kind': u'compute#instance',
-        u'machineType': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/machineTypes/' + instance_type,
+        u'machineType': u'https://www.googleapis.com/compute/v1/projects/appscale.com:appscale/zones/us-central1-a/machineTypes/' + instance_type,
         u'name': instance_id,
-        u'zone': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a',
+        u'zone': u'https://www.googleapis.com/compute/v1/projects/appscale.com:appscale/zones/us-central1-a',
         u'tags': {u'fingerprint': u'42WmSpB8rSM='},
-        u'image': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/images/lucid64',
+        u'image': u'https://www.googleapis.com/compute/v1/projects/appscale.com:appscale/global/images/lucid64',
         u'disks': [{
           u'index': 0,
           u'kind': u'compute#attachedDisk',
@@ -1048,7 +1048,7 @@ appengine:  1.2.3.4
         },
         u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
         u'id': u'8684033495853907982',
-        u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
+        u'selfLink': u'https://www.googleapis.com/compute/v1/projects/appscale.com:appscale/zones/us-central1-a/instances/' + instance_id,
         u'networkInterfaces': [{
           u'accessConfigs': [{
             u'kind': u'compute#accessConfig',
@@ -1057,13 +1057,13 @@ appengine:  1.2.3.4
             u'natIP': u'public1'
           }],
           u'networkIP': u'private1',
-          u'network': u'https://www.googleapis.com/compute/v1beta15/projects/appscale.com:appscale/global/networks/bazgroup',
+          u'network': u'https://www.googleapis.com/compute/v1/projects/appscale.com:appscale/global/networks/bazgroup',
           u'name': u'nic0'
         }]
       }],
       u'kind': u'compute#instanceList',
       u'id': u'projects/appscale.com:appscale/zones/us-central1-a/instances',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta15/projects/961228229472/zones/us-central1-a/instances'
+      u'selfLink': u'https://www.googleapis.com/compute/v1/projects/961228229472/zones/us-central1-a/instances'
     }
 
     fake_list_instance_request = flexmock(name='fake_list_instance_request')

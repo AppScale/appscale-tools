@@ -53,6 +53,14 @@ class GCEAgent(BaseAgent):
   # but is more responsive to when machines become ready to use.
   SLEEP_TIME = 20
 
+
+  # We need to get the project name from the network string for creating a
+  # a firewall. Previous versions of the API allowed for the creation of 
+  # firewalls with the project ID, that is no longer the case in versions 1.0
+  # and higher.
+  PROJECT_ID_INDEX_IN_NETWORK = 6
+
+
   # The following constants are string literals that can be used by callers to
   # index into the parameters the user passes in, as opposed to having to type
   # out the strings each time we need them.
@@ -111,7 +119,7 @@ class GCEAgent(BaseAgent):
 
 
   # The version of the Google Compute Engine API that we support.
-  API_VERSION = 'v1beta16'
+  API_VERSION = 'v1'
 
 
   # The URL endpoint that receives Google Compute Engine API requests.
@@ -400,6 +408,16 @@ class GCEAgent(BaseAgent):
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
 
+ 
+  def get_project_name_from_network_url(self, network_url):
+    """ Gets the project name from the network URL string.
+
+    Args:
+      network_url: A URL string of the network location.
+    Returns:
+      The project name used by the network.
+    """
+    return network_url.split('/')[self.PROJECT_ID_INDEX_IN_NETWORK]
 
   def create_firewall(self, parameters, network_url):
     """ Creates a new firewall in Google Compute Engine with the specified name,
@@ -416,7 +434,7 @@ class GCEAgent(BaseAgent):
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
     request = gce_service.firewalls().insert(
-      project=parameters[self.PARAM_PROJECT],
+      project=self.get_project_name_from_network_url(network_url),
       body={
         "name" : parameters[self.PARAM_GROUP],
         "description" : "Firewall used for AppScale instances",
