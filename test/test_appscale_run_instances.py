@@ -876,7 +876,7 @@ appengine:  1.2.3.4
 
     # next, presume that the persistent disk we want to use exists
     disk_name = 'my-persistent-disk-1'
-    disk_info = {}
+    disk_info = {'status':'DONE'}
     fake_disk_request = flexmock(name='fake_disk_request')
     fake_disk_request.should_receive('execute').with_args(
       http=fake_authorized_http).and_return(disk_info)
@@ -884,6 +884,8 @@ appengine:  1.2.3.4
     fake_disks = flexmock(name='fake_disks')
     fake_disks.should_receive('get').with_args(project=project_id,
       disk=disk_name, zone=zone).and_return(fake_disk_request)
+    fake_disks.should_receive('insert').with_args(project=project_id,
+      sourceImage=str, body=dict, zone=zone_name).and_return(fake_disk_request)
 
     fake_gce.should_receive('disks').and_return(fake_disks)
 

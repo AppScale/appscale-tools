@@ -162,8 +162,8 @@ class GCEAgent(BaseAgent):
     try:
       http = httplib2.Http()
       auth_http = credentials.authorize(http)
-      request = gce_service.instances().list(project=parameters[self.PARAM_PROJECT],
-        zone=parameters[self.PARAM_ZONE])
+      request = gce_service.instances().list(project=parameters
+        [self.PARAM_PROJECT], zone=parameters[self.PARAM_ZONE])
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
@@ -560,9 +560,11 @@ class GCEAgent(BaseAgent):
     }
 
     if os.path.exists(LocalState.get_client_secrets_location(keyname)):
-      params[self.PARAM_SECRETS] = LocalState.get_client_secrets_location(keyname)
+      params[self.PARAM_SECRETS] = \
+        LocalState.get_client_secrets_location(keyname)
     else:
-      params[self.PARAM_STORAGE] = LocalState.get_oauth2_storage_location(keyname)
+      params[self.PARAM_STORAGE] = \
+        LocalState.get_oauth2_storage_location(keyname)
 
     return params
 
@@ -636,6 +638,56 @@ class GCEAgent(BaseAgent):
 
     return public_ips, private_ips, instance_ids
 
+  def generate_disk_name(self, parameters):
+    """ Creates a temporary name for a disk.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+    Returns:
+      A str, a disk name associated with the root disk of AppScale on GCE.
+    """
+    return "appscale{0}{1}".format(parameters[self.PARAM_GROUP], 
+      str(int(time.time() * 1000)))
+
+  def create_scratch_disk(self, parameters, project_name):
+    """ Creates a disk from a given machine image.
+
+    GCE does not support scratch disks on API version v1 and higher. We create
+    a persistent disk upon creation to act like one to keep the abstraction used
+    in other infrastructures.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      project_name: A str, the project name (derived from the project ID).
+    Returns:
+      A str, the url to the disk to use.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    disk_name = self.generate_disk_name(parameters)
+    project_url = '{0}{1}'.format(self.GCE_URL, 
+      parameters[self.PARAM_PROJECT])
+    source_image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL,
+      project_name, parameters[self.PARAM_IMAGE_ID])
+    request = gce_service.disks().insert(
+      project=parameters[self.PARAM_PROJECT],
+      zone=parameters[self.PARAM_ZONE],
+      body={
+        'name':disk_name 
+      },
+      sourceImage=source_image_url
+    )
+    response = request.execute(http=auth_http)
+    AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+      parameters[self.PARAM_PROJECT])
+
+    disk_url = "{0}/zones/{1}/disks/{2}".format(
+      project_url, parameters[self.PARAM_ZONE], disk_name)
+    return disk_url
 
   def run_instances(self, count, parameters, security_configured):
     """ Starts 'count' instances in Google Compute Engine, and returns once they
@@ -678,11 +730,18 @@ class GCEAgent(BaseAgent):
 
     # Construct the request body
     for index in range(count):
+      disk_url = self.create_scratch_disk(parameters, 
+        self.get_project_name_from_network_url(network_url))
       instances = {
         # Truncate the name down to the first 62 characters, since GCE doesn't
         # let us use arbitrarily long instance names.
         'name': "appscale-{0}-{1}".format(group, uuid.uuid4())[:62],
         'machineType': machine_type_url,
+        'disks':[{
+          'source': disk_url,
+          'boot': 'true',
+          'type': 'PERSISTENT'
+        }],
         'image': image_url,
         'networkInterfaces': [{
           'accessConfigs': [{
@@ -1015,7 +1074,8 @@ class GCEAgent(BaseAgent):
     flow = None
     if self.PARAM_SECRETS in parameters:
       flow = oauth2client.client.flow_from_clientsecrets(
-        os.path.expanduser(parameters[self.PARAM_SECRETS]), scope=self.GCE_SCOPE)
+        os.path.expanduser(parameters[self.PARAM_SECRETS]), 
+        scope=self.GCE_SCOPE)
 
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))
