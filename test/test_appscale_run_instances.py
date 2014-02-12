@@ -669,7 +669,7 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_gce_deployment(self):
     # presume that our client_secrets file exists
-    project_id = "1234567890"
+    project_id = "appscale.com:appscale"
     client_secrets = "/boo/client_secrets.json"
     instance_type = 'n1-standard-8'
     zone = 'my-zone1-b'

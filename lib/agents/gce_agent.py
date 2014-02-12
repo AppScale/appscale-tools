@@ -54,13 +54,6 @@ class GCEAgent(BaseAgent):
   SLEEP_TIME = 20
 
 
-  # We need to get the project name from the network string for creating a
-  # a firewall. Previous versions of the API allowed for the creation of 
-  # firewalls with the project ID, that is no longer the case in versions 1.0
-  # and higher.
-  PROJECT_ID_INDEX_IN_NETWORK = 6
-
-
   # The following constants are string literals that can be used by callers to
   # index into the parameters the user passes in, as opposed to having to type
   # out the strings each time we need them.
@@ -408,17 +401,6 @@ class GCEAgent(BaseAgent):
     self.ensure_operation_succeeds(gce_service, auth_http, response,
       parameters[self.PARAM_PROJECT])
 
- 
-  def get_project_name_from_network_url(self, network_url):
-    """ Gets the project name from the network URL string.
-
-    Args:
-      network_url: A URL string of the network location.
-    Returns:
-      The project name used by the network.
-    """
-    return network_url.split('/')[self.PROJECT_ID_INDEX_IN_NETWORK]
-
   def create_firewall(self, parameters, network_url):
     """ Creates a new firewall in Google Compute Engine with the specified name,
     bound to the specified network.
@@ -434,7 +416,7 @@ class GCEAgent(BaseAgent):
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
     request = gce_service.firewalls().insert(
-      project=self.get_project_name_from_network_url(network_url),
+      project=parameters[self.PARAM_PROJECT],
       body={
         "name" : parameters[self.PARAM_GROUP],
         "description" : "Firewall used for AppScale instances",
@@ -650,7 +632,7 @@ class GCEAgent(BaseAgent):
     return "appscale{0}{1}".format(parameters[self.PARAM_GROUP], 
       str(int(time.time() * 1000)))
 
-  def create_scratch_disk(self, parameters, project_name):
+  def create_scratch_disk(self, parameters):
     """ Creates a disk from a given machine image.
 
     GCE does not support scratch disks on API version v1 and higher. We create
@@ -660,7 +642,6 @@ class GCEAgent(BaseAgent):
     Args:
       parameters: A dict with keys for each parameter needed to connect to
         Google Compute Engine.
-      project_name: A str, the project name (derived from the project ID).
     Returns:
       A str, the url to the disk to use.
     """
@@ -671,7 +652,7 @@ class GCEAgent(BaseAgent):
     project_url = '{0}{1}'.format(self.GCE_URL, 
       parameters[self.PARAM_PROJECT])
     source_image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL,
-      project_name, parameters[self.PARAM_IMAGE_ID])
+      parameters[self.PARAM_PROJECT], parameters[self.PARAM_IMAGE_ID])
     request = gce_service.disks().insert(
       project=parameters[self.PARAM_PROJECT],
       zone=parameters[self.PARAM_ZONE],
@@ -730,8 +711,7 @@ class GCEAgent(BaseAgent):
 
     # Construct the request body
     for index in range(count):
-      disk_url = self.create_scratch_disk(parameters, 
-        self.get_project_name_from_network_url(network_url))
+      disk_url = self.create_scratch_disk(parameters)
       instances = {
         # Truncate the name down to the first 62 characters, since GCE doesn't
         # let us use arbitrarily long instance names.
