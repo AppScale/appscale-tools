@@ -80,14 +80,20 @@ elif command == "status":
     sys.exit(1)
 elif command == "deploy":
   try:
-    # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
+    if len(sys.argv != 3):
+      cprint("Usage: appscale deploy <path to your app>", 'red')
+      sys.exit(1)
+
     appscale.deploy(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
 elif command == "undeploy" or command == "remove":
   try:
-    # TODO(cgb): Make sure argv[2] exists, and print helpful info if not
+    if len(sys.argv != 3):
+      cprint("Usage: appscale {0} <path to your app>".format(command))
+      sys.exit(1)
+
     appscale.undeploy(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
@@ -107,7 +113,10 @@ elif command == "get":
     sys.exit(1)
 elif command == "set":
   try:
-    # TODO(cgb): Make sure argv[2,3] exists, and print helpful info if not
+    if len(sys.argv) != 4:
+      cprint("Usage: appscale set <property> <value>", 'red')
+      sys.exit(1)
+
     appscale.set(sys.argv[2], sys.argv[3])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
