@@ -80,7 +80,7 @@ elif command == "status":
     sys.exit(1)
 elif command == "deploy":
   try:
-    if len(sys.argv != 3):
+    if len(sys.argv) != 3:
       cprint("Usage: appscale deploy <path to your app>", 'red')
       sys.exit(1)
 
@@ -90,8 +90,8 @@ elif command == "deploy":
     sys.exit(1)
 elif command == "undeploy" or command == "remove":
   try:
-    if len(sys.argv != 3):
-      cprint("Usage: appscale {0} <path to your app>".format(command))
+    if len(sys.argv) != 3:
+      cprint("Usage: appscale {0} <path to your app>".format(command), 'red')
       sys.exit(1)
 
     appscale.undeploy(sys.argv[2])
