@@ -552,20 +552,20 @@ class EC2Agent(BaseAgent):
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
     conn.terminate_instances(instance_ids)
-    AppScaleLogger.log('Terminating instances: '+' '.join(instance_ids))
+    AppScaleLogger.log('Terminating instances: ' + ' '.join(instance_ids))
     if not self.wait_for_status_change(parameters, conn, 'terminated',
             max_wait_time=120):
-      AppScaleLogger.log("re-terminating instances: "+' '.join(instance_ids))
+      AppScaleLogger.log("re-terminating instances: " + ' '.join(instance_ids))
       conn.terminate_instances(instance_ids)
       if not self.wait_for_status_change(parameters, conn, 'terminated',
                 max_wait_time=120):
         self.handle_failure("ERROR: could not terminate instances: " + \
             ' '.join(instance_ids))
-    # Sending a second terminate to a terminated instance, remove it from
-    # the system (ie no more in describe-instances).  This helps when
+    # Sending a second terminate to a terminated instance to remove it
+    # from the system (ie no more in describe-instances).  This helps when
     # bringing deployments up and down frequently and instances are still
     # associated with keyname (although they are terminated).
-    AppScaleLogger.log("Removing terminated instances: "+' '.join(instance_ids))
+    AppScaleLogger.log("Removing terminated instances: " + ' '.join(instance_ids))
     conn.terminate_instances(instance_ids)
 
 
