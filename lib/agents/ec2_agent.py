@@ -561,10 +561,10 @@ class EC2Agent(BaseAgent):
                 max_wait_time=120):
         self.handle_failure("ERROR: could not terminate instances: " + \
             ' '.join(instance_ids))
-    # Terminating and already terminated instances, will remove it from
-    # the list of instances. This helps when bringing deployments up and
-    # down frequently and instances are still associated with keynema
-    # (although they are terminated).
+    # Sending a second terminate to a terminated instance, remove it from
+    # the system (ie no more in describe-instances).  This helps when
+    # bringing deployments up and down frequently and instances are still
+    # associated with keyname (although they are terminated).
     AppScaleLogger.log("Removing terminated instances: "+' '.join(instance_ids))
     conn.terminate_instances(instance_ids)
 
