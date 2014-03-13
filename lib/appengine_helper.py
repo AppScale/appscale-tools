@@ -89,11 +89,12 @@ class AppEngineHelper():
       app_dir: The location on the filesystem where the App Engine application
         is located.
     Returns:
-      The location where we can expect to find an appengine-web.xml file for the
-      given application.
+      The location of the appengine-web.xml file for the given application.
     """
-    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
-      "appengine-web.xml"
+    for root, sub_dirs, files in os.walk(app_dir):
+      for file in files:
+        if ('appengine-web.xml' == file):
+          return os.path.abspath(os.path.join(root, file))
 
 
   @classmethod
@@ -127,12 +128,13 @@ class AppEngineHelper():
       app_dir: The location on the filesystem where the App Engine application
         is located.
     Returns:
-      The location where we can expect to find the lib folder for the
-      given application.
+      The location of the lib folder for the given application.
     """
-    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
-      "lib"
-  
+    for root, sub_dirs, files in os.walk(app_dir):
+      for dir in sub_dirs:
+        if ('lib' == dir):
+          return os.path.abspath(os.path.join(root, dir))
+
 
   @classmethod
   def get_app_id_from_app_config(cls, app_dir):
