@@ -50,7 +50,7 @@ class AppEngineHelper():
 
   # The prefix of the GAE Java SDK jar name.
   JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
-  
+
 
   @classmethod
   def read_file(cls, path):
@@ -93,13 +93,13 @@ class AppEngineHelper():
     """
     for root, sub_dirs, files in os.walk(app_dir):
       for file in files:
-        if ('appengine-web.xml' == file):
+        if 'appengine-web.xml' == file:
           return os.path.abspath(os.path.join(root, file))
 
 
   @classmethod
   def is_sdk_mismatch(cls, app_dir):
-    """Returns if the sdk jars are the right version within an App Engine 
+    """Returns if the sdk jars are the right version within an App Engine
     application.
 
     Args:
@@ -107,18 +107,18 @@ class AppEngineHelper():
         is located.
     Returns:
       A boolean value indicating if the user may have an sdk version
-      compatibility error with AppScale. 
+      compatibility error with AppScale.
     """
-    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir));
+    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir))
     target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
       + '.jar'
     mismatch = True
     for jar_file in lib_files:
       if target_jar in jar_file:
         mismatch = False
-    return mismatch 
+    return mismatch
 
-  
+
   @classmethod
   def get_appengine_lib_location(cls, app_dir):
     """Returns the location that we expect the lib folder to be found
@@ -132,7 +132,7 @@ class AppEngineHelper():
     """
     for root, sub_dirs, files in os.walk(app_dir):
       for dir in sub_dirs:
-        if ('lib' == dir):
+        if 'lib' == dir:
           return os.path.abspath(os.path.join(root, dir))
 
 
