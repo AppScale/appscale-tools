@@ -99,7 +99,7 @@ class AppEngineHelper():
     """
     for root, sub_dirs, files in os.walk(app_dir):
       for file in files:
-        if file == APPENGINE_WEB_XML:
+        if file == cls.APPENGINE_WEB_XML:
           return os.path.abspath(os.path.join(root, file))
 
 
@@ -138,7 +138,7 @@ class AppEngineHelper():
     """
     for root, sub_dirs, files in os.walk(app_dir):
       for dir in sub_dirs:
-        if dir == LIB:
+        if dir == cls.LIB:
           return os.path.abspath(os.path.join(root, dir))
 
 
