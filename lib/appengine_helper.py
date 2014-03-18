@@ -51,7 +51,7 @@ class AppEngineHelper():
   # The prefix of the GAE Java SDK jar name.
   JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
 
-  # The configuration file for Java Apps
+  # The configuration file for Java Apps.
   APPENGINE_WEB_XML = 'appengine-web.xml'
 
   # The directory that contains useful libraries for Java Apps.
