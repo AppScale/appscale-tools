@@ -2,6 +2,11 @@
 
 export DIST=`lsb_release -c -s`
 
+if [ "$DIST" == "n/a" ]
+then
+  DIST="na"
+fi
+
 cd `dirname $0`/..
 
 if [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
