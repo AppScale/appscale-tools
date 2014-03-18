@@ -50,7 +50,13 @@ class AppEngineHelper():
 
   # The prefix of the GAE Java SDK jar name.
   JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
-  
+
+  # The configuration file for Java Apps.
+  APPENGINE_WEB_XML = 'appengine-web.xml'
+
+  # The directory that contains useful libraries for Java Apps.
+  LIB = 'lib'
+
 
   @classmethod
   def read_file(cls, path):
@@ -89,16 +95,17 @@ class AppEngineHelper():
       app_dir: The location on the filesystem where the App Engine application
         is located.
     Returns:
-      The location where we can expect to find an appengine-web.xml file for the
-      given application.
+      The location of the appengine-web.xml file for the given application.
     """
-    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
-      "appengine-web.xml"
+    for root, sub_dirs, files in os.walk(app_dir):
+      for file in files:
+        if file == cls.APPENGINE_WEB_XML:
+          return os.path.abspath(os.path.join(root, file))
 
 
   @classmethod
   def is_sdk_mismatch(cls, app_dir):
-    """Returns if the sdk jars are the right version within an App Engine 
+    """Returns if the sdk jars are the right version within an App Engine
     application.
 
     Args:
@@ -106,18 +113,18 @@ class AppEngineHelper():
         is located.
     Returns:
       A boolean value indicating if the user may have an sdk version
-      compatibility error with AppScale. 
+      compatibility error with AppScale.
     """
-    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir));
+    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir))
     target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
       + '.jar'
     mismatch = True
     for jar_file in lib_files:
       if target_jar in jar_file:
         mismatch = False
-    return mismatch 
+    return mismatch
 
-  
+
   @classmethod
   def get_appengine_lib_location(cls, app_dir):
     """Returns the location that we expect the lib folder to be found
@@ -127,12 +134,13 @@ class AppEngineHelper():
       app_dir: The location on the filesystem where the App Engine application
         is located.
     Returns:
-      The location where we can expect to find the lib folder for the
-      given application.
+      The location of the lib folder for the given application.
     """
-    return app_dir + os.sep + "war" + os.sep + "WEB-INF" + os.sep + \
-      "lib"
-  
+    for root, sub_dirs, files in os.walk(app_dir):
+      for dir in sub_dirs:
+        if dir == cls.LIB:
+          return os.path.abspath(os.path.join(root, dir))
+
 
   @classmethod
   def get_app_id_from_app_config(cls, app_dir):

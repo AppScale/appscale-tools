@@ -26,6 +26,7 @@ import SOAPpy
 # AppScale import, the library that we're testing here
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
+from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -116,6 +117,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
     os.path.should_receive('exists').with_args(app_yaml_location) \
       .and_return(True)
+    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -146,6 +148,10 @@ class TestAppScaleUploadApp(unittest.TestCase):
       self.app_dir)
     os.path.should_receive('exists').with_args(
       AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
+    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
+    flexmock(AppEngineHelper).should_receive('get_app_runtime_from_app_config').and_return('runtime')
+    flexmock(LocalState).should_receive('get_secret_key').and_return()
+    flexmock(AppControllerClient).should_receive('get_uaserver_host').and_return('1.2.3.4')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -1027,7 +1033,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
   def test_java_bad_sdk_version(self):
     bad_jars = ['test.jar', 'appengine-api-1.0-sdk-1.7.3.jar']
     flexmock(os)
-    os.should_receive('listdir').with_args('/war/WEB-INF/lib').and_return(bad_jars)
+    os.should_receive('listdir').and_return(bad_jars)
     self.assertEquals(True, AppEngineHelper.is_sdk_mismatch(''))
 
     
@@ -1036,5 +1042,5 @@ class TestAppScaleUploadApp(unittest.TestCase):
       + AppEngineHelper.SUPPORTED_SDK_VERSION + '.jar'
     good_jars = ['test.jar', target_jar]
     flexmock(os)
-    os.should_receive('listdir').with_args('/war/WEB-INF/lib').and_return(good_jars)
+    os.should_receive('listdir').and_return(good_jars)
     self.assertEquals(False, AppEngineHelper.is_sdk_mismatch('')) 
