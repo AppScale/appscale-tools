@@ -4,13 +4,13 @@ Priority: optional
 Maintainer: AppScale Developer <appscale_developer@googlegroups.com>
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.0
-Homepage: http://appscale.cs.ucsb.edu/
+Homepage: http://www.appscale.com/
 
 Package: appscale-tools
 Architecture: any
 Depends:
 # tools
- openssh-client, curl,
+ openssh-client, curl, python-httplib2
 # Unknown
  make
 # m2crypto
@@ -18,4 +18,5 @@ Depends:
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
- scalable cloud computing fabrics.
+ scalable cloud computing fabrics. These are the tools
+ to interact with an AppScale deployment.
