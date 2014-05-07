@@ -670,7 +670,7 @@ class RemoteHelper():
 
     # Start up monit.
     cls.ssh(host, keyname, 'monit quit; ', is_verbose)
-    cls.ssh(host, keyname, 'monit -c /etc/monitrc', is_verbose)
+    cls.ssh(host, keyname, 'service monit start', is_verbose)
     time.sleep(1)
 
     # Finally, start the AppController.
