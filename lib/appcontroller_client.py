@@ -42,6 +42,11 @@ class AppControllerClient():
   WAIT_TIME = 10
 
 
+  # The max number of seconds we should wait for when waiting for the
+  # UserAppServer to start up. We'll give up after this.
+  MAX_WAIT_TIME = 900
+
+
   # The message that an AppController can return if callers do not authenticate
   # themselves correctly.
   BAD_SECRET_MESSAGE = 'false: bad secret'
@@ -188,8 +193,12 @@ class AppControllerClient():
     Returns:
       The IP address where a UserAppServer can be located (although it is not
       guaranteed to be running).
+    Raises:
+      TimeoutException if MAX_WAIT_TIME passes with no answer from
+      controller.
     """
     last_known_state = None
+    timeout = datetime.datetime.now() + MAX_WAIT_TIME
     while True:
       try:
         status = self.get_status()
@@ -218,6 +227,9 @@ class AppControllerClient():
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
       time.sleep(self.WAIT_TIME)
+      if timeout < datetime.datetime.now():
+          raise TimeoutException()
+
 
 
   def get_status(self):
