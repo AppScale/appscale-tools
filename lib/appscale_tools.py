@@ -425,7 +425,8 @@ class AppScaleTools():
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       # and let's make sure we don't leave dangling instances around
-      RemoteHelper.terminate_cloud_instance(instance_id, options)
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+        options.verbose)
       raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
