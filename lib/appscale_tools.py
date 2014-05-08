@@ -410,7 +410,7 @@ class AppScaleTools():
       "for use.")
 
     # Write our metadata as soon as possible to let users SSH into those
-    # machines via 'appscale ssh'
+    # machines via 'appscale ssh'.
     LocalState.update_local_metadata(options, node_layout, public_ip,
       instance_id)
     RemoteHelper.copy_local_metadata(public_ip, options.keyname,
@@ -421,10 +421,10 @@ class AppScaleTools():
     try:
       uaserver_host = acc.get_uaserver_host(options.verbose)
     except Exception:
-      # collect crash logs from the AC machine
+      # Collect crash logs from the AppController machine.
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
-      # and let's make sure we don't leave dangling instances around
+      # Let's make sure we don't leave dangling instance around.
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
       raise AppControllerException(message)
