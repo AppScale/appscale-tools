@@ -421,8 +421,11 @@ class AppScaleTools():
     try:
       uaserver_host = acc.get_uaserver_host(options.verbose)
     except Exception:
+      # collect crash logs from the AC machine
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
+      # and let's make sure we don't leave dangling instances around
+      RemoteHelper.terminate_cloud_instance(instance_id, options)
       raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
