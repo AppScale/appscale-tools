@@ -819,7 +819,7 @@ class RemoteHelper():
     params = agent.get_params_from_yaml(keyname)
     params['IS_VERBOSE'] = is_verbose
 
-    # we want to terminate also the pending instances
+    # We want to terminate also the pending instances.
     pending = True
     _, _, instance_ids = agent.describe_instances(params, pending)
 

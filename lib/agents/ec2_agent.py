@@ -350,12 +350,11 @@ class EC2Agent(BaseAgent):
     """
     Retrieves the list of running instances that have been instantiated using a
     particular EC2 keyname. The target keyname is read from the input parameter
-    map. (Also see documentation for the BaseAgent class)
+    map. (Also see documentation for the BaseAgent class).
 
     Args:
-      parameters  A dictionary containing the 'keyname' parameter
-      pending     Indicates we also want the pending instances
-
+      parameters:  A dictionary containing the 'keyname' parameter.
+      pending:     Indicates we also want the pending instances.
     Returns:
       A tuple of the form (public_ips, private_ips, instances) where each
       member is a list.
