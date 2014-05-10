@@ -198,7 +198,7 @@ class AppControllerClient():
       controller.
     """
     last_known_state = None
-    timeout = datetime.datetime.now() + MAX_WAIT_TIME
+    timeout = datetime.datetime.now() + datetime.timedelta(0, MAX_WAIT_TIME)
     while True:
       try:
         status = self.get_status()
