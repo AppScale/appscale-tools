@@ -581,13 +581,14 @@ class GCEAgent(BaseAgent):
         'file at {0}'.format(credentials_file))
 
 
-  def describe_instances(self, parameters):
+  def describe_instances(self, parameters, pending=False):
     """ Queries Google Compute Engine to see which instances are currently
     running, and retrieve information about their public and private IPs.
 
     Args:
       parameters: A dict with keys for each parameter needed to connect to
         Google Compute Engine.
+      pending: Boolean if we should show pending instances.
     Returns:
       A tuple of the form (public_ips, private_ips, instance_ids), where each
         member is a list. Items correspond to each other across these lists,

@@ -51,13 +51,13 @@ class BaseAgent:
     raise NotImplementedError
 
 
-  def describe_instances(self, parameters):
+  def describe_instances(self, parameters, pending=False):
     """Query the underlying cloud platform regarding VMs that are running.
 
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
-
+      pending: If we should show pending instances.
     Returns:
       A tuple of the form (public, private, id) where public is a list
       of private IP addresses, private is a list of private IP addresses,

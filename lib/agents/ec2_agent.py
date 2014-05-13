@@ -100,7 +100,6 @@ class EC2Agent(BaseAgent):
 
     Args:
       parameters: A dict containing the user's AWS access key and secret key.
-
     Raises:
       AgentConfigurationException: If the given AWS access key and secret key
       cannot be used to make requests to AWS.
@@ -124,7 +123,7 @@ class EC2Agent(BaseAgent):
     BaseAgent class)
 
     Args:
-      parameters  A dictionary of parameters
+      parameters: A dictionary of parameters.
     """
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
@@ -168,7 +167,6 @@ class EC2Agent(BaseAgent):
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
       group: A str that names the group that should be created.
-
     Raises:
       AgentRuntimeException: If the security group could not be created.
     """
@@ -207,7 +205,6 @@ class EC2Agent(BaseAgent):
         allowed.
       cidr_ip: A str that names the IP range that traffic should be allowed
         from.
-
     Raises:
       AgentRuntimeException: If the ports could not be opened on the security
       group.
@@ -327,8 +324,8 @@ class EC2Agent(BaseAgent):
     (Also see documentation for the BaseAgent class)
 
     Args:
-      parameters  A dictionary of parameters
-      operation   Operations to be invoked using the above parameters
+      parameters: A dictionary of parameters.
+      operation: Operations to be invoked using the above parameters.
     """
     required_params = ()
     if operation == BaseAgent.OPERATION_RUN:
@@ -353,8 +350,8 @@ class EC2Agent(BaseAgent):
     map. (Also see documentation for the BaseAgent class).
 
     Args:
-      parameters:  A dictionary containing the 'keyname' parameter.
-      pending:     Indicates we also want the pending instances.
+      parameters: A dictionary containing the 'keyname' parameter.
+      pending: Indicates we also want the pending instances.
     Returns:
       A tuple of the form (public_ips, private_ips, instances) where each
       member is a list.
@@ -384,13 +381,11 @@ class EC2Agent(BaseAgent):
     class)
 
     Args:
-      count               No. of VMs to spawned
-      parameters          A dictionary of parameters. This must contain 
-                          'keyname', 'group', 'image_id' and 'instance_type'
-                          parameters.
-      security_configured Uses this boolean value as an heuristic to
-                          detect brand new AppScale deployments.
-
+      count: Number of VMs to spawned.
+      parameters: A dictionary of parameters. This must contain 
+        'keyname', 'group', 'image_id' and 'instance_type' parameters.
+      security_configured: Uses this boolean value as an heuristic to
+        detect brand new AppScale deployments.
     Returns:
       A tuple of the form (instances, public_ips, private_ips)
     """
@@ -525,7 +520,7 @@ class EC2Agent(BaseAgent):
     see documentation for the BaseAgent class)
 
     Args:
-      parameters  A dictionary of parameters
+      parameters: A dictionary of parameters.
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
@@ -548,7 +543,7 @@ class EC2Agent(BaseAgent):
     see documentation for the BaseAgent class)
 
     Args:
-      parameters:  A dictionary of parameters
+      parameters: A dictionary of parameters.
     """
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
     conn = self.open_connection(parameters)
@@ -572,19 +567,19 @@ class EC2Agent(BaseAgent):
 
   def wait_for_status_change(self, parameters, conn, state_requested, \
                               max_wait_time=60,poll_interval=10):
-    """
-    After we have sent a signal to the cloud infrastructure to change the state
+    """ After we have sent a signal to the cloud infrastructure to change the state
       of the instances (unsually from runnning to either stoppped or 
       terminated), wait for the status to change.  If all the instances change
-      successfully, return true, if not return false
+      successfully, return True, if not return False.
+
     Args:
-      parameters: A dictionary of parameters
-      conn:       A connection object returned from self.open_connection()
-      state_requrested: string of the requested final state of the instances
+      parameters: A dictionary of parameters.
+      conn: A connection object returned from self.open_connection().
+      state_requrested: String of the requested final state of the instances.
       max_wait_time: int of maximum amount of time (in seconds)  to wait for the
-                        state change
+        state change.
       poll_interval: int of the number of seconds to wait between checking of
-                        the state
+        the state.
     """
     time_start = time.time()
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
@@ -756,7 +751,6 @@ class EC2Agent(BaseAgent):
         should speculate for.
       zone: A str representing the availability zone that the instance will
         be placed in.
-
     Returns:
       The estimated spot price for the specified instance type, in the
         specified availability zone.
@@ -780,8 +774,7 @@ class EC2Agent(BaseAgent):
     Initialize a connection to the back-end EC2 APIs.
 
     Args:
-      parameters  A dictionary containing the 'credentials' parameter.
-
+      parameters: A dictionary containing the 'credentials' parameter.
     Returns:
       An instance of Boto EC2Connection
     """
@@ -791,31 +784,27 @@ class EC2Agent(BaseAgent):
       aws_secret_access_key=credentials['EC2_SECRET_KEY'])
 
   def handle_failure(self, msg):
-    """
-    Log the specified error message and raise an AgentRuntimeException
+    """ Log the specified error message and raise an AgentRuntimeException
 
     Args:
-      msg An error message to be logged and included in the raised exception
-
+      msg: An error message to be logged and included in the raised exception.
     Raises:
-      AgentRuntimeException Contains the input error message
+      AgentRuntimeException Contains the input error message.
     """
     AppScaleLogger.log(msg)
     raise AgentRuntimeException(msg)
 
   def __describe_instances(self, parameters):
-    """
-    Query the back-end EC2 services for instance details and return
+    """ Query the back-end EC2 services for instance details and return
     a list of instances. This is equivalent to running the standard
     ec2-describe-instances command. The returned list of instances
     will contain all the running and pending instances and it might
     also contain some recently terminated instances.
 
     Args:
-      parameters  A dictionary of parameters
-
+      parameters: A dictionary of parameters.
     Returns:
-      A list of instances (element type definition in boto.ec2 package)
+      A list of instances (element type definition in boto.ec2 package).
     """
     conn = self.open_connection(parameters)
     reservations = conn.get_all_instances()
@@ -823,14 +812,12 @@ class EC2Agent(BaseAgent):
     return instances
 
   def __get_instance_info(self, instances, status, keyname):
-    """
-    Filter out a list of instances by instance status and keyname.
+    """ Filter out a list of instances by instance status and keyname.
 
     Args:
       instances: A list of instances as returned by describe_instances.
       status: Status of the VMs (eg: running, terminated).
       keyname: Keyname used to spawn instances.
-
     Returns:
       A tuple of the form (public ips, private ips, instance ids).
     """
