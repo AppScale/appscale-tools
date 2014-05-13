@@ -818,7 +818,10 @@ class RemoteHelper():
       LocalState.get_infrastructure(keyname))
     params = agent.get_params_from_yaml(keyname)
     params['IS_VERBOSE'] = is_verbose
-    _, _, instance_ids = agent.describe_instances(params)
+
+    # We want to terminate also the pending instances.
+    pending = True
+    _, _, instance_ids = agent.describe_instances(params, pending)
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.

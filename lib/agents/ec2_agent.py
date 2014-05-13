@@ -346,15 +346,15 @@ class EC2Agent(BaseAgent):
       if not self.has_parameter(credential, parameters['credentials']):
         raise AgentConfigurationException('no ' + credential)
 
-  def describe_instances(self, parameters):
+  def describe_instances(self, parameters, pending=False):
     """
     Retrieves the list of running instances that have been instantiated using a
     particular EC2 keyname. The target keyname is read from the input parameter
-    map. (Also see documentation for the BaseAgent class)
+    map. (Also see documentation for the BaseAgent class).
 
     Args:
-      parameters  A dictionary containing the 'keyname' parameter
-
+      parameters:  A dictionary containing the 'keyname' parameter.
+      pending:     Indicates we also want the pending instances.
     Returns:
       A tuple of the form (public_ips, private_ips, instances) where each
       member is a list.
@@ -367,7 +367,8 @@ class EC2Agent(BaseAgent):
     reservations = conn.get_all_instances()
     instances = [i for r in reservations for i in r.instances]
     for i in instances:
-      if i.state == 'running' and i.key_name == parameters[self.PARAM_KEYNAME]:
+      if (i.state == 'running' or (pending and i.state == 'pending'))\
+           and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
         public_ips.append(i.public_dns_name)
         private_ips.append(i.private_dns_name)

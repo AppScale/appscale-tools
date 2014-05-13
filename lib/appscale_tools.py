@@ -424,9 +424,11 @@ class AppScaleTools():
       # Collect crash logs from the AppController machine.
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
-      # Let's make sure we don't leave dangling instance around.
-      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-        options.verbose)
+      # Let's make sure we don't leave dangling instance around if we are
+      # running in the cloud.
+      if options.infrastructure:
+        RemoteHelper.terminate_cloud_infrastructure(options.keyname,
+            options.verbose)
       raise AppControllerException(message)
 
     RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
