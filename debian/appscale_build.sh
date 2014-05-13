@@ -14,7 +14,7 @@ if [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
     exit 1
 fi
 
-echo "Ubuntu ${DIST}"
+echo "Installing Ubuntu ${DIST} building environment."
 
 # Install the deb packages specified for this distro.
 PACKAGES=`find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +`
@@ -32,7 +32,6 @@ cp -rv bin lib templates $TARGETDIR || exit 1
 cp -v LICENSE README.md $TARGETDIR || exit 1
 
 # install scripts
-
 bash debian/appscale_install_${DIST}.sh all
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
