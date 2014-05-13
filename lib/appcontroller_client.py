@@ -44,7 +44,7 @@ class AppControllerClient():
 
   # The max number of seconds we should wait for when waiting for the
   # UserAppServer to start up. We'll give up after this.
-  MAX_WAIT_TIME = 900
+  MAX_RETRIES = 100
 
 
   # The message that an AppController can return if callers do not authenticate
@@ -194,11 +194,11 @@ class AppControllerClient():
       The IP address where a UserAppServer can be located (although it is not
       guaranteed to be running).
     Raises:
-      TimeoutException if MAX_WAIT_TIME passes with no answer from
+      TimeoutException if MAX_RETRIES is attempted with no answer from
       controller.
     """
     last_known_state = None
-    timeout = datetime.datetime.now() + datetime.timedelta(0, MAX_WAIT_TIME)
+    retries = 0
     while True:
       try:
         status = self.get_status()
@@ -227,10 +227,10 @@ class AppControllerClient():
         AppScaleLogger.warn('Saw {0}, waiting a few moments to try again' \
           .format(str(exception)))
       time.sleep(self.WAIT_TIME)
-      if timeout < datetime.datetime.now():
-          raise TimeoutException()
-
-
+      retries += 1
+      if retries >= self.MAX_RETRIES:
+        AppScaleLogger.warn("Too many retries to connect to UAServer.")
+        raise TimeoutException()
 
   def get_status(self):
     """Queries the AppController to see what its internal state is.
