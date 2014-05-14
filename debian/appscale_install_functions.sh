@@ -32,21 +32,6 @@ pip_wrapper ()
 }
 
 
-installsshcopyid()
-{
-  echo "Installing ssh-copy-id if needed."
-  set +e
-  hash ssh-copy-id > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    set -e
-    echo "ssh-copy-id not found - installing."
-    cd /usr/bin
-    curl -o ssh-copy-id http://s3.amazonaws.com/appscale-build/ssh-copy-id
-    chmod +x ./ssh-copy-id
-  fi
-  set -e
-}
-
 installsetuptools()
 {
   pip_wrapper setuptools
