@@ -65,7 +65,8 @@ max : 1
 
 # The project number associated with your Google Compute Engine account, used
 # to uniquely identify you when communicating with Google Compute Engine.
-#project: '123456789'
+# Note: Do not use the project number.
+#project: 'project-name-here'
 
 # The Elastic IP (in Amazon Web Services) or Static IP (in Google Compute Engine)
 # that should be used for your first machine's public IP address.
