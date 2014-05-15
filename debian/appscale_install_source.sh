@@ -7,14 +7,12 @@ DIST=other
 
 case "$1" in
     tools)
-        installsshcopyid
         installsetuptools
         installpylibs
       	installappscaletools
 	postinstallappscaletools
 	;;
     all)
-        installsshcopyid
         installsetuptools
         installpylibs
 	installappscaletools

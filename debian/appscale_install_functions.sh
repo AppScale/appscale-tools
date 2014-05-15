@@ -12,72 +12,44 @@ if [ -z "$APPSCALE_TOOLS_HOME" ]; then
     export APPSCALE_TOOLS_HOME=/root/appscale
 fi
 
-installexpect()
+pip_wrapper () 
 {
-  echo "Installing expect"
-  mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
-  cd ${APPSCALE_TOOLS_HOME}/downloads
-  curl -o expect5.45.tar.gz http://s3.amazonaws.com/appscale-build/expect5.45.tar.gz
-  tar zxvf expect5.45.tar.gz
-  pushd expect5.45
-  ./configure
-  make
-  make install
-  if [ -e ./libexpect5.45.so ]; then
-    cp libexpect5.45.so /usr/lib || exit 
-  fi
-  if [ -e ./libexpect5.45.dylib ]; then
-    cp libexpect5.45.dylib /usr/local/lib || exit 
-  fi 
-  popd 
-  rm -fr expect5.45*
+    # We have seen quite a few network/DNS issues lately, so much so that
+    # it takes a couple of tries to install packages with pip. This
+    # wrapper ensure that we are a bit more persitent.
+    if [ -n "$1" ] ; then
+        for x in 1 2 3 4 5 ; do
+            if pip install --upgrade $1 ; then
+                return
+            else
+                echo "Failed to install $1: retrying ..."
+                sleep $x
+            fi
+        done
+        echo "Failed to install $1: giving up."
+        exit 1
+    else
+        "Need an argument for pip!"
+        exit 1
+    fi
 }
 
-installsshcopyid()
-{
-  echo "Installing ssh-copy-id if needed."
-  set +e
-  hash ssh-copy-id > /dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    set -e
-    echo "ssh-copy-id not found - installing."
-    cd /usr/bin
-    curl -o ssh-copy-id http://s3.amazonaws.com/appscale-build/ssh-copy-id
-    chmod +x ./ssh-copy-id
-  fi
-  set -e
-}
 
 installsetuptools()
 {
-   echo "Installing setuptools if needed."
-   set +e
-   hash easy_install > /dev/null 2>&1
-   if [ $? -ne 0 ]; then
-     set -e
-     echo "setuptools not found - installing."
-     mkdir -pv ${APPSCALE_TOOLS_HOME}/downloads
-     cd ${APPSCALE_TOOLS_HOME}/downloads
-     curl -o setuptools-0.6c11.tar.gz http://s3.amazonaws.com/appscale-build/setuptools-0.6c11.tar.gz
-     tar zxvf setuptools-0.6c11.tar.gz
-     pushd setuptools-0.6c11
-     python setup.py install
-     popd
-     rm -fr setuptools-0.6c11*
-   fi
-   set -e
+  pip_wrapper setuptools
 }
 
 installpylibs()
 {
-  easy_install termcolor
-  easy_install SOAPpy
-  easy_install pyyaml
-  easy_install boto
-  easy_install oauth2client
-  easy_install google-api-python-client
-  easy_install argparse
-  easy_install python-gflags
+  pip_wrapper termcolor
+  pip_wrapper SOAPpy
+  pip_wrapper pyyaml
+  pip_wrapper boto
+  pip_wrapper oauth2client
+  pip_wrapper google-api-python-client
+  pip_wrapper argparse
+  pip_wrapper python-gflags
 }
 
 installappscaletools()
