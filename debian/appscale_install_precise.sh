@@ -5,6 +5,7 @@
 DESTDIR=$2
 DIST=precise
 
+instapp_pip
 installappscaletools
 installsetuptools
 installpylibs
