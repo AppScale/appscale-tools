@@ -1047,4 +1047,3 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(os)
     os.should_receive('listdir').and_return(good_jars)
     self.assertEquals(False, AppEngineHelper.is_sdk_mismatch(''))
-
