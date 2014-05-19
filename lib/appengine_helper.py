@@ -125,6 +125,7 @@ class AppEngineHelper():
         if target_jar in jar_file:
           mismatch = False
           break
+      # If the SDK is found, terminate lookup.
       if not mismatch:
         break
     return mismatch
