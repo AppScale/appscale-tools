@@ -12,34 +12,14 @@ if [ -z "$APPSCALE_TOOLS_HOME" ]; then
     export APPSCALE_TOOLS_HOME=/root/appscale
 fi
 
-# The command to use to install python packages not belonging to the
-# distribution.
-export INSTALL_CMD=""
-
 pip_wrapper () 
 {
-  # pip 1.0 has issues, so we revert to easy_install in this case.
-  if [ -z "$INSTALL_CMD" ]; then
-    case  $(pip --version|awk '{print $2}') in
-    "1.0")
-      INSTALL_CMD="$(which easy_install)"
-      ;;
-    *)
-      INSTALL_CMD="$(which pip) install"
-      ;;
-    esac
-  fi
-  if [ -z "INSTALL_CMD" ]; then
-    echo "Cannot find either pip or easy_install!"
-    exit 1
-  fi
-
   # We have seen quite a few network/DNS issues lately, so much so that
   # it takes a couple of tries to install packages with pip. This
   # wrapper ensure that we are a bit more persitent.
   if [ -n "$1" ] ; then
     for x in 1 2 3 4 5 ; do
-      if $INSTALL_CMD --upgrade $1 ; then
+      if pip install --upgrade $1 ; then
         return
       else
         echo "Failed to install $1: retrying ..."
@@ -49,7 +29,7 @@ pip_wrapper ()
     echo "Failed to install $1: giving up."
     exit 1
   else
-    "Need an argument for $INSTALL_CMD!"
+    "Need an argument for pip!"
     exit 1
   fi
 }
