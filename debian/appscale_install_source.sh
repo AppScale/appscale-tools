@@ -7,14 +7,12 @@ DIST=other
 
 case "$1" in
     tools)
-        installpip
         installsetuptools
         installpylibs
       	installappscaletools
 	postinstallappscaletools
 	;;
     all)
-        installpip
         installsetuptools
         installpylibs
 	installappscaletools

@@ -5,7 +5,6 @@
 DESTDIR=$2
 DIST=wheezy
 
-installpip
 installappscaletools
 installsetuptools
 installpylibs
