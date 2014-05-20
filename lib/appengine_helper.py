@@ -105,7 +105,7 @@ class AppEngineHelper():
 
   @classmethod
   def is_sdk_mismatch(cls, app_dir):
-    """Returns if the sdk jars are the right version within an App Engine
+    """ Returns if the sdk jar is the right version within an App Engine
     application.
 
     Args:
@@ -115,32 +115,38 @@ class AppEngineHelper():
       A boolean value indicating if the user may have an sdk version
       compatibility error with AppScale.
     """
-    lib_files = os.listdir(cls.get_appengine_lib_location(app_dir))
     target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
       + '.jar'
+    paths = cls.get_appengine_lib_locations(app_dir)
     mismatch = True
-    for jar_file in lib_files:
-      if target_jar in jar_file:
-        mismatch = False
+    for path in paths:
+      lib_files = os.listdir(path)
+      for jar_file in lib_files:
+        if target_jar in jar_file:
+          mismatch = False
+          break
+      # If the SDK is found, terminate lookup.
+      if not mismatch:
+        break
     return mismatch
 
-
   @classmethod
-  def get_appengine_lib_location(cls, app_dir):
-    """Returns the location that we expect the lib folder to be found
-    within an App Engine application.
+  def get_appengine_lib_locations(cls, app_dir):
+    """ Returns the locations of all lib folders within an App Engine
+    application.
 
     Args:
       app_dir: The location on the filesystem where the App Engine application
         is located.
     Returns:
-      The location of the lib folder for the given application.
+      A list, all the lib folder paths in the given application.
     """
+    paths = []
     for root, sub_dirs, files in os.walk(app_dir):
       for dir in sub_dirs:
         if dir == cls.LIB:
-          return os.path.abspath(os.path.join(root, dir))
-
+          paths.append(os.path.abspath(os.path.join(root, dir)))
+    return paths
 
   @classmethod
   def get_app_id_from_app_config(cls, app_dir):
