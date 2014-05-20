@@ -115,12 +115,12 @@ class AppEngineHelper():
       A boolean value indicating if the user may have an sdk version
       compatibility error with AppScale.
     """
+    target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
+      + '.jar'
+    paths = cls.get_appengine_lib_locations(app_dir)
     mismatch = True
-    paths = cls.get_appengine_lib_location(app_dir)
     for path in paths:
       lib_files = os.listdir(path)
-      target_jar = cls.JAVA_SDK_JAR_PREFIX + '-' + cls.SUPPORTED_SDK_VERSION \
-        + '.jar'
       for jar_file in lib_files:
         if target_jar in jar_file:
           mismatch = False
@@ -131,7 +131,7 @@ class AppEngineHelper():
     return mismatch
 
   @classmethod
-  def get_appengine_lib_location(cls, app_dir):
+  def get_appengine_lib_locations(cls, app_dir):
     """ Returns the locations of all lib folders within an App Engine
     application.
 

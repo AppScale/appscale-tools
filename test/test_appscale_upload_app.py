@@ -1043,7 +1043,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     good_jars = ['test.jar', target_jar]
 
     aeh = flexmock(AppEngineHelper)
-    aeh.should_receive('get_appengine_lib_location').and_return(['blah'])
+    aeh.should_receive('get_appengine_lib_locations').and_return(['blah'])
     flexmock(os)
     os.should_receive('listdir').and_return(good_jars)
     self.assertEquals(False, AppEngineHelper.is_sdk_mismatch(''))
