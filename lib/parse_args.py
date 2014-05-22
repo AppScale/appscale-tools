@@ -38,7 +38,7 @@ class ParseArgs():
 
 
   # A list of the datastores that AppScale can deploy over.
-  ALLOWED_DATASTORES = ["hbase", "hypertable", "cassandra"]
+  ALLOWED_DATASTORES = ["cassandra"]
 
 
   # The EC2 instance type that should be used if the user does not specify one.
