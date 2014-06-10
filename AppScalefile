@@ -1,0 +1,79 @@
+---
+# The underlying cloud infrastructure to deploy AppScale over.
+# Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
+# or 'gce' if running on Google Compute Engine.
+infrastructure : 'openstack'
+
+# The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
+# installed on it. When running on Google Compute Engine, set this to the name
+# of the image you set when you ran 'gcutil addimage'.
+machine : 'ami-00000009'
+
+# The instance type that should be used for all virtual machines in your
+# AppScale deployment, if running in Amazon EC2 or Eucalyptus.
+instance_type : 'm1.small'
+
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+zone : 'nova' # For Openstack
+
+# The database that your Google App Engine applications will be backed by.
+# Currently only supports cassandra.
+table : 'cassandra'
+
+# Whether or not the Datastore should be erased when AppScale starts up.
+# This defaults to False, to persist your data across AppScale runs.
+# Note that your data is only persisted if you are using non-ephemeral
+# storage (EBS on EC2, and PD on GCE).
+#clear_datastore: True
+
+# The AWS keyname that should be used for all machines in this AppScale
+# deployment. This should refer to a keyname that does not already exist
+# in your AWS account. By default, we randomly generate a keyname for you.
+keyname : 'appscalekey'
+
+# The AWS security group name that should be used for all machines in this
+# AppScale deployment. This should refer to a keyname that does not already
+# exist in your AWS account. When running in Google Compute Engine, this is
+# the name that will be used for the network and firewall that is created
+# for your GCE instances. By default, we randomly generate a group for you.
+group : 'appscalegroup'
+
+# Whether or not increased output should be presented to standard output.
+# We recommend setting this to True if you are encountering issues with
+# AppScale and wish to see precisely where they are coming from.
+verbose : True
+
+# The minimum number of machines that should be used for your AppScale
+# deployment.
+min : 1
+
+# The maximum number of machines that should be used for your AppScale
+# deployment.
+max : 8
+
+# The Elastic IP (in Amazon Web Services) or Static IP (in Google Compute Engine)
+# that should be used for your first machine's public IP address.
+static_ip: '192.168.2.26'
+
+# The number of copies (replicas) of each piece of data stored in the
+# specified database. By default, we determine the optimal value based
+# on the number of virtual machines running the 'database' role, by the
+# formula: min(# of database VMs, 3). Setting this value lower increases
+# performance, at the cost of fault-tolerance, and vice-versa.
+#n : 1
+
+# The password that should be used for the flower web interface that displays
+# information about Task Queue tasks.
+# flower_password: 'appscale'
+
+# Runs the following commands before starting the AppController on each machine.
+# user_commands:
+# - 'apt-get install -y htop'
+# - 'apt-get install -y vim'
+
+
+EC2_ACCESS_KEY: f7c743c0a7964b94aebee45b478af944
+EC2_SECRET_KEY: a4c4bff90cdf4bf09b4ba4543b8521c6
+EC2_URL: http://192.168.2.12:8773/services/Cloud

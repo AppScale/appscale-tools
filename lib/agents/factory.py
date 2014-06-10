@@ -1,6 +1,7 @@
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
 from agents.gce_agent import GCEAgent
+from agents.openstack_agent import OpenStackAgent
 from custom_exceptions import UnknownInfrastructureException
 
 
@@ -24,7 +25,7 @@ class InfrastructureAgentFactory:
     'ec2': EC2Agent,
     'euca': EucalyptusAgent,
     'gce': GCEAgent,
-    'openstack': OpenStack
+    'openstack': OpenStackAgent
   }
 
 
