@@ -75,20 +75,18 @@ class OpenStackAgent(EC2Agent):
     access_key = str(credentials['EC2_ACCESS_KEY'])
     secret_key = str(credentials['EC2_SECRET_KEY'])
     ec2_url = str(credentials['EC2_URL'])
+    ec2_zone = str(credentials['EC2_ZONE'])
 
     result = urlparse(ec2_url)
 
-    if result.port is not None and result.hostname is not None\
-      and result.path is not None:
-      port = result.port
-    else:
+    if result.port is None or result.hostname is None\
+      or result.path is None:
       self.handle_failure('Unknown scheme in Openstack_URL: {0}'+\
         ' : expected like http://<controller>:8773/services/Cloud'\
         .format(result.geturl()))
       return None
 
-    #TODO: region may not be "nova"
-    region = boto.ec2.regioninfo.RegionInfo(name="nova",\
+    region = boto.ec2.regioninfo.RegionInfo(name=ec2_zone,\
               endpoint=result.hostname)
     return boto.connect_ec2(aws_access_key_id=access_key,\
                 aws_secret_access_key=secret_key,\
@@ -113,8 +111,8 @@ class OpenStackAgent(EC2Agent):
     poll_interval: int of the number of seconds to wait between checking of
       the state.
 
-      Returns:
-        If all the instances change successfully, return True, if not return False.
+    Returns:
+      If all the instances change successfully, return True, if not return False.
     """
     time_start = time.time()
     instance_ids = parameters[self.PARAM_INSTANCE_IDS]
