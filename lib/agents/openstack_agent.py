@@ -2,7 +2,7 @@ from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
-
+import time
 
 import boto
 import os
@@ -90,4 +90,39 @@ class OpenStackAgent(EC2Agent):
                                 region=region,
                                 port=result.port,
                                 path=result.path,debug=2)
+
+
+    def wait_for_status_change(self, parameters, conn, state_requested, \
+                                max_wait_time=60,poll_interval=10):
+      """ After we have sent a signal to the cloud infrastructure to change the state
+        of the instances (unsually from runnning to either stoppped or 
+        terminated), wait for the status to change.  If all the instances change
+        successfully, return True, if not return False.
+
+      Args:
+        parameters: A dictionary of parameters.
+        conn: A connection object returned from self.open_connection().
+        state_requrested: String of the requested final state of the instances.
+        max_wait_time: int of maximum amount of time (in seconds)  to wait for the
+          state change.
+        poll_interval: int of the number of seconds to wait between checking of
+          the state.
+      """
+      time_start = time.time()
+      instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+      instances_in_state = {}
+      while True:
+        time.sleep(poll_interval)
+        reservations = conn.get_all_instances(instance_ids)
+        instances = [i for r in reservations for i in r.instances]
+        for i in instances:
+          # instance i.id reports status = i.state
+          if i.state == state_requested and \
+             i.key_name.startswith(parameters[self.PARAM_KEYNAME]):
+            if i.id not in instances_in_state.keys():
+              instances_in_state[i.id] = 1 # mark instance done
+        if len(instances_in_state.keys()) >= len(instance_ids):
+          return True
+        if time.time() - time_start > max_wait_time:
+          return False
 
