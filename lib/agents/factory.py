@@ -1,6 +1,7 @@
 from agents.ec2_agent import EC2Agent
 from agents.euca_agent import EucalyptusAgent
 from agents.gce_agent import GCEAgent
+from agents.openstack_agent import OpenStackAgent
 from custom_exceptions import UnknownInfrastructureException
 
 
@@ -15,7 +16,7 @@ class InfrastructureAgentFactory:
 
   # A set containing each of the cloud infrastructures that AppScale can
   # deploy over.
-  VALID_AGENTS = ('ec2', 'euca', 'gce')
+  VALID_AGENTS = ('ec2', 'euca', 'gce','openstack')
 
 
   # A dict that maps each VALID_AGENT above to the class that implements
@@ -23,7 +24,8 @@ class InfrastructureAgentFactory:
   agents = {
     'ec2': EC2Agent,
     'euca': EucalyptusAgent,
-    'gce': GCEAgent
+    'gce': GCEAgent,
+    'openstack': OpenStackAgent
   }
 
 
