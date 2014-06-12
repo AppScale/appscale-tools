@@ -1,11 +1,12 @@
+""" The Openstack Agent. """
 from agents.base_agent import AgentConfigurationException
 from agents.ec2_agent import EC2Agent
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
-import time
 
 import boto
 import os
+import time
 from urlparse import urlparse
 
 __author__ = 'dario nascimento'
@@ -25,10 +26,13 @@ class OpenStackAgent(EC2Agent):
   # it's the same as what's needed for EC2, with an extra argument indicating
   # where the Openstack deployment is located.
   REQUIRED_OPENSTACK_CREDENTIALS = list(EC2Agent.REQUIRED_EC2_CREDENTIALS) + \
-                   ['EC2_URL']
+    ['EC2_URL']
 
   # A list of credentials that we build our internal credential list from.
   REQUIRED_CREDENTIALS = REQUIRED_OPENSTACK_CREDENTIALS
+
+  # The default openstack region.
+  DEFAULT_REGION = "nova"
 
   def describe_instances(self, parameters, pending=False):
     """
@@ -52,7 +56,7 @@ class OpenStackAgent(EC2Agent):
     instances = [i for r in reservations for i in r.instances]
     for i in instances:
       if (i.state == 'running' or (pending and i.state == 'pending')) \
-          and i.key_name.startswith(parameters[self.PARAM_KEYNAME]):
+        and i.key_name.startswith(parameters[self.PARAM_KEYNAME]):
         instance_ids.append(i.id)
         public_ips.append(i.public_dns_name)
         private_ips.append(i.private_dns_name)
@@ -64,18 +68,18 @@ class OpenStackAgent(EC2Agent):
     Initialize a connection to the back-end OpenStack APIs.
 
     Args:
-      parameters  A dictionary containing the 'credentials' parameter
-                  EC2_URL usually has the format: 
-                      http://<nova_controller>:8773/services/Cloud
+      parameters: A dictionary containing the 'credentials' parameter
+        EC2_URL usually has the format: 
+        http://<nova_controller>:8773/services/Cloud
 
     Returns:
       An instance of Boto EC2Connection
     """
     credentials = parameters[self.PARAM_CREDENTIALS]
+    region_str = self.DEFAULT_REGION
     access_key = str(credentials['EC2_ACCESS_KEY'])
     secret_key = str(credentials['EC2_SECRET_KEY'])
     ec2_url = str(credentials['EC2_URL'])
-    ec2_zone = str(credentials['EC2_ZONE'])
 
     result = urlparse(ec2_url)
 
@@ -86,17 +90,17 @@ class OpenStackAgent(EC2Agent):
         .format(result.geturl()))
       return None
 
-    region = boto.ec2.regioninfo.RegionInfo(name=ec2_zone,\
-              endpoint=result.hostname)
-    return boto.connect_ec2(aws_access_key_id=access_key,\
-                aws_secret_access_key=secret_key,\
-                is_secure=(result.scheme == 'https'),\
-                region=region,\
-                port=result.port,\
-                path=result.path, debug=2)
+    region = boto.ec2.regioninfo.RegionInfo(name=region_str,
+      endpoint=result.hostname)
+    return boto.connect_ec2(aws_access_key_id=access_key,
+      aws_secret_access_key=secret_key,
+      is_secure=(result.scheme == 'https'),
+      region=region,
+      port=result.port,
+      path=result.path, debug=2)
 
-  def wait_for_status_change(self, parameters, conn, state_requested, \
-                max_wait_time=60, poll_interval=10):
+  def wait_for_status_change(self, parameters, conn, state_requested, 
+    max_wait_time=60, poll_interval=10):
     """ 
     After we have sent a signal to the cloud infrastructure to change the state
     of the instances (unsually from runnning to either stoppped or 
