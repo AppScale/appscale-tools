@@ -310,41 +310,8 @@ class TestRemoteHelper(unittest.TestCase):
   def test_copy_deployment_credentials_in_cloud(self):
     # mock out the scp'ing to public1 and assume they succeed
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*secret.key'),True,5)\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*ssh.key'),True,5)\
-      .and_return().ordered()
-
-    # mock out generating the private key
-    local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^openssl'),True, stdin=None)\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*mycert.pem'),True,5)\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*mykey.pem'),True,5)\
-      .and_return().ordered()
-
-    # next, mock out copying the private key and certificate
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),True,5,stdin=re.compile('^mkdir -p'))\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*cloud1/mycert.pem'),True,5)\
-      .and_return().ordered()
-
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*cloud1/mykey.pem'),True,5)\
-      .and_return().ordered()
-
+    local_state.should_receive('shell').and_return().ordered()
+  
     options = flexmock(name='options', keyname='bookey', infrastructure='ec2',
       verbose=True)
     RemoteHelper.copy_deployment_credentials('public1', options)
