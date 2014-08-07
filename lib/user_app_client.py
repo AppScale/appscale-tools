@@ -240,6 +240,8 @@ class UserAppClient():
       if self.does_app_exist(app_id):
         break
       else:
+        AppScaleLogger.log("Waiting {0} second(s) to check on application...".\
+          format(sleep_time))
         time.sleep(sleep_time)
         sleep_time = min(sleep_time * 2, self.MAX_SLEEP_TIME)
 

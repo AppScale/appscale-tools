@@ -7,6 +7,7 @@ import getpass
 import os
 import re
 import socket
+import subprocess
 import threading
 import time
 import uuid
@@ -260,8 +261,8 @@ class RemoteHelper():
     """
     sleep_time = 1
     while not cls.is_port_open(host, port, is_verbose):
-      AppScaleLogger.verbose("Waiting for {0}:{1} to open".format(host, port),
-        is_verbose)
+      AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open".\
+        format(host, port, sleep_time), is_verbose)
       time.sleep(sleep_time)
       sleep_time = min(sleep_time * 2, 20)
 
@@ -597,6 +598,13 @@ class RemoteHelper():
       options.keyname), '/etc/appscale/certs/mycert.pem', options.verbose)
     cls.scp(host, options.keyname, LocalState.get_private_key_location(
       options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
+
+    hash_id = subprocess.Popen(["openssl", "x509", "-hash", "-noout", "-in", 
+      LocalState.get_certificate_location(options.keyname)], stdout=subprocess.PIPE).\
+      communicate()[0]
+    cls.ssh(host, options.keyname, 
+      'ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/{0}.0'.format(hash_id.rstrip()),
+      options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
     cert = LocalState.get_certificate_location(options.keyname)
