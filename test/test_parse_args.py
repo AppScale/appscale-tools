@@ -155,12 +155,12 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals(ParseArgs.DEFAULT_DATASTORE, actual_3.args.table)
 
     # Specifying a non-positive integer for n should abort
-    argv_4 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '0']
+    argv_4 = self.cloud_argv[:] + ['--table', 'cassandra', '--n', '0']
     self.assertRaises(BadConfigurationException, ParseArgs, argv_4,
       self.function)
 
     # Specifying a positive integer for n should be ok
-    argv_5 = self.cloud_argv[:] + ['--table', 'cassandra', '-n', '2']
+    argv_5 = self.cloud_argv[:] + ['--table', 'cassandra', '--n', '2']
     actual_5 = ParseArgs(argv_5, self.function)
     self.assertEquals(2, actual_5.args.replication)
 
