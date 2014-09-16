@@ -48,11 +48,19 @@ class AppEngineHelper():
   APP_ID_REGEX = re.compile('\A(\d|[a-z]|[A-Z]|-)+\Z')
 
 
+  # A message to be displayed to the user, in case the given application ID
+  # does not comply with the corresponding regular expression.
+  REGEX_MESSAGE = "Valid application IDs contain only letters, numbers " + \
+                  "and/or '-'."
+
+
   # The prefix of the GAE Java SDK jar name.
   JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
 
+
   # The configuration file for Java Apps.
   APPENGINE_WEB_XML = 'appengine-web.xml'
+
 
   # The directory that contains useful libraries for Java Apps.
   LIB = 'lib'
@@ -168,15 +176,16 @@ class AppEngineHelper():
       if 'application' in yaml_contents and yaml_contents['application'] != '':
         return yaml_contents['application']
       else:
-        raise AppEngineConfigException("No application id set in your app.yaml")
+        raise AppEngineConfigException("No valid application ID found in " +
+          "your app.yaml. " + cls.REGEX_MESSAGE)
     else:
       xml_contents = cls.read_file(app_config_file)
       app_id_matchdata = cls.JAVA_APP_ID_REGEX.search(xml_contents)
       if app_id_matchdata:
         return app_id_matchdata.group(1)
       else:
-        raise AppEngineConfigException("No application id set in your " + \
-          "appengine-web.xml")
+        raise AppEngineConfigException("No valid application ID found in " +
+          "your appengine-web.xml. " + cls.REGEX_MESSAGE)
 
 
   @classmethod
