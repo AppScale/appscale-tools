@@ -231,7 +231,7 @@ class ParseArgs():
         default=self.DEFAULT_DATASTORE,
         choices=self.ALLOWED_DATASTORES,
         help="the datastore to use")
-      self.parser.add_argument('--replication', '-n', type=int,
+      self.parser.add_argument('--replication', '--n', type=int,
         help="the database replication factor")
       self.parser.add_argument('--clear_datastore', action='store_true',
         default=False,
