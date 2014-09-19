@@ -871,7 +871,7 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && {1} {2}".format(extracted_location, extract_command,
+    cls.shell("cd {0} && {1} '{2}'".format(extracted_location, extract_command,
       os.path.abspath(archive_location)), is_verbose)
 
     file_list = os.listdir(extracted_location)

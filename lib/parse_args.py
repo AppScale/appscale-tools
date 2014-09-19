@@ -400,6 +400,8 @@ class ParseArgs():
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
+      else:
+        self.shellescape(self.args.file)
     elif function == "appscale-gather-logs":
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
@@ -706,3 +708,14 @@ class ParseArgs():
     if self.args.admin_user and self.args.admin_pass and self.args.test:
       raise BadConfigurationException("Cannot set admin_user, " + \
         "admin_pass, and test.")
+
+
+  def shellescape(self, s):
+    """ Escapes  special characters in arguments that are part of shell commands.
+
+      Args:
+        s: A str, the string to be escaped.
+      Returns:
+        The escaped string.
+    """
+    return s.replace('\'', '\\'')

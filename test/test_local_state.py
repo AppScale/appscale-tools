@@ -229,7 +229,7 @@ class TestLocalState(unittest.TestCase):
 
     flexmock(LocalState)
     LocalState.should_receive('shell') \
-      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'), False) \
+      .with_args(re.compile("tar zxvf '/tmp/relative/app.tar.gz'"), False) \
       .and_return()
 
     os.should_receive('listdir').and_return(['one_folder'])
@@ -249,7 +249,7 @@ class TestLocalState(unittest.TestCase):
 
     flexmock(LocalState)
     LocalState.should_receive('shell') \
-      .with_args(re.compile('tar zxvf /tmp/relative/app.tar.gz'), False) \
+      .with_args(re.compile("tar zxvf '/tmp/relative/app.tar.gz'"), False) \
       .and_return()
 
     os.should_receive('listdir').and_return(['one_folder', '.dot_file',
