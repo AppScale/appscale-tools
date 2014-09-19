@@ -401,7 +401,7 @@ class ParseArgs():
       if not self.args.file:
         raise SystemExit("Must specify --file.")
       else:
-        self.args.file = self.shellescape(self.args.file)
+        self.shell_check(self.args.file)
     elif function == "appscale-gather-logs":
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
@@ -710,12 +710,13 @@ class ParseArgs():
         "admin_pass, and test.")
 
 
-  def shellescape(self, s):
-    """ Escapes special characters in arguments that are part of shell commands.
+  def shell_check(self, s):
+    """ Checks for special characters in arguments that are part of shell commands.
 
     Args:
-      s: A str, the string to be escaped.
-    Returns:
-      The escaped string.
+      s: A str, the string to be checked.
+    Raises:
+      BadConfigurationException if single quotes are present in s.
     """
-    return s.replace('\'', '\\'')
+    if '\'' in s:
+      raise BadConfigurationException("Single quotes (') are not allowed in filenames.")
