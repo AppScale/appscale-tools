@@ -401,7 +401,7 @@ class ParseArgs():
       if not self.args.file:
         raise SystemExit("Must specify --file.")
       else:
-        self.shellescape(self.args.file)
+        self.args.file = self.shellescape(self.args.file)
     elif function == "appscale-gather-logs":
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
@@ -711,11 +711,11 @@ class ParseArgs():
 
 
   def shellescape(self, s):
-    """ Escapes  special characters in arguments that are part of shell commands.
+    """ Escapes special characters in arguments that are part of shell commands.
 
-      Args:
-        s: A str, the string to be escaped.
-      Returns:
-        The escaped string.
+    Args:
+      s: A str, the string to be escaped.
+    Returns:
+      The escaped string.
     """
     return s.replace('\'', '\\'')
