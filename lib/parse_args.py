@@ -18,12 +18,11 @@ from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
-from appscale_logger import AppScaleLogger
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 
 
-class ParseArgs():
+class ParseArgs(object):
   """ParseArgs provides the AppScale Tools with the ability
   to parse command-line arguments. Callers can customize
   the arguments that are acceptable for their executable
@@ -710,13 +709,15 @@ class ParseArgs():
         "admin_pass, and test.")
 
 
-  def shell_check(self, s):
-    """ Checks for special characters in arguments that are part of shell commands.
+  def shell_check(self, argument):
+    """ Checks for special characters in arguments that are part of shell
+    commands.
 
     Args:
-      s: A str, the string to be checked.
+      argument: A str, the argument to be checked.
     Raises:
       BadConfigurationException if single quotes are present in s.
     """
-    if '\'' in s:
-      raise BadConfigurationException("Single quotes (') are not allowed in filenames.")
+    if '\'' in argument:
+      raise BadConfigurationException("Single quotes (') are not allowed " + \
+        "in filenames.")

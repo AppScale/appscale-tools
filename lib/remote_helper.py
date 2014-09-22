@@ -27,7 +27,7 @@ from local_state import LocalState
 from user_app_client import UserAppClient
 
 
-class RemoteHelper():
+class RemoteHelper(object):
   """RemoteHelper provides a simple interface to interact with other machines
   (typically, AppScale virtual machines).
 
@@ -65,7 +65,8 @@ class RemoteHelper():
 
   # The message that is sent if we try to log into a VM as the root user but
   # root login isn't enabled yet.
-  LOGIN_AS_UBUNTU_USER = 'Please login as the user "ubuntu" rather than the user "root".'
+  LOGIN_AS_UBUNTU_USER = 'Please login as the user "ubuntu" rather than ' + \
+    'the user "root".'
 
 
   APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
@@ -164,7 +165,8 @@ class RemoteHelper():
         additional_params = params[agent.PARAM_CREDENTIALS]
 
       if options.use_spot_instances:
-        additional_params[agent.PARAM_SPOT_PRICE] = str(params[agent.PARAM_SPOT_PRICE])
+        additional_params[agent.PARAM_SPOT_PRICE] = \
+          str(params[agent.PARAM_SPOT_PRICE])
 
       if agent.PARAM_REGION in params:
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
@@ -345,12 +347,12 @@ class RemoteHelper():
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)
     return LocalState.shell("ssh -i {0} {1} {2}@{3} ".format(ssh_key,
-      cls.SSH_OPTIONS, user, host), is_verbose, num_retries,stdin=command)
+      cls.SSH_OPTIONS, user, host), is_verbose, num_retries, stdin=command)
 
 
   @classmethod
-  def scp(cls, host, keyname, source, dest, is_verbose, user='root', 
-            num_retries=LocalState.DEFAULT_NUM_RETRIES):
+  def scp(cls, host, keyname, source, dest, is_verbose, user='root',
+    num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
@@ -395,7 +397,7 @@ class RemoteHelper():
     return LocalState.shell("scp -r -i {0} {1} {2}@{3}:{4} {5}".format(ssh_key,
       cls.SSH_OPTIONS, user, host, source, dest), is_verbose)
 
-      
+
   @classmethod
   def copy_ssh_keys_to_node(cls, host, keyname, is_verbose):
     """Sets the given SSH keypair as the default key for the named host,
@@ -527,7 +529,7 @@ class RemoteHelper():
     except ShellException:
       return None
 
-  
+
   @classmethod
   def rsync_files(cls, host, keyname, local_appscale_dir, is_verbose):
     """Copies over an AppScale source directory from this machine to the
@@ -557,7 +559,7 @@ class RemoteHelper():
           "from, {0}, doesn't contain a {1} folder.".format(local_appscale_dir,
           local_path))
       LocalState.shell("rsync -e 'ssh -i {0} {1}' -arv {2}/* "\
-        "root@{3}:/root/appscale/{4}".format(ssh_key, cls.SSH_OPTIONS, 
+        "root@{3}:/root/appscale/{4}".format(ssh_key, cls.SSH_OPTIONS,
         local_path, host, dir_name), is_verbose)
 
     # Rsync AppDB separately, as it has a lot of paths we may need to exclude
@@ -599,11 +601,12 @@ class RemoteHelper():
     cls.scp(host, options.keyname, LocalState.get_private_key_location(
       options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
 
-    hash_id = subprocess.Popen(["openssl", "x509", "-hash", "-noout", "-in", 
-      LocalState.get_certificate_location(options.keyname)], stdout=subprocess.PIPE).\
-      communicate()[0]
-    cls.ssh(host, options.keyname, 
-      'ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/{0}.0'.format(hash_id.rstrip()),
+    hash_id = subprocess.Popen(["openssl", "x509", "-hash", "-noout", "-in",
+      LocalState.get_certificate_location(options.keyname)],
+      stdout=subprocess.PIPE).communicate()[0]
+    cls.ssh(host, options.keyname,
+      'ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/{0}.0'.\
+        format(hash_id.rstrip()),
       options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
@@ -622,11 +625,13 @@ class RemoteHelper():
     # credentials, otherwise the AppScale VMs won't be able to interact with
     # GCE.
     if options.infrastructure and options.infrastructure == 'gce':
-      if os.path.exists(LocalState.get_client_secrets_location(options.keyname)):
+      if os.path.exists(LocalState.get_client_secrets_location( \
+          options.keyname)):
         cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
-          options.keyname), '/etc/appscale/client_secrets.json', options.verbose)
+          options.keyname), '/etc/appscale/client_secrets.json',
+          options.verbose)
       cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
-        options.keyname) , '/etc/appscale/oauth2.dat', options.verbose)
+        options.keyname), '/etc/appscale/oauth2.dat', options.verbose)
 
 
   @classmethod
@@ -717,7 +722,7 @@ class RemoteHelper():
     cls.scp(host, keyname, LocalState.get_secret_key_location(keyname),
       '/root/.appscale/', is_verbose)
 
-  
+
   @classmethod
   def create_user_accounts(cls, email, password, uaserver_host, keyname,
     clear_datastore):
@@ -744,7 +749,8 @@ class RemoteHelper():
     # first, create the standard account
     encrypted_pass = LocalState.encrypt_password(email, password)
     if not clear_datastore and uaserver.does_user_exist(email):
-      AppScaleLogger.log("User {0} already exists, so not creating it again.".format(email))
+      AppScaleLogger.log("User {0} already exists, so not creating it again.".
+        format(email))
     else:
       uaserver.create_user(email, encrypted_pass)
 
@@ -756,7 +762,8 @@ class RemoteHelper():
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
     if not clear_datastore and uaserver.does_user_exist(xmpp_user):
-      AppScaleLogger.log("XMPP User {0} already exists, so not creating it again.".format(xmpp_user))
+      AppScaleLogger.log("XMPP User {0} already exists, so not creating it " +\
+        "again.".format(xmpp_user))
     else:
       uaserver.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
@@ -922,7 +929,7 @@ class RemoteHelper():
     AppScaleLogger.log("Terminated AppScale on {0} machines."
       .format(boxes_shut_down))
 
-  
+
   @classmethod
   def stop_remote_appcontroller(cls, host, keyname, is_verbose):
     """Stops the AppController daemon on the specified host.
