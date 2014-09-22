@@ -31,7 +31,7 @@ from remote_helper import RemoteHelper
 from user_app_client import UserAppClient
 
 
-class AppScaleTools():
+class AppScaleTools(object):
   """AppScaleTools provides callers with a way to start, stop, and interact
   with AppScale deployments, on virtualized clusters or on cloud
   infrastructures.
@@ -55,11 +55,11 @@ class AppScaleTools():
 
 
   # A regular expression that matches files compressed in the tar.gz format.
-  TAR_GZ_REGEX = re.compile('.tar.gz\Z')
+  TAR_GZ_REGEX = re.compile(r'.tar.gz\Z')
 
 
   # A regular expression that matches files compressed in the zip format.
-  ZIP_REGEX = re.compile('.zip\Z')
+  ZIP_REGEX = re.compile(r'.zip\Z')
 
 
   @classmethod
@@ -182,8 +182,9 @@ class AppScaleTools():
       AppScaleLogger.log("Status of node at {0}:".format(ip))
       try:
         AppScaleLogger.log(acc.get_status())
-      except Exception as e:
-        AppScaleLogger.warn("Unable to contact machine: {0}\n".format(str(e)))
+      except Exception as exception:
+        AppScaleLogger.warn("Unable to contact machine: {0}\n".
+          format(str(exception)))
 
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}:{1}/status".format(login_host,
@@ -227,14 +228,14 @@ class AppScaleTools():
       RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
         local_dir, options.verbose)
       try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/cassandra',
-          local_dir, options.verbose)
+        RemoteHelper.scp_remote_to_local(ip, options.keyname,
+          '/var/log/cassandra', local_dir, options.verbose)
       except ShellException:
         pass
 
       try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/zookeeper',
-          local_dir, options.verbose)
+        RemoteHelper.scp_remote_to_local(ip, options.keyname,
+          '/var/log/zookeeper', local_dir, options.verbose)
       except ShellException:
         pass
 
@@ -357,9 +358,9 @@ class AppScaleTools():
       uac.change_password(username, encrypted_password)
       AppScaleLogger.success("The password was successfully changed for the " \
         "given user.")
-    except Exception as e:
+    except Exception as exception:
       AppScaleLogger.warn("Could not change the user's password for the " + \
-        "following reason: {0}".format(str(e)))
+        "following reason: {0}".format(str(exception)))
       sys.exit(1)
 
 
@@ -568,11 +569,11 @@ class AppScaleTools():
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     AppEngineHelper.validate_app_id(app_id)
-    
+
     if app_language == 'java':
       if AppEngineHelper.is_sdk_mismatch(file_location):
-        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' + 
-          'versions in your app. The current supported ' + 
+        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
+          'versions in your app. The current supported ' +
           'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
