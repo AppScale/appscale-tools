@@ -12,7 +12,7 @@ import yaml
 from custom_exceptions import AppEngineConfigException
 
 
-class AppEngineHelper():
+class AppEngineHelper(object):
   """AppEngineHelper provides convenience methods that can be used to parse
   configuration files found in App Engine apps, and ensure that they are
   configured in such a way that AppScale can host them.
@@ -25,11 +25,11 @@ class AppEngineHelper():
 
   # A regular expression that can be used to see if the given configuration file
   # is a YAML File.
-  FILE_IS_YAML = re.compile('\.yaml\Z')
+  FILE_IS_YAML = re.compile(r'\.yaml\Z')
 
 
   # A regular expression that can be used to find an appid in a XML file.
-  JAVA_APP_ID_REGEX = re.compile('<application>([\w\d-]+)<\/application>')
+  JAVA_APP_ID_REGEX = re.compile(r'<application>(.*)<\/application>')
 
 
   # A list of language runtimes that App Engine apps can be written in.
@@ -45,7 +45,7 @@ class AppEngineHelper():
 
 
   # A regular expression that matches valid application IDs.
-  APP_ID_REGEX = re.compile('\A(\d|[a-z]|[A-Z]|-)+\Z')
+  APP_ID_REGEX = re.compile(r'\A(\d|[a-z]|[A-Z]|-)+\Z')
 
 
   # A message to be displayed to the user, in case the given application ID
@@ -184,7 +184,7 @@ class AppEngineHelper():
       if app_id_matchdata:
         return app_id_matchdata.group(1)
       else:
-        raise AppEngineConfigException("No valid application ID found in " +
+        raise AppEngineConfigException("No application ID found in " +
           "your appengine-web.xml. " + cls.REGEX_MESSAGE)
 
 
@@ -259,5 +259,5 @@ class AppEngineHelper():
       raise AppEngineConfigException("{0} is a reserved appid".format(app_id))
 
     if not cls.APP_ID_REGEX.match(app_id):
-      raise AppEngineConfigException("Cannot use non-alphanumeric chars in " + \
-        "application ID.")
+      raise AppEngineConfigException("Invalid application ID. You can only" + \
+        " use alphanumeric characters and/or '-'.")
