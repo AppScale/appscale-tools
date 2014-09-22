@@ -18,12 +18,11 @@ from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
-from appscale_logger import AppScaleLogger
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 
 
-class ParseArgs():
+class ParseArgs(object):
   """ParseArgs provides the AppScale Tools with the ability
   to parse command-line arguments. Callers can customize
   the arguments that are acceptable for their executable
@@ -400,6 +399,8 @@ class ParseArgs():
     elif function == "appscale-upload-app":
       if not self.args.file:
         raise SystemExit("Must specify --file.")
+      else:
+        self.shell_check(self.args.file)
     elif function == "appscale-gather-logs":
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
@@ -706,3 +707,17 @@ class ParseArgs():
     if self.args.admin_user and self.args.admin_pass and self.args.test:
       raise BadConfigurationException("Cannot set admin_user, " + \
         "admin_pass, and test.")
+
+
+  def shell_check(self, argument):
+    """ Checks for special characters in arguments that are part of shell
+    commands.
+
+    Args:
+      argument: A str, the argument to be checked.
+    Raises:
+      BadConfigurationException if single quotes are present in argument.
+    """
+    if '\'' in argument:
+      raise BadConfigurationException("Single quotes (') are not allowed " + \
+        "in filenames.")

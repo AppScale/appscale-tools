@@ -31,7 +31,7 @@ from custom_exceptions import ShellException
 APPSCALE_VERSION = "2.0.0"
 
 
-class LocalState():
+class LocalState(object):
   """LocalState handles all interactions necessary to read and write AppScale
   configuration files on the machine that executes the AppScale Tools.
   """
@@ -264,7 +264,8 @@ class LocalState():
     """
     cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
       "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
-      "-keyout {0} -out {1}".format(LocalState.get_private_key_location(keyname),
+      "-keyout {0} -out {1}". \
+      format(LocalState.get_private_key_location(keyname),
       LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
 
 
@@ -379,13 +380,15 @@ class LocalState():
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
 
-    with open(cls.get_locations_yaml_location(options.keyname), 'w') as file_handle:
+    with open(cls.get_locations_yaml_location(options.keyname), 'w') \
+        as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
 
     # and now we can write the json metadata file
-    with open(cls.get_locations_json_location(options.keyname), 'w') as file_handle:
+    with open(cls.get_locations_json_location(options.keyname), 'w') \
+        as file_handle:
       file_handle.write(json.dumps(role_info))
-  
+
 
   @classmethod
   def get_from_yaml(cls, keyname, tag):
@@ -427,6 +430,13 @@ class LocalState():
 
   @classmethod
   def get_host_for_role(cls, keyname, role):
+    """ Gets the ip of the host the given role runs on.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+      role: A str, the role we are looking up the host for.
+    """
     for node in cls.get_local_nodes_info(keyname):
       if role in node["jobs"]:
         return node["public_ip"]
@@ -530,7 +540,7 @@ class LocalState():
     password = cls.get_password_from_stdin()
     return username, password
 
-  
+
   @classmethod
   def get_username_from_stdin(cls, is_admin):
     """Asks the user for the name of the e-mail address that should be made an
@@ -546,7 +556,8 @@ class LocalState():
         username = raw_input('Enter your desired e-mail address: ')
 
       username = username.lstrip().rstrip()
-      email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
+      email_regex = \
+        '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
       if re.match(email_regex, username):
         return username
       else:
@@ -672,6 +683,14 @@ class LocalState():
 
   @classmethod
   def get_oauth2_storage_location(cls, keyname):
+    """ Returns the oauth2 storage location.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A path, the oauth2 storage location.
+    """
     return cls.LOCAL_APPSCALE_PATH + keyname + "-oauth2.dat"
 
 
@@ -722,15 +741,14 @@ class LocalState():
           stdin_strio.write(stdin)
           stdin_strio.seek(0)
           AppScaleLogger.verbose("       stdin str: {0}"\
-                    .format(stdin),is_verbose)
+            .format(stdin), is_verbose)
           result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
-            stdin = stdin_strio,
-            stderr = subprocess.STDOUT)
+            stdin=stdin_strio, stderr=subprocess.STDOUT)
         else:
           result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
             stderr=subprocess.STDOUT)
         AppScaleLogger.verbose("       stdout buffer: {0}"\
-                    .format(the_temp_file.name),is_verbose)
+          .format(the_temp_file.name), is_verbose)
         result.wait()
         if stdin is not None:
           stdin_strio.close()
@@ -871,18 +889,18 @@ class LocalState():
       .replace('-', '')[:8])
 
     os.mkdir(extracted_location)
-    cls.shell("cd {0} && {1} {2}".format(extracted_location, extract_command,
+    cls.shell("cd {0} && {1} '{2}'".format(extracted_location, extract_command,
       os.path.abspath(archive_location)), is_verbose)
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:
       # Users can upload an archive containing their application or a directory
       # containing their application. To see which case this is, we count how
-      # many files are present in the archive. As some platforms will inject a 
-      # dot file into every directory, we shouldn't consider those when trying 
-      # to find out if this archive is just a directory or not (because the 
+      # many files are present in the archive. As some platforms will inject a
+      # dot file into every directory, we shouldn't consider those when trying
+      # to find out if this archive is just a directory or not (because the
       # presence of the dot file will cause our count to be incorrect).
-      file_list[:] = [itm for itm in file_list if itm[0] != '.'] 
+      file_list[:] = [itm for itm in file_list if itm[0] != '.']
       included_dir = extracted_location + os.sep + file_list[0]
       if len(file_list) == 1 and os.path.isdir(included_dir):
         extracted_location = included_dir
@@ -970,6 +988,13 @@ class LocalState():
 
   @classmethod
   def confirm_or_abort(cls, message):
+    """ Displays confirmation message and collects user's choice.
+
+    Args:
+      message: A str, the message to be displayed.
+    Raises:
+      AppScaleException: If the user chooses to terminate AppScale.
+    """
     AppScaleLogger.warn(message)
     confirm = raw_input("Are you sure you want to do this? (Y/N) ")
     if confirm.lower() == 'y' or confirm.lower() == 'yes':
