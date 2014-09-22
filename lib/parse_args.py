@@ -716,7 +716,7 @@ class ParseArgs(object):
     Args:
       argument: A str, the argument to be checked.
     Raises:
-      BadConfigurationException if single quotes are present in s.
+      BadConfigurationException if single quotes are present in argument.
     """
     if '\'' in argument:
       raise BadConfigurationException("Single quotes (') are not allowed " + \
