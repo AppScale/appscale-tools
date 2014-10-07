@@ -1,4 +1,3 @@
-from custom_exceptions import UnknownInfrastructureException
 from ec2_agent import EC2Agent
 from euca_agent import EucalyptusAgent
 from gce_agent import GCEAgent

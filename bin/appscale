@@ -30,9 +30,6 @@ except ImportError:
     from appscale import AppScale
 
 
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 

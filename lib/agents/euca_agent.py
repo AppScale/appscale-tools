@@ -1,4 +1,3 @@
-from agents.base_agent import AgentConfigurationException
 from ec2_agent import EC2Agent
 
 try:
