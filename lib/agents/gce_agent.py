@@ -25,11 +25,17 @@ import oauth2client.tools
 
 
 # AppScale-specific imports
-from agents.base_agent import AgentConfigurationException
-from agents.base_agent import AgentRuntimeException
-from agents.base_agent import BaseAgent 
-from appscale_logger import AppScaleLogger
-from local_state import LocalState
+from base_agent import AgentConfigurationException
+from base_agent import AgentRuntimeException
+from base_agent import BaseAgent
+
+try:
+    from appscale.appscale_logger import AppScaleLogger
+    from appscale.local_state import LocalState
+except ImportError:
+    # If the module is not installed, the lib directory might be on the path
+    from appscale_logger import AppScaleLogger
+    from local_state import LocalState
 
 
 class GCEAgent(BaseAgent):

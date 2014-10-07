@@ -1,8 +1,8 @@
 """ The Openstack Agent. """
 from agents.base_agent import AgentConfigurationException
-from agents.ec2_agent import EC2Agent
 from appscale_logger import AppScaleLogger
 from local_state import LocalState
+from ec2_agent import EC2Agent
 
 import boto
 import os

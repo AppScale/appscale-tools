@@ -11,18 +11,25 @@ import traceback
 from termcolor import cprint
 
 
-# AppScale import, the library that we're wrapping this executable
-# around
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
+# First try importing appscale as a module. If it has not been installed,
+# add the lib directory to the python module path.
+try:
+    import appscale
+    from appscale.appscale import AppScale
+    module_path = os.path.dirname(appscale.__file__)
+    sys.path.append(module_path)
+except ImportError:
+    lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+    sys.path.append(lib)
 
-# Make sure we're on Python 2.6 or greater before importing any code
-# that's incompatible with older versions.
-import version_helper
-version_helper.ensure_valid_python_is_used()
+    # If the module hasn't been installed, make sure python's version
+    # is >= 2.6 before importing any potentially incompatible code
+    import version_helper
+    version_helper.ensure_valid_python_is_used()
+
+    from appscale import AppScale
 
 
-from appscale import AppScale
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException

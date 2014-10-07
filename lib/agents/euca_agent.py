@@ -1,7 +1,13 @@
 from agents.base_agent import AgentConfigurationException
-from agents.ec2_agent import EC2Agent
-from appscale_logger import AppScaleLogger
-from local_state import LocalState
+from ec2_agent import EC2Agent
+
+try:
+    from appscale.appscale_logger import AppScaleLogger
+    from appscale.local_state import LocalState
+except ImportError:
+    # If the module is not installed, the lib directory might be on the path
+    from appscale_logger import AppScaleLogger
+    from local_state import LocalState
 
 import boto
 import os

@@ -1,9 +1,14 @@
-from agents.ec2_agent import EC2Agent
-from agents.euca_agent import EucalyptusAgent
-from agents.gce_agent import GCEAgent
-from agents.openstack_agent import OpenStackAgent
 from custom_exceptions import UnknownInfrastructureException
+from ec2_agent import EC2Agent
+from euca_agent import EucalyptusAgent
+from gce_agent import GCEAgent
+from openstack_agent import OpenStackAgent
 
+try:
+    from appscale.custom_exceptions import UnknownInfrastructureException
+except ImportError:
+    # If the module is not installed, the lib directory might be on the path
+    from custom_exceptions import UnknownInfrastructureException
 
 __author__ = 'hiranya'
 __email__ = 'hiranya@appscale.com'
