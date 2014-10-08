@@ -15,10 +15,10 @@ import traceback
 
 # AppScale library imports
 try:
-    import appscale
-    lib = os.path.dirname(appscale.__file__)
+  import appscale
+  lib = os.path.dirname(appscale.__file__)
 except ImportError:
-    lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+  lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 
 

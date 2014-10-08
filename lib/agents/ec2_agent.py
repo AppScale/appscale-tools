@@ -12,12 +12,12 @@ import os
 import time
 
 try:
-    from appscale.appscale_logger import AppScaleLogger
-    from appscale.local_state import LocalState
+  from appscale.appscale_logger import AppScaleLogger
+  from appscale.local_state import LocalState
 except ImportError:
-    # If the module is not installed, the lib directory might be on the path
-    from appscale_logger import AppScaleLogger
-    from local_state import LocalState
+  # If the module is not installed, the lib directory might be on the path.
+  from appscale_logger import AppScaleLogger
+  from local_state import LocalState
 
 # pylint: disable-msg=W0511
 #    don't bother about todo's

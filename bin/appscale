@@ -14,20 +14,20 @@ from termcolor import cprint
 # First try importing appscale as a module. If it has not been installed,
 # add the lib directory to the python module path.
 try:
-    import appscale
-    from appscale.appscale import AppScale
-    module_path = os.path.dirname(appscale.__file__)
-    sys.path.append(module_path)
+  import appscale
+  from appscale.appscale import AppScale
+  module_path = os.path.dirname(appscale.__file__)
+  sys.path.append(module_path)
 except ImportError:
-    lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-    sys.path.append(lib)
+  lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
+  sys.path.append(lib)
 
-    # If the module hasn't been installed, make sure python's version
-    # is >= 2.6 before importing any potentially incompatible code
-    import version_helper
-    version_helper.ensure_valid_python_is_used()
+  # If the module hasn't been installed, make sure python's version
+  # is >= 2.6 before importing any potentially incompatible code.
+  import version_helper
+  version_helper.ensure_valid_python_is_used()
 
-    from appscale import AppScale
+  from appscale import AppScale
 
 
 from local_state import APPSCALE_VERSION

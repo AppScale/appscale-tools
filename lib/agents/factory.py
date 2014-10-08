@@ -4,10 +4,10 @@ from gce_agent import GCEAgent
 from openstack_agent import OpenStackAgent
 
 try:
-    from appscale.custom_exceptions import UnknownInfrastructureException
+  from appscale.custom_exceptions import UnknownInfrastructureException
 except ImportError:
-    # If the module is not installed, the lib directory might be on the path
-    from custom_exceptions import UnknownInfrastructureException
+  # If the module is not installed, the lib directory might be on the path.
+  from custom_exceptions import UnknownInfrastructureException
 
 __author__ = 'hiranya'
 __email__ = 'hiranya@appscale.com'
