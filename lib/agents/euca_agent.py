@@ -9,7 +9,6 @@ except ImportError:
     from local_state import LocalState
 
 import boto
-import os
 from urlparse import urlparse
 
 __author__ = 'hiranya'
