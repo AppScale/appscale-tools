@@ -14,7 +14,7 @@ import uuid
 
 
 # Third-party imports
-import apiclient.discovery
+from apiclient import discovery
 # Don't bother us about the discovery.Resource not having certain
 # methods, since it gets built dynamically.
 # pylint: disable-msg=E1101
@@ -1072,7 +1072,7 @@ class GCEAgent(BaseAgent):
       credentials = oauth2client.tools.run(flow, storage)
 
     # Build the service
-    return apiclient.discovery.build('compute', self.API_VERSION), credentials
+    return discovery.build('compute', self.API_VERSION), credentials
 
 
   def ensure_operation_succeeds(self, gce_service, auth_http, response,
