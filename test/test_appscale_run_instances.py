@@ -19,8 +19,7 @@ import yaml
 
 
 # Third party libraries
-import apiclient.discovery
-import apiclient.errors
+import apiclient
 import boto.ec2
 from flexmock import flexmock
 import httplib2
