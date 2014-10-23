@@ -164,62 +164,6 @@ class NodeLayout():
 
       return [self.USED_SIMPLE_AND_ADVANCED_KEYS]
 
-
-  def is_supported(self):
-    """Checks to see if AppScale has normally been tested and successfully
-    run over this deployment strategy.
-
-    All simple deployments are supported, but only two specific types of
-    advanced deployments are supported.
-
-    Returns:
-      True if AppScale has been run with this deployment strategy, False
-      otherwise.
-    """
-    if self.is_simple_format():
-      return True
-    elif self.is_advanced_format():
-      return self.is_supported_advanced_format()
-    else:
-      return False
-
-
-  def is_supported_advanced_format(self):
-    """Checks to see if AppScale has been tested and successfully run over
-    this advanced deployment strategy. Specifically, we only support two
-    advanced deployment strategies, one with a minimal number of nodes (each
-    with one service), and one that doubles the number of nodes of the
-    minimal strategy (except for ZooKeeper, which we triple since it requires
-    a consensus to function).
-
-    Returns:
-      True if this deployment is supported, False otherwise.
-    """
-    if len(self.nodes) == 1:
-      return True
-    elif len(self.nodes) == 4:
-      # in a four node deployment, we are looking for one node to
-      # be a load balancer, one to be an appserver, one to be a
-      # database, and one to be zookeeper
-      num_roles = self.count_roles()
-      if num_roles['login'] == 1 and num_roles['appengine'] == 1 and \
-        num_roles['database'] == 1 and num_roles['zookeeper'] == 1:
-        return True
-      else:
-        return False
-    elif len(self.nodes) == 8:
-      # in an eight node deployment, we are looking for one node to
-      # be a load balancer, two to be appservers, two to be databases,
-      # and three to be zookeepers
-      num_roles = self.count_roles()
-      if num_roles['login'] == 1 and num_roles['appengine'] == 2 and \
-        num_roles['database'] == 2 and num_roles['zookeeper'] == 3:
-        return True
-      else:
-        return False
-    else:
-      return False
-
   
   def count_roles(self):
     """Counts the number of roles that are hosted within the current
