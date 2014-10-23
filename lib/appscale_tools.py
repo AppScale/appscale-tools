@@ -400,10 +400,6 @@ class AppScaleTools():
       raise BadConfigurationException("There were errors with your " + \
         "placement strategy:\n{0}".format(str(node_layout.errors())))
 
-    if not node_layout.is_supported():
-      AppScaleLogger.warn("Warning: This deployment strategy is not " + \
-        "officially supported.")
-
     public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
       node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
