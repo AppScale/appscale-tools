@@ -15,6 +15,7 @@ import uuid
 
 # Third-party imports
 from apiclient import discovery
+from apiclient import errors
 # Don't bother us about the discovery.Resource not having certain
 # methods, since it gets built dynamically.
 # pylint: disable-msg=E1101
@@ -166,7 +167,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       raise AgentConfigurationException("We couldn't validate your GCE" + \
         "credentials. Are your credentials valid?")
 
@@ -262,7 +263,7 @@ class GCEAgent(BaseAgent):
           return True, all_ssh_keys
 
       return False, all_ssh_keys
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False, ""
 
 
@@ -286,7 +287,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False
 
 
@@ -310,7 +311,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False
 
   
@@ -954,7 +955,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False
 
 
@@ -978,7 +979,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False
 
 
@@ -1003,7 +1004,7 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except apiclient.errors.HttpError:
+    except errors.HttpError:
       return False
 
 
