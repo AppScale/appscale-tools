@@ -11,6 +11,7 @@ import subprocess
 import threading
 import time
 import uuid
+import sys
 
 
 # AppScale-specific imports
@@ -489,6 +490,51 @@ class RemoteHelper(object):
       return cls.ssh(host, keyname, command, is_verbose) == 'y'
     except ShellException:
       return False
+
+
+  @classmethod
+  def check_if_overwriting_key(cls, host, keyname, local_key, public_key,
+    host_key, is_verbose):
+    """Asks the user if they want to overwrite the host's private key if it
+    differs. Exits and cleans up authorized_keys if they decline.
+
+    Args:
+      host: A str representing a host that should be accessible from this
+        machine.
+      keyname: A str representing the name of the SSH keypair that can log into
+        the specified machine.
+      host_key: The location of the private keyfile on the host
+      is_verbose: A bool that indicates if we should print the command we
+        execute to check the remote host's location to stdout.
+    """
+    if RemoteHelper.does_host_have_location(host, keyname, host_key,
+      is_verbose):
+      host_key_contents = cls.ssh(host, keyname, 'cat {0}'.format(host_key),
+        is_verbose)
+      with open(local_key) as local_key_file:
+        local_key_contents = local_key_file.read()
+      if local_key_contents != host_key_contents:
+        while True:
+          user_input = raw_input("The machine at {0} already has a " +
+            "different private key.\nWould you like to overwrite it? [y/N] "
+            .format(host)).lower()
+          if user_input in ['n', '']:
+            # Revoke local machine's ssh permissions to host so that there
+            # will be another opportunity to copy the key pair.
+            with open(public_key) as public_key_file:
+              public_key_contents = public_key_file.read().strip()
+            authorized_file = '/root/.ssh/authorized_keys'
+            remote_command = 'grep -v "{0}" {1} > {2} ; mv {2} {1}'.format(
+              public_key_contents, authorized_file, authorized_file + '.tmp')
+            cls.ssh(host, keyname, remote_command, is_verbose)
+
+            print("Unable to proceed without copying private key to {0}."
+              .format(host))
+            sys.exit(1)
+          elif user_input == 'y':
+            break
+          else:
+            print("Please respond with 'y' or 'n'.")
 
 
   @classmethod

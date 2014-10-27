@@ -154,45 +154,10 @@ class AppScaleTools(object):
         LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
           options.verbose)
 
-      # Ensure there isn't a different private key already on the host.
       host_key_file = '/root/.ssh/id_rsa'
-      host_key_exists = LocalState.shell(
-        "ssh -i {0} root@{1} 'if [ -e {2} ] ; then echo -n y ; fi'"
-        .format(private_key, ip, host_key_file), options.verbose) == 'y'
-
-      if host_key_exists:
-        host_key_contents = LocalState.shell("ssh -i {0} root@{1} cat {2}"
-          .format(private_key, ip, host_key_file), options.verbose)
-        with open(private_key) as local_key:
-          local_key_contents = local_key.read()
-
-        if local_key_contents != host_key_contents:
-          while True:
-            user_input = raw_input("The machine at {0} already has a " +
-              "different private key.\nWould you like to overwrite it? [y/N] "
-              .format(ip)).lower()
-            if user_input in ['n', '']:
-              # Revoke local machine's ssh permissions to host so that there
-              # will be another opportunity to copy the key pair.
-              with open(public_key) as public_key_file:
-                public_key_contents = public_key_file.read().strip()
-              authorized_file = '/root/.ssh/authorized_keys'
-              remote_command = 'grep -v "{0}" {1} > {2}'.format(
-                public_key_contents, authorized_file,
-                authorized_file + '.tmp')
-              LocalState.shell("ssh -i {0} root@{1} '{2}'"
-                .format(private_key, ip, remote_command), options.verbose)
-              LocalState.shell("ssh -i {0} root@{1} mv {2} {3}".format(
-                private_key, ip, authorized_file + '.tmp', authorized_file),
-                options.verbose)
-
-              print("Unable to proceed without copying private key to {0}"
-                .format(ip))
-              sys.exit(1)
-            elif user_input == 'y':
-              break
-            else:
-              print("Please respond with 'y' or 'n'.")
+      if not options.test:
+        RemoteHelper.check_if_overwriting_key(ip, options.keyname,
+          private_key, public_key, host_key_file, options.verbose)
 
       # next, copy over the ssh keypair we generate
       RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
