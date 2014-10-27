@@ -503,6 +503,8 @@ class RemoteHelper(object):
         machine.
       keyname: A str representing the name of the SSH keypair that can log into
         the specified machine.
+      local_key: The location of the private keyfile on the local machine
+      public_key: The location of the public keyfile on the local machine
       host_key: The location of the private keyfile on the host
       is_verbose: A bool that indicates if we should print the command we
         execute to check the remote host's location to stdout.
