@@ -469,7 +469,7 @@ class RemoteHelper(object):
   @classmethod
   def does_host_have_location(cls, host, keyname, location, is_verbose):
     """Logs into the specified host with the given keyname and checks to see if
-    the named directory exists there.
+    the named file or directory exists there.
 
     Args:
       host: A str representing a host that should be accessible from this
@@ -485,8 +485,8 @@ class RemoteHelper(object):
         False otherwise.
     """
     try:
-      cls.ssh(host, keyname, 'ls {0}'.format(location), is_verbose)
-      return True
+      command = 'if [ -e {0} ] ; then echo -n y ; fi'.format(location)
+      return cls.ssh(host, keyname, command, is_verbose) == 'y'
     except ShellException:
       return False
 
