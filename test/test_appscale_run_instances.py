@@ -226,6 +226,20 @@ group: {1}
       .and_return('y')
 
 
+  def setup_copy_deployment_credentials_mocks(self):
+    # Mock out creating a symlink to certificate.
+    ln_regex = re.compile(
+      '^ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/*..0$')
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=ln_regex).and_return()
+
+    # Mock out creating a directory for cert and keyfile.
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='mkdir -p /etc/appscale/keys/cloud1') \
+      .and_return()
+
+
   def setup_appcontroller_mocks(self, public_ip, private_ip):
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -471,6 +485,13 @@ appengine:  1.2.3.4
       .format(self.keyname)), False, 5).and_return()
 
     self.setup_appscale_compatibility_mocks()
+    self.setup_copy_deployment_credentials_mocks()
+
+    # mock out removing the old json file
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('rm -rf /etc/appscale/appcontroller-state.json')) \
+      .and_return()
 
     # mock out generating the private key
     self.local_state.should_receive('shell') \
@@ -574,6 +595,13 @@ appengine:  1.2.3.4
       .format(self.keyname)), False, 5).and_return()
 
     self.setup_appscale_compatibility_mocks()
+    self.setup_copy_deployment_credentials_mocks()
+
+    # mock out removing the old json file
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('rm -rf /etc/appscale/appcontroller-state.json')) \
+      .and_return()
 
     # mock out generating the private key
     self.local_state.should_receive('shell') \
