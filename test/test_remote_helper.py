@@ -194,9 +194,9 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return().ordered()
 
     local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
-      .and_raise(ShellException).ordered()
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='if [ -e /etc/appscale ] ; then echo -n y ; fi')\
+      .and_return('').ordered()
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -213,11 +213,18 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
       .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-    # mock out our attempts to find /etc/appscale and presume it does exist
+
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return()
 
+    # mock out our attempts to find /etc/appscale and presume it does exist
+    local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='if [ -e /etc/appscale ] ; then echo -n y ; fi') \
+      .and_return('y')
+
+    # mock out our attempts to list the contents of /etc/appscale
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale')) \
@@ -225,10 +232,11 @@ class TestRemoteHelper(unittest.TestCase):
 
     # mock out our attempts to find /etc/appscale/version and presume it doesn't
     # exist
+    check_for_version = 'if [ -e /etc/appscale/{0} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION)
     local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_raise(ShellException)
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_version)\
+      .and_return('')
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -247,30 +255,31 @@ class TestRemoteHelper(unittest.TestCase):
         stdin='ls') \
       .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
       .and_return().ordered()
 
+    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale')) \
-      .and_return().ordered()
+        stdin='if [ -e /etc/appscale ] ; then echo -n y ; fi') \
+      .and_return('y').ordered()
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
+    check_for_version = 'if [ -e /etc/appscale/{0} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION)
     local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION))) \
-      .and_return().ordered()
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_version) \
+      .and_return('y').ordered()
 
-    # finally, put in a mock indicating that the database the user wants
-    # isn't supported
+    # Mock out our attempts to find /etc/appscale/VERSION/cassandra.
+    # The absence of the file indicates that the db is not installed.
+    check_for_db = 'if [ -e /etc/appscale/{0}/{1} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION, 'cassandra')
     local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'
-          .format(APPSCALE_VERSION, 'cassandra'))) \
-      .and_raise(ShellException).ordered()
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_db) \
+      .and_return('').ordered()
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\

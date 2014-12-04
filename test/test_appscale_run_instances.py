@@ -205,19 +205,25 @@ group: {1}
   def setup_appscale_compatibility_mocks(self):
     # mock out seeing if the image is appscale-compatible, and assume it is
     # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
+    self.local_state.should_receive('shell'). \
+      with_args(re.compile('^ssh'), False, 5,
+        stdin='if [ -e /etc/appscale ] ; then echo -n y ; fi') \
+      .and_return('y')
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
+    check_for_version = 'if [ -e /etc/appscale/{0} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_version) \
+      .and_return('y')
 
     # put in a mock indicating that the database the user wants is supported
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    check_for_db = 'if [ -e /etc/appscale/{0}/{1} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION, 'cassandra')
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_db) \
+      .and_return('y')
 
 
   def setup_appcontroller_mocks(self, public_ip, private_ip):
