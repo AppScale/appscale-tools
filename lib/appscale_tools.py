@@ -155,7 +155,7 @@ class AppScaleTools(object):
           options.verbose)
 
       host_key_file = '/root/.ssh/id_rsa'
-      if not options.test:
+      if not options.test and not options.force:
         RemoteHelper.check_if_overwriting_key(ip, options.keyname,
           private_key, public_key, host_key_file, options.verbose)
 

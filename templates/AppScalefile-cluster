@@ -64,7 +64,8 @@ table : 'cassandra'
 
 # AppScale developers only: Bypasses the usual prompt for a cloud
 # username and password and uses a default set of values. Insecure for
-# a production environment but acceptable for testing.
+# a production environment but acceptable for testing. This also permits
+# AppScale tools to overwrite remote private keys without a prompt.
 # test : True
 
 # AppScale developers only: Removes all nameserver entries from /etc/resolv.conf

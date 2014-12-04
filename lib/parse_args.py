@@ -304,6 +304,9 @@ class ParseArgs(object):
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="automatically overwrite remote private keys")
+      self.parser.add_argument('--force', action='store_true',
+        default=False,
+        help="automatically overwrite remote private keys")
     elif function == "appscale-add-instances":
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
