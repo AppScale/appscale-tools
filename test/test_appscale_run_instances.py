@@ -340,7 +340,7 @@ group: {1}
 
     # mock out generating the private key
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^openssl'),False,stdin=None)\
+      .with_args(re.compile('^openssl req'), False, stdin=None)\
       .and_return()
 
     # mock out removing the old json file
@@ -473,8 +473,9 @@ appengine:  1.2.3.4
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^openssl req'), False, stdin=None) \
+      .and_return()
 
     # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -575,8 +576,9 @@ appengine:  1.2.3.4
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
-    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^openssl req'), False, stdin=None) \
+      .and_return()
 
     # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
