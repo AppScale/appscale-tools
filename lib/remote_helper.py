@@ -493,7 +493,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def check_if_overwriting_key(cls, host, keyname, local_key, public_key,
+  def prompt_if_overwriting_key(cls, host, keyname, local_key, public_key,
     host_key, is_verbose):
     """Asks the user if they want to overwrite the host's private key if it
     differs. Exits and cleans up authorized_keys if they decline.
