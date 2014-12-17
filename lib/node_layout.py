@@ -30,7 +30,7 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'taskqueue']
+    'zookeeper', 'memcache', 'taskqueue', 'search']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -38,7 +38,7 @@ class NodeLayout():
   # the user may not be able to specify directly.
   VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'taskqueue', 'taskqueue_master', 'taskqueue_slave')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search', 'search_master')
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for
