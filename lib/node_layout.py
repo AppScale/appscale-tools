@@ -38,7 +38,7 @@ class NodeLayout():
   # the user may not be able to specify directly.
   VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search', 'search_master')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for
