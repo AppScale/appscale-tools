@@ -30,7 +30,8 @@ table : 'cassandra'
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.
 # Note that your data is only persisted if you are using non-ephemeral
-# storage (EBS on EC2, and PD on GCE).
+# storage (EBS on EC2, and PD on GCE). This will also clear the taskqueue
+# and search start.
 #clear_datastore: True
 
 # The AWS keyname that should be used for all machines in this AppScale
