@@ -603,6 +603,10 @@ class AppScaleTools(object):
       AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
       userappclient.reserve_app_id(username, app_id, app_language)
 
+    # Ignore all .pyc files while tarring.
+    if app_language == 'python27':
+      AppScaleLogger.log("Ignoring .pyc files")
+
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose)
 
