@@ -970,8 +970,8 @@ class RemoteHelper(object):
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
     local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
-    LocalState.shell("cd '{0}' && tar -czhf {1} *".format(app_location,
-      local_tarred_app), is_verbose)
+    LocalState.shell("cd '{0}' && tar -czhf {1} --exclude='*.pyc' *".format(
+      app_location, local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
