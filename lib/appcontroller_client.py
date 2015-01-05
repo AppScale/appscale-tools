@@ -69,6 +69,10 @@ class AppControllerClient():
       self.PORT))
     self.secret = secret
 
+    # Disable certificate verification for Python 2.7.9.
+    if hasattr(ssl, '_create_unverified_context'):
+      ssl._create_default_https_context = ssl._create_unverified_context
+
 
   def run_with_timeout(self, timeout_time, default, num_retries, function,
     *args):

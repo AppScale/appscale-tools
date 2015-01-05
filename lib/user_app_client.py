@@ -6,6 +6,7 @@
 # General-purpose Python libraries
 import re
 import time
+import ssl
 
 
 # Third-party imports
@@ -64,6 +65,10 @@ class UserAppClient():
     self.host = host
     self.server = SOAPpy.SOAPProxy('https://%s:%s' % (host, self.PORT))
     self.secret = secret
+
+    # Disable certificate verification for Python 2.7.9.
+    if hasattr(ssl, '_create_unverified_context'):
+      ssl._create_default_https_context = ssl._create_unverified_context
 
 
   def create_user(self, username, password, account_type='xmpp_user'):
