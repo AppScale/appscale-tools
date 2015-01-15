@@ -837,4 +837,3 @@ class EC2Agent(BaseAgent):
         public_ips.append(i.public_dns_name)
         private_ips.append(i.private_dns_name)
     return public_ips, private_ips, instance_ids
-
