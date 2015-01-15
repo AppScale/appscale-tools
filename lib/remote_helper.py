@@ -762,8 +762,9 @@ class RemoteHelper(object):
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
     if not clear_datastore and uaserver.does_user_exist(xmpp_user):
-      AppScaleLogger.log("XMPP User {0} already exists, so not creating it " +\
-        "again.".format(xmpp_user))
+      AppScaleLogger.log(
+        "XMPP User {0} already exists, so not creating it again.".
+        format(xmpp_user))
     else:
       uaserver.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
