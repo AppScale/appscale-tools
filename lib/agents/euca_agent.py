@@ -94,17 +94,16 @@ class EucalyptusAgent(EC2Agent):
     AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
       " is not already registered.")
     conn = self.open_connection(parameters)
-    try:
-      conn.get_key_pair(keyname)
-      self.handle_failure("SSH keyname {0} is already registered. Please " \
-        "change the 'keyname' specified in your AppScalefile to a different " \
-        "value, or erase it to have one automatically generated for you." \
-        .format(keyname))
-    except IndexError:  # in euca, this means the key doesn't exist
-      pass
+
+    all_keypairs = conn.get_all_key_pairs()
+    for keypair in all_keypairs:
+      if keypair == keyname:
+        self.handle_failure("SSH keyname {0} is already registered. Please " \
+          "change the 'keyname' specified in your AppScalefile to a different " \
+          "value, or erase it to have one automatically generated for you." \
+          .format(keyname))
 
     security_groups = conn.get_all_security_groups()
-    group_exists = False
     for security_group in security_groups:
       if security_group.name == group:
         self.handle_failure("Security group {0} is already registered. Please" \
