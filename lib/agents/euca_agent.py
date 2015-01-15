@@ -35,7 +35,6 @@ class EucalyptusAgent(EC2Agent):
   # A list of credentials that we build our internal credential list from.
   REQUIRED_CREDENTIALS = REQUIRED_EUCA_CREDENTIALS
 
-
   def open_connection(self, parameters):
     """
     Initialize a connection to the back-end Eucalyptus APIs.
@@ -171,6 +170,28 @@ class EucalyptusAgent(EC2Agent):
     else:
       AppScaleLogger.log('Availability zone {0} does not exist'.format(zone))
       return False
+
+
+  def cleanup_state(self, parameters):
+    """ Removes the keyname and security group created during this AppScale
+    deployment.
+
+    Args:
+      parameters: A dict that contains the keyname and security group to delete.
+    """
+    AppScaleLogger.log("Deleting keyname {0}".format(
+      parameters[self.PARAM_KEYNAME]))
+    conn = self.open_connection(parameters)
+    conn.delete_key_pair(parameters[self.PARAM_KEYNAME])
+
+    AppScaleLogger.log("Deleting security group {0}".format(
+      parameters[self.PARAM_GROUP]))
+    while True:
+      try:
+        conn.delete_security_group(parameters[self.PARAM_GROUP])
+        return
+      except EC2ResponseError e:
+        print e
 
 
   def __get_instance_info(self, instances, status, keyname):

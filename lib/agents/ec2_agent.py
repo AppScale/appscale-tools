@@ -741,8 +741,8 @@ class EC2Agent(BaseAgent):
       try:
         conn.delete_security_group(parameters[self.PARAM_GROUP])
         return
-      except EC2ResponseError:
-        time.sleep(5)
+      except EC2ResponseError e:
+        print e
 
 
   def get_optimal_spot_price(self, conn, instance_type, zone):
