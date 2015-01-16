@@ -75,82 +75,6 @@ class EucalyptusAgent(EC2Agent):
       api_version=self.EUCA_API_VERSION, debug=debug_level)
 
 
-#  def configure_instance_security(self, parameters):
-#    """
-#    Setup Euca security keys and groups. Required input values are read from
-#    the parameters dictionary. More specifically, this method expects to
-#    find a 'keyname' parameter and a 'group' parameter in the parameters
-#    dictionary. Using these provided values, this method will create a new
-#    Euca key-pair and a security group. Security group will be granted permissions
-#    to access any port on the instantiated VMs. (Also see documentation for the
-#    BaseAgent class)
-#
-#    Args:
-#      parameters  A dictionary of parameters
-#    """
-#    keyname = parameters[self.PARAM_KEYNAME]
-#    group = parameters[self.PARAM_GROUP]
-#
-#    AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
-#      " is not already registered.")
-#    conn = self.open_connection(parameters)
-#    try:
-#      conn.get_key_pair(keyname)
-#      self.handle_failure("SSH keyname {0} is already registered. Please " \
-#        "change the 'keyname' specified in your AppScalefile to a different " \
-#        "value, or erase it to have one automatically generated for you." \
-#        .format(keyname))
-#    except IndexError:  # in euca, this means the key doesn't exist
-#      pass
-#
-#    security_groups = conn.get_all_security_groups()
-#    group_exists = False
-#    for security_group in security_groups:
-#      if security_group.name == group:
-#        self.handle_failure("Security group {0} is already registered. Please" \
-#          " change the 'group' specified in your AppScalefile to a different " \
-#          "value, or erase it to have one automatically generated for you." \
-#          .format(group))
-#
-#    AppScaleLogger.log('Creating key pair: ' + keyname)
-#    key_pair = conn.create_key_pair(keyname)
-#    ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
-#    LocalState.write_key_file(ssh_key, key_pair.material)
-#
-#    AppScaleLogger.log('Creating security group: {0}'.format(group))
-#    conn.create_security_group(group, 'AppScale security group')
-#    conn.authorize_security_group_deprecated(group, from_port=1,
-#      to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-#    conn.authorize_security_group_deprecated(group, from_port=1,
-#      to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-#    conn.authorize_security_group_deprecated(group, from_port=-1,
-#      to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
-#
-#    return True
-
-
-#  def does_image_exist(self, parameters):
-#    """
-#    Queries Eucalyptus to see if the specified image exists.
-#
-#    Args:
-#      parameters A dict that contains the machine ID to check for existence.
-#    Returns:
-#      True if the machine ID exists, False otherwise.
-#    """
-#    # note that we can't use does_image_exist in EC2Agent. There, if the image
-#    # doesn't exist, it throws an EC2ResponseError, but in Eucalyptus, it
-#    # doesn't (and returns None instead).
-#    conn = self.open_connection(parameters)
-#    image_id = parameters[self.PARAM_IMAGE_ID]
-#    if conn.get_image(image_id):
-#      AppScaleLogger.log('Machine image {0} does exist'.format(image_id))
-#      return True
-#    else:
-#      AppScaleLogger.log('Machine image {0} does not exist'.format(image_id))
-#      return False
-
-
   def does_zone_exist(self, parameters):
     """
     Queries Eucalyptus to see if the specified availability zone exists.
@@ -171,26 +95,3 @@ class EucalyptusAgent(EC2Agent):
     else:
       AppScaleLogger.log('Availability zone {0} does not exist'.format(zone))
       return False
-
-
-#  def __get_instance_info(self, instances, status, keyname):
-#    """
-#    Filter out a list of instances by instance status and keyname.
-#
-#    Args:
-#      instances: A list of instances as returned by __describe_instances.
-#      status: Status of the VMs (e.g., running, terminated).
-#      keyname: Keyname used to spawn instances.
-#
-#    Returns:
-#      A tuple of the form (public ips, private ips, instance ids).
-#    """
-#    instance_ids = []
-#    public_ips = []
-#    private_ips = []
-#    for i in instances:
-#      if i.state == status and i.key_name == keyname:
-#        instance_ids.append(i.id)
-#        public_ips.append(i.ip_address)
-#        private_ips.append(i.private_ip_address)
-#    return public_ips, private_ips, instance_ids
