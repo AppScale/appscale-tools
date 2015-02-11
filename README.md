@@ -9,7 +9,7 @@ developed and is maintained by AppScale Systems, Inc., in Santa
 Barbara, CA.
 
 ## AppScale Tools ##
-AppScale Tools Version 2.1.0
+AppScale Tools Version 2.2.0
 from AppScale Systems, Inc.
 http://www.appscale.com
 

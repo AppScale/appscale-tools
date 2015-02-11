@@ -12,7 +12,7 @@ def readme():
 
 setup(
   name='appscale-tools',
-  version='2.1.0',
+  version='2.2.0',
   description='A set of command-line tools for interacting with AppScale',
   long_description=readme(),
   author='AppScale Systems, Inc.',
