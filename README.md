@@ -24,7 +24,7 @@ sudo bash debian/appscale_build.sh
 
 or 
 
-sudo bash osx/appscale_build.sh
+sudo bash osx/appscale_install.sh
 
 This will remove any directories /usr/local/appscale-tools*
 and install the tools in /usr/local/appscale-tools.
