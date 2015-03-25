@@ -421,9 +421,10 @@ class EC2Agent(BaseAgent):
     term_instance_info = self.__get_instance_info(instances,
        'terminated', keyname)
     if len(term_instance_info[2]):
-      self.handle_failure('SSH keyname {0} is already registered. '\
-                          'Please change the "keyname" specified in your '\
-                          'AppScalefile to a different value, or erase it '\
+      self.handle_failure('SSH keyname {0} is already registered to a '
+                          'terminated instance. Please change the "keyname" '
+                          'you specified (or was automatically generated) in '
+                          'your AppScalefile to a different value, or erase it '
                           'to have one generated for you.'.format(keyname))
 
     try:
