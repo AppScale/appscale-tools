@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import urllib
 
 
 # Third-party Python libraries
@@ -27,6 +28,7 @@ from appscale_tools import AppScaleTools
 from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
+from registration_helper import RegistrationHelper
 
 
 class AppScale():
@@ -77,6 +79,7 @@ Available commands:
   destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
   clean: Forcefully terminates all services in a cluster AppScale deployment.
+  register: Registers an AppScale deployment with the portal.
   help: Displays this message.
 """
 
@@ -750,3 +753,47 @@ Available commands:
     LocalState.cleanup_appscale_files(keyname)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
     return all_ips
+
+
+  def register(self):
+    """'register' allows users to register their AppScale deployment with the
+    portal.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+        directory.
+    """
+    appscale_yaml = yaml.safe_load(self.read_appscalefile())
+    if 'keyname' in appscale_yaml:
+      keyname = appscale_yaml['keyname']
+    else:
+      keyname = "appscale"
+
+    nodes = self.get_nodes(keyname)
+    public_ips = [node['public_ip'] for node in nodes]
+
+    if 'infrastructure' in appscale_yaml:
+      deployment_type = 'cloud'
+    else:
+      deployment_type = 'cluster'
+
+    opener = RegistrationHelper.login()
+
+    secret = LocalState.get_secret_key(keyname)
+    deployments = json.loads(
+      opener.open(RegistrationHelper.DEPLOYMENTS_URL).read())
+    RegistrationHelper.ensure_new_deployment(deployments, secret)
+    name = RegistrationHelper.select_deployment_name(deployments, opener)
+
+    deployment_data = {
+      'name': name,
+      'deployment_type': deployment_type,
+      'ip_address': public_ips,
+      'secret': secret
+    }
+    response = opener.open(RegistrationHelper.ADD_DEPLOYMENT_URL,
+                           urllib.urlencode(deployment_data, True))
+    deployment = json.loads(response.read())
+    url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
+    print('Your AppScale deployment {0} has been added to the portal.\n'
+          'You can view it here: {1}'.format(name, url))

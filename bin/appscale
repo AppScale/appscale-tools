@@ -180,6 +180,12 @@ elif command == "relocate":
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
+elif command == "register":
+  try:
+    appscale.register()
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
+    sys.exit(1)
 elif command in ["--version", "-v"]:
   print APPSCALE_VERSION
   sys.exit(0)
