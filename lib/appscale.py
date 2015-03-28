@@ -131,6 +131,16 @@ Available commands:
     return json_file
 
 
+  def get_nodes(self, keyname):
+    """Retrieve a list of the running nodes."""
+    try:
+      with open(self.get_locations_json_file(keyname)) as f:
+        return json.loads(f.read())
+    except IOError:
+      raise AppScaleException("AppScale does not currently appear to"
+                              " be running. Please start it and try again.")
+
+
   def get_key_location(self, keyname):
     """Returns the location where the AppScale tools places an SSH key that
     can be used to log into any virtual machine in the currently running
@@ -355,21 +365,13 @@ Available commands:
     except ValueError:
       raise TypeError("Usage: appscale ssh <node id to ssh to>")
 
-    # get a list of the nodes running
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
     else:
       keyname = "appscale"
 
-    try:
-      with open(self.get_locations_json_file(keyname)) as f:
-        nodes_json_raw = f.read()
-    except IOError:
-      raise AppScaleException("AppScale does not currently appear to" +
-        " be running. Please start it and try again.")
-
+    nodes = self.get_nodes(keyname)
     # make sure there is a node at position 'index'
-    nodes = json.loads(nodes_json_raw)
     try:
       ip = nodes[index]['public_ip']
     except IndexError:
