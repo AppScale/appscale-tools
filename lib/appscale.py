@@ -79,7 +79,7 @@ Available commands:
   destroy: Gracefully terminates the currently running AppScale deployment.
   down: An alias for 'destroy'.
   clean: Forcefully terminates all services in a cluster AppScale deployment.
-  register: Registers an AppScale deployment with the portal.
+  register: Registers an AppScale deployment with the AppScale Portal.
   help: Displays this message.
 """
 
@@ -757,7 +757,7 @@ Available commands:
 
   def register(self):
     """'register' allows users to register their AppScale deployment with the
-    portal.
+    AppScale Portal.
 
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
@@ -795,5 +795,5 @@ Available commands:
                            urllib.urlencode(deployment_data, True))
     deployment = json.loads(response.read())
     url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
-    print('Your AppScale deployment {0} has been added to the portal.\n'
-          'You can view it here: {1}'.format(name, url))
+    print('Your AppScale deployment {0} has been added to the AppScale'
+      'Portal.\nYou can view it here: {1}'.format(name, url))

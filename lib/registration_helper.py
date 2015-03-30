@@ -10,10 +10,10 @@ class RegistrationHelper(object):
   """RegistrationHelper provides convenience methods used during the
   registration process."""
 
-  # The location of the portal.
+  # The location of the AppScale Portal.
   PORTAL_URL = 'https://portal.appscale.com'
 
-  # The URL used to login to the portal.
+  # The URL used to login to the AppScale Portal.
   LOGIN_URL = PORTAL_URL + '/login'
 
   # The endpoint used to post new deployment info.
@@ -28,7 +28,7 @@ class RegistrationHelper(object):
   # The URL used to view existing deployments.
   PORTAL_APPSCALE_URL = PORTAL_URL + '/dashboard/appscale'
 
-  # The URL used to sign up for the portal.
+  # The URL used to sign up for the AppScale Portal.
   SIGNUP_URL = PORTAL_URL + '/trial'
 
   @classmethod
