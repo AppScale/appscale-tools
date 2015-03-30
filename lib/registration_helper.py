@@ -31,6 +31,10 @@ class RegistrationHelper(object):
   # The URL used to sign up for the AppScale Portal.
   SIGNUP_URL = PORTAL_URL + '/trial'
 
+  # HTTP Codes.
+  HTTP_UNAUTHORIZED = 401
+  HTTP_NOTFOUND = 404
+
   @classmethod
   def select_deployment_name(cls, deployments, opener):
     """Prompt the user for a deployment name."""
@@ -80,10 +84,10 @@ class RegistrationHelper(object):
       opener.open(RegistrationHelper.LOGIN_URL, urllib.urlencode(login_data))
       return opener
     except urllib2.HTTPError as error:
-      if error.code == 401:
+      if error.code == cls.HTTP_UNAUTHORIZED:
         print('Login failed. Please check your credentials and try again.')
         return cls.login()
-      if error.code == 404:
+      if error.code == cls.HTTP_NOTFOUND:
         print('Email not found. Please create an account at {0}'
           .format(cls.SIGNUP_URL))
         exit()
