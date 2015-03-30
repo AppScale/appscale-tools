@@ -41,7 +41,7 @@ class RegistrationHelper(object):
 
     if any(deployment['name'] == name for deployment in deployments):
       print('The name {0} has already been taken. Please choose another.'
-            .format(name))
+        .format(name))
       return cls.select_deployment_name(deployments, opener)
 
     return name
@@ -85,5 +85,5 @@ class RegistrationHelper(object):
         return cls.login()
       if error.code == 404:
         print('Email not found. Please create an account at {0}'
-              .format(cls.SIGNUP_URL))
+          .format(cls.SIGNUP_URL))
         exit()

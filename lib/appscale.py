@@ -149,7 +149,7 @@ Available commands:
         return json.loads(f.read())
     except IOError:
       raise AppScaleException("AppScale does not currently appear to"
-                              " be running. Please start it and try again.")
+        " be running. Please start it and try again.")
 
 
   def get_key_location(self, keyname):
@@ -800,7 +800,7 @@ Available commands:
       'secret': secret
     }
     response = opener.open(RegistrationHelper.ADD_DEPLOYMENT_URL,
-                           urllib.urlencode(deployment_data, True))
+      urllib.urlencode(deployment_data, True))
     deployment = json.loads(response.read())
     url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
     print('Your AppScale deployment {0} has been added to the AppScale'
