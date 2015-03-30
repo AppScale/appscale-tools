@@ -58,13 +58,17 @@ class RegistrationHelper(object):
       if deployment['secret'] == secret:
         deployment_url = cls.get_deployment_url(deployment['safe_name'])
         print('This deployment has already been registered as {0}.\n'
-              'You can view it here: {1}'
-              .format(deployment['name'], deployment_url))
+          'You can view it here: {1}'
+          .format(deployment['name'], deployment_url))
         exit()
 
   @classmethod
   def login(cls):
-    username = raw_input('Portal Login Email: ')
+    """Prompt the user for an email address and password and try to log in to
+    the AppScale Portal. If the username is not found, ask them to create an
+    account. If the password is incorrect, ask them to try again.
+    """
+    username = raw_input('AppScale Portal Login Email: ')
     password = getpass.getpass()
 
     login_data = {'username': username, 'password': password, 'tools': True}

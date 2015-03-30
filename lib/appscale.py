@@ -135,7 +135,15 @@ Available commands:
 
 
   def get_nodes(self, keyname):
-    """Retrieve a list of the running nodes."""
+    """Retrieve a list of the running nodes.
+
+    Args:
+      keyname: An identifier for the AppScale deployment.
+    Returns:
+      A list of nodes in the running AppScale deployment.
+    Raises:
+      AppScaleException: If there is no locations json file.
+    """
     try:
       with open(self.get_locations_json_file(keyname)) as f:
         return json.loads(f.read())
