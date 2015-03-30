@@ -7,8 +7,8 @@ import urllib2
 
 
 class RegistrationHelper(object):
-  """RegistrationHelper provides convenience methods used during the
-  registration process."""
+  """ RegistrationHelper provides convenience methods used during the
+  registration process. """
 
   # The location of the AppScale Portal.
   PORTAL_URL = 'https://portal.appscale.com'
@@ -37,7 +37,7 @@ class RegistrationHelper(object):
 
   @classmethod
   def select_deployment_name(cls, deployments, opener):
-    """Prompt the user for a deployment name."""
+    """ Prompt the user for a deployment name. """
     default_name = opener.open(cls.EXAMPLE_NAME_URL).read()
     name = raw_input('Deployment Name [{0}]: '.format(default_name)).strip()
     if name == '':
@@ -52,12 +52,12 @@ class RegistrationHelper(object):
 
   @classmethod
   def get_deployment_url(cls, safe_name):
-    """Generate a url that opens the deployment directly."""
+    """ Generate a url that opens the deployment directly. """
     return '{0}#{1}'.format(cls.PORTAL_APPSCALE_URL, safe_name)
 
   @classmethod
   def ensure_new_deployment(cls, deployments, secret):
-    """Make sure the deployment has not already been registered."""
+    """ Make sure the deployment has not already been registered. """
     for deployment in deployments:
       if deployment['secret'] == secret:
         deployment_url = cls.get_deployment_url(deployment['safe_name'])
@@ -68,10 +68,9 @@ class RegistrationHelper(object):
 
   @classmethod
   def login(cls):
-    """Prompt the user for an email address and password and try to log in to
+    """ Prompt the user for an email address and password and try to log in to
     the AppScale Portal. If the username is not found, ask them to create an
-    account. If the password is incorrect, ask them to try again.
-    """
+    account. If the password is incorrect, ask them to try again. """
     username = raw_input('AppScale Portal Login Email: ')
     password = getpass.getpass()
 

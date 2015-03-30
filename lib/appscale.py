@@ -32,9 +32,8 @@ from registration_helper import RegistrationHelper
 
 
 class AppScale():
-  """AppScale provides a configuration-file-based alternative to the
-  command-line interface that the AppScale Tools require.
-  """
+  """ AppScale provides a configuration-file-based alternative to the
+  command-line interface that the AppScale Tools require. """
 
   # The name of the configuration file that is used for storing
   # AppScale deployment information.
@@ -89,7 +88,7 @@ Available commands:
 
 
   def get_appscalefile_location(self):
-    """Constructs a string that corresponds to the location of the
+    """ Constructs a string that corresponds to the location of the
     AppScalefile for this deployment.
     
     Returns:
@@ -99,7 +98,7 @@ Available commands:
 
 
   def read_appscalefile(self):
-    """Checks the local directory for an AppScalefile and reads its
+    """ Checks the local directory for an AppScalefile and reads its
     contents.
 
     Raises:
@@ -118,7 +117,7 @@ Available commands:
 
 
   def get_locations_json_file(self, keyname):
-    """Returns the location where the AppScale tools writes JSON data
+    """ Returns the location where the AppScale tools writes JSON data
     about where each virtual machine is located in the currently running
     AppScale deployment.
 
@@ -135,7 +134,7 @@ Available commands:
 
 
   def get_nodes(self, keyname):
-    """Retrieve a list of the running nodes.
+    """ Retrieve a list of the running nodes.
 
     Args:
       keyname: An identifier for the AppScale deployment.
@@ -153,7 +152,7 @@ Available commands:
 
 
   def get_key_location(self, keyname):
-    """Returns the location where the AppScale tools places an SSH key that
+    """ Returns the location where the AppScale tools places an SSH key that
     can be used to log into any virtual machine in the currently running
     AppScale deployment.
 
@@ -169,7 +168,7 @@ Available commands:
 
 
   def init(self, environment):
-    """Writes an AppScalefile in the local directory, that contains common
+    """ Writes an AppScalefile in the local directory, that contains common
     configuration parameters.
 
     Args:
@@ -204,7 +203,7 @@ Available commands:
 
 
   def up(self):
-    """Starts an AppScale deployment with the configuration options from the
+    """ Starts an AppScale deployment with the configuration options from the
     AppScalefile in the current directory.
 
     Raises:
@@ -274,7 +273,7 @@ Available commands:
 
 
   def valid_ssh_key(self, config):
-    """Determines whether or not we should call appscale-add-keypair, by
+    """ Determines whether or not we should call appscale-add-keypair, by
     collecting all the IP addresses in the given IPs layout and attempting to
     SSH to each of them with the specified keyname.
 
@@ -309,7 +308,7 @@ Available commands:
 
 
   def get_all_ips(self, ips_layout):
-    """Searches through the given IPs layout and finds all the unique IP
+    """ Searches through the given IPs layout and finds all the unique IP
     addresses.
 
     Args:
@@ -333,7 +332,7 @@ Available commands:
 
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
-    """Attempts to SSH into the machine located at the given IP address with the
+    """ Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
 
     Args:
@@ -355,7 +354,7 @@ Available commands:
 
 
   def ssh(self, node):
-    """'ssh' provides a simple way to log into virtual machines in an AppScale
+    """ 'ssh' provides a simple way to log into virtual machines in an AppScale
     deployment, using the SSH key provided in the user's AppScalefile.
 
     Args:
@@ -399,7 +398,7 @@ Available commands:
 
 
   def status(self):
-    """'status' is a more accessible way to query the state of the AppScale
+    """ 'status' is a more accessible way to query the state of the AppScale
     deployment than 'appscale-describe-instances', and calls it with the
     parameters in the user's AppScalefile.
 
@@ -423,7 +422,7 @@ Available commands:
 
 
   def deploy(self, app):
-    """'deploy' is a more accessible way to tell an AppScale deployment to run a
+    """ 'deploy' is a more accessible way to tell an AppScale deployment to run a
     Google App Engine application than 'appscale-upload-app'. It calls that
     command with the configuration options found in the AppScalefile in the
     current working directory.
@@ -463,7 +462,7 @@ Available commands:
 
 
   def undeploy(self, appid):
-    """'undeploy' is a more accessible way to tell an AppScale deployment to
+    """ 'undeploy' is a more accessible way to tell an AppScale deployment to
     stop hosting a Google App Engine application than 'appscale-remove-app'. It
     calls that command with the configuration options found in the AppScalefile
     in the current working directory.
@@ -496,7 +495,7 @@ Available commands:
 
 
   def get(self, property_regex):
-    """'get' provides a cleaner experience for users than the
+    """ 'get' provides a cleaner experience for users than the
     appscale-get-property command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
@@ -525,7 +524,7 @@ Available commands:
 
 
   def set(self, property_name, property_value):
-    """'set' provides a cleaner experience for users than the
+    """ 'set' provides a cleaner experience for users than the
     appscale-set-property command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
@@ -558,7 +557,7 @@ Available commands:
 
 
   def tail(self, node, file_regex):
-    """'tail' provides a simple way to follow log files in an AppScale
+    """ 'tail' provides a simple way to follow log files in an AppScale
     deployment, instead of having to ssh in to a machine, locate the logs
     directory, and then tail it.
 
@@ -614,7 +613,7 @@ Available commands:
 
 
   def logs(self, location):
-    """'logs' provides a cleaner experience for users than the
+    """ 'logs' provides a cleaner experience for users than the
     appscale-gather-logs command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
@@ -642,7 +641,7 @@ Available commands:
 
 
   def relocate(self, appid, http_port, https_port):
-    """'relocate' provides a nicer experience for users than the
+    """ 'relocate' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
     present in the AppScalefile found in the current working directory.
 
@@ -681,7 +680,7 @@ Available commands:
 
 
   def destroy(self):
-    """'destroy' provides a nicer experience for users than the
+    """ 'destroy' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
     present in the AppScalefile found in the current working directory.
 
@@ -721,7 +720,7 @@ Available commands:
 
 
   def clean(self):
-    """'clean' provides a mechanism that will forcefully shut down all AppScale-
+    """ 'clean' provides a mechanism that will forcefully shut down all AppScale-
     related services on virtual machines in a cluster deployment.
 
     Returns:
@@ -764,7 +763,7 @@ Available commands:
 
 
   def register(self):
-    """'register' allows users to register their AppScale deployment with the
+    """ 'register' allows users to register their AppScale deployment with the
     AppScale Portal.
 
     Raises:
