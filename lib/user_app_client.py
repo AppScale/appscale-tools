@@ -81,8 +81,16 @@ class UserAppClient():
         XMPP users.
     """
     AppScaleLogger.log("Creating new user account {0}".format(username)) 
-    result = self.server.commit_new_user(username, password, account_type,
-      self.secret)
+    while 1:
+      try:
+        result = self.server.commit_new_user(username, password, account_type,
+          self.secret)
+        break
+      except Exception, exception:
+        AppScaleLogger.log("Exception when creating user: {0}".format(exception))
+        AppScaleLogger.log("Backing off and trying again")
+        time.sleep(10)
+
     if result != 'true':
       raise Exception(result)
 
@@ -145,11 +153,19 @@ class UserAppClient():
     Returns:
       True if the given user exists, False otherwise.
     """
-    if self.server.does_user_exist(username, self.secret) == "true":
-      return True
-    else:
-      return False
-
+  
+    while 1: 
+      try:
+        if self.server.does_user_exist(username, self.secret) == "true":
+          return True
+        else:
+          return False
+      except Exception, exception:
+        AppScaleLogger.log("Exception when checking if a user exists: {0}".\
+          format(exception))
+        AppScaleLogger.log("Backing off and trying again")
+        time.sleep(10)
+ 
 
   def does_app_exist(self, appname):
     """Queries the UserAppServer to see if the named application exists.
