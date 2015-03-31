@@ -294,6 +294,12 @@ group: {1}
 
 
   def test_appscale_in_one_node_virt_deployment(self):
+    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ", False, 5, stdin="cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/")
+
+    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@1.2.3.4 ", False, 5, stdin="chmod +x /etc/init.d/appcontroller")
+    
+    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ", False, 5, stdin="cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/")
+
     # let's say that appscale isn't already running
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
     self.local_state.should_receive('make_appscale_directory').and_return()
@@ -350,6 +356,8 @@ group: {1}
     self.local_state.should_receive('shell')\
       .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
       .and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@1.2.3.4 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return() 
 
     self.setup_socket_mocks('1.2.3.4')
     self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
@@ -462,6 +470,15 @@ appengine:  1.2.3.4
       False, 5).and_return()
     self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
       .format(self.keyname)), False, 5).and_return()
+
+    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
+      .format(self.keyname)), False, 5).and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
     self.setup_appscale_compatibility_mocks()
 
@@ -597,6 +614,16 @@ appengine:  1.2.3.4
     # same for the secret key
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazbargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/')
+
+    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
     self.setup_uaserver_mocks('public1')
 
