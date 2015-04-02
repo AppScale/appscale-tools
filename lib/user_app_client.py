@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
-# Adapted from Hiranya's version
+""" Handlers interface to the user/apps soap server in AppScale. """
 
 
 # General-purpose Python libraries
@@ -36,7 +35,7 @@ class UserAppClient():
 
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
-  ADMIN_CAPABILITIES = ":".join(["upload_app", "mr_api", "ec2_api", "neptune_api"])
+  ADMIN_CAPABILITIES = ":".join(["upload_app"])
 
 
   # A regular expression that indicates how many load balancers provide access
@@ -52,6 +51,10 @@ class UserAppClient():
   # The maximum amount of time we should sleep when waiting for UserAppServer
   # metadata to change state.
   MAX_SLEEP_TIME = 30
+
+
+  # Max time to wait to see if an application is uploaded.
+  MAX_WAIT_TIME = 60 * 60 # 1 hour.
 
 
   def __init__(self, host, secret):
@@ -254,7 +257,7 @@ class UserAppClient():
       A tuple containing the host and port where the application is serving
         traffic from.
     """
-
+    total_wait_time = 0
     # first, wait for the app to start serving
     sleep_time = self.STARTING_SLEEP_TIME
     while True:
@@ -265,7 +268,9 @@ class UserAppClient():
           format(sleep_time))
         time.sleep(sleep_time)
         sleep_time = min(sleep_time * 2, self.MAX_SLEEP_TIME)
-
+        total_wait_time += sleep_time
+      if total_wait_time > self.MAX_WAIT_TIME:
+        raise AppScaleException("App took too long to upload")
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
     host = LocalState.get_login_host(keyname)
