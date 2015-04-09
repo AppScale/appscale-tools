@@ -686,16 +686,7 @@ class RemoteHelper(object):
     cls.ssh(host, keyname, 'service monit start', is_verbose)
     time.sleep(1)
 
-    # Make the controller a service.
-    cls.ssh(host, keyname, 'cp {0} {1}'.format(
-      '/root/appscale/AppController/scripts/appcontroller',
-      '/etc/init.d/'), is_verbose)
-
-    # Init.d requires the script to be executable.
-    cls.ssh(host, keyname, 'chmod +x {0}'.format(
-      '/etc/init.d/appcontroller'), is_verbose)
-
-    # Finally, start the AppController.
+    # Start the AppController.
     cls.ssh(host, keyname, 'monit start -g controller', is_verbose)
     time.sleep(1)
 
