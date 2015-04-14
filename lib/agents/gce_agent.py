@@ -496,10 +496,22 @@ class GCEAgent(BaseAgent):
 
     if args.get('client_secrets'):
       destination = LocalState.get_client_secrets_location(args['keyname'])
+
+      # Make sure the destination's parent directory exists.
+      destination_par = os.path.abspath(os.path.join(destination, os.pardir))
+      if not os.path.exists(destination_par):
+        os.makedirs(destination_par)
+
+      shutil.copy(full_credentials, destination)
     elif args.get('oauth2_storage'):
       destination = LocalState.get_oauth2_storage_location(args['keyname'])
 
-    shutil.copy(full_credentials, destination)
+      # Make sure the destination's parent directory exists.
+      destination_par = os.path.abspath(os.path.join(destination, os.pardir))
+      if not os.path.exists(destination_par):
+        os.makedirs(destination_par)
+
+      shutil.copy(full_credentials, destination)
 
     params = {
       self.PARAM_GROUP : args['group'],
