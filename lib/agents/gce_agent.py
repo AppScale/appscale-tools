@@ -8,6 +8,7 @@ interact with Google Compute Engine.
 # General-purpose Python library imports
 import datetime
 import os.path
+import pwd
 import shutil
 import time
 import uuid
@@ -234,7 +235,8 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     gce_service, credentials = self.open_connection(parameters)
     try:
@@ -329,7 +331,8 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     if all_ssh_keys:
       new_all_ssh_keys = our_public_ssh_key + "\n" + all_ssh_keys
