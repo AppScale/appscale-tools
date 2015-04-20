@@ -204,19 +204,39 @@ group: {1}
   def setup_appscale_compatibility_mocks(self):
     # mock out seeing if the image is appscale-compatible, and assume it is
     # mock out our attempts to find /etc/appscale and presume it does exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
+    self.local_state.should_receive('shell'). \
+      with_args(re.compile('^ssh'), False, 5,
+        stdin='if [ -e /etc/appscale ] ; then echo -n y ; fi') \
+      .and_return('y')
 
     # mock out our attempts to find /etc/appscale/version and presume it does
     # exist
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
+    check_for_version = 'if [ -e /etc/appscale/{0} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_version) \
+      .and_return('y')
 
     # put in a mock indicating that the database the user wants is supported
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+    check_for_db = 'if [ -e /etc/appscale/{0}/{1} ] ; then echo -n y ; fi' \
+      .format(APPSCALE_VERSION, 'cassandra')
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=check_for_db) \
+      .and_return('y')
+
+
+  def setup_copy_deployment_credentials_mocks(self):
+    # Mock out creating a symlink to certificate.
+    ln_regex = re.compile(
+      '^ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/*..0$')
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5, stdin=ln_regex).and_return()
+
+    # Mock out creating a directory for cert and keyfile.
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin='mkdir -p /etc/appscale/keys/cloud1') \
+      .and_return()
 
 
   def setup_appcontroller_mocks(self, public_ip, private_ip):
@@ -339,7 +359,7 @@ group: {1}
 
     # mock out generating the private key
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^openssl'),False,stdin=None)\
+      .with_args(re.compile('^openssl req'), False, stdin=None)\
       .and_return()
 
     # mock out removing the old json file
@@ -481,10 +501,18 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
     self.setup_appscale_compatibility_mocks()
+    self.setup_copy_deployment_credentials_mocks()
+
+    # mock out removing the old json file
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('rm -rf /etc/appscale/appcontroller-state.json')) \
+      .and_return()
 
     # mock out generating the private key
-    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^openssl req'), False, stdin=None) \
+      .and_return()
 
     # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -583,10 +611,18 @@ appengine:  1.2.3.4
       .format(self.keyname)), False, 5).and_return()
 
     self.setup_appscale_compatibility_mocks()
+    self.setup_copy_deployment_credentials_mocks()
+
+    # mock out removing the old json file
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^ssh'), False, 5,
+        stdin=re.compile('rm -rf /etc/appscale/appcontroller-state.json')) \
+      .and_return()
 
     # mock out generating the private key
-    self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+    self.local_state.should_receive('shell') \
+      .with_args(re.compile('^openssl req'), False, stdin=None) \
+      .and_return()
 
     # assume that we started monit fine
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),

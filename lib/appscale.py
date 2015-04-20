@@ -217,6 +217,12 @@ Available commands:
           add_keypair_command.append("--keyname")
           add_keypair_command.append(str(contents_as_yaml["keyname"]))
 
+        if "test" in contents_as_yaml and contents_as_yaml["test"] == True:
+          add_keypair_command.append("--test")
+
+        if "force" in contents_as_yaml and contents_as_yaml["force"] == True:
+          add_keypair_command.append("--force")
+
         add_keypair_command.append("--ips_layout")
         add_keypair_command.append(ips_layout)
         options = ParseArgs(add_keypair_command, "appscale-add-keypair").args

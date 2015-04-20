@@ -154,10 +154,15 @@ class AppScaleTools(object):
         LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
           options.verbose)
 
+      host_key_file = '/root/.ssh/id_rsa'
+      if not options.test and not options.force:
+        RemoteHelper.prompt_if_overwriting_key(ip, options.keyname,
+          private_key, public_key, host_key_file, options.verbose)
+
       # next, copy over the ssh keypair we generate
       RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
         options.verbose)
-      RemoteHelper.scp(ip, options.keyname, private_key, '/root/.ssh/id_rsa',
+      RemoteHelper.scp(ip, options.keyname, private_key, host_key_file,
         options.verbose)
 
     AppScaleLogger.success("Generated a new SSH key for this deployment " + \

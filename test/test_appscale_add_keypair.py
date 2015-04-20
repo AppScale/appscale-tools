@@ -168,7 +168,8 @@ appengine: 1.2.3.6
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),
-      "--keyname", self.keyname
+      "--keyname", self.keyname,
+      "--test"
     ]
     options = ParseArgs(argv, self.function).args
     AppScaleTools.add_keypair(options)
