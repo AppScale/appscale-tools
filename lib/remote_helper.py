@@ -321,6 +321,8 @@ class RemoteHelper(object):
         cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
           "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
           is_verbose, user=getpass.getuser())
+        cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
+          is_verbose, user=getpass.getuser())
         temp_file.close()
         return
       else:
@@ -336,6 +338,8 @@ class RemoteHelper(object):
         is_verbose, user='ubuntu')
       cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
         "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
+        is_verbose, user='ubuntu')
+      cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
         is_verbose, user='ubuntu')
       temp_file.close()
     else:
