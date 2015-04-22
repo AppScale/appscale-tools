@@ -189,9 +189,25 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
       .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('^sudo cp'))\
-      .and_return().ordered()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
+      )
+    ).and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sed -n '
+        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
+      )
+    ).and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+    ).and_return()
 
     local_state.should_receive('shell')\
       .with_args(re.compile('^ssh'),False,5,\
@@ -213,11 +229,27 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
       .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
-      .and_return()
 
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
+      )
+    ).and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sed -n '
+        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
+      )
+    ).and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+    ).and_return()
+
+    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale')) \
@@ -247,11 +279,26 @@ class TestRemoteHelper(unittest.TestCase):
         stdin='ls') \
       .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('^sudo cp')) \
-      .and_return().ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
+      )
+    ).and_return()
 
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sed -n '
+        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
+      )
+    ).and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+    ).and_return()
+
+    # mock out our attempts to find /etc/appscale and presume it does exist
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin=re.compile('ls /etc/appscale')) \
