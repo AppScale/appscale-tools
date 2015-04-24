@@ -64,10 +64,9 @@ max : 1
 # Compute Engine on your behalf.
 #client_secrets: '~/client_secrets.json'
 
-# The project number associated with your Google Compute Engine account, used
-# to uniquely identify you when communicating with Google Compute Engine.
-# Note: Do not use the project number.
-#project: 'project-name-here'
+# The Project ID associated with your Google Compute Engine project.
+# Note: Do not use the Project Name or the Project Number.
+#project: 'project-id-here'
 
 # The Elastic IP (in Amazon Web Services) or Static IP (in Google Compute Engine)
 # that should be used for your first machine's public IP address.

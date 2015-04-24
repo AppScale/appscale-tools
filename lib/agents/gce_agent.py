@@ -7,7 +7,9 @@ interact with Google Compute Engine.
 
 # General-purpose Python library imports
 import datetime
+import json
 import os.path
+import pwd
 import shutil
 import time
 import uuid
@@ -156,7 +158,8 @@ class GCEAgent(BaseAgent):
       GCE.
 
     Raises:
-      AgentConfigurationException: If the given GCE credentials are invalid.
+      AgentConfigurationException: If an error is encountered during
+      authentication.
     """
     gce_service, credentials = self.open_connection(parameters)
     try:
@@ -167,9 +170,9 @@ class GCEAgent(BaseAgent):
       response = request.execute(http=auth_http)
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       return True
-    except errors.HttpError:
-      raise AgentConfigurationException("We couldn't validate your GCE" + \
-        "credentials. Are your credentials valid?")
+    except errors.HttpError as e:
+      error_message = json.loads(e.content)['error']['message']
+      raise AgentConfigurationException(error_message)
 
 
   def configure_instance_security(self, parameters):
@@ -234,7 +237,8 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     gce_service, credentials = self.open_connection(parameters)
     try:
@@ -329,7 +333,8 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      our_public_ssh_key = os.getlogin() + ":" + file_handle.read().rstrip()
+      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     if all_ssh_keys:
       new_all_ssh_keys = our_public_ssh_key + "\n" + all_ssh_keys
@@ -496,10 +501,22 @@ class GCEAgent(BaseAgent):
 
     if args.get('client_secrets'):
       destination = LocalState.get_client_secrets_location(args['keyname'])
+
+      # Make sure the destination's parent directory exists.
+      destination_par = os.path.abspath(os.path.join(destination, os.pardir))
+      if not os.path.exists(destination_par):
+        os.makedirs(destination_par)
+
+      shutil.copy(full_credentials, destination)
     elif args.get('oauth2_storage'):
       destination = LocalState.get_oauth2_storage_location(args['keyname'])
 
-    shutil.copy(full_credentials, destination)
+      # Make sure the destination's parent directory exists.
+      destination_par = os.path.abspath(os.path.join(destination, os.pardir))
+      if not os.path.exists(destination_par):
+        os.makedirs(destination_par)
+
+      shutil.copy(full_credentials, destination)
 
     params = {
       self.PARAM_GROUP : args['group'],

@@ -348,6 +348,13 @@ class TestRemoteHelper(unittest.TestCase):
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 
+    # Mock out additional remote calls. 
+    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+
+    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
+
+    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
+
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 
 
