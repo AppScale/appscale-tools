@@ -462,8 +462,24 @@ appengine:  1.2.3.4
       False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('sudo cp')).and_return()
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
+      )
+    ).and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sed -n '
+        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
+      )
+    ).and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+    ).and_return()
 
     # and assume that we can copy over our ssh keys fine
     self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
@@ -573,8 +589,24 @@ appengine:  1.2.3.4
       False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
 
     # assume that we can enable root login
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('sudo cp')).and_return()
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
+      )
+    ).and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin=re.compile(
+        'sudo sed -n '
+        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
+      )
+    ).and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+    ).and_return()
 
     # and assume that we can copy over our ssh keys fine
     self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),

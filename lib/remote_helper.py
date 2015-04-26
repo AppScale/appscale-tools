@@ -8,6 +8,7 @@ import os
 import re
 import socket
 import subprocess
+import tempfile
 import threading
 import time
 import uuid
@@ -313,8 +314,16 @@ class RemoteHelper(object):
       # logged-in user, so log in as that user to enable root login.
       if infrastructure == "gce":
         AppScaleLogger.log("Root login not enabled - enabling it now.")
-        cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+        temp_file = tempfile.NamedTemporaryFile()
+        cls.ssh(host, keyname, "sudo sort -u ~/.ssh/authorized_keys " \
+          "/root/.ssh/authorized_keys -o {0}".format(temp_file.name),
           is_verbose, user=getpass.getuser())
+        cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
+          "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
+          is_verbose, user=getpass.getuser())
+        cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
+          is_verbose, user=getpass.getuser())
+        temp_file.close()
         return
       else:
         raise exception
@@ -323,8 +332,16 @@ class RemoteHelper(object):
     # the ubuntu user, so do that to enable root login.
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       AppScaleLogger.log("Root login not enabled - enabling it now.")
-      cls.ssh(host, keyname, 'sudo cp ~/.ssh/authorized_keys /root/.ssh/',
+      temp_file = tempfile.NamedTemporaryFile()
+      cls.ssh(host, keyname, "sudo sort -u ~/.ssh/authorized_keys " \
+        "/root/.ssh/authorized_keys -o {0}".format(temp_file.name),
         is_verbose, user='ubuntu')
+      cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
+        "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
+        is_verbose, user='ubuntu')
+      cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
+        is_verbose, user='ubuntu')
+      temp_file.close()
     else:
       AppScaleLogger.log("Root login already enabled - not re-enabling it.")
 
