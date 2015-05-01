@@ -763,12 +763,11 @@ Available commands:
 
 
   def register(self):
-    """ 'register' allows users to register their AppScale deployment with the
-    AppScale Portal.
+    """ Allows users to register their AppScale deployment with the AppScale
+    Portal.
 
     Raises:
-      AppScalefileException: If there is no AppScalefile in the current working
-        directory.
+      AppScaleException: If the deployment has already been registered.
     """
     appscale_yaml = yaml.safe_load(self.read_appscalefile())
     if 'keyname' in appscale_yaml:
@@ -777,7 +776,11 @@ Available commands:
       keyname = "appscale"
 
     nodes = self.get_nodes(keyname)
-    public_ips = [node['public_ip'] for node in nodes]
+    head_node = self.get_head_node(nodes)
+    if RegistrationHelper.appscale_has_deployment_id(head_node, keyname):
+      raise AppScaleException('This deployment has already been registered.')
+
+    opener = RegistrationHelper.login()
 
     if 'infrastructure' in appscale_yaml:
       deployment_type = 'cloud'
