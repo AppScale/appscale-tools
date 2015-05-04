@@ -801,26 +801,16 @@ Available commands:
     else:
       deployment_type = 'cluster'
 
-    opener = RegistrationHelper.login()
+    project = RegistrationHelper.select_project(opener)
+    deployment_name = RegistrationHelper.\
+      select_deployment_name(opener, project)
+
+    deployment = RegistrationHelper.register_deployment(
+      opener, deployment_type, nodes, project, deployment_name)
 
     RegistrationHelper.set_deployment_id(
       head_node, keyname, deployment['deployment_id'])
 
-    secret = LocalState.get_secret_key(keyname)
-    deployments = json.loads(
-      opener.open(RegistrationHelper.DEPLOYMENTS_URL).read())
-    RegistrationHelper.ensure_new_deployment(deployments, secret)
-    name = RegistrationHelper.select_deployment_name(deployments, opener)
-
-    deployment_data = {
-      'name': name,
-      'deployment_type': deployment_type,
-      'ip_address': public_ips,
-      'secret': secret
-    }
-    response = opener.open(RegistrationHelper.ADD_DEPLOYMENT_URL,
-      urllib.urlencode(deployment_data, True))
-    deployment = json.loads(response.read())
     url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
     print('Your AppScale deployment {0} has been added to the AppScale'
-      'Portal.\nYou can view it here: {1}'.format(name, url))
+      ' Portal.\nYou can view it here: {1}'.format(deployment_name, url))

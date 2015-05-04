@@ -2,10 +2,13 @@
 
 from cookielib import CookieJar
 import getpass
+import json
 import urllib
 import urllib2
 
 from appcontroller_client import AppControllerClient
+from local_state import LocalState
+
 
 class RegistrationHelper(object):
   """ RegistrationHelper provides convenience methods used during the
@@ -23,6 +26,9 @@ class RegistrationHelper(object):
   # The endpoint used to retrieve a list of existing deployments.
   DEPLOYMENTS_URL = PORTAL_URL + '/appscale/get_deployments'
 
+  # The endpoint used to add and retrieve projects.
+  PROJECTS_URL = PORTAL_URL + '/projects'
+
   # The endpoint used to retrieve an example deployment name.
   EXAMPLE_NAME_URL = PORTAL_URL + '/appscale/example_name'
 
@@ -37,25 +43,33 @@ class RegistrationHelper(object):
   HTTP_NOTFOUND = 404
 
   @classmethod
-  def select_deployment_name(cls, deployments, opener):
-    """ Prompt the user for a deployment name. """
-    default_name = opener.open(cls.EXAMPLE_NAME_URL).read()
+  def select_deployment_name(cls, opener, project):
+    """ Prompt the user for a deployment name.
+
+    Args:
+      opener: A URL opener with valid cookies set for AppScale Portal access.
+    Returns:
+      A string that's used as an identifiable nickname for the deployment.
+    """
+    query_params = urllib.urlencode({'project_id': project['project_id']})
+    default_name = opener.open(cls.EXAMPLE_NAME_URL + '?' + query_params)\
+      .read()
     name = raw_input('Deployment Name [{0}]: '.format(default_name)).strip()
     if name == '':
       name = default_name
-
-    if any(deployment['name'] == name for deployment in deployments):
-      print('The name {0} has already been taken. Please choose another.'
-        .format(name))
-      return cls.select_deployment_name(deployments, opener)
 
     return name
 
   @classmethod
   def get_deployment_url(cls, safe_name):
-    """ Generate a url that opens the deployment directly. """
-    return '{0}#{1}'.format(cls.PORTAL_APPSCALE_URL, safe_name)
+    """ Generate a url that opens the deployment directly.
 
+    Args:
+      safe_name: A string containing a version of the deployment nickname
+        that's safe for use as an HTML ID attribute.
+    Returns: A string containing a link to the deployment on the portal.
+    """
+    return '{0}#{1}'.format(cls.PORTAL_APPSCALE_URL, safe_name)
 
   @classmethod
   def login(cls):
@@ -97,6 +111,89 @@ class RegistrationHelper(object):
     secret = LocalState.get_secret_key(keyname)
     acc = AppControllerClient(head_node, secret)
     return acc.deployment_id_exists()
+
+  @classmethod
+  def prompt_for_project_name(cls):
+    """ Prompt the user for a project name.
+
+    Returns: A string containing a name for the project.
+    """
+    name = raw_input('Project Name: ').strip()
+    if name == '':
+      print('You must enter a name for the project.')
+      return cls.prompt_for_project_name()
+    return name
+
+  @classmethod
+  def register_project(cls, opener, name):
+    project_data = urllib.urlencode({'name': name})
+    project = opener.open(cls.PROJECTS_URL, project_data).read()
+
+    # TODO: Handle rejected requests.
+
+    return json.loads(project)
+
+  @classmethod
+  def select_project(cls, opener):
+    """ Asks the user to select a project to register the deployment under.
+
+    Args:
+      opener: A URL opener with valid cookies set for AppScale Portal access.
+      deployment_type: A string designating the type of deployment.
+      nodes: A list of containing the nodes layout.
+    """
+    projects = json.loads(opener.open(cls.PROJECTS_URL).read())
+
+    if len(projects) == 0:
+      print('You do not have any projects to add this deployment to.'
+        ' Please create one now.')
+      name = cls.prompt_for_project_name()
+      return cls.register_project(opener, name)
+
+    for idx, project in enumerate(projects):
+      project_num = idx + 1
+      print('  {0}) {1}'.format(project_num, project['name']))
+
+    total_selections = str(len(projects) + 1)
+    print('  {0}) Create New Project'.format(total_selections))
+    prompt = 'Please select which project to use for this deployment '\
+      '[1-{0}]: '.format(total_selections)
+    selection = raw_input(prompt)
+
+    if selection == total_selections:
+      name = cls.prompt_for_project_name()
+      return cls.register_project(opener, name)
+    else:
+      # TODO: Check if input is valid.
+      return projects[int(selection) - 1]
+
+  @classmethod
+  def register_deployment(cls, opener, deployment_type, nodes, project, name):
+    """ Asks the AppScale Portal for a new deployment ID.
+
+    Args:
+      opener: A URL opener with valid cookies set for AppScale Portal access.
+      deployment_type: A string designating the type of deployment.
+      nodes: A list of containing the nodes layout.
+    """
+    # Remove unneeded info from node layout.
+    for node in nodes:
+      if 'ssh_key' in node:
+        del node['ssh_key']
+
+    # TODO: Also send version of AppScale and tools.
+
+    deployment_data = urllib.urlencode({
+      'project_id': project['project_id'],
+      'deployment_type': deployment_type,
+      'node_layout': json.dumps(nodes),
+      'name': name
+    })
+    deployment = opener.open(cls.ADD_DEPLOYMENT_URL, deployment_data).read()
+
+    # TODO: Handle rejected requests (e.g. the name already exists)
+
+    return json.loads(deployment)
 
   @classmethod
   def set_deployment_id(cls, head_node, keyname, deployment_id):
