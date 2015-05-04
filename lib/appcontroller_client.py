@@ -399,3 +399,13 @@ class AppControllerClient():
       'Check for deployment id request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.deployment_id_exists, self.secret)
 
+
+  def set_deployment_id(self, deployment_id):
+    """ Tells the AppController to set the deployment ID in ZooKeeper.
+
+    Returns:
+      A boolean indicating whether the deployment ID is stored or not.
+    """
+    return self.run_with_timeout(10, 'Set deployment id request timed out.',
+      self.DEFAULT_NUM_RETRIES, self.server.set_deployment_id, self.secret,
+      deployment_id)

@@ -5,6 +5,7 @@ import getpass
 import urllib
 import urllib2
 
+from appcontroller_client import AppControllerClient
 
 class RegistrationHelper(object):
   """ RegistrationHelper provides convenience methods used during the
@@ -55,16 +56,6 @@ class RegistrationHelper(object):
     """ Generate a url that opens the deployment directly. """
     return '{0}#{1}'.format(cls.PORTAL_APPSCALE_URL, safe_name)
 
-  @classmethod
-  def ensure_new_deployment(cls, deployments, secret):
-    """ Make sure the deployment has not already been registered. """
-    for deployment in deployments:
-      if deployment['secret'] == secret:
-        deployment_url = cls.get_deployment_url(deployment['safe_name'])
-        print('This deployment has already been registered as {0}.\n'
-          'You can view it here: {1}'
-          .format(deployment['name'], deployment_url))
-        exit()
 
   @classmethod
   def login(cls):
@@ -90,3 +81,34 @@ class RegistrationHelper(object):
         print('Email not found. Please create an account at {0}'
           .format(cls.SIGNUP_URL))
         exit()
+
+  @classmethod
+  def appscale_has_deployment_id(cls, head_node, keyname):
+    """ Try to retrieve a deployment ID from ZooKeeper to see if this
+    deployment has already been registered.
+
+    Args:
+      head_node: A string containing the IP address of the head node.
+      keyname: A string representing the SSH keypair name used for this
+        AppScale deployment.
+    Returns: A boolean indicating whether the deployment ID exists or not.
+    """
+    # Check if head node has a deployment id stored.
+    secret = LocalState.get_secret_key(keyname)
+    acc = AppControllerClient(head_node, secret)
+    return acc.deployment_id_exists()
+
+  @classmethod
+  def set_deployment_id(cls, head_node, keyname, deployment_id):
+    """ Set a deployment ID to use for communicating with the AppScale
+    Portal.
+
+    Args:
+      head_node: A string containing the IP address of the head node.
+      keyname: A string representing the SSH keypair name used for this
+        AppScale deployment.
+    """
+    secret = LocalState.get_secret_key(keyname)
+    acc = AppControllerClient(head_node, secret)
+    acc.set_deployment_id(deployment_id)
+    return

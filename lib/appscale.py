@@ -151,6 +151,20 @@ Available commands:
         " be running. Please start it and try again.")
 
 
+  def get_head_node(self, nodes):
+    """ Retrieve a node with the 'shadow' role.
+
+    Args:
+      nodes: A list of nodes in the running AppScale deployment.
+    Returns: A string containing the IP address of the head node.
+    """
+    for node in nodes:
+      if 'shadow' in node['jobs']:
+        return node['public_ip']
+
+    raise AppScaleException('Unable to find head node.')
+
+
   def get_key_location(self, keyname):
     """ Returns the location where the AppScale tools places an SSH key that
     can be used to log into any virtual machine in the currently running
@@ -788,6 +802,9 @@ Available commands:
       deployment_type = 'cluster'
 
     opener = RegistrationHelper.login()
+
+    RegistrationHelper.set_deployment_id(
+      head_node, keyname, deployment['deployment_id'])
 
     secret = LocalState.get_secret_key(keyname)
     deployments = json.loads(
