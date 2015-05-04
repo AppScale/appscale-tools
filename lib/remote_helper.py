@@ -568,7 +568,7 @@ class RemoteHelper(object):
     ssh_key = LocalState.get_key_path_from_name(keyname)
     appscale_dirs = ["lib", "AppController", "AppManager", "AppServer",
       "AppServer_Java", "AppDashboard", "InfrastructureManager", "AppTaskQueue",
-      "XMPPReceiver"]
+      "XMPPReceiver", "Hermes"]
     for dir_name in appscale_dirs:
       local_path = os.path.expanduser(local_appscale_dir) + os.sep + dir_name
       if not os.path.exists(local_path):
