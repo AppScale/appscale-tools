@@ -787,7 +787,7 @@ Available commands:
     if 'keyname' in appscale_yaml:
       keyname = appscale_yaml['keyname']
     else:
-      keyname = "appscale"
+      keyname = 'appscale'
 
     nodes = self.get_nodes(keyname)
     head_node = self.get_head_node(nodes)
