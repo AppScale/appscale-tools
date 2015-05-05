@@ -6,6 +6,8 @@ import json
 import urllib
 import urllib2
 
+from appscale_logger import AppScaleLogger
+
 from appcontroller_client import AppControllerClient
 from local_state import LocalState
 
@@ -89,10 +91,11 @@ class RegistrationHelper(object):
       return opener
     except urllib2.HTTPError as error:
       if error.code == cls.HTTP_UNAUTHORIZED:
-        print('Login failed. Please check your credentials and try again.')
+        AppScaleLogger.warn('Login failed. '
+          'Please check your credentials and try again.')
         return cls.login()
       if error.code == cls.HTTP_NOTFOUND:
-        print('Email not found. Please create an account at {0}'
+        AppScaleLogger.warn('Email not found. Please create an account at {0}'
           .format(cls.SIGNUP_URL))
         exit()
 
@@ -120,7 +123,7 @@ class RegistrationHelper(object):
     """
     name = raw_input('Project Name: ').strip()
     if name == '':
-      print('You must enter a name for the project.')
+      AppScaleLogger.warn('You must enter a name for the project.')
       return cls.prompt_for_project_name()
     return name
 
@@ -145,17 +148,17 @@ class RegistrationHelper(object):
     projects = json.loads(opener.open(cls.PROJECTS_URL).read())
 
     if len(projects) == 0:
-      print('You do not have any projects to add this deployment to.'
-        ' Please create one now.')
+      AppScaleLogger.log('You do not have any projects to add this '
+        'deployment to. Please create one now.')
       name = cls.prompt_for_project_name()
       return cls.register_project(opener, name)
 
     for idx, project in enumerate(projects):
       project_num = idx + 1
-      print('  {0}) {1}'.format(project_num, project['name']))
+      AppScaleLogger.log('{0}) {1}'.format(project_num, project['name']))
 
     total_selections = str(len(projects) + 1)
-    print('  {0}) Create New Project'.format(total_selections))
+    AppScaleLogger.log('{0}) Create New Project'.format(total_selections))
     prompt = 'Please select which project to use for this deployment '\
       '[1-{0}]: '.format(total_selections)
     selection = raw_input(prompt)

@@ -812,5 +812,6 @@ Available commands:
       head_node, keyname, deployment['deployment_id'])
 
     url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
-    print('Your AppScale deployment {0} has been added to the AppScale'
-      ' Portal.\nYou can view it here: {1}'.format(deployment_name, url))
+    AppScaleLogger.success('Your AppScale deployment {0} has been added to '
+      'the AppScale Portal.\nYou can view it here: {1}'
+      .format(deployment_name, url))
