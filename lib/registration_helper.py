@@ -226,4 +226,3 @@ class RegistrationHelper(object):
     secret = LocalState.get_secret_key(keyname)
     acc = AppControllerClient(head_node, secret)
     acc.set_deployment_id(deployment_id)
-    return
