@@ -64,12 +64,13 @@ class RegistrationHelper(object):
 
   @classmethod
   def get_deployment_url(cls, safe_name):
-    """ Generate a url that opens the deployment directly.
+    """ Generate a URL that opens the deployment directly.
 
     Args:
       safe_name: A string containing a version of the deployment nickname
         that's safe for use as an HTML ID attribute.
-    Returns: A string containing a link to the deployment on the portal.
+    Returns:
+      A string containing a link to the deployment on the portal.
     """
     return '{0}#{1}'.format(cls.PORTAL_APPSCALE_URL, safe_name)
 
@@ -108,9 +109,10 @@ class RegistrationHelper(object):
       head_node: A string containing the IP address of the head node.
       keyname: A string representing the SSH keypair name used for this
         AppScale deployment.
-    Returns: A boolean indicating whether the deployment ID exists or not.
+    Returns:
+      A boolean indicating whether the deployment ID exists or not.
     """
-    # Check if head node has a deployment id stored.
+    # Check if head node has a deployment ID stored.
     secret = LocalState.get_secret_key(keyname)
     acc = AppControllerClient(head_node, secret)
     return acc.deployment_id_exists()
@@ -119,7 +121,8 @@ class RegistrationHelper(object):
   def prompt_for_project_name(cls):
     """ Prompt the user for a project name.
 
-    Returns: A string containing a name for the project.
+    Returns:
+      A string containing a name for the project.
     """
     name = raw_input('Project Name: ').strip()
     if name == '':
@@ -129,6 +132,14 @@ class RegistrationHelper(object):
 
   @classmethod
   def register_project(cls, opener, name):
+    """ Tells the AppScale Portal to create a new project.
+
+    Args:
+      opener: A URL opener with valid cookies set for AppScale Portal access.
+      name: A string containing the project name.
+    Returns:
+      A dictionary containing the project info.
+    """
     project_data = urllib.urlencode({'name': name})
     project = opener.open(cls.PROJECTS_URL, project_data).read()
 
@@ -144,6 +155,8 @@ class RegistrationHelper(object):
       opener: A URL opener with valid cookies set for AppScale Portal access.
       deployment_type: A string designating the type of deployment.
       nodes: A list of containing the nodes layout.
+    Returns:
+      A dictionary containing the project info.
     """
     projects = json.loads(opener.open(cls.PROJECTS_URL).read())
 
@@ -178,6 +191,8 @@ class RegistrationHelper(object):
       opener: A URL opener with valid cookies set for AppScale Portal access.
       deployment_type: A string designating the type of deployment.
       nodes: A list of containing the nodes layout.
+    Returns:
+      A dictionary containing the deployment info.
     """
     # Remove unneeded info from node layout.
     for node in nodes:

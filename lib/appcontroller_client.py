@@ -396,7 +396,7 @@ class AppControllerClient():
       A boolean indicating whether the deployment ID is stored or not.
     """
     return self.run_with_timeout(10,
-      'Check for deployment id request timed out.',
+      'Check for deployment ID request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.deployment_id_exists, self.secret)
 
 
@@ -406,6 +406,6 @@ class AppControllerClient():
     Returns:
       A boolean indicating whether the deployment ID is stored or not.
     """
-    return self.run_with_timeout(10, 'Set deployment id request timed out.',
+    return self.run_with_timeout(10, 'Set deployment ID request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.set_deployment_id, self.secret,
       deployment_id)

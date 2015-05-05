@@ -141,7 +141,7 @@ Available commands:
     Returns:
       A list of nodes in the running AppScale deployment.
     Raises:
-      AppScaleException: If there is no locations json file.
+      AppScaleException: If there is no locations JSON file.
     """
     try:
       with open(self.get_locations_json_file(keyname)) as f:
@@ -156,7 +156,8 @@ Available commands:
 
     Args:
       nodes: A list of nodes in the running AppScale deployment.
-    Returns: A string containing the IP address of the head node.
+    Returns:
+      A string containing the IP address of the head node.
     """
     for node in nodes:
       if 'shadow' in node['jobs']:
