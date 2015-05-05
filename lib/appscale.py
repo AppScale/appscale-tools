@@ -143,8 +143,8 @@ Available commands:
       AppScaleException: If there is no locations JSON file.
     """
     try:
-      with open(self.get_locations_json_file(keyname)) as f:
-        return json.loads(f.read())
+      with open(self.get_locations_json_file(keyname)) as locations_file:
+        return json.loads(locations_file.read())
     except IOError:
       raise AppScaleException("AppScale does not currently appear to"
         " be running. Please start it and try again.")
