@@ -143,7 +143,8 @@ class AppScaleTools(object):
       if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT,
         options.verbose):
         raise AppScaleException("SSH does not appear to be running at {0}. " \
-          "Is the machine at {0} up and running?".format(ip))
+          "Is the machine at {0} up and running? Make sure your IPs are " \
+          "correct!".format(ip))
 
       # next, set up passwordless ssh
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
