@@ -34,6 +34,10 @@ ips_layout :
 
 # The search API is optional, and can be added with the "search" role.
 
+# The database that your Google App Engine applications will be backed by.
+# Currently only support cassandra.
+table : 'cassandra'
+
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.
 # This clears the datastore, taskqueue, and search state.
