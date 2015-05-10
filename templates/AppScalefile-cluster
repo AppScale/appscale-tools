@@ -3,10 +3,10 @@
 # AppScale deployment.
 # The following is a sample layout for running everything on one machine:
 ips_layout :
-  master : 192.168.1.2
-  appengine : 192.168.1.2
-  database : 192.168.1.2
-  zookeeper : 192.168.1.2
+  master : 192.168.33.10
+  appengine : 192.168.33.10
+  database : 192.168.33.10
+  zookeeper : 192.168.33.10
 
 # Alternatively, the following is a layout that separates everything onto
 # four machines:
