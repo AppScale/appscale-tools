@@ -3,6 +3,7 @@
 
 
 # General-purpose Python library imports
+import base64
 import json
 import os
 import re
@@ -28,21 +29,19 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState
+from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 
 
 class TestAppScale(unittest.TestCase):
 
-
   def setUp(self):
     os.environ['EC2_ACCESS_KEY'] = ''
     os.environ['EC2_SECRET_KEY'] = ''
 
-  
   def tearDown(self):
     os.environ['EC2_ACCESS_KEY'] = ''
     os.environ['EC2_SECRET_KEY'] = ''
-
 
   def addMockForNoAppScalefile(self, appscale):
     flexmock(os)
@@ -53,7 +52,6 @@ class TestAppScale(unittest.TestCase):
     (mock.should_receive('open')
       .with_args('/boo/' + appscale.APPSCALEFILE)
       .and_raise(IOError))
-
 
   def addMockForAppScalefile(self, appscale, contents):
     flexmock(os)
@@ -67,86 +65,108 @@ class TestAppScale(unittest.TestCase):
 
     return mock
 
+  def test_read_appscalefile(self):
+    appscale = flexmock(AppScale())
+    builtin = flexmock(sys.modules['__builtin__'])
+    builtin.should_call('open')
+    appscale_yaml = {'keyname': 'boo'}
+    appscale.should_receive('get_appscalefile_location').\
+      and_return('AppScalefile')
 
-  def testInitWithNoAppScalefile(self):
-    # calling 'appscale init cloud' if there's no AppScalefile in the local
-    # directory should write a new cloud config file there
-    appscale = AppScale()
 
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo')
+    # If AppScalefile exists, it should return the YAML as a dictionary.
+    builtin.should_receive('open').with_args('AppScalefile').\
+      and_return(flexmock(read=lambda: appscale_yaml))
+    self.assertEqual(appscale_yaml, appscale.read_appscalefile())
 
+    # If AppScalefile does not exist, it should throw an
+    # AppScalefileException.
+    builtin.should_receive('open').with_args('AppScalefile').\
+      and_raise(IOError)
+    with self.assertRaises(AppScalefileException):
+      appscale.read_appscalefile()
+
+  def test_get_nodes(self):
+    appscale = flexmock(AppScale())
+    builtin = flexmock(sys.modules['__builtin__'])
+    builtin.should_call('open')
+    nodes = {'public_ip': 'blarg'}
+    appscale_yaml = {'keyname': 'boo'}
+    appscale.should_receive('get_locations_json_file').\
+      and_return('locations.json')
+
+    # If the locations JSON file exists, it should return the locations as a
+    # dictionary.
+    builtin.should_receive('open').with_args('locations.json').\
+      and_return(flexmock(read=lambda: json.dumps(nodes)))
+    self.assertEqual(nodes, appscale.get_nodes(appscale_yaml['keyname']))
+
+    # If the locations JSON file does not exist, it should throw an
+    # AppScaleException.
+    builtin.should_receive('open').with_args('locations.json').\
+      and_raise(IOError)
+    with self.assertRaises(AppScaleException):
+      appscale.get_nodes(appscale_yaml['keyname'])
+
+  def test_init(self):
+    appscale = flexmock(AppScale())
+    appscale.should_receive('get_appscalefile_location').\
+      and_return('AppScalefile')
     flexmock(os.path)
-    os.path.should_receive('exists').with_args(
-      '/boo/' + appscale.APPSCALEFILE).and_return(False)
-
-    # mock out the actual writing of the template file
     flexmock(shutil)
-    shutil.should_receive('copy').with_args(
-      appscale.TEMPLATE_CLOUD_APPSCALEFILE, '/boo/' + appscale.APPSCALEFILE) \
-      .and_return()
 
+    # If the AppScalefile already exists, it should throw an
+    # AppScalefileException.
+    os.path.should_receive('exists').with_args('AppScalefile').\
+      and_return(True)
+    with self.assertRaises(AppScalefileException):
+      appscale.init('cloud')
+
+    os.path.should_receive('exists').with_args('AppScalefile').and_return(False)
+
+    # If the function is called with an unrecognized argument, it should throw
+    # a BadConfigurationException.
+    with self.assertRaises(BadConfigurationException):
+      appscale.init('boo')
+
+    # If the AppScalefile does not already exist and there's a template for
+    # the specified environment, the function should return successfully.
+    shutil.should_receive('copy').\
+      with_args(appscale.TEMPLATE_CLOUD_APPSCALEFILE, 'AppScalefile').\
+      and_return()
     appscale.init('cloud')
 
+  def test_up(self):
+    appscale = flexmock(AppScale())
 
-  def testInitWithAppScalefile(self):
-    # calling 'appscale init cloud' if there is an AppScalefile in the local
-    # directory should throw up and die
-    appscale = AppScale()
-
-    flexmock(os)
-    os.should_receive('getcwd').and_return('/boo')
-
-    flexmock(os.path)
-    os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(True)
-
-    self.assertRaises(AppScalefileException, appscale.init, 'cloud')
-
-
-  def testUpWithNoAppScalefile(self):
-    # calling 'appscale up' if there is no AppScalefile present
-    # should throw up and die
-    appscale = AppScale()
-    self.addMockForNoAppScalefile(appscale)
-    self.assertRaises(AppScalefileException, appscale.up)
-
-
-  def testUpWithClusterAppScalefile(self):
-    # calling 'appscale up' if there is an AppScalefile present
-    # should call appscale-run-instances with the given config
-    # params. here, we assume that the file is intended for use
-    # on a virtualized cluster
-    appscale = AppScale()
-
-    # Mock out the actual file reading itself, and slip in a YAML-dumped
-    # file
-    contents = {
-      'ips_layout': {'master': 'ip1', 'appengine': 'ip1',
-                     'database': 'ip2', 'zookeeper': 'ip2'},
-      'keyname': 'boobazblarg',
-      'group': 'boobazblarg'
+    # Test 'appscale up' with a cluster-based AppScalefile.
+    cluster_yaml = {
+      'ips_layout': {
+        'master': 'ip1',
+        'appengine': 'ip1',
+        'database': 'ip2',
+        'zookeeper': 'ip2'
+      },
+      'keyname': 'boo',
+      'group': 'boo'
     }
-    yaml_dumped_contents = yaml.dump(contents)
-    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+    appscale.should_receive('read_appscalefile').\
+      and_return(yaml.dump(cluster_yaml))
 
-    flexmock(os.path)
-    os.path.should_call('exists')
-    os.path.should_receive('exists').with_args(
-      '/boo/' + appscale.APPSCALEFILE).and_return(True)
+    flexmock(LocalState)
+    LocalState.should_receive('ensure_appscalefile_is_up_to_date').\
+      and_return(True)
 
-    # for this test, let's say that we don't have an SSH key already
-    # set up for ip1 and ip2
-    # TODO(cgb): Add in tests where we have a key for ip1 but not ip2,
-    # and the case where we have a key but it doesn't work
-    key_path = os.path.expanduser('~/.appscale/boobazblarg.key')
-    os.path.should_receive('exists').with_args(key_path).and_return(False)
+    appscale.should_receive('valid_ssh_key').with_args(cluster_yaml).\
+      and_return(True)
 
-    # finally, mock out the actual appscale tools calls. since we're running
-    # via a cluster, this means we call add-keypair to set up SSH keys, then
-    # run-instances to start appscale
+    command = ['ips_layout',
+      base64.b64encode(yaml.dump(cluster_yaml['ips_layout']))]
+    options = 'mock_argparse_namespace'
+    flexmock(ParseArgs).new_instances(flexmock(args=options))
+
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('add_keypair')
-    AppScaleTools.should_receive('run_instances')
+    AppScaleTools.should_receive('run_instances').with_args(options).and_return()
 
     appscale.up()
 
@@ -290,22 +310,6 @@ class TestAppScale(unittest.TestCase):
     appscale = AppScale()
     self.addMockForAppScalefile(appscale, "")
     self.assertRaises(TypeError, appscale.ssh, "boo")
-
-
-  def testSshWithNoNodesJson(self):
-    # calling 'appscale ssh' when there isn't a locations.json
-    # file should throw up and die
-    appscale = AppScale()
-
-    contents = { 'keyname' : 'boo' }
-    yaml_dumped_contents = yaml.dump(contents)
-
-    mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-    (mock.should_receive('open')
-      .with_args(appscale.get_locations_json_file('boo'))
-      .and_raise(IOError))
-
-    self.assertRaises(AppScaleException, appscale.ssh, 0)
 
 
   def testSshWithIndexOutOfBounds(self):
