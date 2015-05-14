@@ -400,6 +400,16 @@ class AppControllerClient():
       self.DEFAULT_NUM_RETRIES, self.server.deployment_id_exists, self.secret)
 
 
+  def get_deployment_id(self):
+    """ Retrieves the deployment ID from ZooKeeper.
+
+    Returns:
+      A string containing the deployment ID.
+    """
+    return self.run_with_timeout(10, 'Get deployment ID request timed out.',
+      self.DEFAULT_NUM_RETRIES, self.server.get_deployment_id, self.secret)
+
+
   def set_deployment_id(self, deployment_id):
     """ Tells the AppController to set the deployment ID in ZooKeeper.
 

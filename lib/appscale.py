@@ -792,26 +792,21 @@ Available commands:
     nodes = self.get_nodes(keyname)
     head_node = self.get_head_node(nodes)
     if RegistrationHelper.appscale_has_deployment_id(head_node, keyname):
-      raise AppScaleException('This deployment has already been registered.')
-
-    opener = RegistrationHelper.login()
+      existing_id = RegistrationHelper.get_deployment_id(head_node, keyname)
+      if existing_id != deployment_id:
+        raise AppScaleException(
+          'This deployment has already been registered with a different ID.')
 
     if 'infrastructure' in appscale_yaml:
       deployment_type = 'cloud'
     else:
       deployment_type = 'cluster'
 
-    project = RegistrationHelper.select_project(opener)
-    deployment_name = RegistrationHelper.\
-      select_deployment_name(opener, project)
+    deployment = RegistrationHelper.update_deployment(deployment_type, nodes,
+      deployment_id)
 
-    deployment = RegistrationHelper.register_deployment(
-      opener, deployment_type, nodes, project, deployment_name)
+    RegistrationHelper.set_deployment_id(head_node, keyname, deployment_id)
 
-    RegistrationHelper.set_deployment_id(
-      head_node, keyname, deployment['deployment_id'])
-
-    url = RegistrationHelper.get_deployment_url(deployment['safe_name'])
-    AppScaleLogger.success('Your AppScale deployment {0} has been added to '
-      'the AppScale Portal.\nYou can view it here: {1}'
-      .format(deployment_name, url))
+    AppScaleLogger.success(
+      'Registration complete for AppScale deployment {0}.'
+      .format(deployment['name']))
