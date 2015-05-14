@@ -776,7 +776,7 @@ Available commands:
     return all_ips
 
 
-  def register(self):
+  def register(self, deployment_id):
     """ Allows users to register their AppScale deployment with the AppScale
     Portal.
 
