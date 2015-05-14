@@ -68,6 +68,47 @@ class TestAppScale(unittest.TestCase):
     return mock
 
 
+  def test_get_nodes(self):
+    appscale = flexmock(AppScale())
+    builtin = flexmock(sys.modules['__builtin__'])
+    builtin.should_call('open')
+    nodes = [{'public_ip': 'blarg'}]
+    appscale_yaml = {'keyname': 'boo'}
+    appscale.should_receive('get_locations_json_file').\
+      and_return('locations.json')
+
+    # If the locations JSON file exists, it should return the locations as a
+    # dictionary.
+    builtin.should_receive('open').with_args('locations.json').\
+      and_return(flexmock(read=lambda: json.dumps(nodes)))
+    self.assertEqual(nodes, appscale.get_nodes(appscale_yaml['keyname']))
+
+    # If the locations JSON file does not exist, it should throw an
+    # AppScaleException.
+    builtin.should_receive('open').with_args('locations.json').\
+      and_raise(IOError)
+    with self.assertRaises(AppScaleException):
+      appscale.get_nodes(appscale_yaml['keyname'])
+
+
+  def test_get_head_node(self):
+    shadow_node_1 = {'public_ip': 'public2', 'jobs': ['shadow']}
+    appengine_node = {'public_ip': 'public1', 'jobs': ['appengine']}
+    shadow_node_2 = {'public_ip': 'public3', 'jobs': ['shadow']}
+    appscale = AppScale()
+
+    # If the list of nodes does not have a node with the shadow role, the
+    # tools should raise an AppScaleException.
+    with self.assertRaises(AppScaleException):
+      appscale.get_head_node([appengine_node])
+
+    # If the list of nodes contains any nodes with the shadow role, the tools
+    # should return the public IP address of the first node which has that
+    # role.
+    self.assertEqual(shadow_node_1['public_ip'],
+      appscale.get_head_node([shadow_node_1, appengine_node, shadow_node_2]))
+
+
   def testInitWithNoAppScalefile(self):
     # calling 'appscale init cloud' if there's no AppScalefile in the local
     # directory should write a new cloud config file there
