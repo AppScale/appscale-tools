@@ -34,7 +34,7 @@ class RegistrationHelper(object):
 
     Args:
       deployment_type: A string designating the type of deployment.
-      nodes: A list of containing the nodes layout.
+      nodes: A list containing the nodes layout.
       deployment_id: A string containing the deployment ID.
     Returns:
       A dictionary containing the updated deployment info.
