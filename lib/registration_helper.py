@@ -14,14 +14,13 @@ class RegistrationHelper(object):
   registration process. """
 
   # The location of the AppScale Portal.
-  # PORTAL_URL = 'https://portal.appscale.com'
-  PORTAL_URL = 'http://localhost:8080'
+  PORTAL_URL = 'https://portal.appscale.com'
 
   # The endpoint used to update a deployment by ID.
   DEPLOYMENTS_URL = PORTAL_URL + '/deployments/{0}'
 
   # The endpoint used to post new deployment info.
-  ADD_DEPLOYMENT_URL = PORTAL_URL + '/appscale/add_deployment'
+  ADD_DEPLOYMENT_URL = PORTAL_URL + '/dashboard/appscale'
 
   # HTTP Codes.
   HTTP_BADREQUEST = 400
