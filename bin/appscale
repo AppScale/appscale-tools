@@ -32,6 +32,7 @@ except ImportError:
 
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
+from registration_helper import RegistrationHelper
 
 
 appscale = AppScale()
@@ -177,6 +178,18 @@ elif command == "relocate":
 
   try:
     appscale.relocate(sys.argv[2], sys.argv[3], sys.argv[4])
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
+    sys.exit(1)
+elif command == "register":
+  try:
+    if len(sys.argv) != 3:
+      cprint("Usage: appscale register <deployment ID>", "red")
+      print("You can obtain a deployment ID from {0}"
+        .format(RegistrationHelper.ADD_DEPLOYMENT_URL))
+      sys.exit(1)
+
+    appscale.register(sys.argv[2])
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
