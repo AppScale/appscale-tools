@@ -26,6 +26,7 @@ class RegistrationHelper(object):
   HTTP_BADREQUEST = 400
   HTTP_UNAUTHORIZED = 401
   HTTP_NOTFOUND = 404
+  HTTP_METHODNOTALLOWED = 405
 
   @classmethod
   def update_deployment(cls, deployment_type, nodes, deployment_id):
@@ -58,6 +59,8 @@ class RegistrationHelper(object):
     except urllib2.HTTPError as error:
       if error.code == cls.HTTP_NOTFOUND:
         raise AppScaleException('This deployment ID does not exist.')
+      if error.code == cls.HTTP_METHODNOTALLOWED:
+        raise AppScaleException('This feature is currently unavailable.')
       if error.code == cls.HTTP_BADREQUEST:
         raise AppScaleException(error.read())
 
