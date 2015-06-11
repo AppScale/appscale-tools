@@ -331,8 +331,8 @@ class TestRemoteHelper(unittest.TestCase):
     # if the user specifies that we should copy from a directory that doesn't
     # exist, we should throw up and die
     flexmock(os.path)
-    os.path.should_receive('exists').with_args('/tmp/booscale-local/lib')\
-      .and_return(False)
+    os.path.should_receive('exists').with_args('/tmp/booscale-local').\
+      and_return(False)
     self.assertRaises(BadConfigurationException, RemoteHelper.rsync_files,
       'public1', 'booscale', '/tmp/booscale-local', False)
 
@@ -341,8 +341,8 @@ class TestRemoteHelper(unittest.TestCase):
     # if the user specifies that we should copy from a directory that does
     # exist, and has all the right directories in it, we should succeed
     flexmock(os.path)
-    os.path.should_receive('exists').with_args(re.compile(
-      '/tmp/booscale-local/')).and_return(True)
+    os.path.should_receive('exists').with_args('/tmp/booscale-local').\
+      and_return(True)
 
     # assume the rsyncs succeed
     local_state = flexmock(LocalState)
