@@ -62,23 +62,43 @@ class AppScale():
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  init: Writes a new configuration file for starting AppScale.
-  up: Starts a new AppScale instance.
-  ssh: Logs into a virtual machine in a currently running AppScale deployment.
-  status: Reports on the state of a currently running AppScale deployment.
-  deploy: Deploys a Google App Engine app to AppScale.
-  undeploy: Removes a Google App Engine app from AppScale.
-  remove: An alias for 'undeploy'.
-  get: Gets all AppController properties matching the provided regex.
-  set: Sets an AppController property to the provided value.
-  tail: Follows the output of log files in a currently running AppScale deployment.
-  logs: Collects the logs produced by an AppScale deployment.
-  relocate: Moves a hosted app to different HTTP and HTTPS ports.
-  destroy: Gracefully terminates the currently running AppScale deployment.
-  down: An alias for 'destroy'.
-  clean: Forcefully terminates all services in a cluster AppScale deployment.
-  register: Registers an AppScale deployment with the AppScale Portal.
-  help: Displays this message.
+  clean                             forcefully terminates the AppScale
+                                    deployment and delete all data. ALL
+                                    DATA WILL BE DELETED.
+  deploy <app>                      deploys a Google App Engine app to AppScale:
+                                    <app> can be a directory with the source
+                                    code or a tar.gz of the source tree.
+  destroy                           gracefully terminates the currently
+                                    running AppScale deployment.
+  down                              an alias for 'destroy'.
+  get <regex>                       gets all AppController properties matching
+                                    the provided regex: for developers only.
+  help                              displays this message.
+  init <cloud|cluster>              writes a new configuration file for
+                                    AppScale: it will use the <cloud> or
+                                    <cluster> template. Won't override
+                                    an existing configuration.
+  logs <dir>                        collects the logs produced by an AppScale
+                                    deployment into a directory <dir>: the
+                                    directory will be created.
+  register <deployment_id>          registers an AppScale deployment with the
+                                    AppScale Portal (http://hawkeye.appscale.com).
+  relocate <appid> <http> <https>   moves the application <appid> to a
+                                    different <http> and <https> ports.
+  remove                            an alias for 'undeploy'.
+  set <property> <value>            sets an AppController <property> to the
+                                    provided <value>. For developers only.
+  ssh [#]                           logs into the #th node of the current AppScale
+                                    deployment. Default is headnode (1).
+  status                            reports on the state of a currently
+                                    running AppScale deployment.
+  tail                              follows the output of log files of an
+                                    AppScale deployment.
+  up                                starts the AppScale deployments (requires
+                                    an AppScalefile).
+  undeploy <appid>                  removes <appid> from the current
+                                    deployment. DATA ASSOCIATED WITH
+                                    THE APPLICATION WILL BE LOST.
 """
 
 
