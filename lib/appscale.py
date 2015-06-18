@@ -54,51 +54,57 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
+  # This is the command to terminate a deployment.
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
+
+  # This is the command used to upgrade a node.
+  UPGRADE = "sh /root/appscale/bootstrap.sh --git last"
 
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  clean                             forcefully terminates the AppScale
+  clean                             Forcefully terminates the AppScale
                                     deployment and delete all data. ALL
                                     DATA WILL BE DELETED.
-  deploy <app>                      deploys a Google App Engine app to AppScale:
+  deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be a directory with the source
                                     code or a tar.gz of the source tree.
-  destroy                           gracefully terminates the currently
+  destroy                           Gracefully terminates the currently
                                     running AppScale deployment.
-  down                              an alias for 'destroy'.
-  get <regex>                       gets all AppController properties matching
-                                    the provided regex: for developers only.
-  help                              displays this message.
-  init <cloud|cluster>              writes a new configuration file for
+  down                              An alias for 'destroy'.
+  get <regex>                       Gets all AppController properties matching
+                                    The provided regex: for developers only.
+  help                              Displays this message.
+  init <cloud|cluster>              Writes a new configuration file for
                                     AppScale: it will use the <cloud> or
                                     <cluster> template. Won't override
                                     an existing configuration.
-  logs <dir>                        collects the logs produced by an AppScale
+  logs <dir>                        Collects the logs produced by an AppScale
                                     deployment into a directory <dir>: the
                                     directory will be created.
-  register <deployment_id>          registers an AppScale deployment with the
+  register <deployment_id>          Registers an AppScale deployment with the
                                     AppScale Portal (http://hawkeye.appscale.com).
-  relocate <appid> <http> <https>   moves the application <appid> to a
+  relocate <appid> <http> <https>   Moves the application <appid> to a
                                     different <http> and <https> ports.
-  remove                            an alias for 'undeploy'.
-  set <property> <value>            sets an AppController <property> to the
+  remove                            An alias for 'undeploy'.
+  set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
-  ssh [#]                           logs into the #th node of the current AppScale
+  ssh [#]                           Logs into the #th node of the current AppScale
                                     deployment. Default is headnode (1).
-  status                            reports on the state of a currently
+  status                            Reports on the state of a currently
                                     running AppScale deployment.
-  tail                              follows the output of log files of an
+  tail                              Follows the output of log files of an
                                     AppScale deployment.
-  up                                starts the AppScale deployments (requires
+  up                                Starts the AppScale deployment (requires
                                     an AppScalefile).
-  undeploy <appid>                  removes <appid> from the current
+  undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
+  upgrade                           Upgrade the AppScale deployment to the
+                                    latest version.
 """
 
 
@@ -526,6 +532,48 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-remove-app").args
     AppScaleTools.remove_app(options)
+
+
+  def upgrade(self, force=False):
+    """ 'upgrade' will upgrade the deployment to the latest released
+    version.
+
+    Args:
+      force: try to perform the upgrade even if the deployment is up.
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current working
+      directory.
+      BadConfigurationException: If this method is invoked and the AppScalefile
+      is a cloud deployment.
+    """
+    contents = self.read_appscalefile()
+
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'ips_layout' not in contents_as_yaml:
+      raise BadConfigurationException("Cannot use 'appscale upgrade' in a " \
+        "cloud deployment.")
+
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      is_verbose = contents_as_yaml['verbose']
+    else:
+      is_verbose = False
+
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+    else:
+      keyname = 'appscale'
+
+    # Let's make sure AppScale isn't running. It will throw an exception
+    # if so.
+    LocalState.ensure_appscale_isnt_running(keyname, force)
+
+    # Let's upgrade all nodes in the deployment.
+    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+    for ip in all_ips:
+      RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
+
+    AppScaleLogger.success("Successfully upgraded your AppScale deployment." \
+      "You can use 'appscale up' now to bring it back up.")
 
 
   def get(self, property_regex):
