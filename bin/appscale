@@ -103,7 +103,7 @@ elif command == "undeploy" or command == "remove":
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)
-elif command == "upgrade"
+elif command == "upgrade":
   try:
     appscale.upgrade()
   except Exception, e:
