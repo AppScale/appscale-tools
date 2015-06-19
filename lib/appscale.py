@@ -58,8 +58,10 @@ class AppScale():
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
-  # This is the command used to upgrade a node.
-  UPGRADE = "sh /root/appscale/bootstrap.sh --git last"
+  # This is the commands used to upgrade a node: we need first to get the
+  # newest boostrap.sh, then invoke it.
+  GET_BOOTSTRAP = "wget -q -O /tmp/bootstrap.sh http://bootstrap.appscale.com"
+  UPGRADE = "sh /tmp/bootstrap.sh --tag last"
 
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
@@ -570,6 +572,7 @@ Available commands:
     # Let's upgrade all nodes in the deployment.
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
     for ip in all_ips:
+      RemoteHelper.ssh(ip, keyname, self.GET_BOOTSTRAP, is_verbose)
       RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
 
     AppScaleLogger.success("Successfully upgraded your AppScale deployment." \
