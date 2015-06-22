@@ -58,7 +58,7 @@ class AppScale():
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
-  # This is the commands used to upgrade a node: we need first to get the
+  # These are the commands used to upgrade a node: we need first to get the
   # newest boostrap.sh, then invoke it.
   GET_BOOTSTRAP = "wget -q -O /tmp/bootstrap.sh http://bootstrap.appscale.com"
   UPGRADE = "sh /tmp/bootstrap.sh --tag last"
@@ -72,13 +72,13 @@ Available commands:
                                     deployment and delete all data. ALL
                                     DATA WILL BE DELETED.
   deploy <app>                      Deploys a Google App Engine app to AppScale:
-                                    <app> can be a directory with the source
+                                    <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
   destroy                           Gracefully terminates the currently
                                     running AppScale deployment.
   down                              An alias for 'destroy'.
   get <regex>                       Gets all AppController properties matching
-                                    The provided regex: for developers only.
+                                    the provided regex: for developers only.
   help                              Displays this message.
   init <cloud|cluster>              Writes a new configuration file for
                                     AppScale: it will use the <cloud> or
@@ -88,14 +88,14 @@ Available commands:
                                     deployment into a directory <dir>: the
                                     directory will be created.
   register <deployment_id>          Registers an AppScale deployment with the
-                                    AppScale Portal (http://hawkeye.appscale.com).
-  relocate <appid> <http> <https>   Moves the application <appid> to a
+                                    AppScale Portal.
+  relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
   remove                            An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current AppScale
-                                    deployment. Default is headnode (1).
+                                    deployment. Default is headnode (0).
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
