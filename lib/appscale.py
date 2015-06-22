@@ -570,13 +570,20 @@ Available commands:
     LocalState.ensure_appscale_isnt_running(keyname, force)
 
     # Let's upgrade all nodes in the deployment.
+    success = True
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
     for ip in all_ips:
-      RemoteHelper.ssh(ip, keyname, self.GET_BOOTSTRAP, is_verbose)
-      RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
+      try
+        RemoteHelper.ssh(ip, keyname, self.GET_BOOTSTRAP, is_verbose)
+        RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
+      except ShellException:
+        AppScaleLogger.warn("Failed to upgrade {0}.\n".format(str(ip)))
+        success = False
+        continue
 
-    AppScaleLogger.success("Successfully upgraded your AppScale deployment." \
-      "You can use 'appscale up' now to bring it back up.")
+    if success == True:
+      AppScaleLogger.success("Successfully upgraded your AppScale deployment." \
+        "You can use 'appscale up' now to bring it back up.")
 
 
   def get(self, property_regex):
