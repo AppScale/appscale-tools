@@ -573,11 +573,12 @@ Available commands:
     success = True
     all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
     for ip in all_ips:
-      try
+      try:
         RemoteHelper.ssh(ip, keyname, self.GET_BOOTSTRAP, is_verbose)
         RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
-      except ShellException:
+      except ShellException, se:
         AppScaleLogger.warn("Failed to upgrade {0}.\n".format(str(ip)))
+        LocalState.generate_crash_log(se, traceback.format_exc())
         success = False
         continue
 
