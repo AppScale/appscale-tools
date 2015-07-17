@@ -30,7 +30,7 @@ class InfrastructureAgentFactory:
     'ec2': EC2Agent,
     'euca': EucalyptusAgent,
     'gce': GCEAgent,
-    'openstack': OpenStackAgent
+    'openstack': OpenStackAgent,
     'vsphere': vSphereAgent
   }
 
