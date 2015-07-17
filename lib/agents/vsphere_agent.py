@@ -9,10 +9,10 @@ You need setup your vCenter:
 """
 
 from agents.base_agent import BaseAgent, AgentConfigurationException, AgentRuntimeException
-from utils import utils
-from pysphere import VIServer
 import datetime
+from pysphere import VIServer
 import time
+from utils import utils
 
 __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
