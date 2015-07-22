@@ -16,6 +16,7 @@ import time
 
 __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
+__email2__ = 'dinicola.1210022@studenti.uniroma1.it'
 
 
 PARAM_CREDENTIALS = 'credentials'           #HOST(vCenter ip), USERNAME (vCenter), PASSWORD (vCenter)
