@@ -7,6 +7,8 @@ infrastructure : 'vsphere'
 
 username : 'root'
 
+password : 'psw'
+
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
 # installed on it. When running on Google Compute Engine, set this to the name
 # of the image you set when you ran 'gcutil addimage'.
