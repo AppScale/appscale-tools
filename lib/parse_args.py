@@ -177,6 +177,9 @@ class ParseArgs(object):
         help="the static IP address that should be used for the login node " +
           "in cloud deployments")
 
+      #flag for vSphere
+      self.parser.add_argument('--username', '-u'
+        help="username for vSphere login")
       # flags relating to EC2-like cloud infrastructures
       # Don't use dashes in the random suffix, since network names on Google
       # Compute Engine aren't allowed to have dashes in them.
