@@ -1,8 +1,11 @@
 ---
+verbose : 'True'
 # The underlying cloud infrastructure to deploy AppScale over.
 # Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
 # or 'gce' if running on Google Compute Engine.
-infrastructure : 'ec2'
+infrastructure : 'vsphere'
+
+username : 'root'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
 # installed on it. When running on Google Compute Engine, set this to the name
