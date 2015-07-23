@@ -105,3 +105,19 @@ class vSphereAgent(BaseAgent):
 				nvm += 1
 			return instance_ids, private_ips
 		return None
+
+	def get_params_from_args(self, args):
+		if not isinstance(args, dict):
+	      args = vars(args)
+
+	    params = {
+	      self.PARAM_HOST : args['HOST'],
+	      #self.PARAM_IMAGE_ID : args['machine'],
+	      #self.PARAM_INSTANCE_TYPE : args['instance_type'],
+	      #self.PARAM_KEYNAME : args['keyname'],
+	      #self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
+	      #self.PARAM_ZONE : args.get('zone'),
+	      #'IS_VERBOSE' : args.get('verbose', False)
+	    }
+
+		return params
