@@ -18,7 +18,7 @@ __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
 __email2__ = 'dinicola.1210022@studenti.uniroma1.it'
 
-
+PARAM_USERNAME = 'username'
 PARAM_CREDENTIALS = 'credentials'           #HOST(vCenter ip), USERNAME (vCenter), PASSWORD (vCenter)
 PARAM_IMAGE_ID = 'image_id'                 #name of AppScale Template create in vSphere some like appscale-template
 PARAM_RESOURCE_POOL = 'resource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
@@ -46,6 +46,7 @@ class vSphereAgent(BaseAgent):
 	    Returns:
 	      An instance of pysphere connection
 		"""
+		print parameters[PARAM_USERNAME]
 		credentials = parameters[PARAM_CREDENTIALS]
 		try:
 			server = VIServer()
