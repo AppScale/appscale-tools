@@ -111,7 +111,7 @@ class vSphereAgent(BaseAgent):
 	      args = vars(args)
 
 	    params = {
-	      self.PARAM_HOST : args['HOST'],
+	      self.PARAM_HOST : args['HOST']
 	      #self.PARAM_IMAGE_ID : args['machine'],
 	      #self.PARAM_INSTANCE_TYPE : args['instance_type'],
 	      #self.PARAM_KEYNAME : args['keyname'],
