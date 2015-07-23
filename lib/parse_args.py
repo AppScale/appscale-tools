@@ -16,6 +16,7 @@ import yaml
 from agents.base_agent import BaseAgent
 from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
+from agents.vsphere import vSphereAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
