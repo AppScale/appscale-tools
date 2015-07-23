@@ -74,60 +74,6 @@ class vSphereAgent(BaseAgent):
 				vm.power_off()
 				vm.destroy()
 
-	  def get_params_from_args(self, args):
-	    """
-	    Searches through args to build a dict containing the parameters
-	    necessary to interact with vSphere.
-
-	    Args:
-	      args: A Namespace containing the arguments that the user has
-	        invoked an AppScale Tool with.
-	    """
-	    # need to convert this to a dict if it is not already
-	    if not isinstance(args, dict):
-	      args = vars(args)
-
-	    params = {
-
-	      self.PARAM_HOST : args['host'],
-	      self.PARAM_USERNAME : args['username'],
-	      self.PARAM_PASSWORD : args['password'],
-	      #self.PARAM_INSTANCE_TYPE : args['instance_type'],
-	      self.PARAM_KEYNAME : args['keyname'],
-	      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
-	      #self.PARAM_ZONE : args.get('zone'),
-	      'IS_VERBOSE' : args.get('verbose', False)
-	    }
-		"""
-	    if params[self.PARAM_ZONE]:
-	      params[self.PARAM_REGION] = params[self.PARAM_ZONE][:-1]
-	    else:
-	      params[self.PARAM_REGION] = self.DEFAULT_REGION
-
-	    for credential in self.REQUIRED_CREDENTIALS:
-	      if os.environ.get(credential):
-	        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
-	      else:
-	        raise AgentConfigurationException("Couldn't find {0} in your " \
-	          "environment. Please set it and run AppScale again."
-	          .format(credential))
-	    self.assert_credentials_are_valid(params)
-
-	    if args.get('use_spot_instances') == True:
-	      params[self.PARAM_SPOT] = True
-	    else:
-	      params[self.PARAM_SPOT] = False
-
-	    if params[self.PARAM_SPOT]:
-	      if args.get('max_spot_price'):
-	        params[self.PARAM_SPOT_PRICE] = args['max_spot_price']
-	      else:
-	        params[self.PARAM_SPOT_PRICE] = self.get_optimal_spot_price(
-	          self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
-	          params[self.PARAM_ZONE])
-		"""
-	    return params
-
 	def run_instances(self, count, parameters, security_configured):
 		"""
 		Spawns the specified number of vSphere instances using the parameters
