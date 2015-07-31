@@ -8,7 +8,6 @@ import os
 import re
 import socket
 import subprocess
-import tempfile
 import threading
 import time
 import uuid
@@ -291,6 +290,39 @@ class RemoteHelper(object):
       AppScaleLogger.verbose(str(exception), is_verbose)
       return False
 
+  @classmethod
+  def merge_authorized_keys(cls, host, keyname, user, is_verbose):
+    """ Adds the contents of the user's authorized_keys file to the root's
+    authorized_keys file.
+
+    Args:
+      host: A str representing the host to enable root logins on.
+      keyname: A str representing the name of the SSH keypair to login with.
+      user: A str representing the name of the user to login as.
+      is_verbose: A bool indicating if we should print the command we execute to
+        enable root login to stdout.
+    """
+    AppScaleLogger.log('Root login not enabled - enabling it now.')
+
+    create_root_keys = 'sudo touch /root/.ssh/authorized_keys'
+    cls.ssh(host, keyname, create_root_keys, is_verbose, user=user)
+
+    set_permissions = 'sudo chmod 600 /root/.ssh/authorized_keys'
+    cls.ssh(host, keyname, set_permissions, is_verbose, user=user)
+
+    temp_file = cls.ssh(host, keyname, 'mktemp', is_verbose, user=user)
+
+    merge_to_tempfile = 'sudo sort -u ~/.ssh/authorized_keys '\
+      '/root/.ssh/authorized_keys -o {}'.format(temp_file)
+    cls.ssh(host, keyname, merge_to_tempfile, is_verbose, user=user)
+
+    overwrite_root_keys = "sudo sed -n '/.*Please login/d; "\
+      "w/root/.ssh/authorized_keys' {}".format(temp_file)
+    cls.ssh(host, keyname, overwrite_root_keys, is_verbose, user=user)
+
+    remove_tempfile = 'rm -f {0}'.format(temp_file)
+    cls.ssh(host, keyname, remove_tempfile, is_verbose, user=user)
+    return
 
   @classmethod
   def enable_root_login(cls, host, keyname, infrastructure, is_verbose):
@@ -313,17 +345,8 @@ class RemoteHelper(object):
       # Google Compute Engine creates a user with the same name as the currently
       # logged-in user, so log in as that user to enable root login.
       if infrastructure == "gce":
-        AppScaleLogger.log("Root login not enabled - enabling it now.")
-        temp_file = tempfile.NamedTemporaryFile()
-        cls.ssh(host, keyname, "sudo sort -u ~/.ssh/authorized_keys " \
-          "/root/.ssh/authorized_keys -o {0}".format(temp_file.name),
-          is_verbose, user=getpass.getuser())
-        cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
-          "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
-          is_verbose, user=getpass.getuser())
-        cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
-          is_verbose, user=getpass.getuser())
-        temp_file.close()
+        cls.merge_authorized_keys(host, keyname, getpass.getuser(),
+          is_verbose)
         return
       else:
         raise exception
@@ -331,17 +354,7 @@ class RemoteHelper(object):
     # Amazon EC2 rejects a root login request and tells the user to log in as
     # the ubuntu user, so do that to enable root login.
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
-      AppScaleLogger.log("Root login not enabled - enabling it now.")
-      temp_file = tempfile.NamedTemporaryFile()
-      cls.ssh(host, keyname, "sudo sort -u ~/.ssh/authorized_keys " \
-        "/root/.ssh/authorized_keys -o {0}".format(temp_file.name),
-        is_verbose, user='ubuntu')
-      cls.ssh(host, keyname, "sudo sed -n '/.*Please login/d; " \
-        "w/root/.ssh/authorized_keys' {0}".format(temp_file.name),
-        is_verbose, user='ubuntu')
-      cls.ssh(host, keyname, "sudo rm -f {0}".format(temp_file.name),
-        is_verbose, user='ubuntu')
-      temp_file.close()
+      cls.merge_authorized_keys(host, keyname, 'ubuntu', is_verbose)
     else:
       AppScaleLogger.log("Root login already enabled - not re-enabling it.")
 
