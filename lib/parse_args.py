@@ -179,11 +179,11 @@ class ParseArgs(object):
           "in cloud deployments")
 
       #flag for vSphere
-      self.parser.add_argument('--username', '-u',
+      self.parser.add_argument('--vusername', '-vu',
         help="username for vSphere login")
-      self.parser.add_argument('--password', '-p',
+      self.parser.add_argument('--vpassword', '-vp',
         help="password for vSphere login")
-      self.parser.add_argument('--host', '-hv',
+      self.parser.add_argument('--vhost', '-vh',
         help="host for vSphere login")
 
       # flags relating to EC2-like cloud infrastructures
