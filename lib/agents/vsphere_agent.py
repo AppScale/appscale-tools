@@ -9,9 +9,19 @@ You need setup your vCenter:
 """
 
 from agents.base_agent import BaseAgent, AgentConfigurationException, AgentRuntimeException
-import datetime
 from pysphere import VIServer
+import datetime
+import os
 import time
+
+try:
+  from appscale.appscale_logger import AppScaleLogger
+  from appscale.local_state import LocalState
+except ImportError:
+  # If the module is not installed, the lib directory might be on the path.
+  from appscale_logger import AppScaleLogger
+  from local_state import LocalState
+
 
 
 __author__ = 'Marco Maria Di Nicola'
@@ -46,7 +56,7 @@ class vSphereAgent(BaseAgent):
 	    Returns:
 	      An instance of pysphere connection
 		"""
-		print parameters[PARAM_USERNAME]
+
 		credentials = parameters[PARAM_CREDENTIALS]
 		try:
 			server = VIServer()
@@ -105,3 +115,30 @@ class vSphereAgent(BaseAgent):
 				nvm += 1
 			return instance_ids, private_ips
 		return None
+
+	def get_params_from_args(self, args):
+		"""
+        Searches through args to build a dict containing the parameters
+        necessary to interact with Amazon EC2.
+
+        Args:
+          args: A Namespace containing the arguments that the user has
+            invoked an AppScale Tool with.
+        """
+        # need to convert this to a dict if it is not already
+		if not isinstance(args, dict):
+			args = vars(args)
+		params = {
+		#modificare per paramentri necessari
+		
+	      self.PARAM_CREDENTIALS : {},
+	      self.PARAM_GROUP : args['group'],
+	      self.PARAM_IMAGE_ID : args['machine'],
+	      self.PARAM_INSTANCE_TYPE : args['instance_type'],
+	      self.PARAM_KEYNAME : args['keyname'],
+	      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
+	      self.PARAM_ZONE : args.get('zone'),
+	      'IS_VERBOSE' : args.get('verbose', False)
+	    }
+
+		return params
