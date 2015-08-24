@@ -22,17 +22,17 @@ __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
 __email2__ = 'dinicola.1210022@studenti.uniroma1.it'
 
-PARAM_USERNAME = 'vusername'
-PARAM_PASSWORD = 'vpassword'
-PARAM_HOST = 'vhost'
-PARAM_RESOURCE_POOL = 'resource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
-
 """
 PARAM_CREDENTIALS = 'credentials'           #HOST(vCenter ip), USERNAME (vCenter), PASSWORD (vCenter)
 PARAM_IMAGE_ID = 'image_id'                 #name of AppScale Template create in vSphere some like appscale-template
 PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
 """
 class vSphereAgent(BaseAgent):
+	PARAM_USERNAME = 'vusername'
+	PARAM_PASSWORD = 'vpassword'
+	PARAM_HOST = 'vhost'
+	PARAM_RESOURCE_POOL = 'resource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
+
 	"""
 	vSphere infrastructure agent class which can be used to spawn and terminate
   	VMs in an vSphere based environment.
@@ -127,10 +127,10 @@ class vSphereAgent(BaseAgent):
 		if not isinstance(args, dict):
 			args = vars(args)
 		params = {
-			#self.PARAM_USERNAME : args['vusername'],
+			self.PARAM_USERNAME : args['vusername'],
 			self.PARAM_PASSWORD : args['machine'],
-			#self.PARAM_HOST : args['vhost']
+			self.PARAM_HOST : args['vhost']
 		}
-		#print self.PARAM_USERNAME
+		print self.PARAM_USERNAME
 
 		return params
