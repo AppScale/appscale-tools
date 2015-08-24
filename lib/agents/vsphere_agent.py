@@ -117,7 +117,7 @@ class vSphereAgent(BaseAgent):
 	def get_params_from_args(self, args):
 		"""
         Searches through args to build a dict containing the parameters
-        necessary to interact with Amazon EC2.
+        necessary to interact with vSphere.
 
         Args:
           args: A Namespace containing the arguments that the user has
@@ -127,11 +127,10 @@ class vSphereAgent(BaseAgent):
 		if not isinstance(args, dict):
 			args = vars(args)
 		params = {
-			self.PARAM_USERNAME : args['vusername'],
+			#self.PARAM_USERNAME : args['vusername'],
 			self.PARAM_PASSWORD : args['vpassword'],
-			self.PARAM_HOST : args['vhost']
-		#modificare per paramentri necessari
+			#self.PARAM_HOST : args['vhost']
 		}
-		print self.PARAM_USERNAME
+		#print self.PARAM_USERNAME
 
 		return params
