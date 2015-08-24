@@ -127,7 +127,7 @@ class vSphereAgent(BaseAgent):
 		if not isinstance(args, dict):
 			args = vars(args)
 		params = {
-			self.PARAM_USERNAME : args['vusername'],
+			self.PARAM_USERNAME : vusername,
 			self.PARAM_PASSWORD : args['machine'],
 			self.PARAM_HOST : args['vhost']
 		}
