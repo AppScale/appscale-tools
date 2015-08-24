@@ -126,14 +126,12 @@ class vSphereAgent(BaseAgent):
         # need to convert this to a dict if it is not already
 		if not isinstance(args, dict):
 			args = vars(args)
-		"""
+
 		params = {
 			self.PARAM_USERNAME : args['vusername'],
 			self.PARAM_PASSWORD : args['machine'],
 			self.PARAM_HOST : args['vhost']
 		}
-		"""
-		self.PARAM_USERNAME = self.VUSERNAME
-		print self.PARAM_USERNAME
+		print args
 
 		return params
