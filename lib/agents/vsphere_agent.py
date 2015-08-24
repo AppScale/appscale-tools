@@ -127,7 +127,6 @@ class vSphereAgent(BaseAgent):
 		if not isinstance(args, dict):
 			args = vars(args)
 		params = {
-			print args['vusername']
 			self.PARAM_USERNAME : args['vusername'],
 			self.PARAM_PASSWORD : args['vpassword'],
 			self.PARAM_HOST : args['vhost']
@@ -138,5 +137,6 @@ class vSphereAgent(BaseAgent):
 	      'IS_VERBOSE' : args.get('verbose', False)
 		  """
 	    }
+		print self.PARAM_USERNAME
 
 		return params
