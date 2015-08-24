@@ -131,12 +131,7 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_PASSWORD : args['vpassword'],
 			self.PARAM_HOST : args['vhost']
 		#modificare per paramentri necessari
-			"""
-	      self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
-	      self.PARAM_ZONE : args.get('zone'),
-	      'IS_VERBOSE' : args.get('verbose', False)
-		  """
-	    }
+		}
 		print self.PARAM_USERNAME
 
 		return params
