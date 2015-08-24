@@ -14,13 +14,7 @@ import datetime
 import os
 import time
 
-try:
-  from appscale.appscale_logger import AppScaleLogger
-  from appscale.local_state import LocalState
-except ImportError:
-  # If the module is not installed, the lib directory might be on the path.
-  from appscale_logger import AppScaleLogger
-  from local_state import LocalState
+
 
 
 
@@ -133,6 +127,7 @@ class vSphereAgent(BaseAgent):
 		if not isinstance(args, dict):
 			args = vars(args)
 		params = {
+			print args['vusername']
 			self.PARAM_USERNAME : args['vusername'],
 			self.PARAM_PASSWORD : args['vpassword'],
 			self.PARAM_HOST : args['vhost']
