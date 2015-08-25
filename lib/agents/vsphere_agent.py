@@ -58,9 +58,9 @@ class vSphereAgent(BaseAgent):
 		credentials = parameters[PARAM_CREDENTIALS]
 		try:
 			server = VIServer()
-			server.connect(self.PARAM_HOST, self.PARAM_USERNAME, self.PARAM_PASSWORD)
+			server.connect(parameters[PARAM_HOST], parameters[PARAM_USERNAME], parameters[PARAM_PASSWORD])
 		except StandardError, e:
-			print ('Connection problem with the host {0}'.format(self.PARAM_HOST))
+			print ('Connection problem with the host {0}'.format(parameters[PARAM_HOST]))
 			print e
 			return None
 		return server
@@ -132,8 +132,9 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_PASSWORD : args.get('vpassword'),
 			self.PARAM_HOST : args.get('vhost')
 		}
-		print args.get('vusername')
-		print params['vusername']
 
+		print params[PARAM_HOST]
+		print params[PARAM_USERNAME]
+		print params[PARAM_PASSWORD]
 
 		return params
