@@ -134,8 +134,4 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_HOST : args.get('vhost')
 		}
 
-		print params[PARAM_HOST]
-		print params[PARAM_USERNAME]
-		print params[PARAM_PASSWORD]
-
 		return params
