@@ -26,11 +26,9 @@ PARAM_USERNAME = 'vusername'
 PARAM_PASSWORD = 'vpassword'
 PARAM_HOST = 'vhost'
 PARAM_RESOURCE_POOL = 'resource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
-"""
-PARAM_CREDENTIALS = 'credentials'           #HOST(vCenter ip), USERNAME (vCenter), PASSWORD (vCenter)
 PARAM_IMAGE_ID = 'image_id'                 #name of AppScale Template create in vSphere some like appscale-template
 PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
-"""
+
 class vSphereAgent(BaseAgent):
 
 
@@ -75,7 +73,7 @@ class vSphereAgent(BaseAgent):
 	    Args:
 	      parameters  A dictionary of parameters
 		"""
-		instance_ids = parameters[self.PARAM_INSTANCE_IDS]
+		instance_ids = parameters[PARAM_INSTANCE_IDS]
 		conn = self.open_connection(parameters)
 		if conn is not None:
 			for instance_id in instance_ids:
@@ -132,6 +130,23 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_USERNAME : args.get('vusername'),
 			self.PARAM_PASSWORD : args.get('vpassword'),
 			self.PARAM_HOST : args.get('vhost')
+			#self.PARAM_RESOURCE_POOL : args.get('resource_pool')
 		}
 
 		return params
+
+	def assert_required_parameters(self, parameters, operation):
+      """Check whether all the platform specific parameters are present in the
+      provided dict. If all the parameters required to perform the given operation
+      is available this method simply returns. Otherwise it throws an
+      AgentConfigurationException.
+
+      Args:
+        parameters: A dict containing values necessary to authenticate with the
+          underlying cloud.
+        operation: A str representing the operation for which the parameters
+          should be checked.
+
+      Raises:
+        AgentConfigurationException: If a required parameter is absent.
+      """
