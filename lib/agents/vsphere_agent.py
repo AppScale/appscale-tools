@@ -132,24 +132,8 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_HOST : args.get('vhost')
 			#self.PARAM_RESOURCE_POOL : args.get('resource_pool')
 			#self.PARAM_IMAGE_ID = args.get('image_id')
-			#self.PARAM_INSTANCE_IDS = args.get('instance_ids')      
+			#self.PARAM_INSTANCE_IDS = args.get('instance_ids')
 
 		}
 
 		return params
-
-	def assert_required_parameters(self, parameters, operation):
-      """Check whether all the platform specific parameters are present in the
-      provided dict. If all the parameters required to perform the given operation
-      is available this method simply returns. Otherwise it throws an
-      AgentConfigurationException.
-
-      Args:
-        parameters: A dict containing values necessary to authenticate with the
-          underlying cloud.
-        operation: A str representing the operation for which the parameters
-          should be checked.
-
-      Raises:
-        AgentConfigurationException: If a required parameter is absent.
-      """
