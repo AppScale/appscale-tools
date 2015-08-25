@@ -133,7 +133,7 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_HOST : args.get('vhost')
 		}
 		print args.get('vusername')
-		print params
+		print params['vusername']
 
 
 		return params
