@@ -131,6 +131,9 @@ class vSphereAgent(BaseAgent):
 			self.PARAM_PASSWORD : args.get('vpassword'),
 			self.PARAM_HOST : args.get('vhost')
 			#self.PARAM_RESOURCE_POOL : args.get('resource_pool')
+			#self.PARAM_IMAGE_ID = args.get('image_id')
+			#self.PARAM_INSTANCE_IDS = args.get('instance_ids')      
+
 		}
 
 		return params
