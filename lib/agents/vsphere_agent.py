@@ -130,10 +130,20 @@ class vSphereAgent(BaseAgent):
 			PARAM_USERNAME : args.get('vusername'),
 			PARAM_PASSWORD : args.get('vpassword'),
 			PARAM_HOST : args.get('vhost')
-			#self.PARAM_RESOURCE_POOL : args.get('resource_pool')
-			#self.PARAM_IMAGE_ID = args.get('image_id')
-			#self.PARAM_INSTANCE_IDS = args.get('instance_ids')
+			#PARAM_RESOURCE_POOL : args.get('resource_pool')
+			#PARAM_IMAGE_ID = args.get('image_id')
+			#PARAM_INSTANCE_IDS = args.get('instance_ids')
 
 		}
-		print params
 		return params
+
+	 def assert_required_parameters(self, parameters, operation):
+       """
+       Assert that all the parameters required for the EC2 agent are in place.
+       (Also see documentation for the BaseAgent class)
+
+       Args:
+         parameters: A dictionary of parameters.
+         operation: Operations to be invoked using the above parameters.
+       """
+       return True
