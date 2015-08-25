@@ -128,9 +128,9 @@ class vSphereAgent(BaseAgent):
 			args = vars(args)
 
 		params = {
-			#self.PARAM_USERNAME : args[vusername],
-			self.PARAM_PASSWORD : args['machine'],
-			self.PARAM_HOST : args['vhost']
+			self.PARAM_USERNAME : args.get('vusername'),
+			self.PARAM_PASSWORD : args.get('vpassword'),
+			self.PARAM_HOST : args.get('vhost')
 		}
 		print args
 
