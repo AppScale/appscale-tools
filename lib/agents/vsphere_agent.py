@@ -54,7 +54,6 @@ class vSphereAgent(BaseAgent):
 	      An instance of pysphere connection
 		"""
 
-		credentials = parameters[PARAM_CREDENTIALS]
 		try:
 			server = VIServer()
 			server.connect(parameters[PARAM_HOST], parameters[PARAM_USERNAME], parameters[PARAM_PASSWORD])
