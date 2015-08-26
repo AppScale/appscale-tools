@@ -141,5 +141,5 @@ class vSphereAgent(BaseAgent):
 		print "assert_required_parameters"
 
 	def does_image_exist(self, parameters):
-		#restituisce true sè è presente l'immagine nel cloud
+		#restituisce true se presente l'immagine nel cloud
 		return True
