@@ -146,4 +146,6 @@ class vSphereAgent(BaseAgent):
          parameters: A dictionary of parameters.
          operation: Operations to be invoked using the above parameters.
        """
-       return True
+       print operation
+	   print "\n"
+	   print parameters
