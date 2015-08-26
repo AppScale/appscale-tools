@@ -137,7 +137,7 @@ class vSphereAgent(BaseAgent):
 		}
 		return params
 
-	 def assert_required_parameters(self, parameters, operation):
+	def assert_required_parameters(self, parameters, operation):
 		 print operation
 		 print "\n"
 		 print parameters
