@@ -2,7 +2,7 @@
 
 export DIST=`lsb_release -c -s`
 
-if [ "$DIST" == "n/a" ]
+if [ "$DIST" = "n/a" ]
 then
   DIST="na"
 fi

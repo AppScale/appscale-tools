@@ -182,9 +182,21 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
-    # mock out our attempts to find /etc/appscale and presume it doesn't exist
+    # Mock out our attempts to find /etc/appscale and presume it doesn't exist.
     local_state = flexmock(LocalState)
-    # mock out our attempts to enable the root login. 
+
+    # Mock out our attempts to enable the root login.
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
@@ -206,7 +218,7 @@ class TestRemoteHelper(unittest.TestCase):
     ).and_return()
 
     local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
     local_state.should_receive('shell')\
@@ -214,7 +226,7 @@ class TestRemoteHelper(unittest.TestCase):
         stdin=re.compile('ls /etc/appscale'))\
       .and_raise(ShellException).ordered()
 
-    # check that the cleanup routine is called on error
+    # Check that the cleanup routine is called on error.
     flexmock(AppScaleTools).should_receive('terminate_instances')\
       .and_return().ordered()
 
@@ -224,7 +236,18 @@ class TestRemoteHelper(unittest.TestCase):
 
   def test_start_head_node_in_cloud_but_ami_wrong_version(self):
     local_state = flexmock(LocalState)
-    # mock out our attempts to enable the root login. 
+    # mock out our attempts to enable the root login.
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
@@ -246,7 +269,7 @@ class TestRemoteHelper(unittest.TestCase):
     ).and_return()
 
     local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
     # mock out our attempts to find /etc/appscale and presume it does exist
@@ -273,7 +296,18 @@ class TestRemoteHelper(unittest.TestCase):
   def test_start_head_node_in_cloud_but_using_unsupported_database(self):
     local_state = flexmock(LocalState)
 
-    # mock out our attempts to enable the root login. 
+    # Mock out our attempts to enable the root login.
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+
+    local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh'), False, 5,
         stdin='ls') \
@@ -295,7 +329,7 @@ class TestRemoteHelper(unittest.TestCase):
     ).and_return()
 
     local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
     # mock out our attempts to find /etc/appscale and presume it does exist

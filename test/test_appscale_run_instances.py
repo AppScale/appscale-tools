@@ -464,6 +464,17 @@ appengine:  1.2.3.4
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
       re.compile('ssh'), False, 5,
+      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
       stdin=re.compile(
         'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
       )
@@ -478,7 +489,7 @@ appengine:  1.2.3.4
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
     # and assume that we can copy over our ssh keys fine
@@ -591,6 +602,17 @@ appengine:  1.2.3.4
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
       re.compile('ssh'), False, 5,
+      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
+      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), False, 5,
       stdin=re.compile(
         'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
       )
@@ -605,7 +627,7 @@ appengine:  1.2.3.4
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('sudo rm -f ')
+      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
     # and assume that we can copy over our ssh keys fine
