@@ -138,6 +138,7 @@ class vSphereAgent(BaseAgent):
 		return params
 
 	def assert_required_parameters(self, parameters, operation):
-		 print operation
-		 print "\n"
-		 print parameters
+		print "assert_required_parameters"
+
+	def does_image_exist(self, parameters):
+		print "does_image_exist"
