@@ -145,6 +145,8 @@ class vSphereAgent(BaseAgent):
 		return True
 
 	def does_disk_exist(self, parameters, disk):
+		#True if the named persistent disk exists, and False otherwise
 		return True
 
-	
+	def does_zone_exist(self, parameters):
+		return True
