@@ -143,3 +143,8 @@ class vSphereAgent(BaseAgent):
 	def does_image_exist(self, parameters):
 		#restituisce true se presente l'immagine nel cloud
 		return True
+
+	def does_disk_exist(self, parameters, disk):
+		return True
+
+	
