@@ -138,14 +138,6 @@ class vSphereAgent(BaseAgent):
 		return params
 
 	 def assert_required_parameters(self, parameters, operation):
-       """
-       Assert that all the parameters required for the EC2 agent are in place.
-       (Also see documentation for the BaseAgent class)
-
-       Args:
-         parameters: A dictionary of parameters.
-         operation: Operations to be invoked using the above parameters.
-       """
-       print operation
-	   print "\n"
-	   print parameters
+		 print operation
+		 print "\n"
+		 print parameters
