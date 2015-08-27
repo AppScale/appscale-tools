@@ -119,7 +119,6 @@ class vSphereAgent(BaseAgent):
           args: A Namespace containing the arguments that the user has
             invoked an AppScale Tool with.
         """
-		print args
 
         # need to convert this to a dict if it is not already
 		if not isinstance(args, dict):
