@@ -131,7 +131,7 @@ class vSphereAgent(BaseAgent):
 			PARAM_HOST : args.get('vhost'),
 			PARAM_RESOURCE_POOL : args.get('vresource_pool'),
 			PARAM_IMAGE_ID : args.get('vimage_id')
-			#PARAM_INSTANCE_IDS = args.get('instance_ids')
+			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
 		}
 		return params
@@ -143,7 +143,7 @@ class vSphereAgent(BaseAgent):
 	def does_image_exist(self, parameters):
 		#restituisce true se presente l'immagine nel cloud
 		#creo la connessione
-		#controllo se è presente l'immagine che ha per nome image_id
+		#controllo se presente l'immagine che ha per nome image_id
 		return True
 
 	def does_disk_exist(self, parameters, disk):
