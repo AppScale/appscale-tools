@@ -15,9 +15,6 @@ import os
 import time
 
 
-
-
-
 __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
 __email2__ = 'dinicola.1210022@studenti.uniroma1.it'
@@ -27,7 +24,7 @@ PARAM_PASSWORD = 'vpassword'
 PARAM_HOST = 'vhost'
 PARAM_RESOURCE_POOL = 'resource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
 PARAM_IMAGE_ID = 'image_id'                 #name of AppScale Template create in vSphere some like appscale-template
-PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
+#PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
 
 class vSphereAgent(BaseAgent):
 
@@ -95,6 +92,7 @@ class vSphereAgent(BaseAgent):
 	    Returns:
 	      A tuple of the form (instances, private_ips)
 		"""
+		#valutare se fare una creazione asincrona delle macchine
 		conn = self.open_connection(parameters)
 		if conn is not None:
 			template = conn.get_vm_by_name(parameters[PARAM_IMAGE_ID])
@@ -121,6 +119,8 @@ class vSphereAgent(BaseAgent):
           args: A Namespace containing the arguments that the user has
             invoked an AppScale Tool with.
         """
+		print args
+
         # need to convert this to a dict if it is not already
 		if not isinstance(args, dict):
 			args = vars(args)
@@ -129,22 +129,24 @@ class vSphereAgent(BaseAgent):
 			PARAM_USERNAME : args.get('vusername'),
 			PARAM_PASSWORD : args.get('vpassword'),
 			PARAM_HOST : args.get('vhost')
-			#PARAM_RESOURCE_POOL : args.get('resource_pool')
-			#PARAM_IMAGE_ID = args.get('image_id')
+			PARAM_RESOURCE_POOL : args.get('vresource_pool')
+			PARAM_IMAGE_ID = args.get('vimage_id')
 			#PARAM_INSTANCE_IDS = args.get('instance_ids')
 
 		}
 		return params
 
 	def assert_required_parameters(self, parameters, operation):
+		#controllare se sono presenti tutti i parametri
 		print "assert_required_parameters"
 
 	def does_image_exist(self, parameters):
 		#restituisce true se presente l'immagine nel cloud
+		#creo la connessione
+		#controllo se è presente l'immagine che ha per nome image_id
 		return True
 
 	def does_disk_exist(self, parameters, disk):
-		#True if the named persistent disk exists, and False otherwise
 		return True
 
 	def does_zone_exist(self, parameters):
