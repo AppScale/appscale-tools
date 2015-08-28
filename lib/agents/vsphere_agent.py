@@ -1,7 +1,6 @@
 """
 [TESTING]
 Agent class for vSphere.
-The agent need pysphere 0.1.8 you can install from pip or from esayinstall tools
 
 You need setup your vCenter:
 	you need create a AppScale template with VMWare tools installed and to be powered on.
