@@ -102,7 +102,7 @@ class vSphereAgent(BaseAgent):
 			for i in range(count):
 				name = "appscale{0}".format(nvm)
 				newVM = template.clone(name,resourcepool=parameters[PARAM_RESOURCE_POOL])
-				ip = get_property('ip_address')
+				ip = newVM.get_property('ip_address')							#modificato
 				instance_ids.append(name)
 				private_ips.append(ip)
 				nvm += 1
