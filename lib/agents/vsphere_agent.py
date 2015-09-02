@@ -23,7 +23,7 @@ PARAM_PASSWORD = 'vpassword'
 PARAM_HOST = 'vhost'
 PARAM_RESOURCE_POOL = 'vresource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
 PARAM_IMAGE_ID = 'vimage_id'                 #name of AppScale Template create in vSphere some like appscale-template
-#PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
+PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
 
 class vSphereAgent(BaseAgent):
 
