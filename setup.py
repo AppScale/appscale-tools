@@ -27,8 +27,7 @@ setup(
     'PyYAML',
     'boto',
     'google-api-python-client',
-    'argparse',
-    'python-gflags'
+    'argparse'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',

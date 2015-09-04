@@ -48,7 +48,6 @@ installpylibs()
   pip_wrapper oauth2client
   pip_wrapper google-api-python-client
   pip_wrapper argparse
-  pip_wrapper python-gflags
 }
 
 installappscaletools()
