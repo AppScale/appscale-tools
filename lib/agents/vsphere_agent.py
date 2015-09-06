@@ -21,8 +21,7 @@ __email2__ = 'dinicola.1210022@studenti.uniroma1.it'
 PARAM_USERNAME = 'vusername'
 PARAM_PASSWORD = 'vpassword'
 PARAM_HOST = 'vhost'
-PARAM_RESOURCE_POOL = 'vresource_pool'       #name of Resouce Pool in vSphere (reservate for AppScale) some like appscale-pool
-PARAM_IMAGE_ID = 'vimage_id'                 #name of AppScale Template create in vSphere some like appscale-template
+ARAM_IMAGE_ID = 'vimage_id'                 #name of AppScale Template create in vSphere some like appscale-template
 PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
 
 class vSphereAgent(BaseAgent):
@@ -84,7 +83,7 @@ class vSphereAgent(BaseAgent):
 	    Args:
 	      count               No. of VMs to spawned
 	      parameters          A dictionary of parameters. This must contain
-							  'credentials', 'resource_pool', 'image_id'.
+							  'credentials', 'image_id'.
 	      security_configured Uses this boolean value as an heuristic to
 	                          detect brand new AppScale deployments.
 
@@ -126,7 +125,6 @@ class vSphereAgent(BaseAgent):
 			PARAM_USERNAME : args.get('vusername'),
 			PARAM_PASSWORD : args.get('vpassword'),
 			PARAM_HOST : args.get('vhost'),
-			PARAM_RESOURCE_POOL : args.get('vresource_pool'),
 			PARAM_IMAGE_ID : args.get('vimage_id')
 			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
