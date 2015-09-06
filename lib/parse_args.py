@@ -185,8 +185,6 @@ class ParseArgs(object):
         help="password for vSphere login")
       self.parser.add_argument('--vhost', '-vh',
         help="host for vSphere login")
-      self.parser.add_argument('--vresource_pool', '-vrp',
-        help="resource pool for Appscale in vSphere")
       self.parser.add_argument('--vimage_id', '-vimid',
         help="image id for Appscale in vSphere")
 

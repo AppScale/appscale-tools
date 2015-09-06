@@ -12,8 +12,6 @@ vpassword : 'vcenterpassword'
 
 vhost : 'vcenterip'
 
-vresource_pool: 'resourcepool'
-
 vimage_id: 'imageId'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
