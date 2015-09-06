@@ -91,17 +91,16 @@ class vSphereAgent(BaseAgent):
 	    Returns:
 	      A tuple of the form (instances, private_ips)
 		"""
-		#valutare se fare una creazione asincrona delle macchine
 		conn = self.open_connection(parameters)
 		if conn is not None:
 			template = conn.get_vm_by_name(parameters[PARAM_IMAGE_ID])
-			nvm = len(conn.get_registered_vms(resource_pool=parameters[PARAM_RESOURCE_POOL], advanced_filters={'config.template':False}))
+			nvm = len(conn.get_registered_vms())
 			nvm += 1
 			private_ips = []
 			instance_ids = []
 			for i in range(count):
 				name = "appscale{0}".format(nvm)
-				newVM = template.clone(name,resourcepool=parameters[PARAM_RESOURCE_POOL])
+				newVM = template.clone(name)                                    #valutare se inserire una wait di 1 min
 				ip = newVM.get_property('ip_address')							#modificato
 				instance_ids.append(name)
 				private_ips.append(ip)
