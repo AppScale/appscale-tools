@@ -6,13 +6,13 @@
 
 infrastructure : 'vsphere'
 
-vusername : 'vcenterusername'
+vusername : 'administrator@vsphere.local'
 
-vpassword : 'vcenterpassword'
+vpassword : '552155Marco!'
 
-vhost : 'vcenterip'
+vhost : '192.168.1.24'
 
-vimage_id: 'imageId'
+vimage_id: 'appscaleImage'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
 # installed on it. When running on Google Compute Engine, set this to the name
