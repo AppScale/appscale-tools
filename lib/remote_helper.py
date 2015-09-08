@@ -233,6 +233,7 @@ class RemoteHelper(object):
       public_ips[0] = options.static_ip
 
     AppScaleLogger.log("Please wait for your instance to boot up.")
+    print ("prima di sleep_until_port_is_open xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
 
     # Since GCE v1beta15, SSH keys don't immediately get injected to newly

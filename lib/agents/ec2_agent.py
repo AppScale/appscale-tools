@@ -389,7 +389,7 @@ class EC2Agent(BaseAgent):
 
     Args:
       count: Number of VMs to spawned.
-      parameters: A dictionary of parameters. This must contain 
+      parameters: A dictionary of parameters. This must contain
         'keyname', 'group', 'image_id' and 'instance_type' parameters.
       security_configured: Uses this boolean value as an heuristic to
         detect brand new AppScale deployments.
@@ -576,7 +576,7 @@ class EC2Agent(BaseAgent):
   def wait_for_status_change(self, parameters, conn, state_requested, \
                               max_wait_time=60,poll_interval=10):
     """ After we have sent a signal to the cloud infrastructure to change the state
-      of the instances (unsually from runnning to either stoppped or 
+      of the instances (unsually from runnning to either stoppped or
       terminated), wait for the status to change.  If all the instances change
       successfully, return True, if not return False.
 
@@ -610,7 +610,7 @@ class EC2Agent(BaseAgent):
 
   def create_image(self, instance_id, name, parameters):
     """ Creates a new cloud image from the given instance id.
-    
+
     Args:
       instance_id: id of the (stopped) instance to create an image of.
       name: A str containing the human-readable name for the image.
