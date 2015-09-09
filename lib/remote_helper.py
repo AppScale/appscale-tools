@@ -233,8 +233,8 @@ class RemoteHelper(object):
       public_ips[0] = options.static_ip
 
     AppScaleLogger.log("Please wait for your instance to boot up.")
-    print ("prima di sleep_until_port_is_open xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
+    print "sono tornato dalla sleep_until_port_is_open"                         #xxxxxxxxxxxxxxxxxxxxxx
 
     # Since GCE v1beta15, SSH keys don't immediately get injected to newly
     # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
@@ -244,8 +244,12 @@ class RemoteHelper(object):
         "machine.")
       time.sleep(60)
 
+    print "entrato dalla enable_root_login"                                     #xxxxxxxxxxxxxxxxxxxxxx
+
+
     cls.enable_root_login(public_ips[0], options.keyname,
       options.infrastructure, options.verbose)
+    print "rientrato dalla enable_root_login"                                   #xxxxxxxxxxxxxxxxxxxxxx
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -341,6 +345,7 @@ class RemoteHelper(object):
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
     try:
+      print "adesso dovrebbe dare errore sto per chiamare ssh"                  #xxxxxxxxxxxxxxxxxxxxxx
       output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
     except ShellException as exception:
       # Google Compute Engine creates a user with the same name as the currently
@@ -376,7 +381,7 @@ class RemoteHelper(object):
       A str representing the standard output of the remote command and a str
         representing the standard error of the remote command.
     """
-    ssh_key = LocalState.get_key_path_from_name(keyname)
+    ssh_key = LocalState.get_key_path_from_name(keyname)                        #di seguito usa una chiave che non esiste
     return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} bash".format(
       ssh_key, cls.SSH_OPTIONS, user, host),
       is_verbose, num_retries, stdin=command)

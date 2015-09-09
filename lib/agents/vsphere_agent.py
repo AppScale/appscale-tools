@@ -15,6 +15,7 @@ import time
 import random
 
 
+
 __author__ = 'Marco Maria Di Nicola'
 __email__ = 'marticus@hotmail.it'
 __email2__ = 'dinicola.1210022@studenti.uniroma1.it'
@@ -37,7 +38,7 @@ class vSphereAgent(BaseAgent):
 		Prepare AppScale head node in vCenter and AppScale template for cloning
 		a new virtual machines
 		"""
-		#creare chiave SSH
+		#creare chiave SSH (cercare di capire)
 		return True
 
 	def open_connection(self, parameters):
@@ -102,22 +103,14 @@ class vSphereAgent(BaseAgent):
 			instance_ids = []
 			for i in range(count):
 				name = "appscale{0}".format(nvm)
-				print "Creo la VM"									#xxxxxxxxxxxxxxxxxxxxxx
 				newVM = template.clone(name)
-				print "VM Creata"									#xxxxxxxxxxxxxxxxxxxxxx
-				print "Aspetto l'accensione"						#xxxxxxxxxxxxxxxxxxxxxx
-				time.sleep(240)
+				time.sleep(180)
 				vm = conn.get_vm_by_name(name)
 				ip = vm.get_property('ip_address')
-				print "ip della macchina"							#xxxxxxxxxxxxxxxxxxxxxx
-				print ip											#xxxxxxxxxxxxxxxxxxxxxx
 				instance_ids.append(name)
 				private_ips.append(ip)
 				nvm += 1
 			public_ips = private_ips
-			print public_ips 										#xxxxxxxxxxxxxxxxxxxxxx
-			print private_ips										#xxxxxxxxxxxxxxxxxxxxxx
-			print instance_ids										#xxxxxxxxxxxxxxxxxxxxxx
 			return instance_ids, public_ips, private_ips
 		return None
 
@@ -143,6 +136,8 @@ class vSphereAgent(BaseAgent):
 			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
 		}
+		print "argomenti ricevuti vericare se c'è keyname"
+		print args
 		return params
 
 	def assert_required_parameters(self, parameters, operation):
