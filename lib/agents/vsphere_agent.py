@@ -25,6 +25,7 @@ PARAM_PASSWORD = 'vpassword'
 PARAM_HOST = 'vhost'
 PARAM_IMAGE_ID = 'vimage_id'                 #name of AppScale Template create in vSphere some like appscale-template
 PARAM_INSTANCE_IDS = 'instance_ids'         #name of vm (ex: appscale1)
+PARAM_KEYNAME = 'keyname'
 
 class vSphereAgent(BaseAgent):
 
@@ -38,7 +39,9 @@ class vSphereAgent(BaseAgent):
 		Prepare AppScale head node in vCenter and AppScale template for cloning
 		a new virtual machines
 		"""
+		#controllare se esiste
 		#creare chiave SSH (cercare di capire)
+		#generate_rsa_key
 		return True
 
 	def open_connection(self, parameters):
@@ -132,12 +135,16 @@ class vSphereAgent(BaseAgent):
 			PARAM_USERNAME : args.get('vusername'),
 			PARAM_PASSWORD : args.get('vpassword'),
 			PARAM_HOST : args.get('vhost'),
+			PARAM_KEYNAME : args.get('keyname'),  #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 			PARAM_IMAGE_ID : args.get('vimage_id')
 			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
 		}
 		print "argomenti ricevuti vericare se c'è keyname"
 		print args
+
+		print "keyname"
+		print PARAM_KEYNAME
 		return params
 
 	def assert_required_parameters(self, parameters, operation):
