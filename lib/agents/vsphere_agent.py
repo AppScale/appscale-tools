@@ -117,7 +117,13 @@ class vSphereAgent(BaseAgent):
 			for i in range(count):
 				name = "appscale{0}".format(nvm)
 				newVM = template.clone(name)
-				time.sleep(180)
+				print "Macchina creata attendi 3 min"
+				time.sleep(60)
+				print "attendi 2 min"
+				time.sleep(60)
+				print "attendi 1 min"
+				time.sleep(60)
+				print "Fatto"
 				vm = conn.get_vm_by_name(name)
 				ip = vm.get_property('ip_address')
 				instance_ids.append(name)
@@ -150,16 +156,12 @@ class vSphereAgent(BaseAgent):
 			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
 		}
-		print "argomenti ricevuti vericare se c e keyname"
-		print args
 
-		print "keyname"
-		print PARAM_KEYNAME
 		return params
 
 	def assert_required_parameters(self, parameters, operation):
 		#controllare se sono presenti tutti i parametri
-		print "assert_required_parameters"
+		print " "
 
 	def does_image_exist(self, parameters):
 		#restituisce true se presente l'immagine nel cloud
