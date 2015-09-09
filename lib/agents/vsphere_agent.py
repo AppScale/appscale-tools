@@ -14,6 +14,14 @@ import os
 import time
 import random
 
+try:
+  from appscale.appscale_logger import AppScaleLogger
+  from appscale.local_state import LocalState
+except ImportError:
+  # If the module is not installed, the lib directory might be on the path.
+  from appscale_logger import AppScaleLogger
+  from local_state import LocalState
+
 
 
 __author__ = 'Marco Maria Di Nicola'
@@ -39,6 +47,8 @@ class vSphereAgent(BaseAgent):
 		Prepare AppScale head node in vCenter and AppScale template for cloning
 		a new virtual machines
 		"""
+		keyname = parameters[PARAM_KEYNAME]
+		LocalState.generate_rsa_key(keyname, False)
 		#controllare se esiste
 		#creare chiave SSH (cercare di capire)
 		#generate_rsa_key
@@ -140,7 +150,7 @@ class vSphereAgent(BaseAgent):
 			#PARAM_INSTANCE_IDS : args.get('instance_ids')
 
 		}
-		print "argomenti ricevuti vericare se c'è keyname"
+		print "argomenti ricevuti vericare se c e keyname"
 		print args
 
 		print "keyname"
