@@ -43,7 +43,7 @@ zone : 'us-east-1b' # For Amazon EC2
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
 # in your AWS account. By default, we randomly generate a keyname for you.
-#keyname : 'appscalekey'
+keyname : 'appscalea7e5ddc7220d404fbda4c4ced509f589'
 
 # The AWS security group name that should be used for all machines in this
 # AppScale deployment. This should refer to a keyname that does not already
