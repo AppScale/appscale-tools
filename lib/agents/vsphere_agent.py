@@ -48,7 +48,12 @@ class vSphereAgent(BaseAgent):
 		a new virtual machines
 		"""
 		keyname = parameters[PARAM_KEYNAME]
-		LocalState.generate_rsa_key(keyname, False)
+		private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
+	    public_key = private_key + ".pub"
+
+		if not (os.path.exists(private_key) or os.path.exists(public_key)):
+			print "creo le chiavi questo msg deve apparire una volta sola"
+			LocalState.generate_rsa_key(keyname, False)
 		#controllare se esiste
 		#creare chiave SSH (cercare di capire)
 		#generate_rsa_key
