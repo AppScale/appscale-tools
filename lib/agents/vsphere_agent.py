@@ -49,7 +49,7 @@ class vSphereAgent(BaseAgent):
 		"""
 		keyname = parameters[PARAM_KEYNAME]
 		private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
-	    public_key = private_key + ".pub"
+		public_key = private_key + ".pub"
 
 		if not (os.path.exists(private_key) or os.path.exists(public_key)):
 			print "creo le chiavi questo msg deve apparire una volta sola"
