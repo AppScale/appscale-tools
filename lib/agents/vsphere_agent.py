@@ -1,10 +1,9 @@
 """
-[TESTING]
 Agent class for vSphere.
 
 You need setup your vCenter:
-	you need create a AppScale template with VMWare tools installed and to be powered on.
-  	you need create a head node in vSphere
+	You need create a AppScale template with VMWare tools installed and to be powered on.
+  	You need create a head node in vSphere
 """
 
 from agents.base_agent import BaseAgent, AgentConfigurationException, AgentRuntimeException
@@ -52,11 +51,7 @@ class vSphereAgent(BaseAgent):
 		public_key = private_key + ".pub"
 
 		if not (os.path.exists(private_key) or os.path.exists(public_key)):
-			print "creo le chiavi questo msg deve apparire una volta sola"
 			LocalState.generate_rsa_key(keyname, False)
-		#controllare se esiste
-		#creare chiave SSH (cercare di capire)
-		#generate_rsa_key
 		return True
 
 	def open_connection(self, parameters):
@@ -122,13 +117,8 @@ class vSphereAgent(BaseAgent):
 			for i in range(count):
 				name = "appscale{0}".format(nvm)
 				newVM = template.clone(name)
-				print "Macchina creata attendi 3 min"
-				time.sleep(60)
-				print "attendi 2 min"
-				time.sleep(60)
-				print "attendi 1 min"
-				time.sleep(60)
-				print "Fatto"
+				AppScaleLogger.log("Machine created wait start up")
+				time.sleep(180)
 				vm = conn.get_vm_by_name(name)
 				ip = vm.get_property('ip_address')
 				instance_ids.append(name)
@@ -156,10 +146,8 @@ class vSphereAgent(BaseAgent):
 			PARAM_USERNAME : args.get('vusername'),
 			PARAM_PASSWORD : args.get('vpassword'),
 			PARAM_HOST : args.get('vhost'),
-			PARAM_KEYNAME : args.get('keyname'),  #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+			PARAM_KEYNAME : args.get('keyname'),
 			PARAM_IMAGE_ID : args.get('vimage_id')
-			#PARAM_INSTANCE_IDS : args.get('instance_ids')
-
 		}
 
 		return params

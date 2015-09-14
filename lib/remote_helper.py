@@ -129,7 +129,9 @@ class RemoteHelper(object):
     except AppScaleException as ase:
       # On failure shutdown the cloud instances, cleanup the keys, but only
       # if --test is not set.
-      if options.infrastructure:
+      print "qui parte la modifica"
+      """
+      if options.infrastructure :            #xxxxxxxxxxxxxxxxxxxxxx
         if not options.test:
           try:
             cls.terminate_cloud_instance(instance_id, options)
@@ -143,7 +145,7 @@ class RemoteHelper(object):
         raise AppScaleException("{0} Please login to that machine and ensure "\
           "that AppScale {1} is installed on it."
           .format(str(ase), APPSCALE_VERSION))
-
+    """
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
         options.scp))
@@ -160,7 +162,7 @@ class RemoteHelper(object):
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
       additional_params = {}
-
+      """
       if agent.PARAM_CREDENTIALS in params:
         additional_params = params[agent.PARAM_CREDENTIALS]
 
@@ -172,7 +174,7 @@ class RemoteHelper(object):
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
     else:
       additional_params = {}
-
+        """
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
@@ -234,7 +236,6 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Please wait for your instance to boot up.")
     cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
-    print "sono tornato dalla sleep_until_port_is_open"                         #xxxxxxxxxxxxxxxxxxxxxx
 
     # Since GCE v1beta15, SSH keys don't immediately get injected to newly
     # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
@@ -244,12 +245,10 @@ class RemoteHelper(object):
         "machine.")
       time.sleep(60)
 
-    print "entrato dalla enable_root_login"                                     #xxxxxxxxxxxxxxxxxxxxxx
 
 
     cls.enable_root_login(public_ips[0], options.keyname,
       options.infrastructure, options.verbose)
-    print "rientrato dalla enable_root_login"                                   #xxxxxxxxxxxxxxxxxxxxxx
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
     return instance_ids[0], public_ips[0], private_ips[0]
 
@@ -382,6 +381,13 @@ class RemoteHelper(object):
         representing the standard error of the remote command.
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)                        #di seguito usa una chiave che non esiste
+
+    print "modifica ssh per il monit"
+    if command is "monit start -g controller":
+        return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} ".format(
+          ssh_key, cls.SSH_OPTIONS, user, host),
+          is_verbose, num_retries, stdin=command)
+
     return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} bash".format(
       ssh_key, cls.SSH_OPTIONS, user, host),
       is_verbose, num_retries, stdin=command)
