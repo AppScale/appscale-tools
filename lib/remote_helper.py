@@ -131,7 +131,7 @@ class RemoteHelper(object):
       # if --test is not set.
       print "qui parte la modifica"
       """
-      if options.infrastructure :            #xxxxxxxxxxxxxxxxxxxxxx
+      if options.infrastructure :                                               #xxxxxxxxxxxxxxxxxxxxxx
         if not options.test:
           try:
             cls.terminate_cloud_instance(instance_id, options)
@@ -382,8 +382,9 @@ class RemoteHelper(object):
     """
     ssh_key = LocalState.get_key_path_from_name(keyname)                        #di seguito usa una chiave che non esiste
 
-    print "modifica ssh per il monit"
-    if command is "monit start -g controller":
+
+    if command is 'monit start -g controller':
+        print "modifica ssh per il monit"
         return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} ".format(
           ssh_key, cls.SSH_OPTIONS, user, host),
           is_verbose, num_retries, stdin=command)
