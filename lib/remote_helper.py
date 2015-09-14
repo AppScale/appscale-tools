@@ -129,9 +129,8 @@ class RemoteHelper(object):
     except AppScaleException as ase:
       # On failure shutdown the cloud instances, cleanup the keys, but only
       # if --test is not set.
-      print "qui parte la modifica"
-      """
-      if options.infrastructure :                                               #xxxxxxxxxxxxxxxxxxxxxx
+      if options.infrastructure:
+          """
         if not options.test:
           try:
             cls.terminate_cloud_instance(instance_id, options)
@@ -145,7 +144,7 @@ class RemoteHelper(object):
         raise AppScaleException("{0} Please login to that machine and ensure "\
           "that AppScale {1} is installed on it."
           .format(str(ase), APPSCALE_VERSION))
-    """
+          """
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
         options.scp))
@@ -174,7 +173,7 @@ class RemoteHelper(object):
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
     else:
       additional_params = {}
-        """
+      """
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
@@ -190,7 +189,7 @@ class RemoteHelper(object):
     cls.run_user_commands(public_ip, options.user_commands, options.keyname,
       options.verbose)
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
-
+    print "superato la start_remote_appcontroller\ncreo l'appcontroller"
     acc = AppControllerClient(public_ip, secret_key)
     locations = [{
       'public_ip' : public_ip,
@@ -199,12 +198,14 @@ class RemoteHelper(object):
       'instance_id' : instance_id,
       'disk' : node_layout.head_node().disk
     }]
+    print "creato"
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
     except Exception:
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       raise AppControllerException(message)
+    print "superato il blocco try"
 
     return public_ip, instance_id
 
@@ -245,8 +246,6 @@ class RemoteHelper(object):
         "machine.")
       time.sleep(60)
 
-
-
     cls.enable_root_login(public_ips[0], options.keyname,
       options.infrastructure, options.verbose)
     cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
@@ -266,6 +265,7 @@ class RemoteHelper(object):
         for services to come up).
     """
     sleep_time = 1
+    print "sono nella sleep_until_port_is_open"
     while not cls.is_port_open(host, port, is_verbose):
       AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open".\
         format(host, port, sleep_time), is_verbose)
@@ -286,6 +286,7 @@ class RemoteHelper(object):
     Returns:
       True if the port is open, False otherwise.
     """
+    print "sono in is_port_open"
     try:
       sock = socket.socket()
       sock.connect((host, port))
@@ -344,7 +345,6 @@ class RemoteHelper(object):
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
     try:
-      print "adesso dovrebbe dare errore sto per chiamare ssh"                  #xxxxxxxxxxxxxxxxxxxxxx
       output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
     except ShellException as exception:
       # Google Compute Engine creates a user with the same name as the currently
@@ -380,15 +380,7 @@ class RemoteHelper(object):
       A str representing the standard output of the remote command and a str
         representing the standard error of the remote command.
     """
-    ssh_key = LocalState.get_key_path_from_name(keyname)                        #di seguito usa una chiave che non esiste
-
-
-    if command is 'monit start -g controller':
-        print "modifica ssh per il monit"
-        return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} ".format(
-          ssh_key, cls.SSH_OPTIONS, user, host),
-          is_verbose, num_retries, stdin=command)
-
+    ssh_key = LocalState.get_key_path_from_name(keyname)
     return LocalState.shell("ssh -F /dev/null -i {0} {1} {2}@{3} bash".format(
       ssh_key, cls.SSH_OPTIONS, user, host),
       is_verbose, num_retries, stdin=command)
@@ -717,7 +709,8 @@ class RemoteHelper(object):
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
 
-    cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
+    #cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
+    print "esco dalla sleep_until_port_is_open"
 
 
   @classmethod
