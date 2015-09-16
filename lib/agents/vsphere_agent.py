@@ -121,6 +121,7 @@ class vSphereAgent(BaseAgent):
 				time.sleep(180)
 				vm = conn.get_vm_by_name(name)
 				ip = vm.get_property('ip_address')
+				print ip
 				instance_ids.append(name)
 				private_ips.append(ip)
 				nvm += 1
