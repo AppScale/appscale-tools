@@ -709,7 +709,7 @@ class RemoteHelper(object):
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
 
-    #cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
+    cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
     print "esco dalla sleep_until_port_is_open"
 
 

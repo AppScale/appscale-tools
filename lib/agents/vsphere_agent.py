@@ -118,7 +118,7 @@ class vSphereAgent(BaseAgent):
 				name = "appscale{0}".format(nvm)
 				newVM = template.clone(name)
 				AppScaleLogger.log("Machine created wait start up")
-				time.sleep(180)
+				time.sleep(80)
 				vm = conn.get_vm_by_name(name)
 				ip = vm.get_property('ip_address')
 				print ip
