@@ -177,8 +177,7 @@ class RemoteHelper(object):
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
       options.verbose)
-    AppScaleLogger.log("Head node successfully initialized at {0}. It is now "\
-      "starting up {1}.".format(public_ip, options.table))
+    AppScaleLogger.log("Head node successfully initialized at {0}.".format(public_ip))
 
     AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
       APPSCALE_VERSION)
