@@ -58,11 +58,6 @@ class AppScale():
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
-  # These are the commands used to upgrade a node: we need first to get the
-  # newest boostrap.sh, then invoke it.
-  GET_BOOTSTRAP = "wget -q -O /tmp/bootstrap.sh http://bootstrap.appscale.com"
-  UPGRADE = "sh /tmp/bootstrap.sh --tag last"
-
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """Usage: appscale command [<args>]
@@ -105,8 +100,6 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
-  upgrade                           Upgrade the AppScale deployment to the
-                                    latest version.
 """
 
 
@@ -534,57 +527,6 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-remove-app").args
     AppScaleTools.remove_app(options)
-
-
-  def upgrade(self, force=False):
-    """ 'upgrade' will upgrade the deployment to the latest released
-    version.
-
-    Args:
-      force: try to perform the upgrade even if the deployment is up.
-    Raises:
-      AppScalefileException: If there is no AppScalefile in the current working
-      directory.
-      BadConfigurationException: If this method is invoked and the AppScalefile
-      is a cloud deployment.
-    """
-    contents = self.read_appscalefile()
-
-    contents_as_yaml = yaml.safe_load(contents)
-    if 'ips_layout' not in contents_as_yaml:
-      raise BadConfigurationException("Cannot use 'appscale upgrade' in a " \
-        "cloud deployment.")
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      is_verbose = contents_as_yaml['verbose']
-    else:
-      is_verbose = False
-
-    if 'keyname' in contents_as_yaml:
-      keyname = contents_as_yaml['keyname']
-    else:
-      keyname = 'appscale'
-
-    # Let's make sure AppScale isn't running. It will throw an exception
-    # if so.
-    LocalState.ensure_appscale_isnt_running(keyname, force)
-
-    # Let's upgrade all nodes in the deployment.
-    success = True
-    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
-    for ip in all_ips:
-      try:
-        RemoteHelper.ssh(ip, keyname, self.GET_BOOTSTRAP, is_verbose)
-        RemoteHelper.ssh(ip, keyname, self.UPGRADE, is_verbose)
-      except ShellException, se:
-        AppScaleLogger.warn("Failed to upgrade {0}.\n".format(str(ip)))
-        LocalState.generate_crash_log(se, traceback.format_exc())
-        success = False
-        continue
-
-    if success == True:
-      AppScaleLogger.success("Successfully upgraded your AppScale deployment." \
-        "You can use 'appscale up' now to bring it back up.")
 
 
   def get(self, property_regex):
