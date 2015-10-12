@@ -372,14 +372,16 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_storage = flexmock(name='fake_storage')
     fake_storage.should_receive('get').and_return(None)
 
+    fake_flags = oauth2client.tools.argparser.parse_args(args=[])
+
     flexmock(oauth2client.file)
     oauth2client.file.should_receive('Storage').with_args(str).and_return(
       fake_storage)
 
     fake_credentials = flexmock(name='fake_credentials')
     flexmock(oauth2client.tools)
-    oauth2client.tools.should_receive('run').with_args(fake_flow,
-      fake_storage).and_return(fake_credentials)
+    oauth2client.tools.should_receive('run_flow').with_args(fake_flow,
+      fake_storage, fake_flags).and_return(fake_credentials)
 
     # next, mock out http calls to GCE
     fake_http = flexmock(name='fake_http')
