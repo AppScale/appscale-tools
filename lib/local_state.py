@@ -224,7 +224,7 @@ class LocalState(object):
       are masked if the key relates to a cloud credential.
     """
     obscured = {}
-    obscure_regex = re.compile('(EC2)|(ec2)')
+    obscure_regex = re.compile('(.*EC2.*)|(.*ec2.*)')
     for key, value in dict_to_obscure.iteritems():
       if obscure_regex.match(key):
         obscured[key] = cls.obscure_str(value)
