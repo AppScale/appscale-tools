@@ -684,12 +684,12 @@ class RemoteHelper(object):
       is_verbose)
 
     # Remove any monit configuration files from previous AppScale deployments.
-    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/*.cfg', is_verbose)
+    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
 
     # Copy over the config file that indicates how the AppController should be
     # started up.
     cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
-      '/etc/monit/conf.d/controller-17443.cfg', is_verbose)
+      '/etc/monit/conf.d/appscale-controller-17443.cfg', is_verbose)
 
     # Start up monit.
     cls.ssh(host, keyname, 'monit quit; ', is_verbose)
