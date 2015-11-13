@@ -53,7 +53,7 @@ class RegistrationHelper(object):
     })
     try:
       response = urllib2.urlopen(
-        cls.DEPLOYMENTS_URL.format(deployment_id), deployment_data)
+        cls.DEPLOYMENTS_URL.format(deployment_id), data=deployment_data)
       deployment = response.read()
       return json.loads(deployment)
     except urllib2.HTTPError as error:

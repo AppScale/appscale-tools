@@ -54,6 +54,7 @@ class AppScale():
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
+  # This is the command to terminate a deployment.
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
@@ -62,23 +63,43 @@ class AppScale():
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  init: Writes a new configuration file for starting AppScale.
-  up: Starts a new AppScale instance.
-  ssh: Logs into a virtual machine in a currently running AppScale deployment.
-  status: Reports on the state of a currently running AppScale deployment.
-  deploy: Deploys a Google App Engine app to AppScale.
-  undeploy: Removes a Google App Engine app from AppScale.
-  remove: An alias for 'undeploy'.
-  get: Gets all AppController properties matching the provided regex.
-  set: Sets an AppController property to the provided value.
-  tail: Follows the output of log files in a currently running AppScale deployment.
-  logs: Collects the logs produced by an AppScale deployment.
-  relocate: Moves a hosted app to different HTTP and HTTPS ports.
-  destroy: Gracefully terminates the currently running AppScale deployment.
-  down: An alias for 'destroy'.
-  clean: Forcefully terminates all services in a cluster AppScale deployment.
-  register: Registers an AppScale deployment with the AppScale Portal.
-  help: Displays this message.
+  clean                             Forcefully terminates the AppScale
+                                    deployment and delete all data. ALL
+                                    DATA WILL BE DELETED.
+  deploy <app>                      Deploys a Google App Engine app to AppScale:
+                                    <app> can be the top level directory with the
+                                    code or a tar.gz of the source tree.
+  destroy                           Gracefully terminates the currently
+                                    running AppScale deployment.
+  down                              An alias for 'destroy'.
+  get <regex>                       Gets all AppController properties matching
+                                    the provided regex: for developers only.
+  help                              Displays this message.
+  init <cloud|cluster>              Writes a new configuration file for
+                                    AppScale: it will use the <cloud> or
+                                    <cluster> template. Won't override
+                                    an existing configuration.
+  logs <dir>                        Collects the logs produced by an AppScale
+                                    deployment into a directory <dir>: the
+                                    directory will be created.
+  register <deployment_id>          Registers an AppScale deployment with the
+                                    AppScale Portal.
+  relocate <appid> <http> <https>   Moves the application <appid> to
+                                    different <http> and <https> ports.
+  remove                            An alias for 'undeploy'.
+  set <property> <value>            Sets an AppController <property> to the
+                                    provided <value>. For developers only.
+  ssh [#]                           Logs into the #th node of the current AppScale
+                                    deployment. Default is headnode (0).
+  status                            Reports on the state of a currently
+                                    running AppScale deployment.
+  tail                              Follows the output of log files of an
+                                    AppScale deployment.
+  up                                Starts the AppScale deployment (requires
+                                    an AppScalefile).
+  undeploy <appid>                  Removes <appid> from the current
+                                    deployment. DATA ASSOCIATED WITH
+                                    THE APPLICATION WILL BE LOST.
 """
 
 
