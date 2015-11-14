@@ -69,7 +69,7 @@ class RemoteHelper(object):
     'the user "root".'
 
 
-  APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
+  APPCONTROLLER_CRASHLOG_PATH = "/var/log/appscale/appcontroller_crashlog.txt"
 
 
   # The location on AppScale VMs where we should mount and unmount the
