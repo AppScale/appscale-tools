@@ -23,7 +23,6 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
-from local_state import LOCAL_APPSCALE_PATH
 from local_state import LocalState
 from user_app_client import UserAppClient
 
@@ -1020,8 +1019,8 @@ class RemoteHelper(object):
     """
     message = ""
     try:
-      local_crashlog = "{0}/appcontroller-log-{1}".format(LOCAL_APPSCALE_PATH,
-        uuid.uuid4())
+      local_crashlog = "{0}/appcontroller-log-{1}".format(
+        LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
