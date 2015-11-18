@@ -23,6 +23,7 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
+from local_state import LOCAL_APPSCALE_PATH
 from local_state import LocalState
 from user_app_client import UserAppClient
 
@@ -198,7 +199,9 @@ class RemoteHelper(object):
     }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
+        .format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       raise AppControllerException(message)
@@ -907,7 +910,9 @@ class RemoteHelper(object):
 
     try:
       all_ips = acc.get_all_public_ips()
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}' \
+        .format(str(exception)))
       all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
@@ -1015,7 +1020,8 @@ class RemoteHelper(object):
     """
     message = ""
     try:
-      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
+      local_crashlog = "{0}/appcontroller-log-{1}".format(LOCAL_APPSCALE_PATH,
+        uuid.uuid4())
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
