@@ -418,7 +418,10 @@ class AppScaleTools(object):
       options.keyname))
     try:
       uaserver_host = acc.get_uaserver_host(options.verbose)
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while looking for UAServer {0}' \
+        .format(str(exception)))
+
       # Collect crash logs from the AppController machine.
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)

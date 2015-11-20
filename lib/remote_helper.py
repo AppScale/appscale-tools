@@ -9,6 +9,7 @@ import re
 import socket
 import subprocess
 import threading
+import tempfile
 import time
 import uuid
 
@@ -198,7 +199,9 @@ class RemoteHelper(object):
     }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
+        .format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       raise AppControllerException(message)
@@ -907,7 +910,9 @@ class RemoteHelper(object):
 
     try:
       all_ips = acc.get_all_public_ips()
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}' \
+        .format(str(exception)))
       all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
@@ -982,7 +987,8 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
-    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
+    local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".format(tempfile.gettempdir(),
+      app_id, rand)
     LocalState.shell("cd '{0}' && tar -czhf {1} --exclude='*.pyc' *".format(
       app_location, local_tarred_app), is_verbose)
 
@@ -1015,7 +1021,8 @@ class RemoteHelper(object):
     """
     message = ""
     try:
-      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
+      local_crashlog = "{0}/appcontroller-log-{1}".format(
+        tempfile.gettempdir(), uuid.uuid4())
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
