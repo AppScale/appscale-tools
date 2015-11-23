@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -222,30 +221,40 @@ class AppScaleTools(object):
     # cause the tool to crash and not create this directory
     os.mkdir(options.location)
 
+    # The log paths that we collect logs from.
+    log_paths = [
+      '/var/log/appscale',
+      '/var/log/kern.log*',
+      '/var/log/monit.log*',
+      '/var/log/nginx',
+      '/var/log/syslog*',
+      '/var/log/zookeeper'
+    ]
+
+    failures = False
     for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = "{0}/{1}".format(options.location, ip)
       os.mkdir(local_dir)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
-        local_dir, options.verbose)
-      try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname,
-          '/var/log/cassandra', local_dir, options.verbose)
-      except ShellException:
-        pass
 
-      try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname,
-          '/var/log/zookeeper', local_dir, options.verbose)
-      except ShellException:
-        pass
+      for log_path in log_paths:
+        try:
+          RemoteHelper.scp_remote_to_local(ip, options.keyname, log_path,
+            local_dir, options.verbose)
+        except ShellException as shell_exception:
+          failures = True
+          AppScaleLogger.warn("Unable to collect logs from '{}' for host '{}'".
+            format(log_path, ip))
+          AppScaleLogger.verbose("Encountered exception: {}".
+            format(str(shell_exception)), options.verbose)
 
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/kern.log',
-        local_dir, options.verbose)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/syslog',
-        local_dir, options.verbose)
-    AppScaleLogger.success("Successfully copied logs to {0}".format(
-      options.location))
+    if failures:
+      AppScaleLogger.log("Done copying to {0}. There were "
+        "failures while collecting AppScale logs.".format(
+        options.location))
+    else:
+      AppScaleLogger.success("Successfully collected all AppScale logs into "
+        "{0}".format(options.location))
 
 
   @classmethod

@@ -110,16 +110,19 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/appscale'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
-    subprocess.should_receive('Popen').with_args(re.compile('/var/log/cassandra'),
+    subprocess.should_receive('Popen').with_args(re.compile('/var/log/kern.log*'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(re.compile('/var/log/monit*'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(re.compile('/var/log/nginx'),
+      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
+      .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(re.compile('/var/log/syslog*'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/zookeeper'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
-    subprocess.should_receive('Popen').with_args(re.compile('/var/log/syslog'),
-      shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
-      .and_return(self.success)
-    subprocess.should_receive('Popen').with_args(re.compile('/var/log/kern.log'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
 
