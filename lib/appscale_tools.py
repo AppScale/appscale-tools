@@ -224,9 +224,9 @@ class AppScaleTools(object):
     # The log paths that we collect logs from.
     log_paths = [
       '/var/log/appscale',
+      '/var/log/kern.log*',
       '/var/log/monit.log*',
       '/var/log/nginx',
-      '/var/log/kern.log*',
       '/var/log/syslog*',
       '/var/log/zookeeper'
     ]
