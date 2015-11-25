@@ -590,8 +590,9 @@ class AppScaleTools(object):
 
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
-      RemoteHelper.create_user_accounts(username, password, userappserver_host,
-        options.keyname, clear_datastore=False)
+      RemoteHelper.create_user_accounts(username, password,
+        LocalState.get_login_host(options.keyname), options.keyname,
+        clear_datastore=False)
 
     app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)
