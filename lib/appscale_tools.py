@@ -331,8 +331,7 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
       options.keyname))
-    userappserver_host = acc.get_uaserver_host(options.verbose)
-    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+    userappclient = UserAppClient(login_host, LocalState.get_secret_key(
       options.keyname))
     if not userappclient.does_app_exist(options.appname):
       raise AppScaleException("The given application is not currently running.")
@@ -359,10 +358,7 @@ class AppScaleTools(object):
     username, password = LocalState.get_credentials(is_admin=False)
     encrypted_password = LocalState.encrypt_password(username, password)
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      secret)
-    userappserver_ip = acc.get_uaserver_host(options.verbose)
-    uac = UserAppClient(userappserver_ip, secret)
+    uac = UserAppClient(LocalState.get_login_host(options.keyname), secret)
 
     try:
       uac.change_password(username, encrypted_password)
@@ -425,24 +421,20 @@ class AppScaleTools(object):
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
+
+    # Let's now wait till the server is initialized.
+    while not acc.is_initialized():
+      AppScaleLogger.log('Waiting for head-node to initialize...')
+      time.sleep(SLEEP_TIME)
+
+    # Now let's make sure the UserAppServer is fully initialized.
+    uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
+      options.keyname))
     try:
-      uaserver_host = acc.get_uaserver_host(options.verbose)
+      uaserver_client.does_user_exist("non-existent-user")
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while looking for UAServer {0}' \
-        .format(str(exception)))
-
-      # Collect crash logs from the AppController machine.
-      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
-        options.keyname, options.verbose)
-      # Let's make sure we don't leave dangling instance around if we are
-      # running in the cloud.
-      if options.infrastructure:
-        RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-            options.verbose)
-      raise AppControllerException(message)
-
-    RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
-      options.verbose)
+      AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
+      time.sleep(SLEEP_TIME)
 
     # Update our metadata again so that users can SSH into other boxes that
     # may have been started.
@@ -450,11 +442,6 @@ class AppScaleTools(object):
       instance_id)
     RemoteHelper.copy_local_metadata(public_ip, options.keyname,
       options.verbose)
-
-    AppScaleLogger.log("UserAppServer is at {0}".format(uaserver_host))
-
-    uaserver_client = UserAppClient(uaserver_host,
-      LocalState.get_secret_key(options.keyname))
 
     if options.admin_user and options.admin_pass:
       AppScaleLogger.log("Using the provided admin username/password")
@@ -587,9 +574,8 @@ class AppScaleTools(object):
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
-    userappserver_host = acc.get_uaserver_host(options.verbose)
-    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
-      options.keyname))
+    userappclient = UserAppClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key( options.keyname))
 
     if options.test:
       username = LocalState.DEFAULT_USER
