@@ -410,7 +410,7 @@ class AppScaleTools(object):
     public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
       node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
-      "for use.")
+      "for use. This can take few minutes.")
 
     # Write our metadata as soon as possible to let users SSH into those
     # machines via 'appscale ssh'.
@@ -424,8 +424,10 @@ class AppScaleTools(object):
 
     # Let's now wait till the server is initialized.
     while not acc.is_initialized():
-      AppScaleLogger.log('Waiting for head-node to initialize...')
-      time.sleep(SLEEP_TIME)
+      AppScaleLogger.log('Waiting for head node to initialize...')
+      # This can take some time in particular the first time around, since
+      # we will have to initialize the database.
+      time.sleep(cls.SLEEP_TIME*3)
 
     # Now let's make sure the UserAppServer is fully initialized.
     uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
@@ -434,7 +436,7 @@ class AppScaleTools(object):
       uaserver_client.does_user_exist("non-existent-user")
     except Exception as exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
-      time.sleep(SLEEP_TIME)
+      time.sleep(cls.SLEEP_TIME)
 
     # Update our metadata again so that users can SSH into other boxes that
     # may have been started.
@@ -452,7 +454,7 @@ class AppScaleTools(object):
     else:
       username, password = LocalState.get_credentials()
 
-    RemoteHelper.create_user_accounts(username, password, uaserver_host,
+    RemoteHelper.create_user_accounts(username, password, public_ip,
       options.keyname, options.clear_datastore)
     uaserver_client.set_admin_role(username)
 
