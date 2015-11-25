@@ -433,7 +433,9 @@ class AppScaleTools(object):
     uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
       options.keyname))
     try:
-      uaserver_client.does_user_exist("non-existent-user")
+      # We don't need to have any exception information here: we do expect
+      # some anyway while the UserAppServer is coming up.
+      uaserver_client.does_user_exist("non-existent-user", True)
     except Exception as exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
