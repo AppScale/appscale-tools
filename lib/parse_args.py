@@ -16,6 +16,7 @@ import yaml
 from agents.base_agent import BaseAgent
 from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
+from agents.vsphere_agent import vSphereAgent
 from agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
@@ -176,6 +177,17 @@ class ParseArgs(object):
       self.parser.add_argument('--static_ip',
         help="the static IP address that should be used for the login node " +
           "in cloud deployments")
+
+      #flag for vSphere
+      self.parser.add_argument('--vusername', '-vu',
+        help="username for vSphere login")
+      self.parser.add_argument('--vpassword', '-vp',
+        help="password for vSphere login")
+      self.parser.add_argument('--vhost', '-vh',
+        help="host for vSphere login")
+      self.parser.add_argument('--vimage_id', '-vimid',
+        help="image id for Appscale in vSphere")
+
 
       # flags relating to EC2-like cloud infrastructures
       # Don't use dashes in the random suffix, since network names on Google

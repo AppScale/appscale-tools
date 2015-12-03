@@ -90,7 +90,7 @@ class GCEAgent(BaseAgent):
 
   PARAM_REGION = 'region'
 
-  
+
   PARAM_SECRETS = 'client_secrets'
 
 
@@ -257,7 +257,6 @@ class GCEAgent(BaseAgent):
       if not metadata:
         return False, ""
 
-      all_ssh_keys = ""
       for item in metadata:
         if item['key'] != 'sshKeys':
           continue
@@ -320,7 +319,7 @@ class GCEAgent(BaseAgent):
     except errors.HttpError:
       return False
 
-  
+
   def create_ssh_key(self, parameters, all_ssh_keys):
     """ Creates a new SSH key in Google Compute Engine with the contents of
     our newly generated public key.
@@ -656,7 +655,7 @@ class GCEAgent(BaseAgent):
     Returns:
       A str, a disk name associated with the root disk of AppScale on GCE.
     """
-    return "appscale{0}{1}".format(parameters[self.PARAM_GROUP], 
+    return "appscale{0}{1}".format(parameters[self.PARAM_GROUP],
       str(int(time.time() * 1000)))
 
   def create_scratch_disk(self, parameters):
@@ -676,7 +675,7 @@ class GCEAgent(BaseAgent):
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
     disk_name = self.generate_disk_name(parameters)
-    project_url = '{0}{1}'.format(self.GCE_URL, 
+    project_url = '{0}{1}'.format(self.GCE_URL,
       parameters[self.PARAM_PROJECT])
     source_image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL,
       parameters[self.PARAM_PROJECT], parameters[self.PARAM_IMAGE_ID])
@@ -684,7 +683,7 @@ class GCEAgent(BaseAgent):
       project=parameters[self.PARAM_PROJECT],
       zone=parameters[self.PARAM_ZONE],
       body={
-        'name':disk_name 
+        'name':disk_name
       },
       sourceImage=source_image_url
     )
@@ -773,7 +772,7 @@ class GCEAgent(BaseAgent):
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
-    
+
     instance_ids = []
     public_ips = []
     private_ips = []
@@ -1081,7 +1080,7 @@ class GCEAgent(BaseAgent):
     flow = None
     if self.PARAM_SECRETS in parameters:
       flow = oauth2client.client.flow_from_clientsecrets(
-        os.path.expanduser(parameters[self.PARAM_SECRETS]), 
+        os.path.expanduser(parameters[self.PARAM_SECRETS]),
         scope=self.GCE_SCOPE)
 
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(

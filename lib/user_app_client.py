@@ -150,7 +150,7 @@ class UserAppClient():
     self.server.set_capabilities(username, self.ADMIN_CAPABILITIES, self.secret)
 
 
-  def does_user_exist(self, username, silent=False):
+  def does_user_exist(self, username):
     """Queries the UserAppServer to see if the given user exists.
 
     Returns:
@@ -164,10 +164,9 @@ class UserAppClient():
         else:
           return False
       except Exception, exception:
-        if not silent:
-          AppScaleLogger.log("Exception when checking if a user exists: {0}".\
-            format(exception))
-          AppScaleLogger.log("Backing off and trying again")
+        AppScaleLogger.log("Exception when checking if a user exists: {0}".\
+          format(exception))
+        AppScaleLogger.log("Backing off and trying again")
         time.sleep(10)
  
 

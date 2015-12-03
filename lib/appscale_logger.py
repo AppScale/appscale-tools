@@ -100,8 +100,7 @@ class AppScaleLogger():
       conn.request('POST', '/upload', payload, cls.HEADERS)
       _ = conn.getresponse()
       conn.close()
-    except Exception as exception:
-      cls.verbose("Unable to log {0} state: saw exception {1}".format(state,
-        str(exception)), options.verbose)
+    except Exception:
+      cls.verbose("Unable to log {0} state".format(state), options.verbose)
 
     return params

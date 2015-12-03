@@ -9,7 +9,6 @@ import re
 import socket
 import subprocess
 import threading
-import tempfile
 import time
 import uuid
 
@@ -70,7 +69,7 @@ class RemoteHelper(object):
     'the user "root".'
 
 
-  APPCONTROLLER_CRASHLOG_PATH = "/var/log/appscale/appcontroller_crashlog.txt"
+  APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
 
 
   # The location on AppScale VMs where we should mount and unmount the
@@ -131,6 +130,7 @@ class RemoteHelper(object):
       # On failure shutdown the cloud instances, cleanup the keys, but only
       # if --test is not set.
       if options.infrastructure:
+          """
         if not options.test:
           try:
             cls.terminate_cloud_instance(instance_id, options)
@@ -144,7 +144,7 @@ class RemoteHelper(object):
         raise AppScaleException("{0} Please login to that machine and ensure "\
           "that AppScale {1} is installed on it."
           .format(str(ase), APPSCALE_VERSION))
-
+          """
     if options.scp:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
         options.scp))
@@ -161,7 +161,7 @@ class RemoteHelper(object):
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
       additional_params = {}
-
+      """
       if agent.PARAM_CREDENTIALS in params:
         additional_params = params[agent.PARAM_CREDENTIALS]
 
@@ -173,7 +173,7 @@ class RemoteHelper(object):
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
     else:
       additional_params = {}
-
+      """
     deployment_params = LocalState.generate_deployment_params(options,
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
@@ -188,7 +188,7 @@ class RemoteHelper(object):
     cls.run_user_commands(public_ip, options.user_commands, options.keyname,
       options.verbose)
     cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
-
+    print "superato la start_remote_appcontroller\ncreo l'appcontroller"
     acc = AppControllerClient(public_ip, secret_key)
     locations = [{
       'public_ip' : public_ip,
@@ -197,14 +197,14 @@ class RemoteHelper(object):
       'instance_id' : instance_id,
       'disk' : node_layout.head_node().disk
     }]
+    print "creato"
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
-    except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
-        .format(str(exception)))
+    except Exception:
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       raise AppControllerException(message)
+    print "superato il blocco try"
 
     return public_ip, instance_id
 
@@ -264,6 +264,7 @@ class RemoteHelper(object):
         for services to come up).
     """
     sleep_time = 1
+    print "sono nella sleep_until_port_is_open"
     while not cls.is_port_open(host, port, is_verbose):
       AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open".\
         format(host, port, sleep_time), is_verbose)
@@ -284,6 +285,7 @@ class RemoteHelper(object):
     Returns:
       True if the port is open, False otherwise.
     """
+    print "sono in is_port_open"
     try:
       sock = socket.socket()
       sock.connect((host, port))
@@ -687,12 +689,12 @@ class RemoteHelper(object):
       is_verbose)
 
     # Remove any monit configuration files from previous AppScale deployments.
-    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
+    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/*.cfg', is_verbose)
 
     # Copy over the config file that indicates how the AppController should be
     # started up.
     cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
-      '/etc/monit/conf.d/appscale-controller-17443.cfg', is_verbose)
+      '/etc/monit/conf.d/controller-17443.cfg', is_verbose)
 
     # Start up monit.
     cls.ssh(host, keyname, 'monit quit; ', is_verbose)
@@ -707,6 +709,7 @@ class RemoteHelper(object):
       "pre-processing tasks.")
 
     cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
+    print "esco dalla sleep_until_port_is_open"
 
 
   @classmethod
@@ -910,9 +913,7 @@ class RemoteHelper(object):
 
     try:
       all_ips = acc.get_all_public_ips()
-    except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}' \
-        .format(str(exception)))
+    except Exception:
       all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
@@ -987,8 +988,7 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
-    local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".format(tempfile.gettempdir(),
-      app_id, rand)
+    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
     LocalState.shell("cd '{0}' && tar -czhf {1} --exclude='*.pyc' *".format(
       app_location, local_tarred_app), is_verbose)
 
@@ -1021,8 +1021,7 @@ class RemoteHelper(object):
     """
     message = ""
     try:
-      local_crashlog = "{0}/appcontroller-log-{1}".format(
-        tempfile.gettempdir(), uuid.uuid4())
+      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
