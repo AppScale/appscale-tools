@@ -257,7 +257,6 @@ class GCEAgent(BaseAgent):
       if not metadata:
         return False, ""
 
-      all_ssh_keys = ""
       for item in metadata:
         if item['key'] != 'sshKeys':
           continue

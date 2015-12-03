@@ -1,18 +1,8 @@
 ---
-
 # The underlying cloud infrastructure to deploy AppScale over.
 # Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
 # or 'gce' if running on Google Compute Engine.
-
-infrastructure : 'vsphere'
-
-vusername : 'administrator@vsphere.local'
-
-vpassword : '552155Marco!'
-
-vhost : '192.168.1.24'
-
-vimage_id: 'appscaleImage'
+infrastructure : 'ec2'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
 # installed on it. When running on Google Compute Engine, set this to the name
@@ -43,7 +33,7 @@ zone : 'us-east-1b' # For Amazon EC2
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
 # in your AWS account. By default, we randomly generate a keyname for you.
-keyname : 'appscalea7e5ddc7220d404fbda4c4ced509f589'
+#keyname : 'appscalekey'
 
 # The AWS security group name that should be used for all machines in this
 # AppScale deployment. This should refer to a keyname that does not already

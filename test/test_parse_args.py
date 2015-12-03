@@ -12,7 +12,7 @@ import yaml
 
 # Third-party imports
 import boto
-#from flexmock import flexmock
+from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
@@ -27,12 +27,12 @@ from parse_args import ParseArgs
 
 
 class TestParseArgs(unittest.TestCase):
-
+  
 
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
-      '--infrastructure', 'vsphere', '--machine', 'ami-ABCDEFG', '--zone',
-      'my-zone-1b', '--vusername', 'vsphereusername']
+      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG', '--zone',
+      'my-zone-1b']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
@@ -100,7 +100,7 @@ class TestParseArgs(unittest.TestCase):
     # using a flag that isn't acceptable should raise
     # an exception
     argv_1 = ['--boo!']
-    self.assertRaises(SystemExit, ParseArgs, argv_1,
+    self.assertRaises(SystemExit, ParseArgs, argv_1, 
       self.function)
 
     # the version flag should quit and print the current
