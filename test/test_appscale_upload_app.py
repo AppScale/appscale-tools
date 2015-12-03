@@ -151,7 +151,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
     flexmock(AppEngineHelper).should_receive('get_app_runtime_from_app_config').and_return('runtime')
     flexmock(LocalState).should_receive('get_secret_key').and_return()
-    flexmock(AppControllerClient).should_receive('get_uaserver_host').and_return('1.2.3.4')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
