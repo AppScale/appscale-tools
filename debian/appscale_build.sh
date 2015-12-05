@@ -2,17 +2,13 @@
 
 export DIST=`lsb_release -c -s`
 
-if [ "$DIST" = "n/a" ]
-then
-  DIST="na"
+if [ "$DIST" = "n/a" ] ||  [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
+    echo "We do not have a build script for ${DIST}."
+    echo "You can still install this package from source with 'python setup.py install'."
+    exit 1
 fi
 
 cd `dirname $0`/..
-
-if [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
-    echo "${DIST} is not supported."
-    exit 1
-fi
 
 echo "Installing Ubuntu ${DIST} building environment."
 
