@@ -41,7 +41,7 @@ class ParseArgs(object):
 
 
   # The EC2 instance type that should be used if the user does not specify one.
-  DEFAULT_EC2_INSTANCE_TYPE = "m1.large"
+  DEFAULT_EC2_INSTANCE_TYPE = "m3.medium"
 
 
   # A list of the instance types we allow users to run AppScale over in EC2.
@@ -49,19 +49,10 @@ class ParseArgs(object):
   # users can spawn without having to contact Amazon, and enforce this
   # limitation.
   ALLOWED_EC2_INSTANCE_TYPES = [
-    # Standard Instances (First Generation)
-    "m1.small", "m1.medium", "m1.large", "m1.xlarge",
-
-    # Standard Instances (Second Generation)
+    # General Purpose Instances
     "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
 
-    # High-Memory Instances
-    "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
-
-    # High-CPU Compute Instances (First Generation)
-    "c1.medium", "c1.xlarge",
-
-    # High-CPU Compute Instance (Second Generation)
+    # Compute Optimized Instances
     "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
 
     # Cluster Compute Instances
