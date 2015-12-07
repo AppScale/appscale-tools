@@ -10,7 +10,7 @@ Package: appscale-tools
 Architecture: any
 Depends:
 # tools
- openssh-client, curl, python-pip, python-httplib2
+ openssh-client, curl, python-pip, python-httplib2, python-yaml
  make,
  python-setuptools,
 # m2crypto
