@@ -409,6 +409,11 @@ appengine:  1.2.3.4
       "--test"
     ]
 
+    acc = flexmock(AppControllerClient)
+    acc.should_receive('is_initialized').and_return(True)
+
+    uac = flexmock(UserAppClient)
+    uac.should_receive('does_user_exist').and_return(False)
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
@@ -555,6 +560,12 @@ appengine:  1.2.3.4
       "--static_ip", "elastic-ip"
     ]
 
+    acc = flexmock(AppControllerClient)
+    acc.should_receive('is_initialized').and_return(True)
+
+    uac = flexmock(UserAppClient)
+    uac.should_receive('does_user_exist').and_return(False)
+
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
 
@@ -694,6 +705,12 @@ appengine:  1.2.3.4
       "--zone", "my-zone-1b"
     ]
 
+    acc = flexmock(AppControllerClient)
+    acc.should_receive('is_initialized').and_return(True)
+
+    uac = flexmock(UserAppClient)
+    uac.should_receive('does_user_exist').and_return(False)
+
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
 
@@ -722,7 +739,10 @@ appengine:  1.2.3.4
         .and_return()
 
     acc = flexmock(AppControllerClient)
-    acc.should_receive('get_uaserver_host').and_return('host')
+    acc.should_receive('is_initialized').and_return(True)
+
+    uac = flexmock(UserAppClient)
+    uac.should_receive('does_user_exist').and_return(False)
 
     flexmock(UserAppClient).should_receive('set_admin_role').and_return()
 

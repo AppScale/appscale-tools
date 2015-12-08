@@ -989,7 +989,7 @@ class RemoteHelper(object):
     rand = str(uuid.uuid4()).replace('-', '')[:8]
     local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".format(tempfile.gettempdir(),
       app_id, rand)
-    LocalState.shell("cd '{0}' && tar -czhf {1} --exclude='*.pyc' *".format(
+    LocalState.shell("cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".format(
       app_location, local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")

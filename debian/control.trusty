@@ -10,8 +10,9 @@ Package: appscale-tools
 Architecture: any
 Depends:
 # tools
- openssh-client, curl, python-pip, python-httplib2
- make
+ openssh-client, curl, python-pip, python-httplib2, python-yaml
+ make,
+ python-setuptools,
 # m2crypto
  libssl-dev, python-dev, swig
 Description: An open-source framework for execution of GAE applications
