@@ -609,6 +609,8 @@ class RemoteHelper(object):
       options.keyname), '/etc/appscale/ssh.key', options.verbose)
 
     LocalState.generate_ssl_cert(options.keyname, options.verbose)
+    cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/certs',
+      options.verbose)
     cls.scp(host, options.keyname, LocalState.get_certificate_location(
       options.keyname), '/etc/appscale/certs/mycert.pem', options.verbose)
     cls.scp(host, options.keyname, LocalState.get_private_key_location(
