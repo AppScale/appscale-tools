@@ -6,6 +6,5 @@ DESTDIR=$2
 DIST=wheezy
 
 installappscaletools
-installsetuptools
 installpylibs
 keygen

@@ -7,6 +7,7 @@ import json
 import os
 import re
 import socket
+import subprocess
 import sys
 import tempfile
 import time
@@ -387,16 +388,37 @@ class TestRemoteHelper(unittest.TestCase):
     RemoteHelper.rsync_files('public1', 'booscale', '/tmp/booscale-local',
       False)
 
-
   def test_copy_deployment_credentials_in_cloud(self):
-    # mock out the scp'ing to public1 and assume they succeed
+    options = flexmock(
+      keyname='key1',
+      infrastructure='ec2',
+      verbose=True,
+    )
+
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell').and_return().ordered()
-  
-    options = flexmock(name='options', keyname='bookey', infrastructure='ec2',
-      verbose=True)
+    remote_helper = flexmock(RemoteHelper)
+    local_state.should_receive('get_secret_key_location').and_return()
+    local_state.should_receive('get_key_path_from_name').and_return()
+    local_state.should_receive('get_certificate_location').and_return()
+    local_state.should_receive('get_private_key_location').and_return()
+
+    remote_helper.should_receive('scp').and_return()
+    local_state.should_receive('generate_ssl_cert').and_return()
+    popen_object = flexmock(communicate=lambda: ['hash_id'])
+    flexmock(subprocess).should_receive('Popen').and_return(popen_object)
+    remote_helper.should_receive('ssh').and_return()
+    flexmock(AppScaleLogger).should_receive('log').and_return()
+
     RemoteHelper.copy_deployment_credentials('public1', options)
 
+    options = flexmock(
+      keyname='key1',
+      infrastructure='gce',
+      verbose=True,
+    )
+    local_state.should_receive('get_oauth2_storage_location').and_return()
+
+    RemoteHelper.copy_deployment_credentials('public1', options)
 
   def test_start_remote_appcontroller(self):
     # mock out removing the old json file

@@ -20,7 +20,7 @@ class AppEngineHelper(object):
 
 
   # The version of the App Engine SDK that AppScale currently supports.
-  SUPPORTED_SDK_VERSION = '1.8.1'
+  SUPPORTED_SDK_VERSION = '1.8.4'
 
 
   # A regular expression that can be used to see if the given configuration file

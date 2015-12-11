@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -225,30 +224,40 @@ class AppScaleTools(object):
     # cause the tool to crash and not create this directory
     os.mkdir(options.location)
 
+    # The log paths that we collect logs from.
+    log_paths = [
+      '/var/log/appscale',
+      '/var/log/kern.log*',
+      '/var/log/monit.log*',
+      '/var/log/nginx',
+      '/var/log/syslog*',
+      '/var/log/zookeeper'
+    ]
+
+    failures = False
     for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = "{0}/{1}".format(options.location, ip)
       os.mkdir(local_dir)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/appscale',
-        local_dir, options.verbose)
-      try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname,
-          '/var/log/cassandra', local_dir, options.verbose)
-      except ShellException:
-        pass
 
-      try:
-        RemoteHelper.scp_remote_to_local(ip, options.keyname,
-          '/var/log/zookeeper', local_dir, options.verbose)
-      except ShellException:
-        pass
+      for log_path in log_paths:
+        try:
+          RemoteHelper.scp_remote_to_local(ip, options.keyname, log_path,
+            local_dir, options.verbose)
+        except ShellException as shell_exception:
+          failures = True
+          AppScaleLogger.warn("Unable to collect logs from '{}' for host '{}'".
+            format(log_path, ip))
+          AppScaleLogger.verbose("Encountered exception: {}".
+            format(str(shell_exception)), options.verbose)
 
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/kern.log',
-        local_dir, options.verbose)
-      RemoteHelper.scp_remote_to_local(ip, options.keyname, '/var/log/syslog',
-        local_dir, options.verbose)
-    AppScaleLogger.success("Successfully copied logs to {0}".format(
-      options.location))
+    if failures:
+      AppScaleLogger.log("Done copying to {0}. There were "
+        "failures while collecting AppScale logs.".format(
+        options.location))
+    else:
+      AppScaleLogger.success("Successfully collected all AppScale logs into "
+        "{0}".format(options.location))
 
 
   @classmethod
@@ -325,8 +334,7 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
       options.keyname))
-    userappserver_host = acc.get_uaserver_host(options.verbose)
-    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
+    userappclient = UserAppClient(login_host, LocalState.get_secret_key(
       options.keyname))
     if not userappclient.does_app_exist(options.appname):
       raise AppScaleException("The given application is not currently running.")
@@ -353,10 +361,7 @@ class AppScaleTools(object):
     username, password = LocalState.get_credentials(is_admin=False)
     encrypted_password = LocalState.encrypt_password(username, password)
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      secret)
-    userappserver_ip = acc.get_uaserver_host(options.verbose)
-    uac = UserAppClient(userappserver_ip, secret)
+    uac = UserAppClient(LocalState.get_login_host(options.keyname), secret)
 
     try:
       uac.change_password(username, encrypted_password)
@@ -408,7 +413,7 @@ class AppScaleTools(object):
     public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
       node_layout)
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
-      "for use.")
+      "for use. This can take few minutes.")
 
     # Write our metadata as soon as possible to let users SSH into those
     # machines via 'appscale ssh'.
@@ -419,21 +424,24 @@ class AppScaleTools(object):
 
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(
       options.keyname))
-    try:
-      uaserver_host = acc.get_uaserver_host(options.verbose)
-    except Exception:
-      # Collect crash logs from the AppController machine.
-      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
-        options.keyname, options.verbose)
-      # Let's make sure we don't leave dangling instance around if we are
-      # running in the cloud.
-      if options.infrastructure:
-        RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-            options.verbose)
-      raise AppControllerException(message)
 
-    RemoteHelper.sleep_until_port_is_open(uaserver_host, UserAppClient.PORT,
-      options.verbose)
+    # Let's now wait till the server is initialized.
+    while not acc.is_initialized():
+      AppScaleLogger.log('Waiting for head node to initialize...')
+      # This can take some time in particular the first time around, since
+      # we will have to initialize the database.
+      time.sleep(cls.SLEEP_TIME*3)
+
+    # Now let's make sure the UserAppServer is fully initialized.
+    uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
+      options.keyname))
+    try:
+      # We don't need to have any exception information here: we do expect
+      # some anyway while the UserAppServer is coming up.
+      uaserver_client.does_user_exist("non-existent-user", True)
+    except Exception as exception:
+      AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
+      time.sleep(cls.SLEEP_TIME)
 
     # Update our metadata again so that users can SSH into other boxes that
     # may have been started.
@@ -441,11 +449,6 @@ class AppScaleTools(object):
       instance_id)
     RemoteHelper.copy_local_metadata(public_ip, options.keyname,
       options.verbose)
-
-    AppScaleLogger.log("UserAppServer is at {0}".format(uaserver_host))
-
-    uaserver_client = UserAppClient(uaserver_host,
-      LocalState.get_secret_key(options.keyname))
 
     if options.admin_user and options.admin_pass:
       AppScaleLogger.log("Using the provided admin username/password")
@@ -456,7 +459,7 @@ class AppScaleTools(object):
     else:
       username, password = LocalState.get_credentials()
 
-    RemoteHelper.create_user_accounts(username, password, uaserver_host,
+    RemoteHelper.create_user_accounts(username, password, public_ip,
       options.keyname, options.clear_datastore)
     uaserver_client.set_admin_role(username)
 
@@ -578,9 +581,8 @@ class AppScaleTools(object):
 
     acc = AppControllerClient(LocalState.get_login_host(options.keyname),
       LocalState.get_secret_key(options.keyname))
-    userappserver_host = acc.get_uaserver_host(options.verbose)
-    userappclient = UserAppClient(userappserver_host, LocalState.get_secret_key(
-      options.keyname))
+    userappclient = UserAppClient(LocalState.get_login_host(options.keyname),
+      LocalState.get_secret_key( options.keyname))
 
     if options.test:
       username = LocalState.DEFAULT_USER
@@ -591,8 +593,9 @@ class AppScaleTools(object):
 
     if not userappclient.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
-      RemoteHelper.create_user_accounts(username, password, userappserver_host,
-        options.keyname, clear_datastore=False)
+      RemoteHelper.create_user_accounts(username, password,
+        LocalState.get_login_host(options.keyname), options.keyname,
+        clear_datastore=False)
 
     app_exists = userappclient.does_app_exist(app_id)
     app_admin = userappclient.get_app_admin(app_id)

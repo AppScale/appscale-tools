@@ -6,6 +6,5 @@ DESTDIR=$2
 DIST=trusty
 
 installappscaletools
-installsetuptools
 installpylibs
 keygen

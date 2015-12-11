@@ -1,35 +1,23 @@
-![AppScale Logo](http://upload.wikimedia.org/wikipedia/commons/7/74/AppScale_Systems_Logo.png)
+# AppScale Tools
+[![GitHub version](https://badge.fury.io/gh/AppScale%2Fappscale-tools.svg)](http://badge.fury.io/gh/AppScale%2Fappscale-tools)
+[![AppScale license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/AppScale/appscale-tools/blob/master/LICENSE)
 
-AppScale is a platform that allows users to deploy and host their 
-own Google App Engine applications. It executes automatically over 
-Amazon EC2, Google Compute Engine, Digital Ocean,
-Rackspace, Eucalyptus, CloudStack,
-OpenStack, as well as Xen, VirtualBox, VMWare, and KVM. It has been
-developed and is maintained by AppScale Systems, Inc., in Santa
-Barbara, CA.
+A set of command-line tools for interacting with AppScale.
 
-## AppScale Tools ##
-AppScale Tools Version 2.3.1
-from AppScale Systems, Inc.
-http://www.appscale.com
+## Installing AppScale Tools
+See [Installing the AppScale Tools](https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools).
 
-This toolset automates the installation and manipulation of
-the AppScale system. AppScale can be run as a cloud over 
-Eucalyptus, EC2, or Google Compute Engine, over a virtualization
-layer such as Xen or KVM, or directly on a non-virtualized cluster.
+## Installing from Source
+To install the very latest code on your system:
 
-To install the tools run for debian and osx:
+1. Make sure [setuptools](https://pypi.python.org/pypi/setuptools) is installed.
+2. Run `# python setup.py install` from this directory.
 
-sudo bash debian/appscale_build.sh
+## What is AppScale?
+AppScale is an open-source cloud computing platform that automatically deploys and scales unmodified Google App Engine
+applications over public and private cloud systems and on-premise clusters. AppScale is modeled on the App Engine APIs
+and has support for Python, Go, PHP and Java applications.
 
-or 
+AppScale is developed and maintained by AppScale Systems, Inc., based in Santa Barbara, California, and Google.
 
-sudo bash osx/appscale_install.sh
-
-This will remove any directories /usr/local/appscale-tools*
-and install the tools in /usr/local/appscale-tools.
-
-## Main Branch ##
 See http://github.com/AppScale/appscale for the main branch.
-
-[![Analytics](https://ga-beacon.appspot.com/UA-39403730-2/appscale/appscale-tools)](https://github.com/appscale/appscale-tools)

@@ -9,6 +9,7 @@ import re
 import socket
 import subprocess
 import threading
+import tempfile
 import time
 import uuid
 
@@ -69,7 +70,7 @@ class RemoteHelper(object):
     'the user "root".'
 
 
-  APPCONTROLLER_CRASHLOG_PATH = "/etc/appscale/appcontroller_crashlog.txt"
+  APPCONTROLLER_CRASHLOG_PATH = "/var/log/appscale/appcontroller_crashlog.txt"
 
 
   # The location on AppScale VMs where we should mount and unmount the
@@ -177,8 +178,7 @@ class RemoteHelper(object):
       node_layout, public_ip, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
       options.verbose)
-    AppScaleLogger.log("Head node successfully initialized at {0}. It is now "\
-      "starting up {1}.".format(public_ip, options.table))
+    AppScaleLogger.log("Head node successfully initialized at {0}.".format(public_ip))
 
     AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
       APPSCALE_VERSION)
@@ -199,7 +199,9 @@ class RemoteHelper(object):
     }]
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
+        .format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
         options.keyname, options.verbose)
       raise AppControllerException(message)
@@ -685,12 +687,12 @@ class RemoteHelper(object):
       is_verbose)
 
     # Remove any monit configuration files from previous AppScale deployments.
-    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/*.cfg', is_verbose)
+    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
 
     # Copy over the config file that indicates how the AppController should be
     # started up.
     cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
-      '/etc/monit/conf.d/controller-17443.cfg', is_verbose)
+      '/etc/monit/conf.d/appscale-controller-17443.cfg', is_verbose)
 
     # Start up monit.
     cls.ssh(host, keyname, 'monit quit; ', is_verbose)
@@ -908,7 +910,9 @@ class RemoteHelper(object):
 
     try:
       all_ips = acc.get_all_public_ips()
-    except Exception:
+    except Exception as exception:
+      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}' \
+        .format(str(exception)))
       all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
@@ -983,8 +987,9 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
-    local_tarred_app = "/tmp/appscale-app-{0}-{1}.tar.gz".format(app_id, rand)
-    LocalState.shell("cd '{0}' && tar -czhf {1} --exclude='*.pyc' *".format(
+    local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".format(tempfile.gettempdir(),
+      app_id, rand)
+    LocalState.shell("cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".format(
       app_location, local_tarred_app), is_verbose)
 
     AppScaleLogger.log("Copying over application")
@@ -1016,7 +1021,8 @@ class RemoteHelper(object):
     """
     message = ""
     try:
-      local_crashlog = "/tmp/appcontroller-log-{0}".format(uuid.uuid4())
+      local_crashlog = "{0}/appcontroller-log-{1}".format(
+        tempfile.gettempdir(), uuid.uuid4())
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
