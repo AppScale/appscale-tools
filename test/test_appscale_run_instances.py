@@ -454,13 +454,13 @@ appengine:  1.2.3.4
     fake_entry = flexmock(name='fake_entry', price=1)
     self.fake_ec2.should_receive('get_spot_price_history').with_args(
       start_time=str, end_time=str,
-      product_description='Linux/UNIX', instance_type='m1.large',
+      product_description='Linux/UNIX', instance_type='m3.medium',
       availability_zone='my-zone-1b').and_return([fake_entry])
 
     # also mock out acquiring a spot instance
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
-      instance_type='m1.large', count=1, placement='my-zone-1b')
+      instance_type='m3.medium', count=1, placement='my-zone-1b')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -604,7 +604,7 @@ appengine:  1.2.3.4
     # also mock out acquiring a spot instance
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
-      instance_type='m1.large', count=1, placement='my-zone-1b')
+      instance_type='m3.medium', count=1, placement='my-zone-1b')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),

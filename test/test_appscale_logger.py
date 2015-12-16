@@ -78,7 +78,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "force" : False,
       "group" : "blargscale",
       "gce_instance_type" : "n1-standard-1",
-      "instance_type" : "m1.large",
+      "instance_type" : "m3.medium",
       "ips" : None,
       "ips_layout" : None,
       "keyname" : "appscale",
@@ -103,7 +103,7 @@ class TestAppScaleLogger(unittest.TestCase):
     # tests can use
     self.payload = "?boo=baz&min=1&max=1&infrastructure=ec2" + \
       "&machine=ami-ABCDEFG&force=False&group=appscale" + \
-      "&instance_type=m1.large&ips=None&keyname=appscale&n=None" + \
+      "&instance_type=m3.medium&ips=None&keyname=appscale&n=None" + \
       "table=cassandra&test=False&version=False"
 
 

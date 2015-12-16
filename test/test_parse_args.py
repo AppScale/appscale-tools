@@ -220,11 +220,11 @@ class TestParseArgs(unittest.TestCase):
     self.assertEquals(ParseArgs.DEFAULT_EC2_INSTANCE_TYPE, \
       actual.args.instance_type)
 
-    # Specifying m1.large as the instance type is acceptable.
+    # Specifying m3.medium as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
-      'ami-ABCDEFG', '--instance_type', 'm1.large']
+      'ami-ABCDEFG', '--instance_type', 'm3.medium']
     actual = ParseArgs(argv_2, self.function)
-    self.assertEquals("m1.large", actual.args.instance_type)
+    self.assertEquals("m3.medium", actual.args.instance_type)
 
     # Specifying blarg1.humongous as the instance type is not
     # acceptable.
