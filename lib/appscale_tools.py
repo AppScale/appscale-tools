@@ -80,7 +80,10 @@ class AppScaleTools(object):
     # In virtualized cluster deployments, we need to make sure that the user
     # has already set up SSH keys.
     if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
-      for ip in options.ips.values():
+      ips_to_check = []
+      for ip_group in options.ips.values():
+        ips_to_check.extend(ip_group)
+      for ip in ips_to_check:
         # throws a ShellException if the SSH key doesn't work
         RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
 
