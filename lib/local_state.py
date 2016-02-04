@@ -828,7 +828,13 @@ class LocalState(object):
     if os.path.exists(private_key):
       os.remove(private_key)
 
-    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
+    host_private_key = "/root/.ssh/id_rsa"
+    host_public_key = host_private_key + ".pub"
+    if not os.path.isfile(host_private_key) or not os.path.isfile(host_public_key):
+      cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
+    else:
+      shutil.copy(host_private_key, private_key)
+      shutil.copy(host_public_key, public_key)
     os.chmod(public_key, 0600)
     os.chmod(private_key, 0600)
     shutil.copy(private_key, private_key + ".key")

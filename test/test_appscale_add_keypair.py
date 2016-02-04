@@ -130,6 +130,11 @@ appengine:  public3
     os.path.should_receive('exists').with_args(public_key).and_return(False)
     os.path.should_receive('exists').with_args(private_key).and_return(False)
 
+    # assume that existing RSA key remains unharmed
+    flexmock(os.path)
+    os.path.should_receive('isfile').with_args('/root/.ssh/id_rsa') \
+      .and_return(False)
+
     # next, assume that ssh-keygen ran fine
     flexmock(subprocess)
     subprocess.should_receive('Popen').with_args(re.compile('ssh-keygen'),
