@@ -38,11 +38,6 @@ class UserAppClient():
   ADMIN_CAPABILITIES = ":".join(["upload_app"])
 
 
-  # A regular expression that indicates how many load balancers provide access
-  # for an application.
-  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
-
-
   # The initial amount of time we should sleep when waiting for UserAppServer
   # metadata to change state.
   STARTING_SLEEP_TIME = 1
@@ -179,18 +174,11 @@ class UserAppClient():
     Returns:
       True if the app does exist, False otherwise.
     """
-    app_data = self.server.get_app_data(appname, self.secret)
+    result = self.server.does_app_exist(appname, self.secret)
+    if result == 'true':
+      return True
 
-    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
-    if search_data:
-      num_ports = int(search_data.group(1))
-      if num_ports > 0:
-        return True
-      else:
-        return False
-    else:
-      return False
+    return False
 
 
   def get_app_admin(self, app_id):
@@ -203,13 +191,12 @@ class UserAppClient():
         if there is none.
     """
     app_data = self.server.get_app_data(app_id, self.secret)
+    result = json.loads(app_data)
+    app_owner = result['owner']
+    if app_owner:
+      return app_owner
 
-    self.NUM_OF_PORTS_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
-    if search_data:
-      return search_data.group(1)
-    else:
-      return None
+    return None
 
 
   def change_password(self, username, password):
