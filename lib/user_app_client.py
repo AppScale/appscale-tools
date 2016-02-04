@@ -3,6 +3,7 @@
 
 
 # General-purpose Python libraries
+import json
 import re
 import time
 import ssl
@@ -191,6 +192,9 @@ class UserAppClient():
         if there is none.
     """
     app_data = self.server.get_app_data(app_id, self.secret)
+    if "Error:" in app_data:
+      return None
+
     result = json.loads(app_data)
     app_owner = result['owner']
     if app_owner:
@@ -261,6 +265,13 @@ class UserAppClient():
         raise AppScaleException("App took too long to upload")
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
+    if "Error:" in app_data:
+      raise AppScaleException("Cannot find application data")
+
+    result = json.loads(app_data)
     host = LocalState.get_login_host(keyname)
-    port = int(re.search(".*\sports: (\d+)[\s|:]", app_data).group(1))
+    port = 0
+    if len(result['hosts']) > 0:
+      port = int(result['hosts'].values()[0]['http'])
+
     return host, port
