@@ -157,12 +157,6 @@ class AppScaleTools(object):
         LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
           options.verbose)
 
-      # next, copy over the ssh keypair we generate
-      RemoteHelper.scp(ip, options.keyname, public_key, '/root/.ssh/id_rsa.pub',
-        options.verbose)
-      RemoteHelper.scp(ip, options.keyname, private_key, '/root/.ssh/id_rsa',
-        options.verbose)
-
     AppScaleLogger.success("Generated a new SSH key for this deployment " + \
       "at {0}".format(private_key))
 

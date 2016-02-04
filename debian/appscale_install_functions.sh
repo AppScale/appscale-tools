@@ -64,8 +64,3 @@ export PATH=\${PATH}:\${TOOLS_PATH}/bin
 EOF
 }
 
-keygen()
-{
-    # create ssh private key if it does not exist
-    test -e /root/.ssh/id_rsa || ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -N ""
-}
