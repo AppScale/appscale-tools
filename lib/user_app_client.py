@@ -44,11 +44,6 @@ class UserAppClient():
   STARTING_SLEEP_TIME = 1
 
 
-  # A regular expression that indicates how many load balancers provide access
-  # for an application.
-  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
-
-
   # The maximum amount of time we should sleep when waiting for UserAppServer
   # metadata to change state.
   MAX_SLEEP_TIME = 30
@@ -182,18 +177,14 @@ class UserAppClient():
       True if the app does exist, False otherwise.
     """
     app_data = self.server.get_app_data(appname, self.secret)
-
-    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
-    if search_data:
-      num_ports = int(search_data.group(1))
-      if num_ports > 0:
-        return True
-      else:
-        return False
-    else:
+    if "Error:" in app_data:
       return False
 
+    result = json.loads(app_data)
+    if len(result['hosts']) > 0:
+      return True
+
+    return False
 
 
   def get_app_admin(self, app_id):
