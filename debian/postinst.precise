@@ -8,7 +8,6 @@ DESTDIR=
 case "$1" in
     configure)
 	postinstallappscaletools
-	keygen
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 	;;

@@ -7,4 +7,3 @@ DIST=precise
 
 installappscaletools
 installpylibs
-keygen
