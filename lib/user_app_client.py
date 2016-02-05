@@ -44,6 +44,11 @@ class UserAppClient():
   STARTING_SLEEP_TIME = 1
 
 
+  # A regular expression that indicates how many load balancers provide access
+  # for an application.
+  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+
+
   # The maximum amount of time we should sleep when waiting for UserAppServer
   # metadata to change state.
   MAX_SLEEP_TIME = 30
@@ -168,18 +173,27 @@ class UserAppClient():
  
 
   def does_app_exist(self, appname):
-    """Queries the UserAppServer to see if the named application exists.
+    """Queries the UserAppServer to see if the named application exists,
+    and it is listening to any port.
 
     Args:
       appname: The name of the app that we should check for existence.
     Returns:
       True if the app does exist, False otherwise.
     """
-    result = self.server.does_app_exist(appname, self.secret)
-    if result == 'true':
-      return True
+    app_data = self.server.get_app_data(appname, self.secret)
 
-    return False
+    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
+    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
+    if search_data:
+      num_ports = int(search_data.group(1))
+      if num_ports > 0:
+        return True
+      else:
+        return False
+    else:
+      return False
+
 
 
   def get_app_admin(self, app_id):
@@ -263,6 +277,7 @@ class UserAppClient():
         total_wait_time += sleep_time
       if total_wait_time > self.MAX_WAIT_TIME:
         raise AppScaleException("App took too long to upload")
+
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
     if "Error:" in app_data:
