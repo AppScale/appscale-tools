@@ -7,4 +7,3 @@ DIST=wheezy
 
 installappscaletools
 installpylibs
-keygen
