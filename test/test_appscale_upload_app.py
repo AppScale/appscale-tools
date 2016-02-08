@@ -346,12 +346,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
-    app_data = """
-    num_hosts:1
-    num_ports:1
-    hosts:public1
-    ports: 8080
-    """
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
 
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
@@ -363,7 +359,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(app_data)
+      'baz', 'the secret').and_return(json.dumps(app_data))
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -467,6 +463,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
+    app_data = { 'owner' : 'b@b.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('false')
@@ -477,7 +476,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return('\n\nnum_ports:0\n\napp_owner:b@b.com')
+      'baz', 'the secret').and_return(json.dumps(app_data))
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -552,12 +551,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
-    app_data = """
-    num_hosts:1
-    num_ports:1
-    hosts:public1
-    ports: 8080
-    """
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
 
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
@@ -569,7 +564,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(app_data)
+      'baz', 'the secret').and_return(json.dumps(app_data))
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
@@ -675,12 +670,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
-    app_data = """
-    num_hosts:1
-    num_ports:1
-    hosts:public1
-    ports: 8080
-    """
+    app_data_no_ports = { 'owner' : 'a@a.com', 'hosts' : { }}
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
 
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
@@ -692,8 +684,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return('\n\nnum_ports:0\n') \
-      .and_return(app_data).and_return(app_data).and_return(app_data)
+      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
+      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
+      .and_return(json.dumps(app_data))
     fake_userappserver.should_receive('commit_new_app').with_args(
       'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
@@ -817,12 +810,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
-    app_data = """
-    num_hosts:1
-    num_ports:1
-    hosts:public1
-    ports: 8080
-    """
+    app_data_no_ports = { 'owner' : 'a@a.com', 'hosts' : { }}
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
 
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
@@ -834,8 +824,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return('\n\nnum_ports:0\n') \
-      .and_return(app_data).and_return(app_data).and_return(app_data)
+      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
+      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
+      .and_return(json.dumps(app_data))
     fake_userappserver.should_receive('commit_new_app').with_args(
       'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
@@ -959,12 +950,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     # mock out calls to the UserAppServer and presume that calls to create new
     # users succeed
-    app_data = """
-    num_hosts:1
-    num_ports:1
-    hosts:public1
-    ports: 8080
-    """
+    app_data_no_ports = { 'owner' : 'b@b.com', 'hosts' : { }}
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
 
     fake_userappserver = flexmock(name='fake_userappserver')
     fake_userappserver.should_receive('does_user_exist').with_args(
@@ -976,8 +964,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_userappserver.should_receive('commit_new_user').with_args(
       'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
     fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return('\n\nnum_ports:0\n') \
-      .and_return(app_data).and_return(app_data).and_return(app_data)
+      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
+      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
+      .and_return(json.dumps(app_data))
     fake_userappserver.should_receive('commit_new_app').with_args(
       'baz', 'a@a.com', 'php', 'the secret').and_return('true')
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
