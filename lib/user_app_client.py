@@ -3,6 +3,7 @@
 
 
 # General-purpose Python libraries
+import json
 import re
 import time
 import ssl
@@ -36,11 +37,6 @@ class UserAppClient():
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = ":".join(["upload_app"])
-
-
-  # A regular expression that indicates how many load balancers provide access
-  # for an application.
-  NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
 
 
   # The initial amount of time we should sleep when waiting for UserAppServer
@@ -172,7 +168,8 @@ class UserAppClient():
  
 
   def does_app_exist(self, appname):
-    """Queries the UserAppServer to see if the named application exists.
+    """Queries the UserAppServer to see if the named application exists,
+    and it is listening to any port.
 
     Args:
       appname: The name of the app that we should check for existence.
@@ -180,17 +177,14 @@ class UserAppClient():
       True if the app does exist, False otherwise.
     """
     app_data = self.server.get_app_data(appname, self.secret)
-
-    self.NUM_OF_PORTS_REGEX = re.compile(".*num_ports:(\d+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
-    if search_data:
-      num_ports = int(search_data.group(1))
-      if num_ports > 0:
-        return True
-      else:
-        return False
-    else:
+    if "Error:" in app_data:
       return False
+
+    result = json.loads(app_data)
+    if len(result['hosts']) > 0:
+      return True
+
+    return False
 
 
   def get_app_admin(self, app_id):
@@ -203,13 +197,15 @@ class UserAppClient():
         if there is none.
     """
     app_data = self.server.get_app_data(app_id, self.secret)
-
-    self.NUM_OF_PORTS_REGEX = re.compile(".*app_owner:([\w|\d@\.]+)")
-    search_data = self.NUM_OF_PORTS_REGEX.search(app_data)
-    if search_data:
-      return search_data.group(1)
-    else:
+    if "Error:" in app_data:
       return None
+
+    result = json.loads(app_data)
+    app_owner = result['owner']
+    if app_owner:
+      return app_owner
+
+    return None
 
 
   def change_password(self, username, password):
@@ -272,8 +268,16 @@ class UserAppClient():
         total_wait_time += sleep_time
       if total_wait_time > self.MAX_WAIT_TIME:
         raise AppScaleException("App took too long to upload")
+
     # next, get the serving host and port
     app_data = self.server.get_app_data(app_id, self.secret)
+    if "Error:" in app_data:
+      raise AppScaleException("Cannot find application data")
+
+    result = json.loads(app_data)
     host = LocalState.get_login_host(keyname)
-    port = int(re.search(".*\sports: (\d+)[\s|:]", app_data).group(1))
+    port = 0
+    if len(result['hosts']) > 0:
+      port = int(result['hosts'].values()[0]['http'])
+
     return host, port
