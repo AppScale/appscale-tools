@@ -156,7 +156,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     fake_userappserver = flexmock(name='fake_uaserver')
     fake_userappserver.should_receive('get_app_data').with_args(
       'blargapp', 'the secret').and_return(json.dumps({
-        'hosts' : {{ '192.168.1.1' : { 'http' : '80', 'https' : '443' }}}})
+        'hosts' : {{ '192.168.1.1' : { 'http' : '80', 'https' : '443' }}}}))
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
       .and_return(fake_userappserver)
 
