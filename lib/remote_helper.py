@@ -959,8 +959,7 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the stop commands we
         exec to stdout.
     """
-    stop_command = 'service appscale-controller stop ; '\
-      'ruby /root/appscale/AppController/terminate.rb'
+    stop_command = 'service appscale-controller stop'
     cls.ssh(host, keyname, stop_command, is_verbose)
     time.sleep(5)
     cls.ssh(host, keyname, stop_command, is_verbose)
