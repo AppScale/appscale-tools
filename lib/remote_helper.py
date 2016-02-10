@@ -78,6 +78,10 @@ class RemoteHelper(object):
   PERSISTENT_MOUNT_POINT = "/opt/appscale"
 
 
+  # Where AppScale keeps local deployment information and configuration.
+  APPSCALE_CONFIG_DIR = "/etc/appscale"
+
+
   # The location on AppScale VMs where Google App Engine applications should be
   # uploaded to.
   REMOTE_APP_DIR = "{0}/apps".format(PERSISTENT_MOUNT_POINT)
@@ -473,14 +477,14 @@ class RemoteHelper(object):
         correct database installed.
     """
     # first, make sure the image is an appscale image
-    if not cls.does_host_have_location(host, keyname, '/etc/appscale',
-      is_verbose):
+    if not cls.does_host_have_location(host, keyname,
+        cls.APPSCALE_CONFIG_DIR, is_verbose):
       raise AppScaleException("The machine at {0} does not have " \
         "AppScale installed.".format(host))
 
     # next, make sure it has the same version of appscale installed as the tools
     if not cls.does_host_have_location(host, keyname,
-      '/etc/appscale/{0}'.format(APPSCALE_VERSION), is_verbose):
+      '{0}/{1}'.format(cls.APPSCALE_CONFIG_DIR, APPSCALE_VERSION), is_verbose):
       host_version = cls.get_host_appscale_version(host, keyname, is_verbose)
       if host_version:
         raise AppScaleException("The machine at {0} has AppScale {1} installed,"
@@ -494,7 +498,8 @@ class RemoteHelper(object):
 
     # finally, make sure it has the database installed that the user requests
     if not cls.does_host_have_location(host, keyname,
-      '/etc/appscale/{0}/{1}'.format(APPSCALE_VERSION, database), is_verbose):
+        '{0}/{1}/{2}'.format(cls.APPSCALE_CONFIG_DIR, APPSCALE_VERSION, database),
+        is_verbose):
       raise AppScaleException("The machine at {0} does not have support for"  \
         " {1} installed.".format(host, database))
 
@@ -542,8 +547,8 @@ class RemoteHelper(object):
       version of AppScale installed.
     """
     try:
-      etc_appscale_files = cls.ssh(host, keyname, 'ls /etc/appscale',
-        is_verbose)
+      etc_appscale_files = cls.ssh(host, keyname,
+        'ls {0}'.format(cls.APPSCALE_CONFIG_DIR), is_verbose)
 
       # If the user doesn't have an /etc/appscale directory, then the ls command
       # will be empty, so catch that special case here.
@@ -604,34 +609,41 @@ class RemoteHelper(object):
         or not we are running in a cloud infrastructure.
     """
     cls.scp(host, options.keyname, LocalState.get_secret_key_location(
-      options.keyname), '/etc/appscale/secret.key', options.verbose)
+      options.keyname), '{0}/secret.key'.format(cls.APPSCALE_CONFIG_DIR),
+      options.verbose)
     cls.scp(host, options.keyname, LocalState.get_key_path_from_name(
-      options.keyname), '/etc/appscale/ssh.key', options.verbose)
+      options.keyname), '{0}/ssh.key'.format(cls.APPSCALE_CONFIG_DIR),
+      options.verbose)
 
     LocalState.generate_ssl_cert(options.keyname, options.verbose)
     cls.scp(host, options.keyname, LocalState.get_certificate_location(
-      options.keyname), '/etc/appscale/certs/mycert.pem', options.verbose)
+      options.keyname), '{0}/certs/mycert.pem'.format(cls.APPSCALE_CONFIG_DIR),
+      options.verbose)
     cls.scp(host, options.keyname, LocalState.get_private_key_location(
-      options.keyname), '/etc/appscale/certs/mykey.pem', options.verbose)
+      options.keyname), '{0}/certs/mykey.pem'.format(cls.APPSCALE_CONFIG_DIR),
+      options.verbose)
 
     hash_id = subprocess.Popen(["openssl", "x509", "-hash", "-noout", "-in",
       LocalState.get_certificate_location(options.keyname)],
       stdout=subprocess.PIPE).communicate()[0]
     cls.ssh(host, options.keyname,
-      'ln -fs /etc/appscale/certs/mycert.pem /etc/ssl/certs/{0}.0'.\
-        format(hash_id.rstrip()),
+      'ln -fs {0}/certs/mycert.pem /etc/ssl/certs/{1}.0'.\
+        format(cls.APPSCALE_CONFIG_DIR, hash_id.rstrip()),
       options.verbose)
 
     AppScaleLogger.log("Copying over deployment credentials")
     cert = LocalState.get_certificate_location(options.keyname)
     private_key = LocalState.get_private_key_location(options.keyname)
 
-    cls.ssh(host, options.keyname, 'mkdir -p /etc/appscale/keys/cloud1',
+    cls.ssh(host, options.keyname,
+      'mkdir -p {0}/keys/cloud1'.format(cls.APPSCALE_CONFIG_DIR),
       options.verbose)
-    cls.scp(host, options.keyname, cert, "/etc/appscale/keys/cloud1/mycert.pem",
+    cls.scp(host, options.keyname, cert,
+      "{0}/keys/cloud1/mycert.pem".format(cls.APPSCALE_CONFIG_DIR),
       options.verbose)
     cls.scp(host, options.keyname, private_key,
-      "/etc/appscale/keys/cloud1/mykey.pem", options.verbose)
+      "{0}/keys/cloud1/mykey.pem".format(cls.APPSCALE_CONFIG_DIR),
+      options.verbose)
 
     # In Google Compute Engine, we also need to copy over our client_secrets
     # file and the OAuth2 file that the user has approved for use with their
@@ -641,10 +653,11 @@ class RemoteHelper(object):
       if os.path.exists(LocalState.get_client_secrets_location( \
           options.keyname)):
         cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
-          options.keyname), '/etc/appscale/client_secrets.json',
+          options.keyname), '{0}/client_secrets.json'.format(cls.APPSCALE_CONFIG_DIR),
           options.verbose)
       cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
-        options.keyname), '/etc/appscale/oauth2.dat', options.verbose)
+        options.keyname), '{0}/oauth2.dat'.format(cls.APPSCALE_CONFIG_DIR),
+        options.verbose)
 
 
   @classmethod
@@ -681,31 +694,19 @@ class RemoteHelper(object):
     """
     AppScaleLogger.log("Starting AppController at {0}".format(host))
 
-    # remove any possible appcontroller state that may not have been
-    # properly removed in virtualized clusters
-    cls.ssh(host, keyname, 'rm -rf /etc/appscale/appcontroller-state.json',
-      is_verbose)
+    # Remove any possible appcontroller state that may not have been
+    # properly removed, so the local state and the zookeeler locations
+    # need to go.
+    old_state = "rm -rf {0}/{1} {0}/{2}".format(cls.APPSCALE_CONFIG_DIR,
+      "appcontroller-state.json", "zookeeper_locations.json")
+    cls.ssh(host, keyname, old_state, is_verbose)
 
-    # Remove any monit configuration files from previous AppScale deployments.
-    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
-
-    # Copy over the config file that indicates how the AppController should be
-    # started up.
-    cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
-      '/etc/monit/conf.d/appscale-controller-17443.cfg', is_verbose)
-
-    # Start up monit.
-    cls.ssh(host, keyname, 'monit quit; ', is_verbose)
-    cls.ssh(host, keyname, 'service monit start', is_verbose)
-    time.sleep(1)
-
-    # Start the AppController.
-    cls.ssh(host, keyname, 'monit start -g controller', is_verbose)
-    time.sleep(1)
-
+    # The init script is all we need to get started.
+    cls.ssh(host, keyname, 'service appscale-controller start', is_verbose)
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
 
+    # Now we wait till the AppController is ready.
     cls.sleep_until_port_is_open(host, AppControllerClient.PORT, is_verbose)
 
 
@@ -723,9 +724,11 @@ class RemoteHelper(object):
     """
     # copy the metadata files for AppScale itself to use
     cls.scp(host, keyname, LocalState.get_locations_yaml_location(keyname),
-      '/etc/appscale/locations-{0}.yaml'.format(keyname), is_verbose)
+      '{0}/locations-{1}.yaml'.format(cls.APPSCALE_CONFIG_DIR, keyname),
+      is_verbose)
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
-      '/etc/appscale/locations-{0}.json'.format(keyname), is_verbose)
+      '{0}/locations-{1}.json'.format(cls.APPSCALE_CONFIG_DIR, keyname),
+      is_verbose)
 
     # and copy the json file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),

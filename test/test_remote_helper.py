@@ -458,6 +458,8 @@ class TestRemoteHelper(unittest.TestCase):
 
     local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
+    local_state.should_receive('shell').with_args("ssh -F /dev/null -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 bash", False, 5, stdin="service appscale-controller start")
+
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 
 
