@@ -202,21 +202,20 @@ group: {1}
 
 
   def setup_appscale_compatibility_mocks(self):
-    # mock out seeing if the image is appscale-compatible, and assume it is
-    # mock out our attempts to find /etc/appscale and presume it does exist
+    # Assume the config directory exists.
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale')).and_return()
+      False, 5, stdin=re.compile(RemoteHelper.CONFIG_DIR)).and_return()
 
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
+    # Assume the verion file exists.
+    version_file = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}'
-      .format(APPSCALE_VERSION)))
+      False, 5, stdin=re.compile(version_file))
 
-    # put in a mock indicating that the database the user wants is supported
+    # Assume we are using a supported database.
+    db_file = '{}/{}/{}'.\
+      format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION, 'cassandra')
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('/etc/appscale/{0}/{1}'
-      .format(APPSCALE_VERSION, 'cassandra')))
+      False, 5, stdin=re.compile(db_file))
 
 
   def setup_appcontroller_mocks(self, public_ip, private_ip):
@@ -370,25 +369,27 @@ group: {1}
         "jobs" : ["shadow", "login"]
       }])))
 
-    # copying over the locations yaml and json files should be fine
+    # Assume the locations files were copied successfully.
+    locations_file = '{}/locations-bookey.yaml'.\
+      format(RemoteHelper.CONFIG_DIR)
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.yaml'),\
-        False,5)\
+      .with_args(re.compile('^scp .*{}'.format(locations_file)), False, 5)\
       .and_return()
 
+    locations_json = '{}/locations-bookey.json'.\
+      format(RemoteHelper.CONFIG_DIR)
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/etc/appscale/locations-bookey.json'),\
-        False,5)\
+      .with_args(re.compile('^scp .*{}'.format(locations_json)), False, 5)\
       .and_return()
 
+    user_locations = '/root/.appscale/locations-bookey.json'
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*/root/.appscale/locations-bookey.json'),\
-        False,5)\
+      .with_args(re.compile('^scp .*{}'.format(user_locations)), False, 5)\
       .and_return()
 
-    # same for the secret key
+    # Assume the secret key was copied successfully.
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*.secret'),False,5)\
+      .with_args(re.compile('^scp .*.secret'), False, 5)\
       .and_return()
 
 

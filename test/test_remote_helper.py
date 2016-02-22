@@ -185,7 +185,6 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_start_head_node_in_cloud_but_ami_not_appscale(self):
-    # Mock out our attempts to find /etc/appscale and presume it doesn't exist.
     local_state = flexmock(LocalState)
 
     # Mock out our attempts to enable the root login.
@@ -224,10 +223,10 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,\
-        stdin=re.compile('ls /etc/appscale'))\
-      .and_raise(ShellException).ordered()
+    local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5,
+      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
+    ).and_raise(ShellException).ordered()
 
     # Check that the cleanup routine is called on error.
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -275,18 +274,17 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale')) \
-      .and_return()
+    # Assume configuration directory exists.
+    local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5,
+      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
+    ).and_return()
 
-    # mock out our attempts to find /etc/appscale/version and presume it doesn't
-    # exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION)))\
-      .and_raise(ShellException)
+    # Assume the version file does not exist.
+    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
+    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
+      5, stdin=re.compile('ls {}'.format(version_dir))).\
+      and_raise(ShellException)
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -335,26 +333,24 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    # mock out our attempts to find /etc/appscale and presume it does exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale')) \
-      .and_return().ordered()
+    # Assume the configuration directory exists.
+    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
+      5, stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))).\
+      and_return().ordered()
 
-    # mock out our attempts to find /etc/appscale/version and presume it does
-    # exist
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}'.format(APPSCALE_VERSION))) \
-      .and_return().ordered()
+    # Assume the version directory exists.
+    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
+    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
+      5, stdin=re.compile('ls {}'.format(version_dir))).\
+      and_return().ordered()
 
-    # finally, put in a mock indicating that the database the user wants
-    # isn't supported
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('ls /etc/appscale/{0}/{1}'
-          .format(APPSCALE_VERSION, 'cassandra'))) \
-      .and_raise(ShellException).ordered()
+    # Assume the given database is not supported.
+    db_file = '{}/{}/{}'.\
+      format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION, 'cassandra')
+    local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5,
+      stdin=re.compile('ls {}'.format(db_file))
+    ).and_raise(ShellException).ordered()
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -468,18 +464,22 @@ class TestRemoteHelper(unittest.TestCase):
 
 
   def test_copy_local_metadata(self):
-    # mock out the copying of the two files
+    # Assume the locations files were copied successfully.
     local_state = flexmock(LocalState)
+    locations_yaml = '{}/locations-bookey.yaml'.\
+      format(RemoteHelper.CONFIG_DIR)
     local_state.should_receive('shell').with_args(
-      re.compile('^scp .*/etc/appscale/locations-bookey.yaml'), False, 5)
+      re.compile('^scp .*{}'.format(locations_yaml)), False, 5)
 
+    locations_json = '{}/locations-bookey.json'.\
+      format(RemoteHelper.CONFIG_DIR)
     local_state.should_receive('shell').with_args(
-      re.compile('^scp .*/etc/appscale/locations-bookey.json'), False, 5)
+      re.compile('^scp .*{}'.format(locations_json)), False, 5)
 
     local_state.should_receive('shell').with_args(
       re.compile('^scp .*/root/.appscale/locations-bookey.json'), False, 5)
-	
-    # and mock out copying the secret file
+
+    # Assume the secret file was copied successfully.
     local_state.should_receive('shell').with_args(
       re.compile('^scp .*bookey.secret'), False, 5)
 
