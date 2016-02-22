@@ -24,6 +24,8 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.euca_agent import EucalyptusAgent
+from agents.gce_agent import CredentialTypes
+from agents.gce_agent import GCEAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -410,6 +412,10 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(AppScaleLogger).should_receive('log').and_return()
 
     RemoteHelper.copy_deployment_credentials('public1', options)
+
+    flexmock(GCEAgent).should_receive('get_secrets_type').\
+      and_return(CredentialTypes.OAUTH)
+    flexmock(os.path).should_receive('exists').and_return(True)
 
     options = flexmock(
       keyname='key1',

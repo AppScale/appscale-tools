@@ -23,6 +23,8 @@ from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
+from agents.gce_agent import CredentialTypes
+from agents.gce_agent import GCEAgent
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from user_app_client import UserAppClient
@@ -638,14 +640,15 @@ class RemoteHelper(object):
     # credentials, otherwise the AppScale VMs won't be able to interact with
     # GCE.
     if options.infrastructure and options.infrastructure == 'gce':
-      if os.path.exists(LocalState.get_client_secrets_location( \
-          options.keyname)):
-        cls.scp(host, options.keyname, LocalState.get_client_secrets_location(
-          options.keyname), '/etc/appscale/client_secrets.json',
-          options.verbose)
-      cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
-        options.keyname), '/etc/appscale/oauth2.dat', options.verbose)
-
+      secrets_location = LocalState.get_client_secrets_location(options.keyname)
+      if not os.path.exists(secrets_location):
+        raise AppScaleException('{} does not exist.'.format(secrets_location))
+      secrets_type = GCEAgent.get_secrets_type(secrets_location)
+      cls.scp(host, options.keyname, secrets_location,
+        '/etc/appscale/client_secrets.json', options.verbose)
+      if secrets_type == CredentialTypes.OAUTH:
+        cls.scp(host, options.keyname, LocalState.get_oauth2_storage_location(
+          options.keyname), '/etc/appscale/oauth2.dat', options.verbose)
 
   @classmethod
   def run_user_commands(cls, host, commands, keyname, is_verbose):

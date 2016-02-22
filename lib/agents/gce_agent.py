@@ -24,6 +24,7 @@ from apiclient import errors
 import httplib2
 import oauth2client.client
 import oauth2client.file
+from oauth2client.service_account import ServiceAccountCredentials
 import oauth2client.tools
 
 
@@ -39,6 +40,12 @@ except ImportError:
   # If the module is not installed, the lib directory might be on the path.
   from appscale_logger import AppScaleLogger
   from local_state import LocalState
+
+
+class CredentialTypes(object):
+  """ A class containing the supported credential types. """
+  SERVICE = 'service_account'
+  OAUTH = 'oauth_client'
 
 
 class GCEAgent(BaseAgent):
@@ -1063,6 +1070,24 @@ class GCEAgent(BaseAgent):
     self.delete_firewall(parameters)
     self.delete_network(parameters)
 
+  @staticmethod
+  def get_secrets_type(secrets_location):
+    """ Determines whether the secrets file is for a service account or OAuth.
+
+    Args:
+      secrets_location: A string that contains the location of the JSON
+        credentials file downloaded from GCP.
+    Returns:
+      A string containing the type of credentials to use.
+    """
+    with open(secrets_location) as secrets_file:
+      secrets_json = secrets_file.read()
+    secrets = json.loads(secrets_json)
+    if 'type' in secrets and secrets['type'] == CredentialTypes.SERVICE:
+      return CredentialTypes.SERVICE
+    else:
+      return CredentialTypes.OAUTH
+
 
   def open_connection(self, parameters):
     """ Connects to Google Compute Engine with the given credentials.
@@ -1079,9 +1104,16 @@ class GCEAgent(BaseAgent):
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
-      flow = oauth2client.client.flow_from_clientsecrets(
-        os.path.expanduser(parameters[self.PARAM_SECRETS]), 
-        scope=self.GCE_SCOPE)
+      secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
+      secrets_type = GCEAgent.get_secrets_type(secrets_location)
+      if secrets_type == CredentialTypes.SERVICE:
+        scopes = ['https://www.googleapis.com/auth/compute']
+        credentials = ServiceAccountCredentials\
+          .from_json_keyfile_name(secrets_location, scopes=scopes)
+        return discovery.build('compute', self.API_VERSION), credentials
+      else:
+        flow = oauth2client.client.flow_from_clientsecrets(secrets_location,
+          scope=self.GCE_SCOPE)
 
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))

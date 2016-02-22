@@ -29,6 +29,7 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
+from agents.gce_agent import CredentialTypes
 from agents.gce_agent import GCEAgent
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
@@ -619,6 +620,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     flexmock(apiclient.discovery)
     apiclient.discovery.should_receive('build').with_args('compute',
       GCEAgent.API_VERSION).and_return(fake_gce)
+
+    flexmock(GCEAgent).should_receive('get_secrets_type')\
+      .and_return(CredentialTypes.OAUTH)
 
     # finally, mock out removing the yaml file, json file, and secret key from
     # this machine
