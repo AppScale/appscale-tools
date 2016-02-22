@@ -42,6 +42,11 @@ except ImportError:
   from local_state import LocalState
 
 
+class CredentialJSONKeys(object):
+  """ A class containing valid JSON keys in credential files. """
+  TYPE = 'type'
+
+
 class CredentialTypes(object):
   """ A class containing the supported credential types. """
   SERVICE = 'service_account'
@@ -1083,7 +1088,8 @@ class GCEAgent(BaseAgent):
     with open(secrets_location) as secrets_file:
       secrets_json = secrets_file.read()
     secrets = json.loads(secrets_json)
-    if 'type' in secrets and secrets['type'] == CredentialTypes.SERVICE:
+    if (CredentialJSONKeys.TYPE in secrets and
+        secrets[CredentialJSONKeys.TYPE] == CredentialTypes.SERVICE):
       return CredentialTypes.SERVICE
     else:
       return CredentialTypes.OAUTH
