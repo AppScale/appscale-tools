@@ -47,6 +47,11 @@ class CredentialJSONKeys(object):
   TYPE = 'type'
 
 
+class GCPScopes(object):
+  """ A class containing scopes for Google's Cloud Platform. """
+  COMPUTE = 'https://www.googleapis.com/auth/compute'
+
+
 class CredentialTypes(object):
   """ A class containing the supported credential types. """
   SERVICE = 'service_account'
@@ -1113,7 +1118,7 @@ class GCEAgent(BaseAgent):
       secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
       secrets_type = GCEAgent.get_secrets_type(secrets_location)
       if secrets_type == CredentialTypes.SERVICE:
-        scopes = ['https://www.googleapis.com/auth/compute']
+        scopes = [GCPScopes.COMPUTE]
         credentials = ServiceAccountCredentials\
           .from_json_keyfile_name(secrets_location, scopes=scopes)
         return discovery.build('compute', self.API_VERSION), credentials
