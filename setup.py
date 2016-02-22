@@ -26,8 +26,9 @@ setup(
     'SOAPpy',
     'PyYAML',
     'boto',
-    'google-api-python-client',
-    'argparse'
+    'google-api-python-client>=1.5.0',
+    'argparse',
+    'oauth2client>=2.0.0',
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
