@@ -6,7 +6,6 @@ interact with Google Compute Engine.
 """
 
 # General-purpose Python library imports
-import argparse
 import datetime
 import json
 import os.path
