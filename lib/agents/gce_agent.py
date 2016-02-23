@@ -35,10 +35,12 @@ from base_agent import BaseAgent
 
 try:
   from appscale.appscale_logger import AppScaleLogger
+  from appscale.custom_exceptions import AppScaleException
   from appscale.local_state import LocalState
 except ImportError:
   # If the module is not installed, the lib directory might be on the path.
   from appscale_logger import AppScaleLogger
+  from custom_exceptions import AppScaleException
   from local_state import LocalState
 
 
@@ -1111,6 +1113,8 @@ class GCEAgent(BaseAgent):
       An apiclient.discovery.Resource that is a connection valid for requests
       to Google Compute Engine for the given user, and a Credentials object that
       can be used to sign requests performed with that connection.
+    Raises:
+      AppScaleException if the user wants to abort.
     """
     # Perform OAuth 2.0 authorization.
     flow = None
@@ -1118,6 +1122,11 @@ class GCEAgent(BaseAgent):
       secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
       secrets_type = GCEAgent.get_secrets_type(secrets_location)
       if secrets_type == CredentialTypes.SERVICE:
+        response = raw_input('It looks like you are using service account '
+          'credentials, which are not currently supported for cloud '
+          'autoscaling.\nWould you like to continue? (y/N)')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException('User cancelled starting AppScale.')
         scopes = [GCPScopes.COMPUTE]
         credentials = ServiceAccountCredentials\
           .from_json_keyfile_name(secrets_location, scopes=scopes)
