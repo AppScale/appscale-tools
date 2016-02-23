@@ -1,13 +1,16 @@
-from lib import version_helper
-from setuptools import setup
 import glob
+import os
+from setuptools import setup
+
+from lib import version_helper
 
 version_helper.ensure_valid_python_is_used()
 
 
 def readme():
   """Return the contents of the readme file."""
-  with open('README.md') as readme_file:
+  readme_rst = '{}/README.rst'.format(os.path.dirname(__file__))
+  with open(readme_rst) as readme_file:
     return readme_file.read()
 
 setup(
