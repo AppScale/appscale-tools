@@ -116,6 +116,9 @@ class GCEAgent(BaseAgent):
   PARAM_STORAGE = 'oauth2_storage'
 
 
+  PARAM_TEST = 'test'
+
+
   PARAM_VERBOSE = 'is_verbose'
 
 
@@ -543,7 +546,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
-      self.PARAM_ZONE : args['zone']
+      self.PARAM_ZONE : args['zone'],
+      self.PARAM_TEST: args['test'],
     }
 
     # A zone in GCE looks like 'us-central2-a', which is in the region
@@ -625,7 +629,8 @@ class GCEAgent(BaseAgent):
     # TODO: Remove this warning once service accounts have been fully tested.
     secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
     secrets_type = GCEAgent.get_secrets_type(secrets_location)
-    if secrets_type == CredentialTypes.SERVICE:
+    if (secrets_type == CredentialTypes.SERVICE and
+        not parameters[self.PARAM_TEST]):
       response = raw_input('It looks like you are using service account '
         'credentials, which are not currently supported for cloud '
         'autoscaling.\nWould you like to continue? (y/N)')
