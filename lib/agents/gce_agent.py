@@ -6,7 +6,6 @@ interact with Google Compute Engine.
 """
 
 # General-purpose Python library imports
-import argparse
 import datetime
 import json
 import os.path
@@ -25,6 +24,7 @@ from apiclient import errors
 import httplib2
 import oauth2client.client
 import oauth2client.file
+from oauth2client.service_account import ServiceAccountCredentials
 import oauth2client.tools
 
 
@@ -35,11 +35,29 @@ from base_agent import BaseAgent
 
 try:
   from appscale.appscale_logger import AppScaleLogger
+  from appscale.custom_exceptions import AppScaleException
   from appscale.local_state import LocalState
 except ImportError:
   # If the module is not installed, the lib directory might be on the path.
   from appscale_logger import AppScaleLogger
+  from custom_exceptions import AppScaleException
   from local_state import LocalState
+
+
+class CredentialJSONKeys(object):
+  """ A class containing valid JSON keys in credential files. """
+  TYPE = 'type'
+
+
+class GCPScopes(object):
+  """ A class containing scopes for Google's Cloud Platform. """
+  COMPUTE = 'https://www.googleapis.com/auth/compute'
+
+
+class CredentialTypes(object):
+  """ A class containing the supported credential types. """
+  SERVICE = 'service_account'
+  OAUTH = 'oauth_client'
 
 
 class GCEAgent(BaseAgent):
@@ -1064,6 +1082,25 @@ class GCEAgent(BaseAgent):
     self.delete_firewall(parameters)
     self.delete_network(parameters)
 
+  @staticmethod
+  def get_secrets_type(secrets_location):
+    """ Determines whether the secrets file is for a service account or OAuth.
+
+    Args:
+      secrets_location: A string that contains the location of the JSON
+        credentials file downloaded from GCP.
+    Returns:
+      A string containing the type of credentials to use.
+    """
+    with open(secrets_location) as secrets_file:
+      secrets_json = secrets_file.read()
+    secrets = json.loads(secrets_json)
+    if (CredentialJSONKeys.TYPE in secrets and
+        secrets[CredentialJSONKeys.TYPE] == CredentialTypes.SERVICE):
+      return CredentialTypes.SERVICE
+    else:
+      return CredentialTypes.OAUTH
+
 
   def open_connection(self, parameters):
     """ Connects to Google Compute Engine with the given credentials.
@@ -1076,13 +1113,27 @@ class GCEAgent(BaseAgent):
       An apiclient.discovery.Resource that is a connection valid for requests
       to Google Compute Engine for the given user, and a Credentials object that
       can be used to sign requests performed with that connection.
+    Raises:
+      AppScaleException if the user wants to abort.
     """
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
-      flow = oauth2client.client.flow_from_clientsecrets(
-        os.path.expanduser(parameters[self.PARAM_SECRETS]), 
-        scope=self.GCE_SCOPE)
+      secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
+      secrets_type = GCEAgent.get_secrets_type(secrets_location)
+      if secrets_type == CredentialTypes.SERVICE:
+        response = raw_input('It looks like you are using service account '
+          'credentials, which are not currently supported for cloud '
+          'autoscaling.\nWould you like to continue? (y/N)')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException('User cancelled starting AppScale.')
+        scopes = [GCPScopes.COMPUTE]
+        credentials = ServiceAccountCredentials\
+          .from_json_keyfile_name(secrets_location, scopes=scopes)
+        return discovery.build('compute', self.API_VERSION), credentials
+      else:
+        flow = oauth2client.client.flow_from_clientsecrets(secrets_location,
+          scope=self.GCE_SCOPE)
 
     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
       parameters[self.PARAM_KEYNAME]))
