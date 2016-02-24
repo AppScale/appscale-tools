@@ -35,12 +35,10 @@ from base_agent import BaseAgent
 
 try:
   from appscale.appscale_logger import AppScaleLogger
-  from appscale.custom_exceptions import AppScaleException
   from appscale.local_state import LocalState
 except ImportError:
   # If the module is not installed, the lib directory might be on the path.
   from appscale_logger import AppScaleLogger
-  from custom_exceptions import AppScaleException
   from local_state import LocalState
 
 
@@ -624,6 +622,16 @@ class GCEAgent(BaseAgent):
       raise AgentConfigurationException('Could not find your credentials ' \
         'file at {0}'.format(credentials_file))
 
+    # TODO: Remove this warning once service accounts have been fully tested.
+    secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
+    secrets_type = GCEAgent.get_secrets_type(secrets_location)
+    if secrets_type == CredentialTypes.SERVICE:
+      response = raw_input('It looks like you are using service account '
+        'credentials, which are not currently supported for cloud '
+        'autoscaling.\nWould you like to continue? (y/N)')
+      if response.lower() not in ['y', 'yes']:
+        raise AgentConfigurationException('User cancelled starting AppScale.')
+
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Google Compute Engine to see which instances are currently
@@ -1122,11 +1130,6 @@ class GCEAgent(BaseAgent):
       secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
       secrets_type = GCEAgent.get_secrets_type(secrets_location)
       if secrets_type == CredentialTypes.SERVICE:
-        response = raw_input('It looks like you are using service account '
-          'credentials, which are not currently supported for cloud '
-          'autoscaling.\nWould you like to continue? (y/N)')
-        if response.lower() not in ['y', 'yes']:
-          raise AppScaleException('User cancelled starting AppScale.')
         scopes = [GCPScopes.COMPUTE]
         credentials = ServiceAccountCredentials\
           .from_json_keyfile_name(secrets_location, scopes=scopes)
