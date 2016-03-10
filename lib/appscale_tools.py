@@ -557,7 +557,11 @@ class AppScaleTools(object):
 
     try:
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
-    except AppEngineConfigException:
+    except AppEngineConfigException as config_error:
+      AppScaleLogger.log(config_error)
+      if 'yaml' in str(config_error):
+        raise config_error
+
       # Java App Engine users may have specified their war directory. In that
       # case, just move up one level, back to the app's directory.
       file_location = file_location + os.sep + ".."
