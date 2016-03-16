@@ -311,6 +311,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
@@ -319,6 +325,16 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -343,25 +359,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data))
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them
@@ -432,10 +429,22 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com','hosts' : { }}
+    app_data_not_admin = {'owner': 'notappadmin@a.com'}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data_not_admin))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -460,25 +469,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data = { 'owner' : 'b@b.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data))
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them
@@ -516,6 +506,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
@@ -524,6 +520,16 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return('OK')
     fake_appcontroller.should_receive('update').with_args(
       ['baz'], 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -548,25 +554,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data))
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them
@@ -633,6 +620,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
@@ -643,6 +636,18 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
       'the secret').and_return(False).and_return(True)
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
+    fake_appcontroller.should_receive('reserve_app_id').with_args(
+      'a@a.com','baz','python27','the secret').and_return("true")
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -667,30 +672,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data_no_ports = { 'owner' : 'a@a.com', 'hosts' : { }}
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
-      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
-      .and_return(json.dumps(app_data))
-    fake_userappserver.should_receive('commit_new_app').with_args(
-      'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them
@@ -773,6 +754,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
@@ -783,6 +770,16 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
       'the secret').and_return(False).and_return(True)
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -807,30 +804,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data_no_ports = { 'owner' : 'a@a.com', 'hosts' : { }}
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
-      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
-      .and_return(json.dumps(app_data))
-    fake_userappserver.should_receive('commit_new_app').with_args(
-      'baz', 'a@a.com', 'python27', 'the secret').and_return('true')
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them
@@ -913,6 +886,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
 
+    # Mock out service host and port
+    app_data = { 'owner' : 'a@a.com',
+      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
@@ -923,6 +902,16 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'the secret').and_return()
     fake_appcontroller.should_receive('is_app_running').with_args('baz',
       'the secret').and_return(False).and_return(True)
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@a.com', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_user_exist').with_args(
+      'a@public1', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('does_app_exist').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_app_admin').with_args(
+      'baz', 'the secret').and_return(json.dumps(app_data))
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -947,30 +936,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    app_data_no_ports = { 'owner' : 'b@b.com', 'hosts' : { }}
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@public1', 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@public1', str, 'xmpp_user', 'the secret').and_return('true')
-    fake_userappserver.should_receive('get_app_data').with_args(
-      'baz', 'the secret').and_return(json.dumps(app_data_no_ports)) \
-      .and_return(json.dumps(app_data)).and_return(json.dumps(app_data)) \
-      .and_return(json.dumps(app_data))
-    fake_userappserver.should_receive('commit_new_app').with_args(
-      'baz', 'a@a.com', 'php', 'the secret').and_return('true')
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     # mock out asking the user for the admin on the new app, and slip in an
     # answer for them

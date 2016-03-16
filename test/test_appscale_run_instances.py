@@ -412,6 +412,8 @@ appengine:  1.2.3.4
 
     acc = flexmock(AppControllerClient)
     acc.should_receive('is_initialized').and_return(True)
+    acc.should_receive('does_user_exist').and_return(False)
+    acc.should_receive('set_admin_role').and_return()
 
     uac = flexmock(UserAppClient)
     uac.should_receive('does_user_exist').and_return(False)
@@ -563,6 +565,8 @@ appengine:  1.2.3.4
 
     acc = flexmock(AppControllerClient)
     acc.should_receive('is_initialized').and_return(True)
+    acc.should_receive('does_user_exist').and_return(False)
+    acc.should_receive('set_admin_role').and_return()
 
     uac = flexmock(UserAppClient)
     uac.should_receive('does_user_exist').and_return(False)
@@ -708,6 +712,8 @@ appengine:  1.2.3.4
 
     acc = flexmock(AppControllerClient)
     acc.should_receive('is_initialized').and_return(True)
+    acc.should_receive('does_user_exist').and_return(False)
+    acc.should_receive('set_admin_role').and_return()
 
     uac = flexmock(UserAppClient)
     uac.should_receive('does_user_exist').and_return(False)
