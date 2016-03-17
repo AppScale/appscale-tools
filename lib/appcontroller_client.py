@@ -387,7 +387,8 @@ class AppControllerClient():
     Returns:
       All of the application's stats from the AppController
     """
-    return self.run_with_timeout(20, 'Get all JSON stats request timed out.',
+    #TODO: Check if this timeout increased to 30 is ok because this request takes some time.
+    return self.run_with_timeout(30, 'Get all JSON stats request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_all_stats, self.secret)
 
 
@@ -398,18 +399,9 @@ class AppControllerClient():
     Args:
       appname: The name of the app that we should check for existence.
     """
-    app_data = self.run_with_timeout(10,
-      'Request to check if user application exists timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.does_app_exist, appname, self.secret)
-
-    #if "Error:" in app_data:
-    #  return False
-
-    #result = json.loads(app_data)
-    #if len(result['hosts']) > 0:
-    #  return True
-
-    return app_data
+    #TODO: Check if using the method does_app_exist instead is correct as existing code used get_app_data.
+    return self.run_with_timeout(10, 'Request to check if user application exists timed out.',
+      self.DEFAULT_NUM_RETRIES,self.server.does_app_exist, appname, self.secret)
 
 
   def reset_password(self, username, encrypted_password):
@@ -449,6 +441,31 @@ class AppControllerClient():
             format((exception)))
           AppScaleLogger.log(("Backing off and trying again."))
         time.sleep(10)
+
+  def create_user(self, username, password, account_type='xmpp_user'):
+    """Creates a new user account, with the given username and hashed password.
+
+    Args:
+      username: An e-mail address that should be set as the new username.
+      password: A sha1-hashed password that is bound to the given username.
+      account_type: A str that indicates if this account can be logged into by
+        XMPP users.
+    """
+    AppScaleLogger.log("Creating new user account {0}".format(username))
+    while 1:
+      try:
+        result = self.run_with_timeout(10, 'Request to create user timed out.',
+          self.DEFAULT_NUM_RETRIES, self.server.create_user, username, password,
+          account_type, self.secret)
+        break
+      except Exception, exception:
+        AppScaleLogger.log("Exception when creating user: {0}".format(exception))
+        AppScaleLogger.log("Backing off and trying again")
+        time.sleep(10)
+
+    if result != 'true':
+      raise Exception(result)
+
 
   def set_admin_role(self, username, is_cloud_admin, capabilities):
     """Grants the given user the ability to perform any administrative action.

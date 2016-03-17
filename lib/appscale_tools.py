@@ -27,7 +27,6 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
-from user_app_client import UserAppClient
 
 
 class AppScaleTools(object):
@@ -437,15 +436,10 @@ class AppScaleTools(object):
       # we will have to initialize the database.
       time.sleep(cls.SLEEP_TIME*3)
 
-    # Now let's make sure the UserAppServer is fully initialized.
-    # Remove the UserAppClient call?
-    #uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
-      #options.keyname))
     try:
       # We don't need to have any exception information here: we do expect
       # some anyway while the UserAppServer is coming up.
-      #uaserver_client.does_user_exist("non-existent-user", True)
-      acc.does_user_exist("non-existent-user")
+      acc.does_user_exist("non-existent-user", True)
     except Exception as exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
@@ -468,7 +462,6 @@ class AppScaleTools(object):
 
     RemoteHelper.create_user_accounts(username, password, public_ip,
       options.keyname, options.clear_datastore)
-    #uaserver_client.set_admin_role(username)
     acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
@@ -641,6 +634,8 @@ class AppScaleTools(object):
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
     result = acc.get_all_stats()
+    #TODO: Check if any handling of JSON response is needed because on time out,
+    #TODO: it returns an error saying No JSON object can be decoded.
     json_result = json.loads(result)
     apps_result = json_result['apps']
     current_app = apps_result[app_id]
