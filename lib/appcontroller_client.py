@@ -454,7 +454,7 @@ class AppControllerClient():
     AppScaleLogger.log("Creating new user account {0}".format(username))
     while 1:
       try:
-        result = self.run_with_timeout(10, 'Request to create user timed out.',
+        result = self.run_with_timeout(20, 'Request to create user timed out.',
           self.DEFAULT_NUM_RETRIES, self.server.create_user, username, password,
           account_type, self.secret)
         break
@@ -488,7 +488,7 @@ class AppControllerClient():
       A str containing the name of the application's administrator, or None
         if there is none.
     """
-    app_data = self.run_with_timeout(20, 'Get app admin request timed out.',
+    app_data = self.run_with_timeout(10, 'Get app admin request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_app_admin, app_id, self.secret)
     if not app_data:
       return None
