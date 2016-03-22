@@ -488,7 +488,7 @@ class AppControllerClient():
       A str containing the name of the application's administrator, or None
         if there is none.
     """
-    app_data = self.run_with_timeout(10, 'Get app admin request timed out.',
+    app_data = self.run_with_timeout(20, 'Get app admin request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_app_admin, app_id, self.secret)
     if not app_data:
       return None
