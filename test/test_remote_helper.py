@@ -513,7 +513,7 @@ class TestRemoteHelper(unittest.TestCase):
       LocalState.get_locations_json_location('bookey'), 'r') \
       .and_return(fake_nodes_json)
 
-    # Mock out SOAP interactions with the AppController
+    # Mock out SOAP interactions with the AppController.
     fake_appcontroller = flexmock(name="fake_appcontroller")
     fake_appcontroller.should_receive('does_user_exist').with_args('boo@foo.goo',
       'the secret').and_return('false')

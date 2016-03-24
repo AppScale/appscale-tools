@@ -68,8 +68,6 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
 
-    app_data = { 'owner' : 'a@a.com', 'hosts' : { }}
-
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \

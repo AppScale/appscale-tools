@@ -46,13 +46,8 @@ class AppScaleTools(object):
   # down.
   SLEEP_TIME = 5
 
-  # The initial amount of time we should sleep when waiting for UserAppServer
-  # metadata to change state.
-  STARTING_SLEEP_TIME = 1
-
-  # The maximum amount of time we should sleep when waiting for UserAppServer
-  # metadata to change state.
-  MAX_SLEEP_TIME = 30
+  # The maximum number of times we should retry for methods that take longer.
+  MAX_RETRIES = 10
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
@@ -598,8 +593,7 @@ class AppScaleTools(object):
     if not acc.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password,
-                                        login_host, options.keyname,
-                                        clear_datastore=False)
+        login_host, options.keyname, clear_datastore=False)
 
     app_exists = acc.does_app_exist(app_id)
     app_admin = acc.get_app_admin(app_id)
@@ -633,13 +627,19 @@ class AppScaleTools(object):
 
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
-    result = acc.get_all_stats()
-    #TODO: Check if any handling of JSON response is needed because on time out,
-    #TODO: it returns an error saying No JSON object can be decoded.
-    json_result = json.loads(result)
-    apps_result = json_result['apps']
-    current_app = apps_result[app_id]
-    http_port = current_app['http']
+    current_app = None
+    for i in range(cls.MAX_RETRIES):
+      try:
+        result = acc.get_all_stats()
+        json_result = json.loads(result)
+        apps_result = json_result['apps']
+        current_app = apps_result[app_id]
+        http_port = current_app['http']
+        break
+      except ValueError:
+        pass
+    if not current_app:
+      raise AppScaleException("Unable to get the serving port for the application.")
 
     RemoteHelper.sleep_until_port_is_open(login_host, http_port, options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +

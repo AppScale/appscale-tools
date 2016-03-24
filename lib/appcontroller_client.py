@@ -56,13 +56,17 @@ class AppControllerClient():
   # The number of times we should retry SOAP calls in case of failures.
   DEFAULT_NUM_RETRIES = 5
 
-  # The initial amount of time we should sleep when waiting for UserAppServer
-  # metadata to change state.
-  STARTING_SLEEP_TIME = 1
 
   # The maximum amount of time we should sleep when waiting for UserAppServer
   # metadata to change state.
   MAX_SLEEP_TIME = 30
+
+
+  # The maximum amount of time we should wait before timing out the request.
+  DEFAULT_TIMEOUT = 10
+
+  # The maximum amount of time we should wait before timing out requests that take longer.
+  LONGER_TIMEOUT = 20
 
 
   def __init__(self, host, secret):
@@ -157,9 +161,8 @@ class AppControllerClient():
     if app is None:
       app = 'none'
 
-    result = self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, json.dumps(locations), credentials, [app],
-      self.secret)
+    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.set_parameters, json.dumps(locations), credentials, [app], self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -172,7 +175,7 @@ class AppControllerClient():
       A list of the public IP addresses of each machine in this AppScale
       deployment.
     """
-    all_ips = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    all_ips = self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_all_public_ips, self.secret)
     if all_ips == "":
       return []
@@ -188,7 +191,7 @@ class AppControllerClient():
       A dict that contains the public IP address, private IP address, and a list
       of the API services that each node runs in this AppScale deployment.
     """
-    role_info = self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    role_info = self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_role_info, self.secret)
     if role_info == "":
       return {}
@@ -202,7 +205,7 @@ class AppControllerClient():
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(10, "", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
       self.server.status, self.secret)
 
 
@@ -214,8 +217,7 @@ class AppControllerClient():
       A bool that indicates if all API services have finished starting up on
       this machine.
     """
-    return self.run_with_timeout(10, False, self.DEFAULT_NUM_RETRIES,
-      self.server.is_done_initializing, self.secret)
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, False, self.DEFAULT_NUM_RETRIES,
 
 
   def start_roles_on_nodes(self, roles_to_nodes):
@@ -227,7 +229,7 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
 
@@ -239,7 +241,7 @@ class AppControllerClient():
     Returns:
       The result of telling the AppController to no longer host the app.
     """
-    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.stop_app, app_id, self.secret)
 
 
@@ -252,7 +254,7 @@ class AppControllerClient():
     Returns:
       True if the application is running, False otherwise.
     """
-    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.is_app_running, app_id, self.secret)
 
 
@@ -265,7 +267,7 @@ class AppControllerClient():
       remote_app_location: The location on the remote machine where the App
         Engine application can be found.
     """
-    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.done_uploading, app_id, remote_app_location, self.secret)
 
 
@@ -277,7 +279,7 @@ class AppControllerClient():
       apps_to_run: A list of apps to start running on nodes running the App
         Engine service.
     """
-    return self.run_with_timeout(10, "Error", self.DEFAULT_NUM_RETRIES,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.update, apps_to_run, self.secret)
 
 
@@ -290,7 +292,7 @@ class AppControllerClient():
       haproxy, or dev_appserver ports host that app, with an additional field
       indicating what language the app is written in.
     """
-    return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
+    return json.loads(self.run_with_timeout(self.DEFAULT_TIMEOUT, '{}', self.DEFAULT_NUM_RETRIES,
       self.server.get_app_info_map, self.secret))
 
 
@@ -310,7 +312,7 @@ class AppControllerClient():
       A str that indicates if the operation was successful, and in unsuccessful
       cases, the reason why the operation failed.
     """
-    return self.run_with_timeout(20, "Relocate request timed out.",
+    return self.run_with_timeout(self.LONGER_TIMEOUT, "Relocate request timed out.",
       self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
         https_port, self.secret)
 
@@ -328,7 +330,7 @@ class AppControllerClient():
       value. This dict is empty when (1) no matches are found, or (2) if the
       SOAP call times out.
     """
-    return json.loads(self.run_with_timeout(10, '{}', self.DEFAULT_NUM_RETRIES,
+    return json.loads(self.run_with_timeout(self.DEFAULT_TIMEOUT, '{}', self.DEFAULT_NUM_RETRIES,
       self.server.get_property, property_regex, self.secret))
 
 
@@ -344,7 +346,7 @@ class AppControllerClient():
       'OK'), or the reason why the request failed (e.g., the property name
       referred to a non-existent instance variable).
     """
-    return self.run_with_timeout(10, 'Set property request timed out.',
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Set property request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.set_property, property_name,
       property_value, self.secret)
 
@@ -355,7 +357,7 @@ class AppControllerClient():
     Returns:
       A boolean indicating whether the deployment ID is stored or not.
     """
-    return self.run_with_timeout(10,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
       'Check for deployment ID request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.deployment_id_exists, self.secret)
 
@@ -366,7 +368,7 @@ class AppControllerClient():
     Returns:
       A string containing the deployment ID.
     """
-    return self.run_with_timeout(10, 'Get deployment ID request timed out.',
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Get deployment ID request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_deployment_id, self.secret)
 
 
@@ -376,9 +378,8 @@ class AppControllerClient():
     Returns:
       A boolean indicating whether the deployment ID is stored or not.
     """
-    return self.run_with_timeout(10, 'Set deployment ID request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.set_deployment_id, self.secret,
-      deployment_id)
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Set deployment ID request timed out.',
+      self.DEFAULT_NUM_RETRIES, self.server.set_deployment_id, self.secret, deployment_id)
 
 
   def get_all_stats(self):
@@ -387,25 +388,23 @@ class AppControllerClient():
     Returns:
       All of the application's stats from the AppController
     """
-    #TODO: Check if this timeout increased to 30 is ok because this request takes some time.
-    return self.run_with_timeout(30, 'Get all JSON stats request timed out.',
+    return self.run_with_timeout(self.LONGER_TIMEOUT, 'Get all JSON stats request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_all_stats, self.secret)
 
 
   def does_app_exist(self, appname):
-    """Queries the UserAppServer to see if the named application exists,
-    and it is listening to any port.
+    """ Queries the UserAppServer to see if the named application exists,
+    and if it is listening to any port.
 
     Args:
       appname: The name of the app that we should check for existence.
     """
-    #TODO: Check if using the method does_app_exist instead is correct as existing code used get_app_data.
-    return self.run_with_timeout(10, 'Request to check if user application exists timed out.',
-      self.DEFAULT_NUM_RETRIES,self.server.does_app_exist, appname, self.secret)
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Request to check if user application exists timed out.',
+      self.DEFAULT_NUM_RETRIES, self.server.does_app_exist, appname, self.secret)
 
 
   def reset_password(self, username, encrypted_password):
-    """Resets a user's password the currently running AppScale deployment.
+    """ Resets a user's password in the currently running AppScale deployment.
 
     Args:
        username: The e-mail address for the user whose password will be
@@ -413,7 +412,7 @@ class AppControllerClient():
       password: The SHA1-hashed password that will be set as the user's
         password.
     """
-    result = self.run_with_timeout(10, 'Reset password request timed out.',
+    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Reset password request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.reset_password, username,
       encrypted_password, self.secret)
     if result != 'true':
@@ -421,12 +420,12 @@ class AppControllerClient():
 
 
   def does_user_exist(self, username, silent=False):
-    """Queries the UserAppServer to see if the given user exists.
+    """ Queries the UserAppServer to see if the given user exists.
 
     Args:
-      username: The email address registered as username for the user's application
+      username: The email address registered as username for the user's application.
     """
-    user_exists = self.run_with_timeout(10, 'Request to check if user exists timed out.',
+    user_exists = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Request to check if user exists timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.does_user_exist, username, self.secret)
 
     while 1:
@@ -442,8 +441,9 @@ class AppControllerClient():
           AppScaleLogger.log(("Backing off and trying again."))
         time.sleep(10)
 
+
   def create_user(self, username, password, account_type='xmpp_user'):
-    """Creates a new user account, with the given username and hashed password.
+    """ Creates a new user account, with the given username and hashed password.
 
     Args:
       username: An e-mail address that should be set as the new username.
@@ -454,7 +454,7 @@ class AppControllerClient():
     AppScaleLogger.log("Creating new user account {0}".format(username))
     while 1:
       try:
-        result = self.run_with_timeout(20, 'Request to create user timed out.',
+        result = self.run_with_timeout(self.LONGER_TIMEOUT, 'Request to create user timed out.',
           self.DEFAULT_NUM_RETRIES, self.server.create_user, username, password,
           account_type, self.secret)
         break
@@ -468,19 +468,19 @@ class AppControllerClient():
 
 
   def set_admin_role(self, username, is_cloud_admin, capabilities):
-    """Grants the given user the ability to perform any administrative action.
+    """ Grants the given user the ability to perform any administrative action.
 
     Args:
       username: The e-mail address that should be given administrative
         authorizations.
     """
     AppScaleLogger.log('Granting admin privileges to %s' % username)
-    return self.run_with_timeout(10, 'Set admin role request timed out.',
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Set admin role request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.set_admin_role, username, is_cloud_admin,
       capabilities, self.secret)
 
   def get_app_admin(self, app_id):
-    """Queries the UserAppServer to see which user owns the given application.
+    """ Queries the UserAppServer to see which user owns the given application.
 
     Args:
       app_id: The name of the app that we should see the administrator on.
@@ -488,7 +488,7 @@ class AppControllerClient():
       A str containing the name of the application's administrator, or None
         if there is none.
     """
-    app_data = self.run_with_timeout(10, 'Get app admin request timed out.',
+    app_data = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Get app admin request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_app_admin, app_id, self.secret)
     if not app_data:
       return None
@@ -504,7 +504,7 @@ class AppControllerClient():
     return None
 
   def reserve_app_id(self, username, app_id, app_language):
-    """Tells the UserAppServer to reserve the given app_id for a particular
+    """ Tells the UserAppServer to reserve the given app_id for a particular
     user.
 
     Args:
@@ -513,7 +513,7 @@ class AppControllerClient():
       app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
         over.
     """
-    result = self.run_with_timeout(10, 'Reserve app id request timed out.',
+    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Reserve app id request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.reserve_app_id, username, app_id,
       app_language, self.secret)
     if result == "true":

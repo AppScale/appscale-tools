@@ -312,8 +312,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_data = {'owner' : 'a@a.com',
+      'hosts' : {'192.168.1.1' : {'http' : 8080, 'https' : 4380 }}}
     app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
       'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
 
@@ -430,7 +430,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com','hosts' : { }}
+    app_data = {'owner' : 'a@a.com','hosts' : { }}
     app_data_not_admin = {'owner': 'notappadmin@a.com'}
 
     # mock out the SOAP call to the AppController and assume it succeeded
@@ -507,8 +507,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_data = {'owner' : 'a@a.com',
+      'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
     app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
       'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
 
@@ -621,8 +621,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_data = {'owner' : 'a@a.com',
+      'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
     app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
       'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
 
@@ -755,8 +755,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_data = {'owner' : 'a@a.com',
+      'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
     app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
       'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
 
@@ -887,8 +887,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(fake_app_yaml)
 
     # Mock out service host and port
-    app_data = { 'owner' : 'a@a.com',
-      'hosts' : { '192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
+    app_data = {'owner' : 'a@a.com',
+      'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
     app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
       'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
 
