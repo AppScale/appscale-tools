@@ -57,13 +57,9 @@ class AppControllerClient():
   DEFAULT_NUM_RETRIES = 5
 
 
-  # The maximum amount of time we should sleep when waiting for UserAppServer
-  # metadata to change state.
-  MAX_SLEEP_TIME = 30
-
-
   # The maximum amount of time we should wait before timing out the request.
   DEFAULT_TIMEOUT = 10
+
 
   # The maximum amount of time we should wait before timing out requests that take longer.
   LONGER_TIMEOUT = 20
@@ -394,7 +390,7 @@ class AppControllerClient():
 
 
   def does_app_exist(self, appname):
-    """ Queries the UserAppServer to see if the named application exists,
+    """ Queries the AppController to see if the named application exists,
     and if it is listening to any port.
 
     Args:
@@ -421,7 +417,7 @@ class AppControllerClient():
 
 
   def does_user_exist(self, username, silent=False):
-    """ Queries the UserAppServer to see if the given user exists.
+    """ Queries the AppController to see if the given user exists.
 
     Args:
       username: The email address registered as username for the user's application.
@@ -481,7 +477,7 @@ class AppControllerClient():
       capabilities, self.secret)
 
   def get_app_admin(self, app_id):
-    """ Queries the UserAppServer to see which user owns the given application.
+    """ Queries the AppController to see which user owns the given application.
 
     Args:
       app_id: The name of the app that we should see the administrator on.
@@ -505,7 +501,7 @@ class AppControllerClient():
     return None
 
   def reserve_app_id(self, username, app_id, app_language):
-    """ Tells the UserAppServer to reserve the given app_id for a particular
+    """ Tells the AppController to reserve the given app_id for a particular
     user.
 
     Args:
