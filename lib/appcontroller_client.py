@@ -218,6 +218,7 @@ class AppControllerClient():
       this machine.
     """
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, False, self.DEFAULT_NUM_RETRIES,
+      self.server.is_done_initializing, self.secret)
 
 
   def start_roles_on_nodes(self, roles_to_nodes):
