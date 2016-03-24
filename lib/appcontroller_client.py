@@ -387,7 +387,7 @@ class AppControllerClient():
     """ Queries the AppController for all the stats.
 
     Returns:
-      All of the application's stats from the AppController
+      A hash in string format containing system and platform stats for this node.
     """
     return self.run_with_timeout(self.LONGER_TIMEOUT, 'Get all JSON stats request timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.get_all_stats, self.secret)
