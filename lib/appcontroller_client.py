@@ -383,10 +383,11 @@ class AppControllerClient():
     """ Queries the AppController for all the stats.
 
     Returns:
-      A hash in string format containing system and platform stats for this node.
+      A JSON string containing system and platform stats for this node.
     """
-    return self.run_with_timeout(self.LONGER_TIMEOUT, 'Get all JSON stats request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.get_all_stats, self.secret)
+    return self.run_with_timeout(self.LONGER_TIMEOUT,
+      'Get all JSON stats request timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.get_all_stats, self.secret)
 
 
   def does_app_exist(self, appname):
@@ -396,7 +397,8 @@ class AppControllerClient():
     Args:
       appname: The name of the app that we should check for existence.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Request to check if user application exists timed out.',
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Request to check if user application exists timed out.',
       self.DEFAULT_NUM_RETRIES, self.server.does_app_exist, appname, self.secret)
 
 
@@ -409,9 +411,9 @@ class AppControllerClient():
       password: The SHA1-hashed password that will be set as the user's
         password.
     """
-    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Reset password request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.reset_password, username,
-      encrypted_password, self.secret)
+    result = self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Reset password request timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.reset_password, username, encrypted_password, self.secret)
     if result != 'true':
       raise Exception(result)
 
@@ -422,8 +424,9 @@ class AppControllerClient():
     Args:
       username: The email address registered as username for the user's application.
     """
-    user_exists = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Request to check if user exists timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.does_user_exist, username, self.secret)
+    user_exists = self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Request to check if user exists timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.does_user_exist, username, self.secret)
 
     while 1:
       try:
@@ -451,9 +454,9 @@ class AppControllerClient():
     AppScaleLogger.log("Creating new user account {0}".format(username))
     while 1:
       try:
-        result = self.run_with_timeout(self.LONGER_TIMEOUT, 'Request to create user timed out.',
-          self.DEFAULT_NUM_RETRIES, self.server.create_user, username, password,
-          account_type, self.secret)
+        result = self.run_with_timeout(self.LONGER_TIMEOUT,
+          'Request to create user timed out.', self.DEFAULT_NUM_RETRIES,
+          self.server.create_user, username, password, account_type, self.secret)
         break
       except Exception, exception:
         AppScaleLogger.log("Exception when creating user: {0}".format(exception))
@@ -472,8 +475,9 @@ class AppControllerClient():
         authorizations.
     """
     AppScaleLogger.log('Granting admin privileges to %s' % username)
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Set admin role request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.set_admin_role, username, is_cloud_admin,
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Set admin role request timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.set_admin_role, username, is_cloud_admin,
       capabilities, self.secret)
 
   def get_app_admin(self, app_id):
@@ -485,8 +489,9 @@ class AppControllerClient():
       A str containing the name of the application's administrator, or None
         if there is none.
     """
-    app_data = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Get app admin request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.get_app_admin, app_id, self.secret)
+    app_data = self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Get app admin request timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.get_app_admin, app_id, self.secret)
     if not app_data:
       return None
 
@@ -510,9 +515,9 @@ class AppControllerClient():
       app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
         over.
     """
-    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, 'Reserve app id request timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.reserve_app_id, username, app_id,
-      app_language, self.secret)
+    result = self.run_with_timeout(self.DEFAULT_TIMEOUT,
+      'Reserve app id request timed out.', self.DEFAULT_NUM_RETRIES,
+      self.server.reserve_app_id, username, app_id, app_language, self.secret)
     if result == "true":
       AppScaleLogger.log("We have reserved {0} for your app".format(app_id))
     elif result == "Error: appname already exists":

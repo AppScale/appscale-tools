@@ -63,7 +63,7 @@ class AppScaleTools(object):
 
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
-  ADMIN_CAPABILITIES = ":".join(["upload_app"])
+  ADMIN_CAPABILITIES = "upload_app"
 
 
   @classmethod
