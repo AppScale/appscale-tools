@@ -239,31 +239,18 @@ group: {1}
     fake_appcontroller.should_receive('is_done_initializing') \
       .and_return(False) \
       .and_return(True)
+    fake_appcontroller.should_receive('is_initialized').and_return(True)
+    fake_appcontroller.should_receive('does_user_exist').and_return(False)
+    fake_appcontroller.should_receive('set_admin_role').and_return()
+    fake_appcontroller.should_receive('create_user').with_args(
+      'a@a.com', str, 'xmpp_user', 'the secret') \
+      .and_return('true')
+    fake_appcontroller.should_receive('create_user').with_args(
+      'a@' + public_ip, str, 'xmpp_user', 'the secret') \
+      .and_return('true')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:17443'.format(
       public_ip)).and_return(fake_appcontroller)
-
-
-  def setup_uaserver_mocks(self, public_uaserver_address):
-    # mock out calls to the UserAppServer and presume that calls to create new
-    # users succeed
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@a.com', 'the secret').and_return('false')
-    fake_userappserver.should_receive('does_user_exist').with_args(
-      'a@' + public_uaserver_address, 'the secret').and_return('false')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@a.com', str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('commit_new_user').with_args(
-      'a@' + public_uaserver_address, str, 'xmpp_user', 'the secret') \
-      .and_return('true')
-    fake_userappserver.should_receive('set_cloud_admin_status').with_args(
-      'a@a.com', 'true', 'the secret').and_return()
-    fake_userappserver.should_receive('set_capabilities').with_args(
-      'a@a.com', UserAppClient.ADMIN_CAPABILITIES, 'the secret').and_return()
-    SOAPpy.should_receive('SOAPProxy').with_args('https://{0}:4343'.format(
-      public_uaserver_address)).and_return(fake_userappserver)
 
 
   def setup_socket_mocks(self, host):
@@ -276,11 +263,6 @@ group: {1}
     # assume that the AppController comes up on the third attempt
     fake_socket.should_receive('connect').with_args((host,
       AppControllerClient.PORT)).and_raise(Exception).and_raise(Exception) \
-      .and_return(None)
-
-    # same for the UserAppServer
-    fake_socket.should_receive('connect').with_args((host,
-      UserAppClient.PORT)).and_raise(Exception).and_raise(Exception) \
       .and_return(None)
 
     # as well as for the AppDashboard
@@ -392,9 +374,6 @@ group: {1}
       .with_args(re.compile('^scp .*.secret'), False, 5)\
       .and_return()
 
-
-    self.setup_uaserver_mocks('1.2.3.4')
-
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
     ips_layout = yaml.safe_load("""
@@ -409,12 +388,6 @@ appengine:  1.2.3.4
       "--keyname", self.keyname,
       "--test"
     ]
-
-    acc = flexmock(AppControllerClient)
-    acc.should_receive('is_initialized').and_return(True)
-
-    uac = flexmock(UserAppClient)
-    uac.should_receive('does_user_exist').and_return(False)
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
@@ -546,8 +519,6 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
-    self.setup_uaserver_mocks('elastic-ip')
-
     argv = [
       "--min", "1",
       "--max", "1",
@@ -560,12 +531,6 @@ appengine:  1.2.3.4
       "--zone", "my-zone-1b",
       "--static_ip", "elastic-ip"
     ]
-
-    acc = flexmock(AppControllerClient)
-    acc.should_receive('is_initialized').and_return(True)
-
-    uac = flexmock(UserAppClient)
-    uac.should_receive('does_user_exist').and_return(False)
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
@@ -691,8 +656,6 @@ appengine:  1.2.3.4
 
     self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
-    self.setup_uaserver_mocks('public1')
-
     argv = [
       "--min", "1",
       "--max", "1",
@@ -705,12 +668,6 @@ appengine:  1.2.3.4
       "--test",
       "--zone", "my-zone-1b"
     ]
-
-    acc = flexmock(AppControllerClient)
-    acc.should_receive('is_initialized').and_return(True)
-
-    uac = flexmock(UserAppClient)
-    uac.should_receive('does_user_exist').and_return(False)
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
@@ -729,7 +686,6 @@ appengine:  1.2.3.4
       }])))
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 
-
     flexmock(RemoteHelper)
     RemoteHelper.should_receive('start_head_node')\
         .and_return(('1.2.3.4','i-ABCDEFG'))
@@ -741,12 +697,8 @@ appengine:  1.2.3.4
 
     acc = flexmock(AppControllerClient)
     acc.should_receive('is_initialized').and_return(True)
-
-    uac = flexmock(UserAppClient)
-    uac.should_receive('does_user_exist').and_return(False)
-
-    flexmock(UserAppClient).should_receive('set_admin_role').and_return()
-
+    acc.should_receive('does_user_exist').and_return(False)
+    acc.should_receive('set_admin_role').and_return()
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).

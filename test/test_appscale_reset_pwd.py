@@ -81,17 +81,12 @@ class TestAppScaleResetPassword(unittest.TestCase):
       .and_return('nothing interesting here') \
       .and_return('Database is at not-up-yet') \
       .and_return('Database is at public1')
+    fake_appcontroller.should_receive('reset_password').with_args(
+      'boo@foo.goo', str, 'the secret').and_return('true')
 
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
-
-    # and mock out changing the password
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('change_password').with_args(
-      'boo@foo.goo', str, 'the secret').and_return('true')
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     argv = [
       "--keyname", self.keyname
@@ -138,17 +133,11 @@ class TestAppScaleResetPassword(unittest.TestCase):
       .and_return('nothing interesting here') \
       .and_return('Database is at not-up-yet') \
       .and_return('Database is at public1')
-
+    fake_appcontroller.should_receive('reset_password').with_args(
+      'boo@foo.goo', str, 'the secret').and_return('false')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
-
-    # and mock out changing the password
-    fake_userappserver = flexmock(name='fake_userappserver')
-    fake_userappserver.should_receive('change_password').with_args(
-      'boo@foo.goo', str, 'the secret').and_return('Error: user does not exist')
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_userappserver)
 
     argv = [
       "--keyname", self.keyname

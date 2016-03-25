@@ -513,20 +513,19 @@ class TestRemoteHelper(unittest.TestCase):
       LocalState.get_locations_json_location('bookey'), 'r') \
       .and_return(fake_nodes_json)
 
-    # mock out SOAP interactions with the UserAppServer
-    fake_soap = flexmock(name='fake_soap')
-    fake_soap.should_receive('does_user_exist').with_args('boo@foo.goo',
+    # Mock out SOAP interactions with the AppController.
+    fake_appcontroller = flexmock(name="fake_appcontroller")
+    fake_appcontroller.should_receive('does_user_exist').with_args('boo@foo.goo',
       'the secret').and_return('false')
-    fake_soap.should_receive('commit_new_user').with_args('boo@foo.goo', str,
+    fake_appcontroller.should_receive('create_user').with_args('boo@foo.goo', str,
       'xmpp_user', 'the secret').and_return('true')
-    fake_soap.should_receive('does_user_exist').with_args('boo@public1',
+    fake_appcontroller.should_receive('does_user_exist').with_args('boo@public1',
       'the secret').and_return('false')
-    fake_soap.should_receive('commit_new_user').with_args('boo@public1', str,
+    fake_appcontroller.should_receive('create_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
     flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:4343') \
-      .and_return(fake_soap)
-
+    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
+      .and_return(fake_appcontroller)
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
       'bookey', False)
 

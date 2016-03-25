@@ -27,7 +27,6 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
-from user_app_client import UserAppClient
 
 
 class AppScaleTools(object):
@@ -47,6 +46,8 @@ class AppScaleTools(object):
   # down.
   SLEEP_TIME = 5
 
+  # The maximum number of times we should retry for methods that take longer.
+  MAX_RETRIES = 10
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
@@ -59,6 +60,10 @@ class AppScaleTools(object):
 
   # A regular expression that matches files compressed in the zip format.
   ZIP_REGEX = re.compile(r'.zip\Z')
+
+  # A str that contains all of the authorizations that an AppScale cloud
+  # administrator should be granted.
+  ADMIN_CAPABILITIES = "upload_app"
 
 
   @classmethod
@@ -326,11 +331,10 @@ class AppScaleTools(object):
         raise AppScaleException("Cancelled application removal.")
 
     login_host = LocalState.get_login_host(options.keyname)
-    acc = AppControllerClient(login_host, LocalState.get_secret_key(
-      options.keyname))
-    userappclient = UserAppClient(login_host, LocalState.get_secret_key(
-      options.keyname))
-    if not userappclient.does_app_exist(options.appname):
+    secret = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(login_host, secret)
+
+    if not acc.does_app_exist(options.appname):
       raise AppScaleException("The given application is not currently running.")
 
     acc.stop_app(options.appname)
@@ -352,13 +356,14 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     secret = LocalState.get_secret_key(options.keyname)
+    login_host = LocalState.get_login_host(options.keyname)
     username, password = LocalState.get_credentials(is_admin=False)
     encrypted_password = LocalState.encrypt_password(username, password)
 
-    uac = UserAppClient(LocalState.get_login_host(options.keyname), secret)
+    acc = AppControllerClient(login_host,secret)
 
     try:
-      uac.change_password(username, encrypted_password)
+      acc.reset_password(username, encrypted_password)
       AppScaleLogger.success("The password was successfully changed for the " \
         "given user.")
     except Exception as exception:
@@ -426,13 +431,10 @@ class AppScaleTools(object):
       # we will have to initialize the database.
       time.sleep(cls.SLEEP_TIME*3)
 
-    # Now let's make sure the UserAppServer is fully initialized.
-    uaserver_client = UserAppClient(public_ip, LocalState.get_secret_key(
-      options.keyname))
     try:
       # We don't need to have any exception information here: we do expect
       # some anyway while the UserAppServer is coming up.
-      uaserver_client.does_user_exist("non-existent-user", True)
+      acc.does_user_exist("non-existent-user", True)
     except Exception as exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
@@ -455,7 +457,7 @@ class AppScaleTools(object):
 
     RemoteHelper.create_user_accounts(username, password, public_ip,
       options.keyname, options.clear_datastore)
-    uaserver_client.set_admin_role(username)
+    acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
 
     RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
     # Finally, update our metadata once we know that all of the machines are
@@ -577,10 +579,9 @@ class AppScaleTools(object):
           'versions in your app. The current supported ' +
           'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      LocalState.get_secret_key(options.keyname))
-    userappclient = UserAppClient(LocalState.get_login_host(options.keyname),
-      LocalState.get_secret_key( options.keyname))
+    login_host = LocalState.get_login_host(options.keyname)
+    secret_key = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(login_host, secret_key)
 
     if options.test:
       username = LocalState.DEFAULT_USER
@@ -589,14 +590,13 @@ class AppScaleTools(object):
     else:
       username = LocalState.get_username_from_stdin(is_admin=False)
 
-    if not userappclient.does_user_exist(username):
+    if not acc.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password,
-        LocalState.get_login_host(options.keyname), options.keyname,
-        clear_datastore=False)
+        login_host, options.keyname, clear_datastore=False)
 
-    app_exists = userappclient.does_app_exist(app_id)
-    app_admin = userappclient.get_app_admin(app_id)
+    app_exists = acc.does_app_exist(app_id)
+    app_admin = acc.get_app_admin(app_id)
     if app_admin is not None and username != app_admin:
       raise AppScaleException("The given user doesn't own this application" + \
         ", so they can't upload an app with that application ID. Please " + \
@@ -606,7 +606,7 @@ class AppScaleTools(object):
       AppScaleLogger.log("Uploading new version of app {0}".format(app_id))
     else:
       AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
-      userappclient.reserve_app_id(username, app_id, app_language)
+      acc.reserve_app_id(username, app_id, app_language)
 
     # Ignore all .pyc files while tarring.
     if app_language == 'python27':
@@ -625,14 +625,27 @@ class AppScaleTools(object):
     if app_exists:
       time.sleep(20)  # give the AppController time to restart the app
 
-    serving_host, serving_port = userappclient.get_serving_info(app_id,
-      options.keyname)
-    RemoteHelper.sleep_until_port_is_open(serving_host, serving_port,
-      options.verbose)
+    # Makes a call to the AppController to get all the stats and looks
+    # through them for the http port the app can be reached on.
+    current_app = None
+    for i in range(cls.MAX_RETRIES):
+      try:
+        result = acc.get_all_stats()
+        json_result = json.loads(result)
+        apps_result = json_result['apps']
+        current_app = apps_result[app_id]
+        http_port = current_app['http']
+        break
+      except ValueError:
+        pass
+    if not current_app:
+      raise AppScaleException("Unable to get the serving port for the application.")
+
+    RemoteHelper.sleep_until_port_is_open(login_host, http_port, options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
-      "http://{0}:{1}".format(serving_host, serving_port))
+      "http://{0}:{1}".format(login_host, http_port))
 
     if created_dir:
       shutil.rmtree(file_location)
 
-    return (serving_host, serving_port)
+    return (login_host, http_port)
