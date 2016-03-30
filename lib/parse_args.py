@@ -577,17 +577,19 @@ class ParseArgs(object):
 
     if self.args.instance_type in EC2Agent.DISALLOWED_INSTANCE_TYPES and \
       not (self.args.force or self.args.test):
-      LocalState.confirm_or_abort("The {0} instance type does not have " \
-        "enough RAM to run Cassandra in a production setting. Please " \
-        "consider using a larger instance type.".format(
-        self.args.instance_type))
+      warning = 'The {0} instance type does not have enough RAM to run '\
+        'Cassandra in a production setting. Please consider using a larger '\
+        'instance type.'.format(self.args.instance_type)
+      abort_message = 'AppScale up was cancelled.'
+      LocalState.confirm_or_abort(warning, abort_message)
 
     if self.args.gce_instance_type in GCEAgent.DISALLOWED_INSTANCE_TYPES and \
       not (self.args.force or self.args.test):
-      LocalState.confirm_or_abort("The {0} instance type does not have " \
-        "enough RAM to run Cassandra in a production setting. Please " \
-        "consider using a larger instance type.".format(
-        self.args.gce_instance_type))
+      warning = 'The {0} instance type does not have enough RAM to run ' \
+        'Cassandra in a production setting. Please consider using a larger ' \
+        'instance type.'.format(self.args.gce_instance_type)
+      abort_message = 'AppScale up was cancelled.'
+      LocalState.confirm_or_abort(warning, abort_message)
 
 
   def validate_credentials(self):

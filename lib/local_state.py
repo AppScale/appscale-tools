@@ -970,7 +970,9 @@ class LocalState(object):
       AppScaleException: If the user does not want to terminate their
         AppScale deployment.
     """
-    cls.confirm_or_abort("Terminating AppScale will delete all stored data.")
+    warning = 'Terminating AppScale will delete all stored data.'
+    abort_message = 'AppScale termination was cancelled.'
+    cls.confirm_or_abort(warning, abort_message)
 
 
   @classmethod
@@ -982,25 +984,26 @@ class LocalState(object):
       AppScaleException: If the user does not want to start AppScale without
         persistent disks.
     """
-    cls.confirm_or_abort("Starting AppScale without specifying persistent " +
-      "disks means your data will not be saved when your cloud is destroyed.")
+    warning = 'Starting AppScale without specifying persistent disks means '\
+      'your data will not be saved when your cloud is destroyed.'
+    abort_message = 'AppScale up was cancelled.'
+    cls.confirm_or_abort(warning, abort_message)
 
 
   @classmethod
-  def confirm_or_abort(cls, message):
+  def confirm_or_abort(cls, warning, abort_message):
     """ Displays confirmation message and collects user's choice.
 
     Args:
-      message: A str, the message to be displayed.
+      warning: A string to use as a warning message before prompting the user.
+      abort_message: A string to display if the user does not confirm.
     Raises:
-      AppScaleException: If the user chooses to terminate AppScale.
+      AppScaleException: If the user chooses to abort.
     """
-    AppScaleLogger.warn(message)
-    confirm = raw_input("Are you sure you want to do this? (Y/N) ")
-    if confirm.lower() == 'y' or confirm.lower() == 'yes':
-      return
-    else:
-      raise AppScaleException('AppScale termination was cancelled.')
+    AppScaleLogger.warn(warning)
+    confirm = raw_input("Are you sure you want to do this? (y/N) ")
+    if confirm.lower() not in ['y', 'yes']:
+      raise AppScaleException(abort_message)
 
 
   @classmethod

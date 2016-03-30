@@ -26,6 +26,7 @@ from flexmock import flexmock
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from local_state import LocalState
@@ -373,3 +374,20 @@ class TestLocalState(unittest.TestCase):
 
     actual = LocalState.generate_crash_log(exception, stacktrace)
     self.assertEquals(expected, actual)
+
+
+  def test_confirm_or_abort(self):
+    warning = 'This could be dangerous.'
+    abort_message = 'You chose to cancel.'
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('warn').with_args(warning).and_return()
+    builtin = flexmock(sys.modules['__builtin__'])
+
+    # If the user presses enter, the tools should abort by default.
+    builtin.should_receive('raw_input').and_return('')
+    with self.assertRaises(AppScaleException):
+      LocalState.confirm_or_abort(warning, abort_message)
+
+    # If the user enters 'y', the function should return.
+    builtin.should_receive('raw_input').and_return('y')
+    LocalState.confirm_or_abort(warning, abort_message)
