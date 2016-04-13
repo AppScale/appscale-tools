@@ -399,7 +399,8 @@ appengine:  1.2.3.4
       os.sep + self.keyname + ".key"
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
     self.local_state.should_receive('make_appscale_directory').and_return()
-    self.local_state.should_receive('get_key_path_from_name').and_return(LOCAL_APPSCALE_PATH)
+    self.local_state.should_receive('get_key_path_from_name').and_return(
+      LOCAL_APPSCALE_PATH)
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -545,7 +546,8 @@ appengine:  1.2.3.4
       os.sep + self.keyname + ".key"
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
     self.local_state.should_receive('make_appscale_directory').and_return()
-    self.local_state.should_receive('get_key_path_from_name').and_return(LOCAL_APPSCALE_PATH)
+    self.local_state.should_receive('get_key_path_from_name').and_return(
+      LOCAL_APPSCALE_PATH)
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
