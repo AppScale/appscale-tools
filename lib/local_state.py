@@ -45,8 +45,13 @@ class LocalState(object):
   # AppScale deployment metadata.
   LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
+
+  # The path on the local filesystem where we can find the keyname file.
   ETC_APPSCALE_KEY_PATH = "/etc/appscale/keys/cloud1/"
 
+
+  # A list of valid paths on the local filesystem where we could find the
+  # keyname file.
   VALID_KEY_PATHS = [LOCAL_APPSCALE_PATH, ETC_APPSCALE_KEY_PATH]
 
 
@@ -286,10 +291,8 @@ class LocalState(object):
     """
     for local_path in cls.VALID_KEY_PATHS:
       key_file_path = local_path + keyname + ".key"
-      if (os.path.isfile(key_file_path)):
+      if os.path.isfile(key_file_path):
         return key_file_path
-      else:
-        pass
 
   @classmethod
   def get_private_key_location(cls, keyname):

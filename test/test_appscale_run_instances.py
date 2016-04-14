@@ -395,12 +395,12 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_cloud_deployment_auto_spot_price(self):
     # let's say that appscale isn't already running
-    LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + \
+    local_appscale_path = os.path.expanduser("~") + os.sep + ".appscale" + \
       os.sep + self.keyname + ".key"
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
     self.local_state.should_receive('make_appscale_directory').and_return()
     self.local_state.should_receive('get_key_path_from_name').and_return(
-      LOCAL_APPSCALE_PATH)
+      local_appscale_path)
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
@@ -542,12 +542,12 @@ appengine:  1.2.3.4
 
   def test_appscale_in_one_node_cloud_deployment_manual_spot_price(self):
     # let's say that appscale isn't already running
-    LOCAL_APPSCALE_PATH = os.path.expanduser("~") + os.sep + ".appscale" + \
+    local_appscale_path = os.path.expanduser("~") + os.sep + ".appscale" + \
       os.sep + self.keyname + ".key"
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
     self.local_state.should_receive('make_appscale_directory').and_return()
     self.local_state.should_receive('get_key_path_from_name').and_return(
-      LOCAL_APPSCALE_PATH)
+      local_appscale_path)
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
