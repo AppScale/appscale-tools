@@ -8,7 +8,6 @@ import httplib
 import json
 import os
 import re
-import shutil
 import socket
 import sys
 import tempfile
@@ -19,13 +18,8 @@ import yaml
 
 
 # Third party libraries
-import apiclient
 import boto.ec2
 from flexmock import flexmock
-import httplib2
-import oauth2client.client
-import oauth2client.file
-import oauth2client.tools
 import SOAPpy
 
 
@@ -33,16 +27,13 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
-from agents.gce_agent import GCEAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
-from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
-from user_app_client import UserAppClient
 
 
 class TestAppScaleRunInstances(unittest.TestCase):
