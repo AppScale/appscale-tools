@@ -424,21 +424,23 @@ class AppControllerClient():
     Args:
       username: The email address registered as username for the user's application.
     """
-    user_exists = self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Request to check if user exists timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.does_user_exist, username, self.secret)
-
-    while 1:
+    while True:
       try:
-        if user_exists == "true":
+        user_exists = self.run_with_timeout(
+          self.DEFAULT_TIMEOUT, 'Request to check if user exists timed out.',
+          self.DEFAULT_NUM_RETRIES, self.server.does_user_exist, username,
+          self.secret)
+        if user_exists == 'true':
           return True
-        else:
+        elif user_exists == 'false':
           return False
-      except Exception, exception:
+        else:
+          raise Exception(user_exists)
+      except Exception as acc_error:
         if not silent:
-          AppScaleLogger.log("Exception when checking if a user exists: {0}".\
-            format((exception)))
-          AppScaleLogger.log(("Backing off and trying again."))
+          AppScaleLogger.log("Exception when checking if a user exists: {0}".
+                             format(acc_error))
+          AppScaleLogger.log("Backing off and trying again.")
         time.sleep(10)
 
 
