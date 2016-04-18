@@ -8,7 +8,6 @@ import httplib
 import json
 import os
 import re
-import shutil
 import socket
 import sys
 import tempfile
@@ -19,13 +18,8 @@ import yaml
 
 
 # Third party libraries
-import apiclient
 import boto.ec2
 from flexmock import flexmock
-import httplib2
-import oauth2client.client
-import oauth2client.file
-import oauth2client.tools
 import SOAPpy
 
 
@@ -33,16 +27,13 @@ import SOAPpy
 lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
 sys.path.append(lib)
 from agents.ec2_agent import EC2Agent
-from agents.gce_agent import GCEAgent
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from appscale_tools import AppScaleTools
-from custom_exceptions import ShellException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
-from user_app_client import UserAppClient
 
 
 class TestAppScaleRunInstances(unittest.TestCase):
@@ -374,6 +365,9 @@ group: {1}
       .with_args(re.compile('^scp .*.secret'), False, 5)\
       .and_return()
 
+    flexmock(AppControllerClient)
+    AppControllerClient.should_receive('does_user_exist').and_return(True)
+
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
     ips_layout = yaml.safe_load("""
@@ -519,6 +513,10 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
+    flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
+    flexmock(AppControllerClient)
+    AppControllerClient.should_receive('does_user_exist').and_return(True)
+
     argv = [
       "--min", "1",
       "--max", "1",
@@ -656,6 +654,10 @@ appengine:  1.2.3.4
 
     self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
+    flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
+    flexmock(AppControllerClient)
+    AppControllerClient.should_receive('does_user_exist').and_return(True)
+
     argv = [
       "--min", "1",
       "--max", "1",
@@ -694,11 +696,12 @@ appengine:  1.2.3.4
     RemoteHelper.should_receive('create_user_accounts').and_return()
     RemoteHelper.should_receive('wait_for_machines_to_finish_loading')\
         .and_return()
+    RemoteHelper.should_receive('copy_deployment_credentials')
 
-    acc = flexmock(AppControllerClient)
-    acc.should_receive('is_initialized').and_return(True)
-    acc.should_receive('does_user_exist').and_return(False)
-    acc.should_receive('set_admin_role').and_return()
+    flexmock(AppControllerClient)
+    AppControllerClient.should_receive('does_user_exist').and_return(True)
+    AppControllerClient.should_receive('is_initialized').and_return(True)
+    AppControllerClient.should_receive('set_admin_role').and_return()
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
