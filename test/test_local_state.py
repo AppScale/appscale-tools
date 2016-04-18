@@ -373,3 +373,25 @@ class TestLocalState(unittest.TestCase):
 
     actual = LocalState.generate_crash_log(exception, stacktrace)
     self.assertEquals(expected, actual)
+
+  def test_get_key_path_from_local_appscale(self):
+    keyname = "keyname"
+    # Test key path returned is ~/.appscale when .key file is present in
+    # that location.
+    local_appscale_key_file_path = LocalState.LOCAL_APPSCALE_PATH + keyname + \
+      ".key"
+    os.path.should_receive('isfile').with_args(local_appscale_key_file_path). \
+      and_return(True)
+    actual_key_path = LocalState.get_key_path_from_name(keyname)
+    self.assertEquals(local_appscale_key_file_path, actual_key_path)
+
+    # Test key path returned is /etc/appscale/keys/cloud1/when .key file is
+    # present in that location.
+    etc_appscale_key_file_path = LocalState.ETC_APPSCALE_KEY_PATH + keyname + \
+      ".key"
+    os.path.should_receive('isfile').with_args(local_appscale_key_file_path). \
+      and_return(False)
+    os.path.should_receive('isfile').with_args(etc_appscale_key_file_path). \
+      and_return(True)
+    actual_key_path = LocalState.get_key_path_from_name(keyname)
+    self.assertEquals(etc_appscale_key_file_path, actual_key_path)
