@@ -496,11 +496,16 @@ class AppControllerClient():
     app_data_json = self.run_with_timeout(self.DEFAULT_TIMEOUT,
       'Get app admin request timed out.', self.DEFAULT_NUM_RETRIES,
       self.server.get_app_data, app_id, self.secret)
+    if not app_data_json:
+      return None
 
-    if "Error:" in app_data_json:
-      raise AppScaleException(app_data_json)
+    try:
+      app_data = json.loads(app_data_json)
+    except ValueError as decode_error:
+      if 'Error:' in app_data_json:
+        raise AppScaleException(app_data_json)
+      raise decode_error
 
-    app_data = json.loads(app_data_json)
     if 'owner' not in app_data:
       return None
 
