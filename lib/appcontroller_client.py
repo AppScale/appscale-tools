@@ -490,22 +490,21 @@ class AppControllerClient():
     Returns:
       A str containing the name of the application's administrator, or None
         if there is none.
+    Raises:
+      AppScaleException if the AppController returns an error.
     """
-    app_data = self.run_with_timeout(self.DEFAULT_TIMEOUT,
+    app_data_json = self.run_with_timeout(self.DEFAULT_TIMEOUT,
       'Get app admin request timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.get_app_admin, app_id, self.secret)
-    if not app_data:
+      self.server.get_app_data, app_id, self.secret)
+
+    if "Error:" in app_data_json:
+      raise AppScaleException(app_data_json)
+
+    app_data = json.loads(app_data_json)
+    if 'owner' not in app_data:
       return None
 
-    if "Error:" in app_data:
-      return None
-
-    result = json.loads(app_data)
-    app_owner = result['owner']
-    if app_owner:
-      return app_owner
-
-    return None
+    return app_data['owner']
 
   def reserve_app_id(self, username, app_id, app_language):
     """ Tells the AppController to reserve the given app_id for a particular

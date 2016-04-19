@@ -331,7 +331,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_all_stats').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
@@ -443,7 +443,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data_not_admin))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -526,7 +526,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_all_stats').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
@@ -642,7 +642,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_all_stats').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
@@ -776,7 +776,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_all_stats').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
@@ -908,7 +908,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'a@public1', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_app_exist').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_app_admin').with_args(
+    fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_all_stats').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
