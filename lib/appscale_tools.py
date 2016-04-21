@@ -47,7 +47,7 @@ class AppScaleTools(object):
   SLEEP_TIME = 5
 
   # The maximum number of times we should retry for methods that take longer.
-  MAX_RETRIES = 10
+  MAX_RETRIES = 20
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
