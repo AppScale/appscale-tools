@@ -47,7 +47,7 @@ class AppScaleTools(object):
   SLEEP_TIME = 5
 
   # The maximum number of times we should retry for methods that take longer.
-  MAX_RETRIES = 10
+  MAX_RETRIES = 20
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
@@ -627,6 +627,7 @@ class AppScaleTools(object):
 
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
+    sleep_time = 2 * cls.SLEEP_TIME
     current_app = None
     for i in range(cls.MAX_RETRIES):
       try:
@@ -638,6 +639,11 @@ class AppScaleTools(object):
         break
       except ValueError:
         pass
+      except KeyError:
+        pass
+      AppScaleLogger.verbose("Waiting {0} second(s) for a port to be assigned to {1}".\
+        format(sleep_time, app_id), options.verbose)
+      time.sleep(sleep_time)
     if not current_app:
       raise AppScaleException("Unable to get the serving port for the application.")
 
