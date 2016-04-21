@@ -400,7 +400,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'status': u'RUNNING',
       u'kind': u'compute#instance',
       u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
-      u'name': u'appscale-bazboogroup-one',
+      u'name': u'bazboogroup-one',
       u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'tags': {u'fingerprint': u'42WmSpB8rSM='},
       u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
@@ -421,7 +421,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       },
       u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
       u'id': u'8684033495853907982',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
       u'networkInterfaces': [{
         u'accessConfigs': [{
           u'kind': u'compute#accessConfig',
@@ -439,7 +439,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'status': u'RUNNING',
       u'kind': u'compute#instance',
       u'machineType': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/machineTypes/n1-standard-1',
-      u'name': u'appscale-bazboogroup-two',
+      u'name': u'bazboogroup-two',
       u'zone': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b',
       u'tags': {u'fingerprint': u'42WmSpB8rSM='},
       u'image': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/global/images/lucid64',
@@ -460,7 +460,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       },
       u'creationTimestamp': u'2013-05-22T11:52:33.254-07:00',
       u'id': u'8684033495853907982',
-      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
+      u'selfLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/bazboogroup-feb10b11-62bc-4536-ac25-9734f2267d6d',
       u'networkInterfaces': [{
         u'accessConfigs': [{
           u'kind': u'compute#accessConfig',
@@ -487,7 +487,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     fake_instances = flexmock(name='fake_instances')
     fake_instances.should_receive('list').with_args(project=project_id,
-      filter="name eq appscale-bazboogroup-.*", zone=zone) \
+      filter="name eq bazboogroup-.*", zone=zone) \
       .and_return(fake_list_instance_request)
     fake_gce.should_receive('instances').and_return(fake_instances)
 
@@ -501,7 +501,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'startTime': u'2013-05-27T10:44:51.849-07:00',
       u'insertTime': u'2013-05-27T10:44:51.806-07:00',
       u'targetId': u'12912855597472179535',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
       u'operationType': u'delete',
       u'progress': 0,
       u'id': u'11114355109942058217',
@@ -517,7 +517,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       u'startTime': u'2013-05-27T10:44:51.849-07:00',
       u'insertTime': u'2013-05-27T10:44:51.806-07:00',
       u'targetId': u'12912855597472179535',
-      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscale-appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
+      u'targetLink': u'https://www.googleapis.com/compute/v1beta14/projects/appscale.com:appscale/zones/my-zone-1b/instances/appscalecgb20-0cf89267-5887-4048-b774-ca20de47a07f',
       u'operationType': u'delete',
       u'progress': 0,
       u'id': u'11114355109942058217',
@@ -529,14 +529,14 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_delete_instance_request_one.should_receive('execute').with_args(
       http=fake_authorized_http).and_return(delete_instance_info_one)
     fake_instances.should_receive('delete').with_args(project=project_id,
-      zone=zone, instance='appscale-bazboogroup-one').and_return(
+      zone=zone, instance='bazboogroup-one').and_return(
       fake_delete_instance_request_one)
 
     fake_delete_instance_request_two = flexmock(name='fake_delete_instance_request_two')
     fake_delete_instance_request_two.should_receive('execute').with_args(
       http=fake_authorized_http).and_return(delete_instance_info_two)
     fake_instances.should_receive('delete').with_args(project=project_id,
-      zone=zone, instance='appscale-bazboogroup-two').and_return(
+      zone=zone, instance='bazboogroup-two').and_return(
       fake_delete_instance_request_two)
 
     # mock out our waiting for the instances to be deleted

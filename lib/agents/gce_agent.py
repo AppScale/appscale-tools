@@ -657,7 +657,7 @@ class GCEAgent(BaseAgent):
     auth_http = credentials.authorize(http)
     request = gce_service.instances().list(
       project=parameters[self.PARAM_PROJECT],
-      filter="name eq appscale-{0}-.*".format(parameters[self.PARAM_GROUP]),
+      filter="name eq {group}-.*".format(group=parameters[self.PARAM_GROUP]),
       zone=parameters[self.PARAM_ZONE]
     )
     response = request.execute(http=auth_http)
@@ -773,7 +773,7 @@ class GCEAgent(BaseAgent):
       instances = {
         # Truncate the name down to the first 62 characters, since GCE doesn't
         # let us use arbitrarily long instance names.
-        'name': "appscale-{0}-{1}".format(group, uuid.uuid4())[:62],
+        'name': '{group}-{uuid}'.format(group=group, uuid=uuid.uuid4())[:62],
         'machineType': machine_type_url,
         'disks':[{
           'source': disk_url,
