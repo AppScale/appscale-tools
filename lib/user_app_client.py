@@ -187,27 +187,6 @@ class UserAppClient():
     return False
 
 
-  def get_app_admin(self, app_id):
-    """Queries the UserAppServer to see which user owns the given application.
-
-    Args:
-      app_id: The name of the app that we should see the administrator on.
-    Returns:
-      A str containing the name of the application's administrator, or None
-        if there is none.
-    """
-    app_data = self.server.get_app_data(app_id, self.secret)
-    if "Error:" in app_data:
-      return None
-
-    result = json.loads(app_data)
-    app_owner = result['owner']
-    if app_owner:
-      return app_owner
-
-    return None
-
-
   def change_password(self, username, password):
     """Sets the given user's password to the specified (hashed) value.
 
