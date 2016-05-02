@@ -26,7 +26,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='2.7.1',
+  version='2.8.0',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
