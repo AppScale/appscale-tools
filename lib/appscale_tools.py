@@ -635,6 +635,8 @@ class AppScaleTools(object):
         apps_result = json_result['apps']
         current_app = apps_result[app_id]
         http_port = current_app['http']
+        if not http_port:
+          continue
         break
       except ValueError:
         pass
