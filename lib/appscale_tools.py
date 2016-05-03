@@ -638,6 +638,8 @@ class AppScaleTools(object):
         break
       except ValueError:
         pass
+      except KeyError:
+        time.sleep(20)
     if not current_app:
       raise AppScaleException("Unable to get the serving port for the application.")
 
