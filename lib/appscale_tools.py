@@ -627,7 +627,6 @@ class AppScaleTools(object):
 
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
-    sleep_time = 2 * cls.SLEEP_TIME
     current_app = None
     for i in range(cls.MAX_RETRIES):
       try:
@@ -636,14 +635,13 @@ class AppScaleTools(object):
         apps_result = json_result['apps']
         current_app = apps_result[app_id]
         http_port = current_app['http']
+        if not http_port:
+          continue
         break
       except ValueError:
         pass
       except KeyError:
-        pass
-      AppScaleLogger.verbose("Waiting {0} second(s) for a port to be assigned to {1}".\
-        format(sleep_time, app_id), options.verbose)
-      time.sleep(sleep_time)
+        time.sleep(20)
     if not current_app:
       raise AppScaleException("Unable to get the serving port for the application.")
 
