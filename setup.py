@@ -1,7 +1,18 @@
 import glob
+import sys
+
+from appscale.tools import version_helper
 from setuptools import setup
 
-from lib import version_helper
+# Require users to uninstall versions that used the appscale namespace.
+try:
+  import appscale.appscale_tools
+  print('Please run "pip uninstall appscale-tools" first.\n'
+        "Your installed version conflicts with this version's namespace.")
+  sys.exit()
+except ImportError:
+  pass
+
 
 version_helper.ensure_valid_python_is_used()
 
@@ -54,8 +65,8 @@ setup(
     'Programming Language :: Python :: 2.7',
     'Topic :: Utilities'
   ],
-  package_dir={'appscale': 'lib'},
-  packages=['appscale', 'appscale.agents'],
+  namespace_packages=['appscale'],
+  packages=['appscale', 'appscale.tools', 'appscale.tools.agents'],
   scripts=glob.glob('bin/*'),
-  package_data={'appscale': ['../templates/*']}
+  package_data={'appscale.tools': ['../../templates/*']}
 )

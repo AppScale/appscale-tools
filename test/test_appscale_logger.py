@@ -15,11 +15,9 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from agents.ec2_agent import EC2Agent
-from appscale_logger import AppScaleLogger
-from parse_args import ParseArgs
+from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.parse_args import ParseArgs
 
 
 class TestAppScaleLogger(unittest.TestCase):

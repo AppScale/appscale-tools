@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 
-import os
-import sys
 import unittest
 
-
+from appscale.tools.appcontroller_client import AppControllerClient
 from flexmock import flexmock
 
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from appcontroller_client import AppControllerClient
 
 class TestAppControllerClient(unittest.TestCase):
 

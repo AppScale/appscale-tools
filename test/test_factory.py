@@ -3,16 +3,12 @@
 
 
 # General-purpose Python library imports
-import os
-import sys
 import unittest
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from agents.factory import InfrastructureAgentFactory
-from custom_exceptions import UnknownInfrastructureException
+from appscale.tools.agents.factory import InfrastructureAgentFactory
+from appscale.tools.custom_exceptions import UnknownInfrastructureException
 
 
 class TestFactory(unittest.TestCase):
