@@ -46,14 +46,14 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'httplib2',
-    'termcolor',
-    'SOAPpy',
-    'PyYAML',
+    'argparse',
     'boto',
     'google-api-python-client>=1.5.0',
-    'argparse',
+    'httplib2',
     'oauth2client>=2.0.0',
+    'PyYAML',
+    'SOAPpy',
+    'termcolor'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
