@@ -17,6 +17,11 @@ if [ -f ./debian/control.${DIST} ]; then
     fi
 fi
 
+# These system packages are too old for google-api-python-client>=1.5.0.
+case ${DIST} in
+    precise|trusty) pip install --upgrade httplib2 six ;;
+esac
+
 python2 setup.py install
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
