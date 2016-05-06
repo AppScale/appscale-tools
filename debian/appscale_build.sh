@@ -8,7 +8,7 @@ echo "Installing AppScale tools on ${DIST}."
 
 # Install the deb packages specified for this distro.
 if [ -f ./debian/control.${DIST} ]; then
-    PACKAGES=$(find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +)
+    PACKAGES=$(find debian -regex ".*\/control\.${DIST}\$" -exec awk -f debian/package-list.awk {} +)
     apt-get update
     apt-get install -y --force-yes ${PACKAGES}
     if [ $? -ne 0 ]; then
