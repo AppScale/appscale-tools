@@ -68,5 +68,5 @@ setup(
   namespace_packages=['appscale'],
   packages=['appscale', 'appscale.tools', 'appscale.tools.agents'],
   scripts=glob.glob('bin/*'),
-  package_data={'appscale.tools': ['../../templates/*']}
+  package_data={'appscale.tools': ['templates/*']}
 )
