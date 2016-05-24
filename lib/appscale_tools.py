@@ -64,25 +64,26 @@ class AppScaleTools(object):
   # A regular expression that matches files compressed in the zip format.
   ZIP_REGEX = re.compile(r'.zip\Z')
 
+
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = "upload_app"
 
 
-  # Command to cd into the AppScale repository.
-  CD_APPSCALE_REPO = "cd ~/appscale"
+  # AppScale repository location on local filesystem.
+  APPSCALE_REPO = "~/appscale"
 
 
   # Command to run the Bootstrap.
   RUN_BOOTSTRAP_COMMAND = "bash bootstrap.sh"
 
 
-  # String of commands to cd into the ApppScale repository and run the Bootstrap
-  BOOTSTRAP_COMMAND = CD_APPSCALE_REPO + ";" + RUN_BOOTSTRAP_COMMAND
+  # String of commands to cd into the AppScale repository and run the Bootstrap.
+  BOOTSTRAP_COMMAND = "cd " + APPSCALE_REPO + ";" + RUN_BOOTSTRAP_COMMAND
 
 
   # Command to run the upgrade script from /appscale/scripts directory.
-  UPGRADE_SCRIPT = "python ~/appscale/scripts/datastore_upgrade.py"
+  UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/datastore_upgrade.py"
 
 
   @classmethod
@@ -697,7 +698,7 @@ class AppScaleTools(object):
     AppScaleLogger.log("Upgrading AppScale to the latest version on "
       "these machines: {}".format(options.ips))
     AppScaleLogger.warn(("Running bootstrap on the machines to fetch latest " + \
-      "code and build AppScale. This will atleast take a few minutes."))
+      "code and build AppScale. This will take at least a few minutes."))
     for ip in options.ips:
       try:
         RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
@@ -710,7 +711,7 @@ class AppScaleTools(object):
       zookeeper_ips += zk_ip + " "
 
     upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + zookeeper_ips
-    AppScaleLogger.log("Upgrade script {}".format(upgrade_script_zk_loc))
+    AppScaleLogger.log("Upgrading data for Zookeeper IPs: {}".format(zookeeper_ips))
     try:
       RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc, options.verbose)
       AppScaleLogger.success("Successfully upgraded data within zookeeper and cassandra.")

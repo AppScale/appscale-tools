@@ -107,8 +107,7 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
-  upgrade                           Upgrades AppScale code to its latest version
-                                    and also updates the data.
+  upgrade                           Upgrades AppScale code to its latest version.
 """
 
 
@@ -375,7 +374,7 @@ Available commands:
     return all_ips
 
   def get_ips_for_role(self, ips_layout, role):
-    """ Searched through the given IPs layout and finds all the unique
+    """ Searches through the given IPs layout and finds all the unique
     Zookeeper IP addresses.
 
     Args:
