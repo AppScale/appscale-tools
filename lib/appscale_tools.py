@@ -717,10 +717,3 @@ class AppScaleTools(object):
     except ShellException:
       AppScaleLogger.warn("Error executing upgrade script.")
 
-
-
-
-
-
-
-
