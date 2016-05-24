@@ -196,6 +196,12 @@ elif command == "register":
 elif command in ["--version", "-v"]:
   print APPSCALE_VERSION
   sys.exit(0)
+elif command == "upgrade":
+  try:
+    appscale.upgrade()
+  except Exception, e:
+    LocalState.generate_crash_log(e, traceback.format_exc())
+    sys.exit(1)
 else:
   print(AppScale.USAGE)
   if command == "help":

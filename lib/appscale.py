@@ -58,6 +58,13 @@ class AppScale():
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
+  # Role name for login node.
+  MASTER_ROLE = 'master'
+
+
+  # Role name for ZooKeeper node.
+  ZOOKEEPER_ROLE = 'zookeeper'
+
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """Usage: appscale command [<args>]
@@ -100,6 +107,8 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
+  upgrade                           Upgrades AppScale code to its latest version
+                                    and also updates the data.
 """
 
 
@@ -365,6 +374,29 @@ Available commands:
 
     return all_ips
 
+  def get_ips_for_role(self, ips_layout, role):
+    """ Searched through the given IPs layout and finds all the unique
+    Zookeeper IP addresses.
+
+    Args:
+      ips_layout: A dict that maps AppScale roles to either an IP address or a
+        list of IP addresses that host that role.
+    Returns:
+      A list containing all of the IP addresses in the IPs layout, without
+        duplicates.
+    """
+    ips_for_role = []
+    for key in ips_layout.keys():
+      if key == role:
+        ip_or_ips = ips_layout[role]
+        if isinstance(ip_or_ips, str):
+          if not ip_or_ips in ips_for_role:
+            ips_for_role.append(ip_or_ips)
+        elif isinstance(ip_or_ips, list):
+          for ip in ip_or_ips:
+            if not ip in ips_for_role:
+              ips_for_role.append(ip)
+    return ips_for_role
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
@@ -831,3 +863,35 @@ Available commands:
     AppScaleLogger.success(
       'Registration complete for AppScale deployment {0}.'
       .format(deployment['name']))
+
+  def upgrade(self):
+    """ Allows users to upgrade to the latest version of AppScale as well as
+    upgrades the data within zookeeper and cassandra.
+
+    Raises:
+      AppScaleException:
+    """
+    contents_as_yaml = yaml.safe_load(self.read_appscalefile())
+
+    # Construct the appscale-upgrade command from argv and the contents of
+    # the AppScalefile.
+    command = []
+    is_verbose = False
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      command.append("--verbose")
+
+    if 'ips_layout' in contents_as_yaml:
+      command.append("--ips")
+      command.append(self.get_all_ips(contents_as_yaml['ips_layout']))
+      command.append("--login_ip")
+      command.append(self.get_ips_for_role(contents_as_yaml['ips_layout'], self.MASTER_ROLE))
+      command.append("--zk_ips")
+      command.append(self.get_ips_for_role(contents_as_yaml['ips_layout'], self.ZOOKEEPER_ROLE))
+
+    options = ParseArgs(command, "appscale-upgrade").args
+    AppScaleTools.upgrade(options)
+

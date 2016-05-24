@@ -18,6 +18,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+import appscale
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -46,8 +47,10 @@ class AppScaleTools(object):
   # down.
   SLEEP_TIME = 5
 
+
   # The maximum number of times we should retry for methods that take longer.
   MAX_RETRIES = 20
+
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
@@ -64,6 +67,22 @@ class AppScaleTools(object):
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = "upload_app"
+
+
+  # Command to cd into the AppScale repository.
+  CD_APPSCALE_REPO = "cd ~/appscale"
+
+
+  # Command to run the Bootstrap.
+  RUN_BOOTSTRAP_COMMAND = "bash bootstrap.sh"
+
+
+  # String of commands to cd into the ApppScale repository and run the Bootstrap
+  BOOTSTRAP_COMMAND = CD_APPSCALE_REPO + ";" + RUN_BOOTSTRAP_COMMAND
+
+
+  # Command to run the upgrade script from /appscale/scripts directory.
+  UPGRADE_SCRIPT = "python ~/appscale/scripts/datastore_upgrade.py"
 
 
   @classmethod
@@ -653,3 +672,55 @@ class AppScaleTools(object):
       shutil.rmtree(file_location)
 
     return (login_host, http_port)
+
+  @classmethod
+  def upgrade(cls, options):
+    """ Upgrades the deployment to the latest AppScale version as well as
+    updates the data.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    Returns:
+      A tuple containing the host and port where the application is serving
+        traffic from.
+    """
+    if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
+      response = raw_input("AppScale needs to be down for this upgrade."
+        " Are you sure you want to proceed? (Y/N) ")
+      if response not in ['y', 'yes', 'Y', 'YES']:
+        raise AppScaleException("Cancelled AppScale upgrade.")
+      else:
+        AppScaleLogger.log("Shutting down AppScale...")
+        cls.terminate_instances(options)
+
+    AppScaleLogger.log("Upgrading AppScale to the latest version on "
+      "these machines: {}".format(options.ips))
+    AppScaleLogger.warn(("Running bootstrap on the machines to fetch latest " + \
+      "code and build AppScale. This will atleast take a few minutes."))
+    for ip in options.ips:
+      try:
+        RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
+        AppScaleLogger.success("Successfully upgraded AppScale to its latest version.")
+      except ShellException:
+        AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
+
+    zookeeper_ips = ""
+    for zk_ip in options.zk_ips:
+      zookeeper_ips += zk_ip + " "
+
+    upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + zookeeper_ips
+    AppScaleLogger.log("Upgrade script {}".format(upgrade_script_zk_loc))
+    try:
+      RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc, options.verbose)
+      AppScaleLogger.success("Successfully upgraded data within zookeeper and cassandra.")
+    except ShellException:
+      AppScaleLogger.warn("Error executing upgrade script.")
+
+
+
+
+
+
+
+
