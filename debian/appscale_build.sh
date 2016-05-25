@@ -27,4 +27,10 @@ if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
     exit 1
 fi
+
+# Remove files from outdated appscale-tools installations.
+rm -rf /usr/local/appscale-tools
+rm -f /etc/profile.d/appscale-tools.sh
+sed -i '/TOOLS_PATH/d' ~/.bashrc
+
 echo "AppScale tools installation completed successfully!"
