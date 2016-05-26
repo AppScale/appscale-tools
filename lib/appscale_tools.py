@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import socket
+import subprocess
 import sys
 import time
 import uuid
@@ -85,6 +86,14 @@ class AppScaleTools(object):
   # Command to run the upgrade script from /appscale/scripts directory.
   UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/datastore_upgrade.py"
 
+  # Data Upgrade Success keyword from log file.
+  DATA_UPGRADE_SUCCESS = "Data upgrade status: SUCCESS"
+
+  # Error log level in upgrade log file.
+  LOG_LEVEL_ERROR = "ERROR"
+
+  # Exception log level in upgrade log file.
+  LOG_LEVEL_INFO = "INFO"
 
   @classmethod
   def add_instances(cls, options):
@@ -714,7 +723,21 @@ class AppScaleTools(object):
     AppScaleLogger.log("Upgrading data for Zookeeper IPs: {}".format(zookeeper_ips))
     try:
       RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc, options.verbose)
-      AppScaleLogger.success("Successfully upgraded data within zookeeper and cassandra.")
+      user_host = 'root@' + options.login_ip[0]
+      ssh_file = subprocess.Popen(['ssh', user_host, 'cat', '/var/log/appscale/upgrade.log'],
+        stdout=subprocess.PIPE)
+
+      for line in ssh_file.stdout:
+        if cls.DATA_UPGRADE_SUCCESS in line:
+          AppScaleLogger.success("Successfully upgraded data within zookeeper and cassandra.")
+        elif cls.LOG_LEVEL_ERROR in line:
+          AppScaleLogger.warn("Error occured while upgrading data: {}".
+            format(line.partition(cls.LOG_LEVEL_ERROR)[2]))
+        elif cls.LOG_LEVEL_INFO in line:
+          pass
+        else:
+          AppScaleLogger.warn("Unexpected error occured while upgrading data. "
+            "Refer to the upgrade.log in /var/log/appscale for more details.")
     except ShellException:
       AppScaleLogger.warn("Error executing upgrade script.")
 
