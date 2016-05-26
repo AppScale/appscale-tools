@@ -8,6 +8,7 @@ import os
 import re
 import socket
 import subprocess
+import sys
 import threading
 import tempfile
 import time
@@ -56,8 +57,9 @@ class RemoteHelper(object):
 
   # The location on the local filesystem where a monit configuration file can
   # be found that can be used to start the AppController service.
-  MONIT_APPCONTROLLER_CONFIG_FILE = os.path.dirname(__file__) + os.sep + \
-    ".." + os.sep + "templates" + os.sep + "appcontroller.cfg"
+  MONIT_APPCONTROLLER_CONFIG_FILE = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/appcontroller.cfg')
 
 
   # The amount of time to wait when waiting for all API services to start on

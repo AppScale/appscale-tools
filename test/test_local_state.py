@@ -23,14 +23,12 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from appscale_logger import AppScaleLogger
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-from local_state import LocalState
-from node_layout import NodeLayout
-from parse_args import ParseArgs
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import BadConfigurationException
+from appscale.tools.custom_exceptions import ShellException
+from appscale.tools.local_state import LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.parse_args import ParseArgs
 
 
 class TestLocalState(unittest.TestCase):

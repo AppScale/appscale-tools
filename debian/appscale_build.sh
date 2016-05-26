@@ -4,33 +4,40 @@ export DIST=`lsb_release -c -s`
 
 cd `dirname $0`/..
 
-if [ "$DIST" = "n/a" ] ||  [ ! -e ./debian/appscale_install_${DIST}.sh ]; then
-    echo "We do not have a build script for ${DIST}."
-    echo "You can still install this package from source with 'python setup.py install'."
-    exit 1
-fi
-
-echo "Installing Ubuntu ${DIST} building environment."
+echo "Installing AppScale tools on ${DIST}."
 
 # Install the deb packages specified for this distro.
-PACKAGES=`find debian -regex ".*\/control\.${DIST}\$" -exec mawk -f debian/package-list.awk {} +`
-apt-get update
-apt-get install -y --force-yes ${PACKAGES}
-if [ $? -ne 0 ]; then
-    echo "Failed to install deb packages for ${DIST}."
-    exit 1
+if [ -f ./debian/control.${DIST} ]; then
+    PACKAGES=$(find debian -regex ".*\/control\.${DIST}\$" -exec awk -f debian/package-list.awk {} +)
+    apt-get update
+    apt-get install -y --force-yes ${PACKAGES}
+    if [ $? -ne 0 ]; then
+        echo "Failed to install deb packages for ${DIST}."
+        exit 1
+    fi
 fi
 
-# copy tools files
-TARGETDIR=/usr/local/appscale-tools
-mkdir -p $TARGETDIR
-cp -rv bin lib templates $TARGETDIR || exit 1
-cp -v LICENSE README.md $TARGETDIR || exit 1
+# These system packages are too old for google-api-python-client>=1.5.0.
+case ${DIST} in
+    precise|trusty) pip install --upgrade httplib2 six ;;
+esac
 
-# install scripts
-bash debian/appscale_install_${DIST}.sh all
+python2 setup.py install
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
     exit 1
 fi
+
+# Remove files from outdated appscale-tools installations.
+OLD_FILES_EXIST=false
+if [ -f /etc/profile.d/appscale-tools.sh ]; then
+    OLD_FILES_EXIST=true
+fi
+rm -rf /usr/local/appscale-tools
+rm -f /etc/profile.d/appscale-tools.sh
+sed -i '/TOOLS_PATH/d' ~/.bashrc
+
 echo "AppScale tools installation completed successfully!"
+if [ ${OLD_FILES_EXIST} = true ]; then
+    echo "You may need to run 'hash -r' before using the 'appscale' command."
+fi

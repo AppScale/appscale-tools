@@ -4,7 +4,6 @@
 
 # General-purpose Python library imports
 import os
-import sys
 import unittest
 
 
@@ -14,12 +13,9 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from appscale_logger import AppScaleLogger
-from node_layout import NodeLayout
-
-from agents.ec2_agent import EC2Agent
+from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.node_layout import NodeLayout
 
 
 class TestNodeLayout(unittest.TestCase):

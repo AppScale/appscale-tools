@@ -5,7 +5,6 @@
 
 # General-purpose Python library imports
 import json
-import re
 import socket
 import signal
 import ssl

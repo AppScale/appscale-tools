@@ -3,8 +3,6 @@
 
 
 # General-purpose Python library imports
-import os
-import sys
 import unittest
 
 
@@ -14,9 +12,7 @@ import termcolor
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-import version_helper
+from appscale.tools import version_helper
 
 
 class TestVersionHelper(unittest.TestCase):

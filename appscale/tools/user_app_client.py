@@ -4,7 +4,6 @@
 
 # General-purpose Python libraries
 import json
-import re
 import time
 import ssl
 
