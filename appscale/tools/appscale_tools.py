@@ -56,8 +56,9 @@ class AppScaleTools(object):
 
 
   # The location of the expect script, used to interact with ssh-copy-id
-  EXPECT_SCRIPT = os.path.dirname(__file__) + os.sep + ".." + os.sep + \
-    "templates" + os.sep + "sshcopyid"
+  EXPECT_SCRIPT = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/sshcopyid')
 
 
   # A regular expression that matches files compressed in the tar.gz format.

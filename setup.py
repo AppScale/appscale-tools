@@ -1,7 +1,18 @@
 import glob
+import sys
+
+from appscale.tools import version_helper
 from setuptools import setup
 
-from lib import version_helper
+# Require users to uninstall versions that used the appscale namespace.
+try:
+  import appscale.appscale_tools
+  print('Please run "pip uninstall appscale-tools" first.\n'
+        "Your installed version conflicts with this version's namespace.")
+  sys.exit()
+except ImportError:
+  pass
+
 
 version_helper.ensure_valid_python_is_used()
 
@@ -35,14 +46,14 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'httplib2',
-    'termcolor',
-    'SOAPpy',
-    'PyYAML',
+    'argparse',
     'boto',
     'google-api-python-client>=1.5.0',
-    'argparse',
+    'httplib2',
     'oauth2client>=2.0.0',
+    'PyYAML',
+    'SOAPpy',
+    'termcolor'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
@@ -54,8 +65,8 @@ setup(
     'Programming Language :: Python :: 2.7',
     'Topic :: Utilities'
   ],
-  package_dir={'appscale': 'lib'},
-  packages=['appscale', 'appscale.agents'],
+  namespace_packages=['appscale'],
+  packages=['appscale', 'appscale.tools', 'appscale.tools.agents'],
   scripts=glob.glob('bin/*'),
-  package_data={'appscale': ['../templates/*']}
+  package_data={'appscale.tools': ['templates/*']}
 )

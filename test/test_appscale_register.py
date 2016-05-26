@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
-import os
-import sys
 import unittest
 import yaml
 
 from flexmock import flexmock
 
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from custom_exceptions import AppScaleException
-from registration_helper import RegistrationHelper
-from appscale import AppScale
+from appscale.tools.appscale import AppScale
+from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.registration_helper import RegistrationHelper
 
 class TestAppScaleRegister(unittest.TestCase):
 

@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
 import json
-import os
-import sys
 import unittest
 import urllib2
 
 from flexmock import flexmock
 
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from appcontroller_client import AppControllerClient
-from custom_exceptions import AppScaleException
-from local_state import LocalState
-from registration_helper import RegistrationHelper
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.local_state import LocalState
+from appscale.tools.registration_helper import RegistrationHelper
 
 class TestRegistrationHelper(unittest.TestCase):
 

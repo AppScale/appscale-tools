@@ -21,21 +21,19 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from agents.euca_agent import EucalyptusAgent
-from agents.gce_agent import CredentialTypes
-from agents.gce_agent import GCEAgent
-from appcontroller_client import AppControllerClient
-from appscale_logger import AppScaleLogger
-from appscale_tools import AppScaleTools
-from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-from local_state import APPSCALE_VERSION
-from local_state import LocalState
-from node_layout import NodeLayout
-from remote_helper import RemoteHelper
+from appscale.tools.agents.euca_agent import EucalyptusAgent
+from appscale.tools.agents.gce_agent import CredentialTypes
+from appscale.tools.agents.gce_agent import GCEAgent
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.custom_exceptions import BadConfigurationException
+from appscale.tools.custom_exceptions import ShellException
+from appscale.tools.local_state import APPSCALE_VERSION
+from appscale.tools.local_state import LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestRemoteHelper(unittest.TestCase):

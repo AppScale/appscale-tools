@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 
 
 # Third-party Python libraries
@@ -41,14 +42,16 @@ class AppScale():
 
   # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cloud'.
-  TEMPLATE_CLOUD_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + \
-    "../templates/AppScalefile-cloud"
+  TEMPLATE_CLOUD_APPSCALEFILE = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/AppScalefile-cloud')
 
 
   # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cluster'.
-  TEMPLATE_CLUSTER_APPSCALEFILE = path = os.path.dirname(__file__) + os.sep + \
-    "../templates/AppScalefile-cluster"
+  TEMPLATE_CLUSTER_APPSCALEFILE = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/AppScalefile-cluster')
 
 
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep

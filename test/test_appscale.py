@@ -19,16 +19,14 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from agents.ec2_agent import EC2Agent
-from appscale import AppScale
-from appscale_tools import AppScaleTools
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
-from local_state import LocalState
-from remote_helper import RemoteHelper
+from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.tools.appscale import AppScale
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.custom_exceptions import AppScalefileException
+from appscale.tools.custom_exceptions import BadConfigurationException
+from appscale.tools.local_state import LocalState
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScale(unittest.TestCase):

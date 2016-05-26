@@ -1,8 +1,8 @@
 """ The Openstack Agent. """
-from ec2_agent import EC2Agent
-
 import boto
 import time
+
+from ec2_agent import EC2Agent
 from urlparse import urlparse
 
 __author__ = 'dario nascimento'

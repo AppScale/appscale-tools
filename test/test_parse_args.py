@@ -5,7 +5,6 @@
 # General-purpose Python library imports
 import base64
 import os
-import sys
 import unittest
 import yaml
 
@@ -16,14 +15,12 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from agents.base_agent import AgentConfigurationException
-from agents.ec2_agent import EC2Agent
-from agents.euca_agent import EucalyptusAgent
-from appscale_logger import AppScaleLogger
-from custom_exceptions import BadConfigurationException
-from parse_args import ParseArgs
+from appscale.tools.agents.base_agent import AgentConfigurationException
+from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.tools.agents.euca_agent import EucalyptusAgent
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import BadConfigurationException
+from appscale.tools.parse_args import ParseArgs
 
 
 class TestParseArgs(unittest.TestCase):

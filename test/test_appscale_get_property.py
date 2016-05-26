@@ -16,12 +16,10 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
-lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-from appscale_logger import AppScaleLogger
-from appscale_tools import AppScaleTools
-from local_state import LocalState
-from parse_args import ParseArgs
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.local_state import LocalState
+from appscale.tools.parse_args import ParseArgs
 
 
 class TestAppScaleGetProperty(unittest.TestCase):
