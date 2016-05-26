@@ -30,6 +30,8 @@ from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
 
+UPGRADE_LOG_FILE_LOC = '/var/log/appscale/upgrade.log'
+
 
 class AppScaleTools(object):
   """AppScaleTools provides callers with a way to start, stop, and interact
@@ -86,13 +88,16 @@ class AppScaleTools(object):
   # Command to run the upgrade script from /appscale/scripts directory.
   UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/datastore_upgrade.py"
 
+
   # Data Upgrade Success keyword from log file.
   DATA_UPGRADE_SUCCESS = "Data upgrade status: SUCCESS"
+
 
   # Error log level in upgrade log file.
   LOG_LEVEL_ERROR = "ERROR"
 
-  # Exception log level in upgrade log file.
+
+  # Info log level in upgrade log file.
   LOG_LEVEL_INFO = "INFO"
 
   @classmethod
@@ -722,14 +727,14 @@ class AppScaleTools(object):
     upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + zookeeper_ips
     AppScaleLogger.log("Upgrading data for Zookeeper IPs: {}".format(zookeeper_ips))
     try:
-      RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc, options.verbose)
-      user_host = 'root@' + options.login_ip[0]
-      ssh_file = subprocess.Popen(['ssh', user_host, 'cat', '/var/log/appscale/upgrade.log'],
-        stdout=subprocess.PIPE)
-
+      RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc,
+        options.verbose)
+      ssh_file = RemoteHelper.collect_file_contents_from_remote(options.login_ip[0],
+        UPGRADE_LOG_FILE_LOC)
       for line in ssh_file.stdout:
         if cls.DATA_UPGRADE_SUCCESS in line:
-          AppScaleLogger.success("Successfully upgraded data within zookeeper and cassandra.")
+          AppScaleLogger.success("Successfully upgraded data within zookeeper "
+            "and cassandra.")
         elif cls.LOG_LEVEL_ERROR in line:
           AppScaleLogger.warn("Error occured while upgrading data: {}".
             format(line.partition(cls.LOG_LEVEL_ERROR)[2]))
