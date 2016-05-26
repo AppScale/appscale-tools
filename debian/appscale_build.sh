@@ -29,8 +29,15 @@ if [ $? -ne 0 ]; then
 fi
 
 # Remove files from outdated appscale-tools installations.
+OLD_FILES_EXIST=false
+if [ -f /etc/profile.d/appscale-tools.sh ]; then
+    OLD_FILES_EXIST=true
+fi
 rm -rf /usr/local/appscale-tools
 rm -f /etc/profile.d/appscale-tools.sh
 sed -i '/TOOLS_PATH/d' ~/.bashrc
 
 echo "AppScale tools installation completed successfully!"
+if [ ${OLD_FILES_EXIST} = true ]; then
+    echo "You may need to run 'hash -r' before using the 'appscale' command."
+fi
