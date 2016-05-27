@@ -6,7 +6,6 @@
 import getpass
 import hashlib
 import json
-import locale
 import os
 import platform
 import re
@@ -936,17 +935,10 @@ class LocalState(object):
     crash_log_filename = '{0}log-{1}'.format(
       LocalState.LOCAL_APPSCALE_PATH, uuid.uuid4())
 
-    try:
-      locale.setlocale(locale.LC_ALL, '')
-      this_locale = locale.getlocale()[0]
-    except locale.Error:
-      this_locale = "unknown"
-
     log_info = {
       # System-specific information
       'platform' : platform.platform(),
       'runtime' : platform.python_implementation(),
-      'locale' : this_locale,
 
       # Crash-specific information
       'exception' : exception.__class__.__name__,
