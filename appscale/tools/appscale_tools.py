@@ -704,7 +704,7 @@ class AppScaleTools(object):
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       response = raw_input("AppScale needs to be down for this upgrade."
         " Are you sure you want to proceed? (Y/N) ")
-      if response not in ['y', 'yes', 'Y', 'YES']:
+      if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
       else:
         AppScaleLogger.log("Shutting down AppScale...")

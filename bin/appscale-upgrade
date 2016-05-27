@@ -8,24 +8,17 @@ import traceback
 
 
 # AppScale library imports
-try:
-  import appscale
-  lib = os.path.dirname(appscale.__file__)
-except ImportError:
-  lib = os.path.dirname(__file__) + os.sep + ".." + os.sep + "lib"
-sys.path.append(lib)
-
-
 # Make sure we're on Python 2.6 or greater before importing any code
 # that's incompatible with older versions.
-import version_helper
+from appscale.tools import version_helper
 version_helper.ensure_valid_python_is_used()
 
 
-from appscale_logger import AppScaleLogger
-from appscale_tools import AppScaleTools
-from local_state import LocalState
-from parse_args import ParseArgs
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.local_state import LocalState
+from appscale.tools.parse_args import ParseArgs
+
 
 
 if __name__ == "__main__":
@@ -33,6 +26,6 @@ if __name__ == "__main__":
   try:
     AppScaleTools.upgrade(options)
     sys.exit(0)
-  except Exception, e:
+  except Exception as e:
     LocalState.generate_crash_log(e, traceback.format_exc())
     sys.exit(1)

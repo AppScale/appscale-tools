@@ -868,11 +868,7 @@ Available commands:
 
   def upgrade(self):
     """ Allows users to upgrade to the latest version of AppScale as well as
-    upgrades the data within zookeeper and cassandra.
-
-    Raises:
-      AppScaleException:
-    """
+    upgrades the data within zookeeper and cassandra. """
     contents_as_yaml = yaml.safe_load(self.read_appscalefile())
 
     # Construct the appscale-upgrade command from argv and the contents of
