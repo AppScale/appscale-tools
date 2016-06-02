@@ -484,7 +484,7 @@ Available commands:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
 
-    if 'test' in contents_as_yaml:
+    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append("--test")
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
