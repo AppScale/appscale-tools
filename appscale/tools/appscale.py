@@ -523,6 +523,9 @@ Available commands:
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
+    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
+      command.append('--confirm')
+
     command.append("--appname")
     command.append(appid)
 
