@@ -2,6 +2,7 @@
 
 
 # General-purpose Python library imports
+import datetime
 import getpass
 import json
 import os
@@ -91,7 +92,10 @@ class AppScaleTools(object):
 
 
   # Location of the upgrade status file on the remote machine.
-  UPGRADE_STATUS_FILE_LOC = '/etc/appscale/upgrade-status.json'
+  UPGRADE_STATUS_FILE_LOC = '/var/log/appscale/upgrade-status-'
+
+  # .JSON file extention
+  JSON_FILE_EXTENTION = ".json"
 
 
   @classmethod
@@ -715,12 +719,18 @@ class AppScaleTools(object):
     zookeeper_ips = ""
     for zk_ip in options.zk_ips:
       zookeeper_ips += zk_ip + " "
-    upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + " " + zookeeper_ips
+
+    ts = time.time()
+    timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
+
+    upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + \
+      " " + timestamp + " " + zookeeper_ips
     AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
     try:
       RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc,
         options.verbose)
-      command = 'cat' + " " + cls.UPGRADE_STATUS_FILE_LOC
+      upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + cls.JSON_FILE_EXTENTION
+      command = 'cat' + " " + upgrade_status_file
       ssh_file = RemoteHelper.get_command_output_from_remote(options.login_ip[0], command)
       upgrade_status = ssh_file.stdout.read()
 
