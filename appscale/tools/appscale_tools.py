@@ -13,8 +13,6 @@ import sys
 import time
 import uuid
 
-from distutils.version import StrictVersion
-
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -694,7 +692,7 @@ class AppScaleTools(object):
     """
     upgrade_version_available = cls.get_upgrade_version_available(options)
     
-    if StrictVersion(APPSCALE_VERSION) == StrictVersion(upgrade_version_available):
+    if APPSCALE_VERSION == upgrade_version_available:
       AppScaleLogger.log("AppScale is already at its latest code version, "
         "so skipping code pull and build.")
       AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
@@ -708,6 +706,12 @@ class AppScaleTools(object):
 
   @classmethod
   def run_upgrade_script(cls, options, upgrade_version_available):
+    """ Runs the upgrade script which checks for any upgrades needed to be performed.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+        upgrade_version_available: The latest version available.
+    """
     zookeeper_ips = ""
     for zk_ip in options.zk_ips:
       zookeeper_ips += zk_ip + " "
@@ -738,6 +742,11 @@ class AppScaleTools(object):
 
   @classmethod
   def shut_down_appscale_if_running(cls, options):
+    """ Checks if AppScale is running and shuts it down as this is an offline upgrade.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+    """
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       response = raw_input("AppScale needs to be down for this upgrade."
         " Are you sure you want to proceed? (Y/N) ")
@@ -749,6 +758,11 @@ class AppScaleTools(object):
 
   @classmethod
   def upgrade_appscale_code(cls, options):
+    """ Runs the bootstrap script on each of the remote machines.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+    """
     AppScaleLogger.log("Upgrading AppScale to the latest version on "
       "these machines: {}".format(options.ips))
     AppScaleLogger.warn(("Running bootstrap on the machines to fetch latest " + \
@@ -767,6 +781,11 @@ class AppScaleTools(object):
 
   @classmethod
   def get_upgrade_version_available(cls, options):
+    """ Gets the latest release tag version available.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+    """
     output = RemoteHelper.get_command_output_from_remote(options.login_ip[0], cls.GIT_COMMAND, shell=True)
     for line in output.stdout:
       last_tag_line = line
