@@ -1044,13 +1044,13 @@ class RemoteHelper(object):
     return message
 
   @classmethod
-  def collect_file_contents_from_remote(cls, host, file_location, user='root'):
-    """ Reads the file from the location in the remote and passes the contents.
+  def get_command_output_from_remote(cls, host, command, user='root', shell=False):
+    """ Get the file from the location in the remote and passes the contents.
     Args:
       host: A str representing the machine that we should log into.
       file_location: A str representing the file location on the remote machine.
       user: A str representing the user to log in as.
     """
     user_login = user + '@' + host
-    return subprocess.Popen(['ssh', user_login, 'cat', file_location],
-      stdout=subprocess.PIPE)
+    return subprocess.Popen(['ssh', user_login, command], shell, stdout=subprocess.PIPE)
+

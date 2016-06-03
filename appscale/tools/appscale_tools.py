@@ -13,6 +13,7 @@ import sys
 import time
 import uuid
 
+from distutils.version import StrictVersion
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
@@ -29,9 +30,6 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
-
-UPGRADE_LOG_FILE_LOC = '/var/log/appscale/upgrade.log'
-
 
 class AppScaleTools(object):
   """AppScaleTools provides callers with a way to start, stop, and interact
@@ -87,19 +85,16 @@ class AppScaleTools(object):
 
 
   # Command to run the upgrade script from /appscale/scripts directory.
-  UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/datastore_upgrade.py"
+  UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/upgrade.py"
 
 
-  # Data Upgrade Success keyword from log file.
-  DATA_UPGRADE_SUCCESS = "Data upgrade status: SUCCESS"
+  # Git command to get the latest tags for a repository.
+  GIT_COMMAND = "git ls-remote --tags https://github.com/AppScale/appscale.git"
 
 
-  # Error log level in upgrade log file.
-  LOG_LEVEL_ERROR = "ERROR"
+  # Location of the upgrade status file on the remote machine.
+  UPGRADE_STATUS_FILE_LOC = '/etc/appscale/upgrade-status.json'
 
-
-  # Info log level in upgrade log file.
-  LOG_LEVEL_INFO = "INFO"
 
   @classmethod
   def add_instances(cls, options):
@@ -693,14 +688,56 @@ class AppScaleTools(object):
   def upgrade(cls, options):
     """ Upgrades the deployment to the latest AppScale version as well as
     updates the data.
-
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
-    Returns:
-      A tuple containing the host and port where the application is serving
-        traffic from.
     """
+    upgrade_version_available = cls.get_upgrade_version_available(options)
+    
+    if StrictVersion(APPSCALE_VERSION) == StrictVersion(upgrade_version_available):
+      AppScaleLogger.log("AppScale is already at its latest code version, "
+        "so skipping code pull and build.")
+      AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+      cls.shut_down_appscale_if_running(options)
+      cls.run_upgrade_script(options, upgrade_version_available)
+      return
+
+    cls.shut_down_appscale_if_running(options)
+    cls.upgrade_appscale_code(options)
+    cls.run_upgrade_script(options, upgrade_version_available)
+
+  @classmethod
+  def run_upgrade_script(cls, options, upgrade_version_available):
+    zookeeper_ips = ""
+    for zk_ip in options.zk_ips:
+      zookeeper_ips += zk_ip + " "
+    upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + " " + zookeeper_ips
+    AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+    try:
+      RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc,
+        options.verbose)
+      command = 'cat' + " " + cls.UPGRADE_STATUS_FILE_LOC
+      ssh_file = RemoteHelper.get_command_output_from_remote(options.login_ip[0], command)
+      upgrade_status = ssh_file.stdout.read()
+
+      json_status = json.loads(upgrade_status)
+      if not json_status.keys():
+        AppScaleLogger.log("AppScale is already at its latest version.")
+
+      for key in json_status.keys():
+        for second_level_key in json_status[key]:
+          if second_level_key == 'Completion Status' and \
+            json_status[key][second_level_key] == 'Success':
+            AppScaleLogger.success("{} process was successfully executed.".format(key))
+          elif not json_status[key][second_level_key] == 'Success':
+            AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
+              format(second_level_key, json_status[key][second_level_key]))
+
+    except ShellException:
+      AppScaleLogger.warn("Error executing upgrade script.")
+
+  @classmethod
+  def shut_down_appscale_if_running(cls, options):
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       response = raw_input("AppScale needs to be down for this upgrade."
         " Are you sure you want to proceed? (Y/N) ")
@@ -710,40 +747,29 @@ class AppScaleTools(object):
         AppScaleLogger.log("Shutting down AppScale...")
         cls.terminate_instances(options)
 
+  @classmethod
+  def upgrade_appscale_code(cls, options):
     AppScaleLogger.log("Upgrading AppScale to the latest version on "
       "these machines: {}".format(options.ips))
     AppScaleLogger.warn(("Running bootstrap on the machines to fetch latest " + \
       "code and build AppScale. This will take at least a few minutes."))
-    for ip in options.ips:
-      try:
-        RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
-        AppScaleLogger.success("Successfully upgraded AppScale to its latest version.")
-      except ShellException:
-        AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
-    zookeeper_ips = ""
-    for zk_ip in options.zk_ips:
-      zookeeper_ips += zk_ip + " "
+    response = raw_input(" Are you sure you want to proceed? (Y/N) ")
+    if response.lower() not in ['y', 'yes']:
+      raise AppScaleException("Cancelled AppScale upgrade")
+    else:
+      for ip in options.ips:
+        try:
+          RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
+          AppScaleLogger.success("Successfully upgraded AppScale to its latest version.")
+        except ShellException:
+          AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
-    upgrade_script_zk_loc = cls.UPGRADE_SCRIPT + " " + zookeeper_ips
-    AppScaleLogger.log("Upgrading data for Zookeeper IPs: {}".format(zookeeper_ips))
-    try:
-      RemoteHelper.ssh(options.login_ip[0], options.keyname, upgrade_script_zk_loc,
-        options.verbose)
-      ssh_file = RemoteHelper.collect_file_contents_from_remote(options.login_ip[0],
-        UPGRADE_LOG_FILE_LOC)
-      for line in ssh_file.stdout:
-        if cls.DATA_UPGRADE_SUCCESS in line:
-          AppScaleLogger.success("Successfully upgraded data within zookeeper "
-            "and cassandra.")
-        elif cls.LOG_LEVEL_ERROR in line:
-          AppScaleLogger.warn("Error occured while upgrading data: {}".
-            format(line.partition(cls.LOG_LEVEL_ERROR)[2]))
-        elif cls.LOG_LEVEL_INFO in line:
-          pass
-        else:
-          AppScaleLogger.warn("Unexpected error occured while upgrading data. "
-            "Refer to the upgrade.log in /var/log/appscale for more details.")
-    except ShellException:
-      AppScaleLogger.warn("Error executing upgrade script.")
-
+  @classmethod
+  def get_upgrade_version_available(cls, options):
+    output = RemoteHelper.get_command_output_from_remote(options.login_ip[0], cls.GIT_COMMAND, shell=True)
+    for line in output.stdout:
+      last_tag_line = line
+    tag_line_parts = last_tag_line.partition('/tags/')
+    tag_version = (tag_line_parts[2]).partition('^')
+    return tag_version[0]
