@@ -364,12 +364,10 @@ class ParseArgs(object):
     elif function == "appscale-upgrade":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
-      self.parser.add_argument('--ips',
+      self.parser.add_argument('--ips_layout',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--unique_ips',
         help="a list or string of unique ips")
-      self.parser.add_argument('--login_ip',
-        help="the ip for the login node")
-      self.parser.add_argument('--zk_ips',
-        help="a list or string of ips for the zookeeper node")
     else:
       raise SystemExit
 

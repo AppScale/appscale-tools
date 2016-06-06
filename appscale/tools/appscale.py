@@ -877,7 +877,7 @@ Available commands:
     # Construct the appscale-upgrade command from argv and the contents of
     # the AppScalefile.
     command = []
-    is_verbose = False
+
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")
       command.append(contents_as_yaml['keyname'])
@@ -886,12 +886,10 @@ Available commands:
       command.append("--verbose")
 
     if 'ips_layout' in contents_as_yaml:
-      command.append("--ips")
+      command.append("--ips_layout")
+      command.append(str(contents_as_yaml['ips_layout']))
+      command.append("--unique_ips")
       command.append(self.get_all_ips(contents_as_yaml['ips_layout']))
-      command.append("--login_ip")
-      command.append(self.get_ips_for_role(contents_as_yaml['ips_layout'], self.MASTER_ROLE))
-      command.append("--zk_ips")
-      command.append(self.get_ips_for_role(contents_as_yaml['ips_layout'], self.ZOOKEEPER_ROLE))
 
     options = ParseArgs(command, "appscale-upgrade").args
     AppScaleTools.upgrade(options)
