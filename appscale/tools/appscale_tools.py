@@ -699,8 +699,7 @@ class AppScaleTools(object):
     zk_ips = ips_layout_yaml['zookeeper']
     db_ips = ips_layout_yaml['database']
     master_ip = ips_layout_yaml['master']
-    #upgrade_version_available = cls.get_upgrade_version_available(master_ip)
-    upgrade_version_available = "3.0.0"
+    upgrade_version_available = cls.get_upgrade_version_available(master_ip)
 
     if APPSCALE_VERSION == upgrade_version_available:
       AppScaleLogger.log("AppScale is already at its latest code version, "
@@ -754,6 +753,8 @@ class AppScaleTools(object):
           elif not json_status[key][second_level_key] == 'Success':
             AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
               format(second_level_key, json_status[key][second_level_key]))
+            AppScaleLogger.warn("For more information refer to " + upgrade_status_file
+              + " by logging into your head node.")
 
     except ShellException:
       AppScaleLogger.warn("Error executing upgrade script.")
