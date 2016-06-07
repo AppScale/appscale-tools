@@ -765,6 +765,8 @@ class AppScaleTools(object):
     Args:
       ips_list: A list of ips for which the string is to be constructed.
     """
+    if isinstance(ip_list, str):
+      return "[" + ip_list + "]"
     ips =  ",".join(ip_list)
     string_ips = "[" + ips + "]"
     return string_ips
