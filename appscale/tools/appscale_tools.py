@@ -77,7 +77,7 @@ class AppScaleTools(object):
 
 
   # Command to run the Bootstrap.
-  RUN_BOOTSTRAP_COMMAND = "bash bootstrap.sh"
+  RUN_BOOTSTRAP_COMMAND = "bash bootstrap.sh --force-upgrade"
 
 
   # String of commands to cd into the AppScale repository and run the Bootstrap.
@@ -726,10 +726,13 @@ class AppScaleTools(object):
     """
     ts = time.time()
     timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
+
     zk_ips_str = cls.get_ip_str_for_command(zk_ips)
     db_ips_str = cls.get_ip_str_for_command(db_ips)
+    master_ip_str = cls.get_ip_str_for_command(master_ip)
     upgrade_script_command = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + \
-      " " + options.keyname + " " + timestamp + " " + "--zookeeper" + " " + zk_ips_str + \
+      " " + options.keyname + " " + timestamp + " " + "--master" +  " " + master_ip_str + \
+      " " + "--zookeeper" + " " + zk_ips_str + \
       " " + "--database" + " " + db_ips_str
 
     AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
@@ -779,8 +782,9 @@ class AppScaleTools(object):
           passed in via the command-line interface.
     """
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
-      response = raw_input("AppScale needs to be down for this upgrade."
-        " Are you sure you want to proceed? (Y/N) ")
+      AppScaleLogger.warn("AppScale needs to be down for this upgrade.")
+      response = raw_input("Are you sure you want to proceed with bringing down "
+        "AppScale and continuing with the upgrade? (Y/N) ")
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
       else:
@@ -806,7 +810,8 @@ class AppScaleTools(object):
       for ip in options.unique_ips:
         try:
           RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
-          AppScaleLogger.success("Successfully upgraded AppScale to its latest version.")
+          AppScaleLogger.success("Successfully upgraded AppScale to its latest "
+            "version at {}".format(ip))
         except ShellException:
           AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
