@@ -77,7 +77,7 @@ class AppScaleTools(object):
 
 
   # Command to run the Bootstrap.
-  RUN_BOOTSTRAP_COMMAND = "bash bootstrap.sh --force-upgrade"
+  RUN_BOOTSTRAP_COMMAND = "bash bootstrap_force_upgrade.sh --local-ip"
 
 
   # String of commands to cd into the AppScale repository and run the Bootstrap.
@@ -809,7 +809,8 @@ class AppScaleTools(object):
     else:
       for ip in options.unique_ips:
         try:
-          RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_COMMAND, options.verbose)
+          command = cls.BOOTSTRAP_COMMAND + " " + ip
+          RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
           AppScaleLogger.success("Successfully upgraded AppScale to its latest "
             "version at {}".format(ip))
         except ShellException:
