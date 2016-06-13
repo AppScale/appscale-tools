@@ -1044,7 +1044,7 @@ class RemoteHelper(object):
     return message
 
   @classmethod
-  def get_command_output_from_remote(cls, host, command, user='root', shell=False):
+  def get_command_output_from_remote(cls, host, command, keyname, user='root', shell=False):
     """ Get the file from the location in the remote and passes the contents.
     Args:
       host: A str representing the machine that we should log into.
@@ -1052,5 +1052,6 @@ class RemoteHelper(object):
       user: A str representing the user to log in as.
     """
     user_login = user + '@' + host
-    return subprocess.Popen(['ssh', user_login, command], shell, stdout=subprocess.PIPE)
+    key_path = LocalState.get_key_path_from_name(keyname)
+    return subprocess.Popen(['ssh', '-i', key_path, user_login, command], shell, stdout=subprocess.PIPE)
 

@@ -699,7 +699,7 @@ class AppScaleTools(object):
     zk_ips = ips_layout_yaml['zookeeper']
     db_ips = ips_layout_yaml['database']
     master_ip = ips_layout_yaml['master']
-    upgrade_version_available = cls.get_upgrade_version_available(master_ip)
+    upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
 
     if APPSCALE_VERSION == upgrade_version_available:
       AppScaleLogger.log("AppScale is already at its latest code version, "
@@ -741,7 +741,7 @@ class AppScaleTools(object):
         options.verbose)
       upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + cls.JSON_FILE_EXTENTION
       command = 'cat' + " " + upgrade_status_file
-      ssh_file = RemoteHelper.get_command_output_from_remote(master_ip, command)
+      ssh_file = RemoteHelper.get_command_output_from_remote(master_ip, command, options.keyname)
       upgrade_status = ssh_file.stdout.read()
 
       json_status = json.loads(upgrade_status)
@@ -817,12 +817,12 @@ class AppScaleTools(object):
           AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
   @classmethod
-  def get_upgrade_version_available(cls, master_ip):
+  def get_upgrade_version_available(cls, master_ip, keyname):
     """ Gets the latest release tag version available.
       Args:
         master_ip: The IP address to the head node.
     """
-    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_COMMAND, shell=True)
+    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_COMMAND, keyname, shell=True)
     for line in output.stdout:
       last_tag_line = line
     tag_line_parts = last_tag_line.partition('/tags/')
