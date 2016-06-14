@@ -72,7 +72,7 @@ class AppScaleTools(object):
   ADMIN_CAPABILITIES = "upload_app"
 
 
-  # AppScale repository location on local filesystem.
+  # AppScale repository location on an AppScale image.
   APPSCALE_REPO = "~/appscale"
 
 
@@ -80,23 +80,16 @@ class AppScaleTools(object):
   RUN_BOOTSTRAP_COMMAND = "bash bootstrap_force_upgrade.sh --local-ip"
 
 
-  # String of commands to cd into the AppScale repository and run the Bootstrap.
-  BOOTSTRAP_COMMAND = "cd " + APPSCALE_REPO + ";" + RUN_BOOTSTRAP_COMMAND
-
-
   # Command to run the upgrade script from /appscale/scripts directory.
   UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/upgrade.py"
 
 
   # Git command to get the latest tags for a repository.
-  GIT_COMMAND = "git ls-remote --tags https://github.com/AppScale/appscale.git"
+  GIT_LIST_TAGS = "git ls-remote --tags https://github.com/AppScale/appscale.git"
 
 
   # Location of the upgrade status file on the remote machine.
   UPGRADE_STATUS_FILE_LOC = '/var/log/appscale/upgrade-status-'
-
-  # .JSON file extention
-  JSON_FILE_EXTENTION = ".json"
 
 
   @classmethod
@@ -689,8 +682,7 @@ class AppScaleTools(object):
 
   @classmethod
   def upgrade(cls, options):
-    """ Upgrades the deployment to the latest AppScale version as well as
-    updates the data.
+    """ Upgrades the deployment to the latest AppScale version.
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
@@ -739,7 +731,7 @@ class AppScaleTools(object):
     try:
       RemoteHelper.ssh(master_ip, options.keyname, upgrade_script_command,
         options.verbose)
-      upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + cls.JSON_FILE_EXTENTION
+      upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
       command = 'cat' + " " + upgrade_status_file
       ssh_file = RemoteHelper.get_command_output_from_remote(master_ip, command, options.keyname)
       upgrade_status = ssh_file.stdout.read()
@@ -809,10 +801,10 @@ class AppScaleTools(object):
     else:
       for ip in options.unique_ips:
         try:
-          command = cls.BOOTSTRAP_COMMAND + " " + ip
+          command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
           RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
-          AppScaleLogger.success("Successfully upgraded AppScale to its latest "
-            "version at {}".format(ip))
+          AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
+            "at {}".format(ip))
         except ShellException:
           AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
@@ -822,7 +814,7 @@ class AppScaleTools(object):
       Args:
         master_ip: The IP address to the head node.
     """
-    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_COMMAND, keyname, shell=True)
+    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_LIST_TAGS, keyname, shell=True)
     for line in output.stdout:
       last_tag_line = line
     tag_line_parts = last_tag_line.partition('/tags/')

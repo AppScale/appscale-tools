@@ -376,30 +376,6 @@ Available commands:
 
     return all_ips
 
-  def get_ips_for_role(self, ips_layout, role):
-    """ Searches through the given IPs layout and finds all the unique
-    Zookeeper IP addresses.
-
-    Args:
-      ips_layout: A dict that maps AppScale roles to either an IP address or a
-        list of IP addresses that host that role.
-    Returns:
-      A list containing all of the IP addresses in the IPs layout, without
-        duplicates.
-    """
-    ips_for_role = []
-    for key in ips_layout.keys():
-      if key == role:
-        ip_or_ips = ips_layout[role]
-        if isinstance(ip_or_ips, str):
-          if not ip_or_ips in ips_for_role:
-            ips_for_role.append(ip_or_ips)
-        elif isinstance(ip_or_ips, list):
-          for ip in ip_or_ips:
-            if not ip in ips_for_role:
-              ips_for_role.append(ip)
-    return ips_for_role
-
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
@@ -870,8 +846,7 @@ Available commands:
       .format(deployment['name']))
 
   def upgrade(self):
-    """ Allows users to upgrade to the latest version of AppScale as well as
-    upgrades the data within zookeeper and cassandra. """
+    """ Allows users to upgrade to the latest version of AppScale."""
     contents_as_yaml = yaml.safe_load(self.read_appscalefile())
 
     # Construct the appscale-upgrade command from argv and the contents of
