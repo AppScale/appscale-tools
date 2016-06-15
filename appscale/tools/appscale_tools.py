@@ -11,6 +11,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import uuid
 import yaml
@@ -799,14 +800,26 @@ class AppScaleTools(object):
     if response.lower() not in ['y', 'yes']:
       raise AppScaleException("Cancelled AppScale upgrade")
     else:
+      threads = []
       for ip in options.unique_ips:
-        try:
-          command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
-          RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
-          AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
-            "at {}".format(ip))
-        except ShellException:
-          AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
+        t = threading.Thread(target=cls.run_bootstrap, args=(ip,options))
+        threads.append(t)
+
+      for x in threads:
+        x.start()
+
+      for x in threads:
+        x.join()
+
+  @classmethod
+  def run_bootstrap(cls, ip, options):
+    try:
+      command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
+      RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
+      AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
+        "at {}".format(ip))
+    except ShellException:
+      AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
 
   @classmethod
   def get_upgrade_version_available(cls, master_ip, keyname):
