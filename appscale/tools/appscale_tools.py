@@ -21,7 +21,6 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
-import appscale
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -734,24 +733,23 @@ class AppScaleTools(object):
         options.verbose)
       upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
       command = 'cat' + " " + upgrade_status_file
-      ssh_file = RemoteHelper.get_command_output_from_remote(master_ip, command, options.keyname)
-      upgrade_status = ssh_file.stdout.read()
+      upgrade_status = RemoteHelper.ssh(master_ip, options.keyname, command, options.verbose)
 
       json_status = json.loads(upgrade_status)
-      if not json_status.keys():
-        AppScaleLogger.log("AppScale is already at its latest version.")
+      if 'Latest-version' in json_status.keys():
+        AppScaleLogger.warn("{}".format(json_status['Latest-version']))
+        return
 
       for key in json_status.keys():
-        for second_level_key in json_status[key]:
-          if second_level_key == 'Completion Status' and \
-            json_status[key][second_level_key] == 'Success':
+        if 'Completion-Status' in (json_status[key]).keys():
             AppScaleLogger.success("{} process was successfully executed.".format(key))
-          elif not json_status[key][second_level_key] == 'Success':
-            AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
-              format(second_level_key, json_status[key][second_level_key]))
-            AppScaleLogger.warn("For more information refer to " + upgrade_status_file
-              + " by logging into your head node.")
-
+        else:
+          for second_level_key in json_status[key]:
+            if not json_status[key][second_level_key] == 'Success':
+              AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
+                format(second_level_key, json_status[key][second_level_key]))
+          AppScaleLogger.warn("For more information refer to " + upgrade_status_file
+            + " by logging into your head node.")
     except ShellException:
       AppScaleLogger.warn("Error executing upgrade script.")
 
