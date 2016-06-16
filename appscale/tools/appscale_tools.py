@@ -736,8 +736,9 @@ class AppScaleTools(object):
       upgrade_status = RemoteHelper.ssh(master_ip, options.keyname, command, options.verbose)
 
       json_status = json.loads(upgrade_status)
-      if 'Latest-version' in json_status.keys():
-        AppScaleLogger.warn("{}".format(json_status['Latest-version']))
+      if 'Status' in json_status.keys():
+        if json_status['Status'] == 'Not executed':
+          AppScaleLogger.warn("{}".format(json_status['Message']))
         return
 
       for key in json_status.keys():
@@ -773,7 +774,8 @@ class AppScaleTools(object):
           passed in via the command-line interface.
     """
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
-      AppScaleLogger.warn("AppScale needs to be down for this upgrade.")
+      AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
+        "Upgrade process could take a while and it is not reversible.")
       response = raw_input("Are you sure you want to proceed with bringing down "
         "AppScale and continuing with the upgrade? (Y/N) ")
       if response.lower() not in ['y', 'yes']:
@@ -781,6 +783,13 @@ class AppScaleTools(object):
       else:
         AppScaleLogger.log("Shutting down AppScale...")
         cls.terminate_instances(options)
+    else:
+      AppScaleLogger.warn("Upgrade process could take a while and it is not reversible.")
+      response = raw_input("Are you sure you want to proceed with the upgrade? (Y/N) ")
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled AppScale upgrade.")
+      else:
+        pass
 
   @classmethod
   def upgrade_appscale_code(cls, options):
@@ -789,25 +798,19 @@ class AppScaleTools(object):
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
     """
-    AppScaleLogger.log("Upgrading AppScale to the latest version on "
+    AppScaleLogger.log("Upgrading AppScale code to the latest version on "
       "these machines: {}".format(options.unique_ips))
-    AppScaleLogger.warn(("Running bootstrap on the machines to fetch latest " + \
-      "code and build AppScale. This will take at least a few minutes."))
 
-    response = raw_input("Are you sure you want to proceed? (Y/N) ")
-    if response.lower() not in ['y', 'yes']:
-      raise AppScaleException("Cancelled AppScale upgrade")
-    else:
-      threads = []
-      for ip in options.unique_ips:
-        t = threading.Thread(target=cls.run_bootstrap, args=(ip,options))
-        threads.append(t)
+    threads = []
+    for ip in options.unique_ips:
+      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options))
+      threads.append(t)
 
-      for x in threads:
-        x.start()
+    for x in threads:
+      x.start()
 
-      for x in threads:
-        x.join()
+    for x in threads:
+      x.join()
 
   @classmethod
   def run_bootstrap(cls, ip, options):
