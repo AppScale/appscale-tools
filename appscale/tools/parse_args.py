@@ -368,6 +368,8 @@ class ParseArgs(object):
         help="a YAML file dictating the placement strategy")
       self.parser.add_argument('--unique_ips',
         help="a list or string of unique ips")
+      self.parser.add_argument('--stash',
+        help="to specify running the bootstrap with a stash of local changes.")
     else:
       raise SystemExit
 

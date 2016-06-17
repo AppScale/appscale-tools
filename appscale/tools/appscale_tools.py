@@ -702,8 +702,7 @@ class AppScaleTools(object):
       return
 
     cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale_code(options)
-    cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+    cls.upgrade_appscale(options, upgrade_version_available, master_ip, zk_ips, db_ips)
 
   @classmethod
   def run_upgrade_script(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
@@ -776,7 +775,7 @@ class AppScaleTools(object):
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
         "Upgrade process could take a while and it is not reversible.")
-      response = raw_input("Are you sure you want to proceed with bringing down "
+      response = raw_input("Are you sure you want to proceed with shutting down "
         "AppScale and continuing with the upgrade? (Y/N) ")
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
@@ -792,7 +791,7 @@ class AppScaleTools(object):
         pass
 
   @classmethod
-  def upgrade_appscale_code(cls, options):
+  def upgrade_appscale(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
     """ Runs the bootstrap script on each of the remote machines.
       Args:
         options: A Namespace that has fields for each parameter that can be
@@ -800,10 +799,10 @@ class AppScaleTools(object):
     """
     AppScaleLogger.log("Upgrading AppScale code to the latest version on "
       "these machines: {}".format(options.unique_ips))
-
     threads = []
+    error_ips = []
     for ip in options.unique_ips:
-      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options))
+      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options, error_ips))
       threads.append(t)
 
     for x in threads:
@@ -812,15 +811,24 @@ class AppScaleTools(object):
     for x in threads:
       x.join()
 
+    if not error_ips:
+      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+
   @classmethod
-  def run_bootstrap(cls, ip, options):
+  def run_bootstrap(cls, ip, options, error_ips):
     try:
       command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
+      if options.stash:
+        command = command + " " + "--stash"
       RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
       AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
         "at {}".format(ip))
     except ShellException:
-      AppScaleLogger.warn("Error executing bootstrap command to upgrade AppScale.")
+      error_ips.append(ip)
+      AppScaleLogger.warn("There was a problem upgrading AppScale code on {} "
+        "Please refer to the /var/log/appscale/bootstrap.log file and correct any errors "
+        "to re-run this command successfully.".format(ip))
+      return error_ips
 
   @classmethod
   def get_upgrade_version_available(cls, master_ip, keyname):
