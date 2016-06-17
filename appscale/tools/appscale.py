@@ -845,7 +845,7 @@ Available commands:
       'Registration complete for AppScale deployment {0}.'
       .format(deployment['name']))
 
-  def upgrade(self, stash=False):
+  def upgrade(self):
     """ Allows users to upgrade to the latest version of AppScale."""
     contents_as_yaml = yaml.safe_load(self.read_appscalefile())
 
@@ -865,9 +865,6 @@ Available commands:
       command.append(str(contents_as_yaml['ips_layout']))
       command.append("--unique_ips")
       command.append(self.get_all_ips(contents_as_yaml['ips_layout']))
-
-    if stash:
-      command.append("--stash")
 
     options = ParseArgs(command, "appscale-upgrade").args
     AppScaleTools.upgrade(options)

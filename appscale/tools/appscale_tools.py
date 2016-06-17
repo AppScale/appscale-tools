@@ -818,8 +818,6 @@ class AppScaleTools(object):
   def run_bootstrap(cls, ip, options, error_ips):
     try:
       command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
-      if options.stash:
-        command = command + " " + "--stash"
       RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
       AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
         "at {}".format(ip))
