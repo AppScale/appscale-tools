@@ -61,6 +61,13 @@ class AppScale():
   TERMINATE = "ruby /root/appscale/AppController/terminate.rb clean"
 
 
+  # Role name for login node.
+  MASTER_ROLE = 'master'
+
+
+  # Role name for ZooKeeper node.
+  ZOOKEEPER_ROLE = 'zookeeper'
+
   # The usage that should be displayed to users if they call 'appscale'
   # with a bad directive or ask for help.
   USAGE = """Usage: appscale command [<args>]
@@ -103,6 +110,7 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
+  upgrade                           Upgrades AppScale code to its latest version.
 """
 
 
@@ -367,7 +375,6 @@ Available commands:
             all_ips.append(ip)
 
     return all_ips
-
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
@@ -837,3 +844,28 @@ Available commands:
     AppScaleLogger.success(
       'Registration complete for AppScale deployment {0}.'
       .format(deployment['name']))
+
+  def upgrade(self):
+    """ Allows users to upgrade to the latest version of AppScale."""
+    contents_as_yaml = yaml.safe_load(self.read_appscalefile())
+
+    # Construct the appscale-upgrade command from argv and the contents of
+    # the AppScalefile.
+    command = []
+
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      command.append("--verbose")
+
+    if 'ips_layout' in contents_as_yaml:
+      command.append("--ips_layout")
+      command.append(str(contents_as_yaml['ips_layout']))
+      command.append("--unique_ips")
+      command.append(self.get_all_ips(contents_as_yaml['ips_layout']))
+
+    options = ParseArgs(command, "appscale-upgrade").args
+    AppScaleTools.upgrade(options)
+

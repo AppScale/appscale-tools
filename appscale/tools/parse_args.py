@@ -361,6 +361,13 @@ class ParseArgs(object):
         help="the name of the AppController property to set")
       self.parser.add_argument('--property_value',
         help="the value of the AppController property to set")
+    elif function == "appscale-upgrade":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--ips_layout',
+        help="a YAML file dictating the placement strategy")
+      self.parser.add_argument('--unique_ips',
+        help="a list or string of unique ips")
     else:
       raise SystemExit
 
@@ -433,6 +440,8 @@ class ParseArgs(object):
     elif function == "appscale-get-property":
       pass
     elif function == "appscale-set-property":
+      pass
+    elif function == "appscale-upgrade":
       pass
     else:
       raise SystemExit

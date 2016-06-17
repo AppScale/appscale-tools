@@ -2,16 +2,19 @@
 
 
 # General-purpose Python library imports
+import datetime
 import getpass
 import json
 import os
 import re
 import shutil
 import socket
+import subprocess
 import sys
+import threading
 import time
 import uuid
-
+import yaml
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
@@ -27,7 +30,6 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
-
 
 class AppScaleTools(object):
   """AppScaleTools provides callers with a way to start, stop, and interact
@@ -46,8 +48,10 @@ class AppScaleTools(object):
   # down.
   SLEEP_TIME = 5
 
+
   # The maximum number of times we should retry for methods that take longer.
   MAX_RETRIES = 20
+
 
   # The location of the expect script, used to interact with ssh-copy-id
   EXPECT_SCRIPT = os.path.join(
@@ -62,9 +66,30 @@ class AppScaleTools(object):
   # A regular expression that matches files compressed in the zip format.
   ZIP_REGEX = re.compile(r'.zip\Z')
 
+
   # A str that contains all of the authorizations that an AppScale cloud
   # administrator should be granted.
   ADMIN_CAPABILITIES = "upload_app"
+
+
+  # AppScale repository location on an AppScale image.
+  APPSCALE_REPO = "~/appscale"
+
+
+  # Command to run the Bootstrap.
+  RUN_BOOTSTRAP_COMMAND = "bash bootstrap_force_upgrade.sh --local-ip"
+
+
+  # Command to run the upgrade script from /appscale/scripts directory.
+  UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/upgrade.py"
+
+
+  # Git command to get the latest tags for a repository.
+  GIT_LIST_TAGS = "git ls-remote --tags https://github.com/AppScale/appscale.git"
+
+
+  # Location of the upgrade status file on the remote machine.
+  UPGRADE_STATUS_FILE_LOC = '/var/log/appscale/upgrade-status-'
 
 
   @classmethod
@@ -654,3 +679,164 @@ class AppScaleTools(object):
       shutil.rmtree(file_location)
 
     return (login_host, http_port)
+
+  @classmethod
+  def upgrade(cls, options):
+    """ Upgrades the deployment to the latest AppScale version.
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    ips_layout_yaml = yaml.load(options.ips_layout)
+    zk_ips = ips_layout_yaml['zookeeper']
+    db_ips = ips_layout_yaml['database']
+    master_ip = ips_layout_yaml['master']
+    upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
+
+    if APPSCALE_VERSION == upgrade_version_available:
+      AppScaleLogger.log("AppScale is already at its latest code version, "
+        "so skipping code pull and build.")
+      AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+      cls.shut_down_appscale_if_running(options)
+      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+      return
+
+    cls.shut_down_appscale_if_running(options)
+    cls.upgrade_appscale(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+
+  @classmethod
+  def run_upgrade_script(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
+    """ Runs the upgrade script which checks for any upgrades needed to be performed.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+        upgrade_version_available: The latest version available to upgrade to.
+        master_ip: The IP address to the head node.
+        zk_ips: A list of ZooKeeper node IPs.
+        db_ips: A list of database node IPs.
+    """
+    ts = time.time()
+    timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
+
+    zk_ips_str = cls.get_ip_str_for_command(zk_ips)
+    db_ips_str = cls.get_ip_str_for_command(db_ips)
+    master_ip_str = cls.get_ip_str_for_command(master_ip)
+    upgrade_script_command = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + \
+      " " + options.keyname + " " + timestamp + " " + "--master" +  " " + master_ip_str + \
+      " " + "--zookeeper" + " " + zk_ips_str + \
+      " " + "--database" + " " + db_ips_str
+
+    AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+    try:
+      RemoteHelper.ssh(master_ip, options.keyname, upgrade_script_command,
+        options.verbose)
+      upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
+      command = 'cat' + " " + upgrade_status_file
+      upgrade_status = RemoteHelper.ssh(master_ip, options.keyname, command, options.verbose)
+
+      json_status = json.loads(upgrade_status)
+      if 'Status' in json_status.keys():
+        if json_status['Status'] == 'Not executed':
+          AppScaleLogger.warn("{}".format(json_status['Message']))
+        return
+
+      for key in json_status.keys():
+        if 'Completion-Status' in (json_status[key]).keys():
+            AppScaleLogger.success("{} process was successfully executed.".format(key))
+        else:
+          for second_level_key in json_status[key]:
+            if not json_status[key][second_level_key] == 'Success':
+              AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
+                format(second_level_key, json_status[key][second_level_key]))
+          AppScaleLogger.warn("For more information refer to " + upgrade_status_file
+            + " by logging into your head node.")
+    except ShellException:
+      AppScaleLogger.warn("Error executing upgrade script.")
+
+  @classmethod
+  def get_ip_str_for_command(cls, ip_list):
+    """ Constructs a string from the list of ips to pass to the upgrade script.
+    Args:
+      ips_list: A list of ips for which the string is to be constructed.
+    """
+    if isinstance(ip_list, str):
+      return "[" + ip_list + "]"
+    ips =  ",".join(ip_list)
+    string_ips = "[" + ips + "]"
+    return string_ips
+
+  @classmethod
+  def shut_down_appscale_if_running(cls, options):
+    """ Checks if AppScale is running and shuts it down as this is an offline upgrade.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+    """
+    if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
+      AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
+        "Upgrade process could take a while and it is not reversible.")
+      response = raw_input("Are you sure you want to proceed with shutting down "
+        "AppScale and continuing with the upgrade? (Y/N) ")
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled AppScale upgrade.")
+      else:
+        AppScaleLogger.log("Shutting down AppScale...")
+        cls.terminate_instances(options)
+    else:
+      AppScaleLogger.warn("Upgrade process could take a while and it is not reversible.")
+      response = raw_input("Are you sure you want to proceed with the upgrade? (Y/N) ")
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled AppScale upgrade.")
+      else:
+        pass
+
+  @classmethod
+  def upgrade_appscale(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
+    """ Runs the bootstrap script on each of the remote machines.
+      Args:
+        options: A Namespace that has fields for each parameter that can be
+          passed in via the command-line interface.
+    """
+    AppScaleLogger.log("Upgrading AppScale code to the latest version on "
+      "these machines: {}".format(options.unique_ips))
+    threads = []
+    error_ips = []
+    for ip in options.unique_ips:
+      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options, error_ips))
+      threads.append(t)
+
+    for x in threads:
+      x.start()
+
+    for x in threads:
+      x.join()
+
+    if not error_ips:
+      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+
+  @classmethod
+  def run_bootstrap(cls, ip, options, error_ips):
+    try:
+      command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
+      RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
+      AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
+        "at {}".format(ip))
+    except ShellException:
+      error_ips.append(ip)
+      AppScaleLogger.warn("There was a problem upgrading AppScale code on {} "
+        "Please refer to the /var/log/appscale/bootstrap.log file and correct any errors "
+        "to re-run this command successfully.".format(ip))
+      return error_ips
+
+  @classmethod
+  def get_upgrade_version_available(cls, master_ip, keyname):
+    """ Gets the latest release tag version available.
+      Args:
+        master_ip: The IP address to the head node.
+    """
+    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_LIST_TAGS, keyname, shell=True)
+    for line in output.stdout:
+      last_tag_line = line
+    tag_line_parts = last_tag_line.partition('/tags/')
+    tag_version = (tag_line_parts[2]).partition('^')
+    return tag_version[0]

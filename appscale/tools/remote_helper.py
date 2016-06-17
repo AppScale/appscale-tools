@@ -1042,3 +1042,16 @@ class RemoteHelper(object):
       message = "AppController at {0} crashed for reasons unknown.".format(host)
 
     return message
+
+  @classmethod
+  def get_command_output_from_remote(cls, host, command, keyname, user='root', shell=False):
+    """ Get the file from the location in the remote and passes the contents.
+    Args:
+      host: A str representing the machine that we should log into.
+      command: A str representing the command to run on the remote machine.
+      user: A str representing the user to log in as.
+    """
+    user_login = user + '@' + host
+    key_path = LocalState.get_key_path_from_name(keyname)
+    return subprocess.Popen(['ssh', '-i', key_path, user_login, command], shell, stdout=subprocess.PIPE)
+
