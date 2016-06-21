@@ -691,7 +691,12 @@ class AppScaleTools(object):
     master_ip = ips_layout_yaml['master']
     upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
 
-    if APPSCALE_VERSION == upgrade_version_available:
+    remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
+    version_output = RemoteHelper.ssh(
+      master_ip, options.keyname, 'cat {}'.format(remote_version), False)
+    current_version = version_output.split('AppScale version')[1].strip()
+
+    if current_version == upgrade_version_available:
       AppScaleLogger.log("AppScale is already at its latest code version, "
         "so skipping code pull and build.")
       AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
