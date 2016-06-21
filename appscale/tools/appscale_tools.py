@@ -685,10 +685,17 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    ips_layout_yaml = yaml.load(options.ips_layout)
-    zk_ips = ips_layout_yaml['zookeeper']
-    db_ips = ips_layout_yaml['database']
-    master_ip = ips_layout_yaml['master']
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException(
+        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
+
+    master_ip = node_layout.head_node().public_ip
+    db_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('db_master') or node.is_role('db_slave')]
+    zk_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('zookeeper')]
+
     upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
 
     remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
