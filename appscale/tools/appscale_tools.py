@@ -797,12 +797,19 @@ class AppScaleTools(object):
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
     """
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException(
+        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
+
+    unique_ips = [node.public_ip for node in node_layout.nodes]
+
     AppScaleLogger.log("Upgrading AppScale code to the latest version on "
-      "these machines: {}".format(options.unique_ips))
+      "these machines: {}".format(unique_ips))
     threads = []
     error_ips = []
-    for ip in options.unique_ips:
-      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options, error_ips))
+    for ip in unique_ips:
+      t = threading.Thread(target=cls.run_bootstrap, args=(ip, options, error_ips))
       threads.append(t)
 
     for x in threads:

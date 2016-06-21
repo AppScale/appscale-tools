@@ -861,10 +861,9 @@ Available commands:
       command.append("--verbose")
 
     if 'ips_layout' in contents_as_yaml:
-      command.append("--ips_layout")
-      command.append(str(contents_as_yaml['ips_layout']))
-      command.append("--unique_ips")
-      command.append(self.get_all_ips(contents_as_yaml['ips_layout']))
+      command.append('--ips_layout')
+      command.append(
+        base64.b64encode(yaml.dump(contents_as_yaml['ips_layout'])))
 
     options = ParseArgs(command, "appscale-upgrade").args
     AppScaleTools.upgrade(options)

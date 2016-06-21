@@ -366,8 +366,6 @@ class ParseArgs(object):
         help="the keypair name to use")
       self.parser.add_argument('--ips_layout',
         help="a YAML file dictating the placement strategy")
-      self.parser.add_argument('--unique_ips',
-        help="a list or string of unique ips")
     else:
       raise SystemExit
 
