@@ -833,9 +833,9 @@ class AppScaleTools(object):
         "at {}".format(ip))
     except ShellException:
       error_ips.append(ip)
-      AppScaleLogger.warn("There was a problem upgrading AppScale code on {} "
-        "Please refer to the /var/log/appscale/bootstrap.log file and correct any errors "
-        "to re-run this command successfully.".format(ip))
+      AppScaleLogger.warn('Unable to upgrade AppScale code on {}.\n'
+        'Please correct any errors listed in /var/log/appscale/bootstrap.log '
+        'on that machine and re-run appscale upgrade.'.format(ip))
       return error_ips
 
   @classmethod
