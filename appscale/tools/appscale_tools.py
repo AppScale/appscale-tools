@@ -9,12 +9,10 @@ import os
 import re
 import shutil
 import socket
-import subprocess
 import sys
 import threading
 import time
 import uuid
-import yaml
 
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
@@ -687,13 +685,25 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    ips_layout_yaml = yaml.load(options.ips_layout)
-    zk_ips = ips_layout_yaml['zookeeper']
-    db_ips = ips_layout_yaml['database']
-    master_ip = ips_layout_yaml['master']
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException(
+        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
+
+    master_ip = node_layout.head_node().public_ip
+    db_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('db_master') or node.is_role('db_slave')]
+    zk_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('zookeeper')]
+
     upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
 
-    if APPSCALE_VERSION == upgrade_version_available:
+    remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
+    version_output = RemoteHelper.ssh(
+      master_ip, options.keyname, 'cat {}'.format(remote_version), False)
+    current_version = version_output.split('AppScale version')[1].strip()
+
+    if current_version == upgrade_version_available:
       AppScaleLogger.log("AppScale is already at its latest code version, "
         "so skipping code pull and build.")
       AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
@@ -775,8 +785,9 @@ class AppScaleTools(object):
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
         "Upgrade process could take a while and it is not reversible.")
-      response = raw_input("Are you sure you want to proceed with shutting down "
-        "AppScale and continuing with the upgrade? (Y/N) ")
+      response = raw_input(
+        'Are you sure you want to proceed with shutting down AppScale to '
+        'continue the upgrade? (y/N) ')
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
       else:
@@ -784,7 +795,8 @@ class AppScaleTools(object):
         cls.terminate_instances(options)
     else:
       AppScaleLogger.warn("Upgrade process could take a while and it is not reversible.")
-      response = raw_input("Are you sure you want to proceed with the upgrade? (Y/N) ")
+      response = raw_input(
+        'Are you sure you want to proceed with the upgrade? (y/N) ')
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
       else:
@@ -797,12 +809,19 @@ class AppScaleTools(object):
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
     """
+    node_layout = NodeLayout(options)
+    if not node_layout.is_valid():
+      raise BadConfigurationException(
+        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
+
+    unique_ips = [node.public_ip for node in node_layout.nodes]
+
     AppScaleLogger.log("Upgrading AppScale code to the latest version on "
-      "these machines: {}".format(options.unique_ips))
+      "these machines: {}".format(unique_ips))
     threads = []
     error_ips = []
-    for ip in options.unique_ips:
-      t = threading.Thread(target=cls.run_bootstrap, args=(ip,options, error_ips))
+    for ip in unique_ips:
+      t = threading.Thread(target=cls.run_bootstrap, args=(ip, options, error_ips))
       threads.append(t)
 
     for x in threads:
@@ -823,9 +842,9 @@ class AppScaleTools(object):
         "at {}".format(ip))
     except ShellException:
       error_ips.append(ip)
-      AppScaleLogger.warn("There was a problem upgrading AppScale code on {} "
-        "Please refer to the /var/log/appscale/bootstrap.log file and correct any errors "
-        "to re-run this command successfully.".format(ip))
+      AppScaleLogger.warn('Unable to upgrade AppScale code on {}.\n'
+        'Please correct any errors listed in /var/log/appscale/bootstrap.log '
+        'on that machine and re-run appscale upgrade.'.format(ip))
       return error_ips
 
   @classmethod
