@@ -12,6 +12,7 @@ import socket
 import sys
 import threading
 import time
+import urllib2
 import uuid
 
 # AppScale-specific imports
@@ -82,8 +83,8 @@ class AppScaleTools(object):
   UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/upgrade.py"
 
 
-  # Git command to get the latest tags for a repository.
-  GIT_LIST_TAGS = "git ls-remote --tags https://github.com/AppScale/appscale.git"
+  # Template used for GitHub API calls.
+  GITHUB_API = 'https://api.github.com/repos/{owner}/{repo}'
 
 
   # Location of the upgrade status file on the remote machine.
@@ -696,7 +697,7 @@ class AppScaleTools(object):
     zk_ips = [node.private_ip for node in node_layout.nodes
               if node.is_role('zookeeper')]
 
-    upgrade_version_available = cls.get_upgrade_version_available(master_ip, options.keyname)
+    upgrade_version_available = cls.get_upgrade_version_available()
 
     remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
     version_output = RemoteHelper.ssh(
@@ -704,15 +705,18 @@ class AppScaleTools(object):
     current_version = version_output.split('AppScale version')[1].strip()
 
     if current_version == upgrade_version_available:
-      AppScaleLogger.log("AppScale is already at its latest code version, "
-        "so skipping code pull and build.")
-      AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+      AppScaleLogger.log(
+        'AppScale is already up to date. Skipping code upgrade.')
+      AppScaleLogger.log(
+        'Running upgrade script to check if any other upgrades are needed.')
       cls.shut_down_appscale_if_running(options)
-      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+      cls.run_upgrade_script(options, upgrade_version_available, master_ip,
+                             zk_ips, db_ips)
       return
 
     cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+    cls.upgrade_appscale(options, upgrade_version_available, master_ip,
+                         zk_ips, db_ips)
 
   @classmethod
   def run_upgrade_script(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
@@ -848,14 +852,10 @@ class AppScaleTools(object):
       return error_ips
 
   @classmethod
-  def get_upgrade_version_available(cls, master_ip, keyname):
+  def get_upgrade_version_available(cls):
     """ Gets the latest release tag version available.
-      Args:
-        master_ip: The IP address to the head node.
     """
-    output = RemoteHelper.get_command_output_from_remote(master_ip, cls.GIT_LIST_TAGS, keyname, shell=True)
-    for line in output.stdout:
-      last_tag_line = line
-    tag_line_parts = last_tag_line.partition('/tags/')
-    tag_version = (tag_line_parts[2]).partition('^')
-    return tag_version[0]
+    github_api = cls.GITHUB_API.format(owner='AppScale', repo='appscale')
+    response = urllib2.urlopen('{}/tags'.format(github_api))
+    tag_list = json.loads(response.read())
+    return tag_list[0]['name']
