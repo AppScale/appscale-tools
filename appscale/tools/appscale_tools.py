@@ -704,15 +704,18 @@ class AppScaleTools(object):
     current_version = version_output.split('AppScale version')[1].strip()
 
     if current_version == upgrade_version_available:
-      AppScaleLogger.log("AppScale is already at its latest code version, "
-        "so skipping code pull and build.")
-      AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
+      AppScaleLogger.log(
+        'AppScale is already up to date. Skipping code upgrade.')
+      AppScaleLogger.log(
+        'Running upgrade script to check if any other upgrades are needed.')
       cls.shut_down_appscale_if_running(options)
-      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+      cls.run_upgrade_script(options, upgrade_version_available, master_ip,
+                             zk_ips, db_ips)
       return
 
     cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+    cls.upgrade_appscale(options, upgrade_version_available, master_ip,
+                         zk_ips, db_ips)
 
   @classmethod
   def run_upgrade_script(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
