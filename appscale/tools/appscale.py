@@ -26,6 +26,7 @@ from custom_exceptions import ShellException
 # AppScale-specific imports
 from appscale_tools import AppScaleTools
 from local_state import LocalState
+from node_layout import NodeLayout
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 from registration_helper import RegistrationHelper
@@ -264,30 +265,6 @@ Available commands:
       contents = self.read_appscalefile()
       contents_as_yaml = yaml.safe_load(contents)
 
-    if "ips_layout" in contents_as_yaml:
-      ips_layout = base64.b64encode(yaml.dump(contents_as_yaml["ips_layout"]))
-
-    if "disks" in contents_as_yaml:
-      disks = base64.b64encode(yaml.dump(contents_as_yaml["disks"]))
-
-    if "user_commands" in contents_as_yaml:
-      user_commands = base64.b64encode(yaml.dump(
-        contents_as_yaml["user_commands"]))
-
-    if not "infrastructure" in contents_as_yaml:
-      # Only run add-keypair if there is no ssh key present,
-      # or if it doesn't log into all the machines specified.
-      if not self.valid_ssh_key(contents_as_yaml):
-        add_keypair_command = []
-        if "keyname" in contents_as_yaml:
-          add_keypair_command.append("--keyname")
-          add_keypair_command.append(str(contents_as_yaml["keyname"]))
-
-        add_keypair_command.append("--ips_layout")
-        add_keypair_command.append(ips_layout)
-        options = ParseArgs(add_keypair_command, "appscale-add-keypair").args
-        AppScaleTools.add_keypair(options)
-
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
@@ -302,50 +279,86 @@ Available commands:
       else:
         if key == "ips_layout":
           command.append("--ips_layout")
-          command.append(ips_layout)
+          command.append(base64.b64encode(yaml.dump(value)))
         elif key == "disks":
           command.append("--disks")
-          command.append(disks)
+          command.append(base64.b64encode(yaml.dump(value)))
         elif key == "user_commands":
           command.append("--user_commands")
-          command.append(user_commands)
+          command.append(base64.b64encode(yaml.dump(value)))
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
 
-    # Finally, call AppScaleTools.run_instances
-    options = ParseArgs(command, "appscale-run-instances").args
-    AppScaleTools.run_instances(options)
+    run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 
+    if 'infrastructure' not in contents_as_yaml:
+      # Generate a new keypair if necessary.
+      if not self.valid_ssh_key(contents_as_yaml, run_instances_opts):
+        add_keypair_command = []
+        if 'keyname' in contents_as_yaml:
+          add_keypair_command.append('--keyname')
+          add_keypair_command.append(str(contents_as_yaml['keyname']))
 
-  def valid_ssh_key(self, config):
-    """ Determines whether or not we should call appscale-add-keypair, by
-    collecting all the IP addresses in the given IPs layout and attempting to
-    SSH to each of them with the specified keyname.
+        add_keypair_command.append('--ips_layout')
+        add_keypair_command.append(
+          base64.b64encode(yaml.dump(contents_as_yaml['ips_layout'])))
+        add_keypair_opts = ParseArgs(
+          add_keypair_command, 'appscale-add-keypair').args
+        AppScaleTools.add_keypair(add_keypair_opts)
+
+    AppScaleTools.run_instances(run_instances_opts)
+
+  def valid_ssh_key(self, config, run_instances_opts):
+    """ Checks if the tools can log into the head node with the current key.
 
     Args:
       config: A dictionary that includes the IPs layout (which itself is a dict
         mapping role names to IPs) and, optionally, the keyname to use.
+      run_instances_opts: The arguments parsed from the appscale-run-instances
+        command.
 
     Returns:
       A bool indicating whether or not the specified keyname can be used to log
-      into each IP address without a password.
+      into the head node.
 
     Raises:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
-    keyname = config["keyname"]
+    keyname = config['keyname']
     verbose = config.get('verbose', False)
 
-    if not isinstance(config["ips_layout"], dict):
-      raise BadConfigurationException("ips_layout should be a dictionary. " \
-        "Please fix it and try again.")
+    if not isinstance(config['ips_layout'], dict):
+      raise BadConfigurationException(
+        'ips_layout should be a dictionary. Please fix it and try again.')
 
     ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
     if not os.path.exists(ssh_key_location):
       return False
 
     all_ips = self.get_all_ips(config["ips_layout"])
+
+    # If a login node is defined, use that to communicate with other nodes.
+    node_layout = NodeLayout(run_instances_opts)
+    head_node = node_layout.head_node()
+    if head_node is not None:
+      remote_key = '{}/ssh.key'.format(RemoteHelper.CONFIG_DIR)
+      try:
+        RemoteHelper.scp(
+          head_node.public_ip, keyname, ssh_key_location, remote_key, verbose)
+      except ShellException:
+        return False
+
+      for ip in all_ips:
+        ssh_to_ip = 'ssh -i {key} -o StrictHostkeyChecking=no root@{ip} true'\
+          .format(key=remote_key, ip=ip)
+        try:
+          RemoteHelper.ssh(
+            head_node.public_ip, keyname, ssh_to_ip, verbose, user='root')
+        except ShellException:
+          return False
+      return True
+
     for ip in all_ips:
       if not self.can_ssh_to_ip(ip, keyname, verbose):
         return False
