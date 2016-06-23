@@ -878,6 +878,9 @@ Available commands:
       command.append(
         base64.b64encode(yaml.dump(contents_as_yaml['ips_layout'])))
 
+    if 'login' in contents_as_yaml:
+      command.extend(['--login', contents_as_yaml['login']])
+
     options = ParseArgs(command, 'appscale-upgrade').args
     options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
     AppScaleTools.upgrade(options)
