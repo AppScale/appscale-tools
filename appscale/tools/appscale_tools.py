@@ -789,22 +789,26 @@ class AppScaleTools(object):
     if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
       AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
         "Upgrade process could take a while and it is not reversible.")
-      response = raw_input(
-        'Are you sure you want to proceed with shutting down AppScale to '
-        'continue the upgrade? (y/N) ')
-      if response.lower() not in ['y', 'yes']:
-        raise AppScaleException("Cancelled AppScale upgrade.")
-      else:
-        AppScaleLogger.log("Shutting down AppScale...")
-        cls.terminate_instances(options)
+
+      if not options.test:
+        response = raw_input(
+          'Are you sure you want to proceed with shutting down AppScale to '
+          'continue the upgrade? (y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException("Cancelled AppScale upgrade.")
+
+      AppScaleLogger.log("Shutting down AppScale...")
+      cls.terminate_instances(options)
     else:
       AppScaleLogger.warn("Upgrade process could take a while and it is not reversible.")
+
+      if options.test:
+        return
+
       response = raw_input(
         'Are you sure you want to proceed with the upgrade? (y/N) ')
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled AppScale upgrade.")
-      else:
-        pass
 
   @classmethod
   def upgrade_appscale(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
