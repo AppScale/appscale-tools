@@ -12,6 +12,7 @@ import socket
 import sys
 import threading
 import time
+import traceback
 import urllib2
 import uuid
 
@@ -764,8 +765,9 @@ class AppScaleTools(object):
                 format(second_level_key, json_status[key][second_level_key]))
           AppScaleLogger.warn("For more information refer to " + upgrade_status_file
             + " by logging into your head node.")
-    except ShellException:
-      AppScaleLogger.warn("Error executing upgrade script.")
+    except ShellException as ssh_error:
+      AppScaleLogger.warn('Error executing upgrade script')
+      LocalState.generate_crash_log(ssh_error, traceback.format_exc())
 
   @classmethod
   def get_ip_str_for_command(cls, ip_list):
