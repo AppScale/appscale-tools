@@ -12,6 +12,7 @@ import socket
 import sys
 import threading
 import time
+import traceback
 import urllib2
 import uuid
 
@@ -76,7 +77,7 @@ class AppScaleTools(object):
 
 
   # Command to run the Bootstrap.
-  RUN_BOOTSTRAP_COMMAND = "bash bootstrap_force_upgrade.sh --local-ip"
+  BOOTSTRAP = '{}/bootstrap.sh'.format(APPSCALE_REPO)
 
 
   # Command to run the upgrade script from /appscale/scripts directory.
@@ -692,11 +693,6 @@ class AppScaleTools(object):
         'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
 
     master_ip = node_layout.head_node().public_ip
-    db_ips = [node.private_ip for node in node_layout.nodes
-              if node.is_role('db_master') or node.is_role('db_slave')]
-    zk_ips = [node.private_ip for node in node_layout.nodes
-              if node.is_role('zookeeper')]
-
     upgrade_version_available = cls.get_upgrade_version_available()
 
     remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
@@ -710,43 +706,50 @@ class AppScaleTools(object):
       AppScaleLogger.log(
         'Running upgrade script to check if any other upgrades are needed.')
       cls.shut_down_appscale_if_running(options)
-      cls.run_upgrade_script(options, upgrade_version_available, master_ip,
-                             zk_ips, db_ips)
+      cls.run_upgrade_script(options, upgrade_version_available, node_layout)
       return
 
     cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale(options, upgrade_version_available, master_ip,
-                         zk_ips, db_ips)
+    cls.upgrade_appscale(options, upgrade_version_available, node_layout)
 
   @classmethod
-  def run_upgrade_script(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
+  def run_upgrade_script(cls, options, upgrade_version_available, node_layout):
     """ Runs the upgrade script which checks for any upgrades needed to be performed.
       Args:
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
         upgrade_version_available: The latest version available to upgrade to.
-        master_ip: The IP address to the head node.
-        zk_ips: A list of ZooKeeper node IPs.
-        db_ips: A list of database node IPs.
+        node_layout: A NodeLayout object for the deployment.
     """
-    ts = time.time()
-    timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
 
-    zk_ips_str = cls.get_ip_str_for_command(zk_ips)
-    db_ips_str = cls.get_ip_str_for_command(db_ips)
-    master_ip_str = cls.get_ip_str_for_command(master_ip)
-    upgrade_script_command = cls.UPGRADE_SCRIPT + " " + upgrade_version_available + \
-      " " + options.keyname + " " + timestamp + " " + "--master" +  " " + master_ip_str + \
-      " " + "--zookeeper" + " " + zk_ips_str + \
-      " " + "--database" + " " + db_ips_str
+    db_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('db_master') or node.is_role('db_slave')]
+    zk_ips = [node.private_ip for node in node_layout.nodes
+              if node.is_role('zookeeper')]
+
+    upgrade_script_command = '{script} --keyname {keyname} '\
+      '--log-postfix {timestamp} '\
+      '--db-master {db_master} '\
+      '--zookeeper {zk_ips} '\
+      '--database {db_ips}'.format(
+      script=cls.UPGRADE_SCRIPT,
+      keyname=options.keyname,
+      timestamp=timestamp,
+      db_master=node_layout.db_master().private_ip,
+      zk_ips=' '.join(zk_ips),
+      db_ips=' '.join(db_ips)
+    )
+    master_public_ip = node_layout.head_node().public_ip
 
     AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
     try:
-      RemoteHelper.ssh(master_ip, options.keyname, upgrade_script_command,
-        options.verbose)
+      RemoteHelper.ssh(master_public_ip, options.keyname,
+                       upgrade_script_command, options.verbose)
       upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
       command = 'cat' + " " + upgrade_status_file
-      upgrade_status = RemoteHelper.ssh(master_ip, options.keyname, command, options.verbose)
+      upgrade_status = RemoteHelper.ssh(
+        master_public_ip, options.keyname, command, options.verbose)
 
       json_status = json.loads(upgrade_status)
       if 'Status' in json_status.keys():
@@ -764,20 +767,9 @@ class AppScaleTools(object):
                 format(second_level_key, json_status[key][second_level_key]))
           AppScaleLogger.warn("For more information refer to " + upgrade_status_file
             + " by logging into your head node.")
-    except ShellException:
-      AppScaleLogger.warn("Error executing upgrade script.")
-
-  @classmethod
-  def get_ip_str_for_command(cls, ip_list):
-    """ Constructs a string from the list of ips to pass to the upgrade script.
-    Args:
-      ips_list: A list of ips for which the string is to be constructed.
-    """
-    if isinstance(ip_list, str):
-      return "[" + ip_list + "]"
-    ips =  ",".join(ip_list)
-    string_ips = "[" + ips + "]"
-    return string_ips
+    except ShellException as ssh_error:
+      AppScaleLogger.warn('Error executing upgrade script')
+      LocalState.generate_crash_log(ssh_error, traceback.format_exc())
 
   @classmethod
   def shut_down_appscale_if_running(cls, options):
@@ -811,17 +803,14 @@ class AppScaleTools(object):
         raise AppScaleException("Cancelled AppScale upgrade.")
 
   @classmethod
-  def upgrade_appscale(cls, options, upgrade_version_available, master_ip, zk_ips, db_ips):
+  def upgrade_appscale(cls, options, upgrade_version_available, node_layout):
     """ Runs the bootstrap script on each of the remote machines.
       Args:
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
+        upgrade_version_available: The latest version available to upgrade to.
+        node_layout: A NodeLayout object for the deployment.
     """
-    node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException(
-        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
-
     unique_ips = [node.public_ip for node in node_layout.nodes]
 
     AppScaleLogger.log("Upgrading AppScale code to the latest version on "
@@ -839,15 +828,14 @@ class AppScaleTools(object):
       x.join()
 
     if not error_ips:
-      cls.run_upgrade_script(options, upgrade_version_available, master_ip, zk_ips, db_ips)
+      cls.run_upgrade_script(options, upgrade_version_available, node_layout)
 
   @classmethod
   def run_bootstrap(cls, ip, options, error_ips):
     try:
-      command = "cd " + cls.APPSCALE_REPO + ";" + cls.RUN_BOOTSTRAP_COMMAND + " " + ip
-      RemoteHelper.ssh(ip, options.keyname, command, options.verbose)
-      AppScaleLogger.success("Successfully pulled and built the latest AppScale code "
-        "at {}".format(ip))
+      RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP, options.verbose)
+      AppScaleLogger.success(
+        'Successfully updated and built AppScale on {}'.format(ip))
     except ShellException:
       error_ips.append(ip)
       AppScaleLogger.warn('Unable to upgrade AppScale code on {}.\n'
