@@ -451,11 +451,18 @@ class AppScaleTools(object):
       options.keyname))
 
     # Let's now wait till the server is initialized.
-    while not acc.is_initialized():
-      AppScaleLogger.log('Waiting for head node to initialize...')
-      # This can take some time in particular the first time around, since
-      # we will have to initialize the database.
-      time.sleep(cls.SLEEP_TIME*3)
+    try:
+      while not acc.is_initialized():
+        AppScaleLogger.log('Waiting for head node to initialize...')
+        # This can take some time in particular the first time around, since
+        # we will have to initialize the database.
+        time.sleep(cls.SLEEP_TIME*3)
+    except socket.error as socket_error:
+      AppScaleLogger.warn(
+        'Unable to initialize AppController: {}'.format(socket_error.message))
+      message = RemoteHelper.collect_appcontroller_crashlog(
+        public_ip, options.keyname, options.verbose)
+      raise AppControllerException(message)
 
     try:
       # We don't need to have any exception information here: we do expect
