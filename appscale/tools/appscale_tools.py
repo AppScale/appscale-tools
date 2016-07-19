@@ -6,6 +6,7 @@ import datetime
 import getpass
 import json
 import os
+import Queue
 import re
 import shutil
 import socket
@@ -30,6 +31,14 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
+
+
+def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
+  try:
+    RemoteHelper.ssh(ip, keyname, script, verbose)
+  except ShellException as ssh_error:
+    error_bucket.put(ssh_error)
+
 
 class AppScaleTools(object):
   """AppScaleTools provides callers with a way to start, stop, and interact
@@ -90,7 +99,6 @@ class AppScaleTools(object):
 
   # Location of the upgrade status file on the remote machine.
   UPGRADE_STATUS_FILE_LOC = '/var/log/appscale/upgrade-status-'
-
 
   @classmethod
   def add_instances(cls, options):
@@ -750,33 +758,47 @@ class AppScaleTools(object):
     master_public_ip = node_layout.head_node().public_ip
 
     AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
-    try:
-      RemoteHelper.ssh(master_public_ip, options.keyname,
-                       upgrade_script_command, options.verbose)
+    # Run the upgrade command as a background process.
+    error_bucket = Queue.Queue()
+    threading.Thread(
+      target=async_layout_upgrade,
+      args=(master_public_ip, options.keyname, upgrade_script_command,
+            error_bucket, options.verbose)
+    ).start()
+
+    last_message = None
+    while True:
+      # Check if the SSH thread has crashed.
+      try:
+        ssh_error = error_bucket.get(block=False)
+        AppScaleLogger.warn('Error executing upgrade script')
+        LocalState.generate_crash_log(ssh_error, traceback.format_exc())
+      except Queue.Empty:
+        pass
+
       upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
       command = 'cat' + " " + upgrade_status_file
       upgrade_status = RemoteHelper.ssh(
         master_public_ip, options.keyname, command, options.verbose)
-
       json_status = json.loads(upgrade_status)
-      if 'Status' in json_status.keys():
-        if json_status['Status'] == 'Not executed':
-          AppScaleLogger.warn("{}".format(json_status['Message']))
-        return
 
-      for key in json_status.keys():
-        if 'Completion-Status' in (json_status[key]).keys():
-            AppScaleLogger.success("{} process was successfully executed.".format(key))
-        else:
-          for second_level_key in json_status[key]:
-            if not json_status[key][second_level_key] == 'Success':
-              AppScaleLogger.warn("Error encountered during upgrade process -> {} : {}".
-                format(second_level_key, json_status[key][second_level_key]))
-          AppScaleLogger.warn("For more information refer to " + upgrade_status_file
-            + " by logging into your head node.")
-    except ShellException as ssh_error:
-      AppScaleLogger.warn('Error executing upgrade script')
-      LocalState.generate_crash_log(ssh_error, traceback.format_exc())
+      if 'status' not in json_status or 'message' not in json_status:
+        raise AppScaleException('Invalid status log format')
+
+      if json_status['status'] == 'complete':
+        AppScaleLogger.success(json_status['message'])
+        break
+
+      if json_status['status'] == 'inProgress':
+        if json_status['message'] != last_message:
+          AppScaleLogger.log(json_status['message'])
+          last_message = json_status['message']
+        time.sleep(cls.SLEEP_TIME)
+        continue
+
+      # Assume the message is an error.
+      AppScaleLogger.warn(json_status['message'])
+      raise AppScaleException(json_status['message'])
 
   @classmethod
   def shut_down_appscale_if_running(cls, options):
