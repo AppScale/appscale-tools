@@ -363,14 +363,37 @@ class AppScaleTools(object):
     if not acc.does_app_exist(options.appname):
       raise AppScaleException("The given application is not currently running.")
 
+    # Makes a call to the AppController to get all the stats and looks
+    # through them for the http port the app can be reached on.
+    http_port = None
+    for i in range(cls.MAX_RETRIES):
+      try:
+        result = acc.get_all_stats()
+        json_result = json.loads(result)
+        apps_result = json_result['apps']
+        current_app = apps_result[options.appname]
+        http_port = current_app['http']
+        if http_port:
+          break
+        time.sleep(cls.SLEEP_TIME)
+      except ValueError:
+        pass
+      except KeyError:
+        time.sleep(cls.SLEEP_TIME)
+    if not http_port:
+      raise AppScaleException("Unable to get the serving port for the application.")
+
     acc.stop_app(options.appname)
     AppScaleLogger.log("Please wait for your app to shut down.")
-    while True:
-      if acc.is_app_running(options.appname):
+
+    for i in range(cls.MAX_RETRIES):
+      if RemoteHelper.is_port_open(login_host, http_port, options.verbose)
         time.sleep(cls.SLEEP_TIME)
+        AppScaleLogger.success("Waiting for {0} to terminate...".format(options.appname))
       else:
-        break
-    AppScaleLogger.success("Done shutting down {0}".format(options.appname))
+        AppScaleLogger.success("Done shutting down {0}.".format(options.appname))
+        return
+    AppScaleLogger.warn("App {0} may still be running.".format(options.appname))
 
 
   @classmethod
