@@ -387,7 +387,7 @@ class AppScaleTools(object):
     AppScaleLogger.log("Please wait for your app to shut down.")
 
     for i in range(cls.MAX_RETRIES):
-      if RemoteHelper.is_port_open(login_host, http_port, options.verbose)
+      if RemoteHelper.is_port_open(login_host, http_port, options.verbose):
         time.sleep(cls.SLEEP_TIME)
         AppScaleLogger.success("Waiting for {0} to terminate...".format(options.appname))
       else:
