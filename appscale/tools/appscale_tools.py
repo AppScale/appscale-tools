@@ -377,7 +377,8 @@ class AppScaleTools(object):
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.")
+        AppScaleLogger.verbose("Got json error from get_all_data result.",
+            options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(
@@ -691,7 +692,8 @@ class AppScaleTools(object):
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.")
+        AppScaleLogger.verbose("Got json error from get_all_data result.",
+            options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(
