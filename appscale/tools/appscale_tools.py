@@ -360,7 +360,7 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     acc = AppControllerClient(login_host, secret)
 
-    if not acc.does_app_exist(options.appname):
+    if not acc.is_app_running(options.appname):
       raise AppScaleException("The given application is not currently running.")
 
     # Makes a call to the AppController to get all the stats and looks
