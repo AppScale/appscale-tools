@@ -34,6 +34,15 @@ from remote_helper import RemoteHelper
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
+  """ Run a command over SSH and place exceptions in a bucket.
+
+  Args:
+    ip: A string containing and IP address.
+    keyname: A string containing the deployment keyname.
+    script: A string to run as a command over SSH.
+    error_bucket: A thread-safe queue.
+    verbose: A boolean indicating whether or not to log verbosely.
+  """
   try:
     RemoteHelper.ssh(ip, keyname, script, verbose)
   except ShellException as ssh_error:
