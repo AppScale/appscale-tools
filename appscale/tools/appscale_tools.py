@@ -685,7 +685,7 @@ class AppScaleTools(object):
       try:
         json_result = json.loads(result)
         apps_result = json_result['apps']
-        current_app = apps_result[options.appname]
+        current_app = apps_result[app_id]
         http_port = current_app['http']
         if http_port:
           break
