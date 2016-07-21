@@ -366,7 +366,7 @@ class AppScaleTools(object):
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
     http_port = None
-    for _ in range(cls.MAX_RETRIES):
+    for _ in range(cls.MAX_RETRIES + 1):
       result = acc.get_all_stats()
       try:
         json_result = json.loads(result)
@@ -387,7 +387,7 @@ class AppScaleTools(object):
     acc.stop_app(options.appname)
     AppScaleLogger.log("Please wait for your app to shut down.")
 
-    for _ in range(cls.MAX_RETRIES):
+    for _ in range(cls.MAX_RETRIES + 1):
       if RemoteHelper.is_port_open(login_host, http_port, options.verbose):
         time.sleep(cls.SLEEP_TIME)
         AppScaleLogger.log("Waiting for {0} to terminate...".format(
@@ -681,7 +681,7 @@ class AppScaleTools(object):
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
     http_port = None
-    for _ in range(cls.MAX_RETRIES):
+    for _ in range(cls.MAX_RETRIES + 1):
       result = acc.get_all_stats()
       try:
         json_result = json.loads(result)
