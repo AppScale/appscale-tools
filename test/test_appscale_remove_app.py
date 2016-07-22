@@ -70,7 +70,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
-    fake_appcontroller.should_receive('does_app_exist').with_args('blargapp',
+    fake_appcontroller.should_receive('is_app_running').with_args('blargapp',
       'the secret').and_return(False)
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -114,6 +114,9 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
+    app_stats_data = {'apps': {'blargapp': {'http': 8080, 'language': 'python27',
+      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -125,6 +128,8 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       'the secret').and_return(True).and_return(True).and_return(False)
     fake_appcontroller.should_receive('does_app_exist').with_args('blargapp',
       'the secret').and_return(True)
+    fake_appcontroller.should_receive('get_all_stats').with_args(
+      'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)

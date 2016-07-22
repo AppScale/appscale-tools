@@ -377,17 +377,44 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     acc = AppControllerClient(login_host, secret)
 
-    if not acc.does_app_exist(options.appname):
+    if not acc.is_app_running(options.appname):
       raise AppScaleException("The given application is not currently running.")
+
+    # Makes a call to the AppController to get all the stats and looks
+    # through them for the http port the app can be reached on.
+    http_port = None
+    for _ in range(cls.MAX_RETRIES + 1):
+      result = acc.get_all_stats()
+      try:
+        json_result = json.loads(result)
+        apps_result = json_result['apps']
+        current_app = apps_result[options.appname]
+        http_port = current_app['http']
+        if http_port:
+          break
+        time.sleep(cls.SLEEP_TIME)
+      except (KeyError, ValueError):
+        AppScaleLogger.verbose("Got json error from get_all_data result.",
+            options.verbose)
+        time.sleep(cls.SLEEP_TIME)
+    if not http_port:
+      raise AppScaleException(
+        "Unable to get the serving port for the application.")
 
     acc.stop_app(options.appname)
     AppScaleLogger.log("Please wait for your app to shut down.")
-    while True:
-      if acc.is_app_running(options.appname):
+
+    for _ in range(cls.MAX_RETRIES + 1):
+      if RemoteHelper.is_port_open(login_host, http_port, options.verbose):
         time.sleep(cls.SLEEP_TIME)
+        AppScaleLogger.log("Waiting for {0} to terminate...".format(
+          options.appname))
       else:
-        break
-    AppScaleLogger.success("Done shutting down {0}".format(options.appname))
+        AppScaleLogger.success("Done shutting down {0}.".format(
+          options.appname))
+        return
+    AppScaleLogger.warn("App {0} may still be running.".format(
+      options.appname))
 
 
   @classmethod
@@ -677,23 +704,24 @@ class AppScaleTools(object):
 
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
-    current_app = None
-    for i in range(cls.MAX_RETRIES):
+    http_port = None
+    for _ in range(cls.MAX_RETRIES + 1):
+      result = acc.get_all_stats()
       try:
-        result = acc.get_all_stats()
         json_result = json.loads(result)
         apps_result = json_result['apps']
         current_app = apps_result[app_id]
         http_port = current_app['http']
-        if not http_port:
-          continue
-        break
-      except ValueError:
-        pass
-      except KeyError:
-        time.sleep(20)
-    if not current_app:
-      raise AppScaleException("Unable to get the serving port for the application.")
+        if http_port:
+          break
+        time.sleep(cls.SLEEP_TIME)
+      except (KeyError, ValueError):
+        AppScaleLogger.verbose("Got json error from get_all_data result.",
+            options.verbose)
+        time.sleep(cls.SLEEP_TIME)
+    if not http_port:
+      raise AppScaleException(
+        "Unable to get the serving port for the application.")
 
     RemoteHelper.sleep_until_port_is_open(login_host, http_port, options.verbose)
     AppScaleLogger.success("Your app can be reached at the following URL: " +
