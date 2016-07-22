@@ -53,7 +53,8 @@ setup(
     'oauth2client>=2.0.0',
     'PyYAML',
     'SOAPpy',
-    'termcolor'
+    'termcolor',
+    'wstools==0.4.3'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
