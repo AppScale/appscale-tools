@@ -273,7 +273,8 @@ class AppScaleTools(object):
       '/var/log/monit.log*',
       '/var/log/nginx',
       '/var/log/syslog*',
-      '/var/log/zookeeper'
+      '/var/log/zookeeper',
+      '/opt/cassandra/cassandra/logs/system.log'
     ]
 
     failures = False
