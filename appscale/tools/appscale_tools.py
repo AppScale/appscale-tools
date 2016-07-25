@@ -94,8 +94,9 @@ class AppScaleTools(object):
   APPSCALE_REPO = "~/appscale"
 
 
-  # Command to run the Bootstrap.
-  BOOTSTRAP = '{}/bootstrap.sh'.format(APPSCALE_REPO)
+  # Bootstrap command to run.
+  BOOTSTRAP_CMD = '{}/bootstrap.sh >> /var/log/appscale/bootstrap.log'.\
+    format(APPSCALE_REPO)
 
 
   # Command to run the upgrade script from /appscale/scripts directory.
@@ -899,7 +900,7 @@ class AppScaleTools(object):
   @classmethod
   def run_bootstrap(cls, ip, options, error_ips):
     try:
-      RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP, options.verbose)
+      RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_CMD, options.verbose)
       AppScaleLogger.success(
         'Successfully updated and built AppScale on {}'.format(ip))
     except ShellException:
