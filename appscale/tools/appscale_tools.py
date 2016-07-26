@@ -774,19 +774,18 @@ class AppScaleTools(object):
       AppScaleLogger.log(
         'Running upgrade script to check if any other upgrades are needed.')
       cls.shut_down_appscale_if_running(options)
-      cls.run_upgrade_script(options, upgrade_version_available, node_layout)
+      cls.run_upgrade_script(options, node_layout)
       return
 
     cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale(options, upgrade_version_available, node_layout)
+    cls.upgrade_appscale(options, node_layout)
 
   @classmethod
-  def run_upgrade_script(cls, options, upgrade_version_available, node_layout):
+  def run_upgrade_script(cls, options, node_layout):
     """ Runs the upgrade script which checks for any upgrades needed to be performed.
       Args:
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
-        upgrade_version_available: The latest version available to upgrade to.
         node_layout: A NodeLayout object for the deployment.
     """
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
@@ -800,13 +799,15 @@ class AppScaleTools(object):
       '--log-postfix {timestamp} '\
       '--db-master {db_master} '\
       '--zookeeper {zk_ips} '\
-      '--database {db_ips}'.format(
+      '--database {db_ips} '\
+      '--replication {replication}'.format(
       script=cls.UPGRADE_SCRIPT,
       keyname=options.keyname,
       timestamp=timestamp,
       db_master=node_layout.db_master().private_ip,
       zk_ips=' '.join(zk_ips),
-      db_ips=' '.join(db_ips)
+      db_ips=' '.join(db_ips),
+      replication=node_layout.replication
     )
     master_public_ip = node_layout.head_node().public_ip
 
@@ -885,12 +886,11 @@ class AppScaleTools(object):
         raise AppScaleException("Cancelled AppScale upgrade.")
 
   @classmethod
-  def upgrade_appscale(cls, options, upgrade_version_available, node_layout):
+  def upgrade_appscale(cls, options, node_layout):
     """ Runs the bootstrap script on each of the remote machines.
       Args:
         options: A Namespace that has fields for each parameter that can be
           passed in via the command-line interface.
-        upgrade_version_available: The latest version available to upgrade to.
         node_layout: A NodeLayout object for the deployment.
     """
     unique_ips = [node.public_ip for node in node_layout.nodes]
@@ -910,7 +910,7 @@ class AppScaleTools(object):
       x.join()
 
     if not error_ips:
-      cls.run_upgrade_script(options, upgrade_version_available, node_layout)
+      cls.run_upgrade_script(options, node_layout)
 
   @classmethod
   def run_bootstrap(cls, ip, options, error_ips):
