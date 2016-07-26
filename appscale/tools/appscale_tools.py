@@ -3,6 +3,7 @@
 
 # General-purpose Python library imports
 import datetime
+import errno
 import getpass
 import json
 import os
@@ -268,13 +269,13 @@ class AppScaleTools(object):
 
     # The log paths that we collect logs from.
     log_paths = [
-      '/var/log/appscale',
-      '/var/log/kern.log*',
-      '/var/log/monit.log*',
-      '/var/log/nginx',
-      '/var/log/syslog*',
-      '/var/log/zookeeper',
-      '/opt/cassandra/cassandra/logs/system.log'
+      {'remote': '/var/log/appscale'},
+      {'remote': '/var/log/kern.log*'},
+      {'remote': '/var/log/monit.log*'},
+      {'remote': '/var/log/nginx'},
+      {'remote': '/var/log/syslog*'},
+      {'remote': '/var/log/zookeeper'},
+      {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'}
     ]
 
     failures = False
@@ -284,15 +285,28 @@ class AppScaleTools(object):
       os.mkdir(local_dir)
 
       for log_path in log_paths:
+        sub_dir = local_dir
+
+        if 'local' in log_path:
+          sub_dir = os.path.join(local_dir, log_path['local'])
+          try:
+            os.mkdir(sub_dir)
+          except OSError as os_error:
+            if os_error.errno == errno.EEXIST and os.path.isdir(sub_dir):
+              pass
+            else:
+              raise
+
         try:
-          RemoteHelper.scp_remote_to_local(ip, options.keyname, log_path,
-            local_dir, options.verbose)
+          RemoteHelper.scp_remote_to_local(
+            ip, options.keyname, log_path['remote'], sub_dir, options.verbose)
         except ShellException as shell_exception:
           failures = True
-          AppScaleLogger.warn("Unable to collect logs from '{}' for host '{}'".
-            format(log_path, ip))
-          AppScaleLogger.verbose("Encountered exception: {}".
-            format(str(shell_exception)), options.verbose)
+          AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
+                              format(log_path['remote'], ip))
+          AppScaleLogger.verbose(
+            'Encountered exception: {}'.format(str(shell_exception)),
+            options.verbose)
 
     if failures:
       AppScaleLogger.log("Done copying to {0}. There were "
