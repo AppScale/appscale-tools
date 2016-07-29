@@ -478,13 +478,15 @@ class AppScaleTools(object):
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
+    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
+
     if options.infrastructure:
       if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
-      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+      AppScaleLogger.log("Starting AppScale " + reduced_version +
         " over the " + options.infrastructure + " cloud.")
     else:
-      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+      AppScaleLogger.log("Starting AppScale " + reduced_version +
         " over a virtualized cluster.")
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
