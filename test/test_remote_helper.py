@@ -221,10 +221,9 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5,
-      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
-    ).and_raise(ShellException).ordered()
+    # Assume AppScale is not installed.
+    flexmock(RemoteHelper).\
+      should_receive('get_host_appscale_version').and_return(None)
 
     # Check that the cleanup routine is called on error.
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -278,11 +277,9 @@ class TestRemoteHelper(unittest.TestCase):
       stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
     ).and_return()
 
-    # Assume the version file does not exist.
-    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(version_dir))).\
-      and_raise(ShellException)
+    # Assume AppScale is not installed.
+    flexmock(RemoteHelper).\
+      should_receive('get_host_appscale_version').and_return('X.Y.Z')
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -331,16 +328,9 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    # Assume the configuration directory exists.
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))).\
-      and_return().ordered()
-
-    # Assume the version directory exists.
-    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(version_dir))).\
-      and_return().ordered()
+    # Assume AppScale is not installed.
+    flexmock(RemoteHelper).\
+      should_receive('get_host_appscale_version').and_return(APPSCALE_VERSION)
 
     # Assume the given database is not supported.
     db_file = '{}/{}/{}'.\

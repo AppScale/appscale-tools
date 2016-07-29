@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -195,10 +194,9 @@ group: {1}
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile(RemoteHelper.CONFIG_DIR)).and_return()
 
-    # Assume the verion file exists.
-    version_file = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile(version_file))
+    flexmock(RemoteHelper)
+    RemoteHelper.should_receive('get_host_appscale_version').\
+      and_return(APPSCALE_VERSION)
 
     # Assume we are using a supported database.
     db_file = '{}/{}/{}'.\
