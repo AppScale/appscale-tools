@@ -768,7 +768,7 @@ class AppScaleTools(object):
       master_ip, options.keyname, 'cat {}'.format(remote_version), False)
     current_version = version_output.split('AppScale version')[1].strip()
 
-    if current_version == upgrade_version_available:
+    if current_version <= upgrade_version_available:
       AppScaleLogger.log(
         'AppScale is already up to date. Skipping code upgrade.')
       AppScaleLogger.log(
