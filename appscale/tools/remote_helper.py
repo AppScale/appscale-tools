@@ -479,24 +479,19 @@ class RemoteHelper(object):
         has the wrong version of AppScale installed, or does not have the
         correct database installed.
     """
-    # first, make sure the image is an appscale image
-    if not cls.does_host_have_location(host, keyname, cls.CONFIG_DIR,
-      is_verbose):
+    # First, make sure the image is an AppScale image.
+    remote_version = cls.get_host_appscale_version(host, keyname, is_verbose)
+    if not remote_version:
       raise AppScaleException("The machine at {0} does not have " \
         "AppScale installed.".format(host))
 
     # Make sure the remote version matches the tools version.
-    version_dir = '{}/{}'.format(cls.CONFIG_DIR, APPSCALE_VERSION)
-    if not cls.does_host_have_location(host, keyname, version_dir, is_verbose):
-      host_version = cls.get_host_appscale_version(host, keyname, is_verbose)
-      if host_version:
-        raise AppScaleException("The machine at {0} has AppScale {1} installed,"
-          " but you are trying to use it with version {2} of the AppScale "
-          "Tools. Please use the same version of the AppScale Tools that the "
-          "host machine runs.".format(host, host_version, APPSCALE_VERSION))
-      else:
-        raise AppScaleException("The machine at {0} does not have AppScale "  \
-          "{1} installed.".format(host, APPSCALE_VERSION))
+    reduced_version = '.'.join(x for x in remote_version.split('.')[:2])
+    if not APPSCALE_VERSION.startswith(reduced_version):
+      raise AppScaleException("The machine at {0} has AppScale {1} installed,"
+        " but you are trying to use it with version {2} of the AppScale "
+        "Tools. Please use the same version of the AppScale Tools that the "
+        "host machine runs.".format(host, remote_version, APPSCALE_VERSION))
 
     # Make sure we have the requested database installed.
     db_file = '{}/{}/{}'.format(cls.CONFIG_DIR, APPSCALE_VERSION, database)
@@ -547,26 +542,14 @@ class RemoteHelper(object):
       (1) AppScale isn't installed on host, or (2) host has more than one
       version of AppScale installed.
     """
+    remote_version_file = '{}/{}'.format(cls.CONFIG_DIR, 'VERSION')
     try:
-      etc_appscale_files = cls.ssh(host, keyname,
-       'ls {}'.format(cls.CONFIG_DIR), is_verbose)
-
-      # If the host doesn't have an config directory, then the ls command
-      # will be empty, so catch that special case here.
-      if etc_appscale_files:
-        etc_appscale_files = etc_appscale_files.split()
-      else:
-        return None
-
-      # Only check version files.
-      versions_installed = [name for name in etc_appscale_files
-        if re.match(cls.VERSION_REGEX, name)]
-      if len(versions_installed) == 1:
-        return versions_installed[0]
-      else:
-        return None
+      version_output = cls.ssh(
+        host, keyname, 'cat {}'.format(remote_version_file), is_verbose)
     except ShellException:
       return None
+    version = version_output.split('AppScale version')[1].strip()
+    return version
 
 
   @classmethod

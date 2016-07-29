@@ -763,10 +763,8 @@ class AppScaleTools(object):
     master_ip = node_layout.head_node().public_ip
     upgrade_version_available = cls.get_upgrade_version_available()
 
-    remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
-    version_output = RemoteHelper.ssh(
-      master_ip, options.keyname, 'cat {}'.format(remote_version), False)
-    current_version = version_output.split('AppScale version')[1].strip()
+    current_version = RemoteHelper.get_host_appscale_version(
+      master_ip, options.keyname, False)
 
     if current_version <= upgrade_version_available:
       AppScaleLogger.log(
