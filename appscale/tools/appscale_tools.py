@@ -768,6 +768,9 @@ class AppScaleTools(object):
     current_version = RemoteHelper.get_host_appscale_version(
       master_ip, options.keyname, options.verbose)
 
+    # Don't run bootstrap if current version is later that the most recent
+    # public one. Covers cases of revoked versions/tags and ensures we won't
+    # try to downgrade the code.
     if current_version >= upgrade_version_available:
       AppScaleLogger.log(
         'AppScale is already up to date. Skipping code upgrade.')
