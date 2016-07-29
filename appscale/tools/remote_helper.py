@@ -463,7 +463,7 @@ class RemoteHelper(object):
     """Verifies that the specified host has AppScale installed on it.
 
     This also validates that the host has the right version of AppScale
-    installed on it, as well as the database that the user has asked for.
+    installed on it.
 
     Args:
       host: A str representing the host that may or may not be
@@ -476,8 +476,7 @@ class RemoteHelper(object):
         execute to validate the machine to stdout.
     Raises:
       AppScaleException: If the specified host does not have AppScale installed,
-        has the wrong version of AppScale installed, or does not have the
-        correct database installed.
+        or has the wrong version of AppScale installed.
     """
     # First, make sure the image is an AppScale image.
     remote_version = cls.get_host_appscale_version(host, keyname, is_verbose)
@@ -485,19 +484,13 @@ class RemoteHelper(object):
       raise AppScaleException("The machine at {0} does not have " \
         "AppScale installed.".format(host))
 
-    # Make sure the remote version matches the tools version.
+    # Make sure the remote version is compatible with the tools version.
     reduced_version = '.'.join(x for x in remote_version.split('.')[:2])
     if not APPSCALE_VERSION.startswith(reduced_version):
       raise AppScaleException("The machine at {0} has AppScale {1} installed,"
         " but you are trying to use it with version {2} of the AppScale "
         "Tools. Please use the same version of the AppScale Tools that the "
         "host machine runs.".format(host, remote_version, APPSCALE_VERSION))
-
-    # Make sure we have the requested database installed.
-    db_file = '{}/{}/{}'.format(cls.CONFIG_DIR, APPSCALE_VERSION, database)
-    if not cls.does_host_have_location(host, keyname, db_file, is_verbose):
-      raise AppScaleException("The machine at {0} does not have support for"
-        " {1} installed.".format(host, database))
 
 
   @classmethod
