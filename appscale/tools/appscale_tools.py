@@ -766,7 +766,7 @@ class AppScaleTools(object):
     upgrade_version_available = cls.get_upgrade_version_available()
 
     current_version = RemoteHelper.get_host_appscale_version(
-      master_ip, options.keyname, False)
+      master_ip, options.keyname, options.verbose)
 
     if current_version >= upgrade_version_available:
       AppScaleLogger.log(
