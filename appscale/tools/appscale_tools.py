@@ -478,13 +478,15 @@ class AppScaleTools(object):
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
 
+    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
+
     if options.infrastructure:
       if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
-      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+      AppScaleLogger.log("Starting AppScale " + reduced_version +
         " over the " + options.infrastructure + " cloud.")
     else:
-      AppScaleLogger.log("Starting AppScale " + APPSCALE_VERSION +
+      AppScaleLogger.log("Starting AppScale " + reduced_version +
         " over a virtualized cluster.")
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
@@ -763,12 +765,13 @@ class AppScaleTools(object):
     master_ip = node_layout.head_node().public_ip
     upgrade_version_available = cls.get_upgrade_version_available()
 
-    remote_version = '{}/{}'.format(RemoteHelper.CONFIG_DIR, 'VERSION')
-    version_output = RemoteHelper.ssh(
-      master_ip, options.keyname, 'cat {}'.format(remote_version), False)
-    current_version = version_output.split('AppScale version')[1].strip()
+    current_version = RemoteHelper.get_host_appscale_version(
+      master_ip, options.keyname, options.verbose)
 
-    if current_version == upgrade_version_available:
+    # Don't run bootstrap if current version is later that the most recent
+    # public one. Covers cases of revoked versions/tags and ensures we won't
+    # try to downgrade the code.
+    if current_version >= upgrade_version_available:
       AppScaleLogger.log(
         'AppScale is already up to date. Skipping code upgrade.')
       AppScaleLogger.log(

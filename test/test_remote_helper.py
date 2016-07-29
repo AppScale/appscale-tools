@@ -29,8 +29,6 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
-from appscale.tools.custom_exceptions import ShellException
-from appscale.tools.local_state import APPSCALE_VERSION
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
 from appscale.tools.remote_helper import RemoteHelper
@@ -221,10 +219,9 @@ class TestRemoteHelper(unittest.TestCase):
       re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
     ).and_return()
 
-    local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5,
-      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
-    ).and_raise(ShellException).ordered()
+    # Assume AppScale is not installed.
+    flexmock(RemoteHelper).\
+      should_receive('get_host_appscale_version').and_return(None)
 
     # Check that the cleanup routine is called on error.
     flexmock(AppScaleTools).should_receive('terminate_instances')\
@@ -278,81 +275,13 @@ class TestRemoteHelper(unittest.TestCase):
       stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
     ).and_return()
 
-    # Assume the version file does not exist.
-    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(version_dir))).\
-      and_raise(ShellException)
+    # Assume AppScale is not installed.
+    flexmock(RemoteHelper).\
+      should_receive('get_host_appscale_version').and_return('X.Y.Z')
 
     # check that the cleanup routine is called on error
     flexmock(AppScaleTools).should_receive('terminate_instances')\
       .and_return()
-
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
-
-
-  def test_start_head_node_in_cloud_but_using_unsupported_database(self):
-    local_state = flexmock(LocalState)
-
-    # Mock out our attempts to enable the root login.
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
-
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sed -n '
-        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
-    ).and_return()
-
-    # Assume the configuration directory exists.
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))).\
-      and_return().ordered()
-
-    # Assume the version directory exists.
-    version_dir = '{}/{}'.format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION)
-    local_state.should_receive('shell').with_args(re.compile('^ssh'), False,
-      5, stdin=re.compile('ls {}'.format(version_dir))).\
-      and_return().ordered()
-
-    # Assume the given database is not supported.
-    db_file = '{}/{}/{}'.\
-      format(RemoteHelper.CONFIG_DIR, APPSCALE_VERSION, 'cassandra')
-    local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5,
-      stdin=re.compile('ls {}'.format(db_file))
-    ).and_raise(ShellException).ordered()
-
-    # check that the cleanup routine is called on error
-    flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return().ordered()
 
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
