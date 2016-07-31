@@ -34,6 +34,7 @@ from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScaleTerminateInstances(unittest.TestCase):
@@ -292,6 +293,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    flexmock(RemoteHelper).should_receive('terminate_cloud_infrastructure')
 
     # also mock out asking the user for confirmation on shutting down
     # their cloud
@@ -631,6 +634,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
+
+    flexmock(RemoteHelper).should_receive('terminate_cloud_infrastructure')
 
     argv = [
       "--keyname", self.keyname,

@@ -6,7 +6,7 @@ require 'rake/testtask'
 
 # responds to 'rake test'
 task :test do |test|
-  sh "nosetests -v test"
+  sh 'python -m unittest discover -b -v -s test'
 end
 
 
