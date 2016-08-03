@@ -208,6 +208,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
+    # Assume persistent disks are used.
+    flexmock(LocalState).should_receive('are_disks_used').and_return(True)
+
     fake_yaml_file = flexmock(name='fake_file')
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'ec2',
@@ -325,6 +328,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     zone = 'my-zone-1b'
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
+
+    # Assume persistent disks are used.
+    flexmock(LocalState).should_receive('are_disks_used').and_return(True)
 
     fake_yaml_file = flexmock(name='fake_file')
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
