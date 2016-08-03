@@ -21,6 +21,7 @@ from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScaleRemoveApp(unittest.TestCase):
@@ -150,6 +151,8 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
+
+    flexmock(RemoteHelper).should_receive('is_port_open').and_return(False)
 
     argv = [
       "--appname", "blargapp",
