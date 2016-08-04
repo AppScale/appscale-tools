@@ -10,10 +10,11 @@ import os.path
 import shutil
 
 # Azure specific imports
-from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.common.credentials import ServicePrincipalCredentials
+from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.resource.resources.models import ResourceGroup
+from msrestazure.azure_exceptions import CloudError
 
 import adal
 
@@ -57,43 +58,47 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict containing credentials necessary to interact with Azure.
     Raises:
-      AgentConfigurationException: If the given credentials cannot be used to
-        make requests to the underlying cloud.
+      AgentConfigurationException: If an error is encountered during
+      authentication.
     """
     creds_location = os.path.expanduser(parameters[self.PARAM_CREDS])
     with open(creds_location) as creds_file:
       creds_json = creds_file.read()
     creds = json.loads(creds_json)
 
-    # Get an Azure access token using ADAL.
-    context = adal.AuthenticationContext(
-      self.AZURE_AUTH_ENDPOINT + creds['tenant_id'])
-    token_response = context.acquire_token_with_client_credentials(
-      self.AZURE_RESOURCE_URL, creds['app_id'], creds['app_secret'])
-    auth_token = token_response.get('accessToken')
+    try:
+      # Get an Azure access token using ADAL.
+      context = adal.AuthenticationContext(
+        self.AZURE_AUTH_ENDPOINT + creds['tenant_id'])
+      token_response = context.acquire_token_with_client_credentials(
+        self.AZURE_RESOURCE_URL, creds['app_id'], creds['app_secret'])
+      auth_token = token_response.get('accessToken')
 
-    # To access Azure resources for an application, we need a Service Principal
-    # which contains a role assignment. It can be created using the Azure CLI.
-    credentials = ServicePrincipalCredentials(client_id = creds['app_id'],
-                                              secret = creds['app_secret'],
-                                              tenant = creds['tenant_id'])
+      # To access Azure resources for an application, we need a Service Principal
+      # which contains a role assignment. It can be created using the Azure CLI.
+      credentials = ServicePrincipalCredentials(client_id = creds['app_id'],
+                                                secret = creds['app_secret'],
+                                                tenant = creds['tenant_id'])
 
-    # Create a default 'appscalegroup' resource group if none is specified.
-    resource_client = ResourceManagementClient(credentials, str(creds['subscription_id']))
-    resource_groups = resource_client.resource_groups.list()
+      # Create a default 'appscalegroup' resource group if none is specified.
+      resource_client = ResourceManagementClient(credentials, str(creds['subscription_id']))
+      resource_groups = resource_client.resource_groups.list()
 
-    resource_group_name = 'appscale-group'
-    if parameters[self.PARAM_RESOURCE_GROUP]:
-      resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
+      resource_group_name = 'appscale-group'
+      if parameters[self.PARAM_RESOURCE_GROUP]:
+        resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
 
-    tag_name = 'default-tag'
-    if parameters[self.PARAM_TAG]:
-      tag_name = parameters[self.PARAM_RESOURCE_GROUP]
+      tag_name = 'default-tag'
+      if parameters[self.PARAM_TAG]:
+        tag_name = parameters[self.PARAM_RESOURCE_GROUP]
 
-    if (not resource_group_name in resource_groups):
-      resource_client.resource_groups.create_or_update(
-        resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
-                                           tags={'tag': tag_name}))
+      if (not resource_group_name in resource_groups):
+        resource_client.resource_groups.create_or_update(
+          resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
+                                             tags={'tag': tag_name}))
+
+    except CloudError:
+      raise AgentConfigurationException("Unable to authenticate using the credentials provided.")
 
   def configure_instance_security(self, parameters):
     """Configure and setup security features for the VMs spawned via this
@@ -232,8 +237,8 @@ class AzureAgent(BaseAgent):
       A dict that maps each argument given to the value that was associated with
       it.
     Raises:
-      Agen
-
+      AgentConfigurationException: If the caller fails to specify an Azure
+      credentials JSON file, or if it doesn't exist on the local filesystem.
     """
     if not isinstance(args, dict):
       args = vars(args)
