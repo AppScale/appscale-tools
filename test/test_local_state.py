@@ -184,25 +184,15 @@ class TestLocalState(unittest.TestCase):
       LocalState.get_secret_key_location('booscale'), 'r') \
       .and_return(fake_secret)
 
-    # mock out writing the yaml file
-    fake_locations_yaml = flexmock(name='fake_locations_yaml')
-    fake_locations_yaml.should_receive('write').with_args(yaml.dump({
-      'load_balancer': 'public1', 'instance_id': 'i-ABCDEFG',
-      'secret': 'the secret', 'infrastructure': 'ec2',
-      'group': 'boogroup', 'ips': 'public1', 'table': 'cassandra',
-      'db_master': 'node-0', 'zone' : 'my-zone-1b'
-    })).and_return()
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_yaml_location('booscale'), 'w') \
-      .and_return(fake_locations_yaml)
+    # Mock out writing the yaml file.
+    locations_yaml = LocalState.get_locations_yaml_location('booscale')
+    builtins.should_receive('open').with_args(locations_yaml, 'w').\
+      and_return(flexmock(write=lambda yaml_contents: None))
 
-    # and mock out writing the json file
-    fake_locations_json = flexmock(name='fake_locations_json')
-    fake_locations_json.should_receive('write').with_args(json.dumps(
-      role_info)).and_return()
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_json_location('booscale'), 'w') \
-      .and_return(fake_locations_json)
+    # Mock out writing the json file.
+    json_location = LocalState.get_locations_json_location('booscale')
+    builtins.should_receive('open').with_args(json_location, 'w')\
+      .and_return(flexmock(write=lambda *args: None))
 
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
       keyname='booscale', group='boogroup', zone='my-zone-1b')

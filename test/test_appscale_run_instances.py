@@ -299,6 +299,9 @@ group: {1}
     self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
+    # Don't write local metadata files.
+    flexmock(LocalState).should_receive('update_local_metadata')
+
     # mock out copying over the keys
     self.local_state.should_receive('shell')\
       .with_args(re.compile('^scp .*.key'),False,5)
@@ -429,6 +432,9 @@ appengine:  1.2.3.4
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
       instance_type='m3.medium', count=1, placement='my-zone-1b')
+
+    # Don't write local metadata files.
+    flexmock(LocalState).should_receive('update_local_metadata')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
@@ -573,6 +579,9 @@ appengine:  1.2.3.4
     self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
       'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
       instance_type='m3.medium', count=1, placement='my-zone-1b')
+
+    # Don't write local metadata files.
+    flexmock(LocalState).should_receive('update_local_metadata')
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
