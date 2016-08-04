@@ -1,7 +1,8 @@
 ---
 # The underlying cloud infrastructure to deploy AppScale over.
 # Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
-# or 'gce' if running on Google Compute Engine.
+# 'gce' if running on Google Compute Engine, or 'azure' if running on
+# Microsoft Azure.
 infrastructure : 'ec2'
 
 # The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
@@ -22,6 +23,7 @@ gce_instance_type : 'n1-standard-1'
 # they should be in the same zone that you specify here.
 zone : 'us-east-1b' # For Amazon EC2
 #zone: 'us-central1-a' # For Google Compute Engine
+#zone: 'westus' # For Microsoft Azure
 
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.
@@ -42,6 +44,14 @@ zone : 'us-east-1b' # For Amazon EC2
 # for your GCE instances. By default, we randomly generate a group for you.
 #group : 'appscalegroup'
 
+# The Azure resource group name that should be used for all the machines in
+# this AppScale deployment.
+#resource_group: 'appscale-group'
+
+# The tag for the resource group in case a new resource group for Azure has
+# to be created.
+#group_tag: 'test-tag'
+
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
@@ -59,6 +69,10 @@ max : 1
 # application can be found, which enables the AppScale Tools to talk to Google
 # Compute Engine on your behalf.
 #client_secrets: '~/client_secrets.json'
+
+# The location to a json file on your computer where the Azure credentials can be found,
+# which enables the AppScale Tools to talk to Azure on your behalf.
+#azure_creds: '~/azure_creds.json'
 
 # The Project ID associated with your Google Compute Engine project.
 # Note: Do not use the Project Name or the Project Number.

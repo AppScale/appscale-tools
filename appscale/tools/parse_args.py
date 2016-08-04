@@ -216,6 +216,15 @@ class ParseArgs(object):
         choices=self.ALLOWED_GCE_INSTANCE_TYPES,
         help="the Google Compute Engine instance type to use")
 
+      # Microsoft Azure specific flags
+      self.parser.add_argument('--azure_creds',
+        help="the JSON file with Azure credentials that can be used to "
+          "authenticate via OAuth")
+      self.parser.add_argument('--group_tag',
+        help="the tag set for an Azure resource group")
+      self.parser.add_argument('--resource_group',
+        help="the resource group to use")
+
       # flags relating to the datastore used
       self.parser.add_argument('--table',
         default=self.DEFAULT_DATASTORE,
