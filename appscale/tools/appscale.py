@@ -76,13 +76,20 @@ class AppScale():
 Available commands:
   clean                             Forcefully terminates the AppScale
                                     deployment and delete all data. ALL
-                                    DATA WILL BE DELETED.
+                                    DATA WILL BE DELETED. If instances
+                                    and/or volumes were created, they will
+                                    be terminated/deleted.
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  destroy                           Gracefully terminates the currently
-                                    running AppScale deployment.
-  down                              An alias for 'destroy'.
+  destroy                           Terminate the currently running
+                                    AppScale deployment. If instances were
+                                    created, they will be terminated. No
+                                    volume or data will be deleted.
+  down                              Gracefully terminates the currently
+                                    running AppScale deployments. If
+                                    instances were created, they will not
+                                    be terminated.
   get <regex>                       Gets all AppController properties matching
                                     the provided regex: for developers only.
   help                              Displays this message.
@@ -796,7 +803,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     contents_as_yaml = yaml.safe_load(contents)
-    if 'ips_layout' not in contents_as_yaml:
+    if 'infrastructure' in contents_as_yaml.keys():
       raise BadConfigurationException("Cannot use 'appscale clean' in a " \
         "cloud deployment.")
 
@@ -810,7 +817,7 @@ Available commands:
     else:
       keyname = 'appscale'
 
-    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
+    all_ips = LocalState.get_all_public_ips(keyname)
 
     if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
       LocalState.ensure_user_wants_to_terminate()
