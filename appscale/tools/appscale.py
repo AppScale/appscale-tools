@@ -75,17 +75,13 @@ class AppScale():
 
 Available commands:
   clean                             Forcefully terminates the AppScale
-                                    deployment and delete all data. ALL
-                                    DATA WILL BE DELETED. If instances
-                                    and/or volumes were created, they will
-                                    be terminated/deleted.
+                                    deployment and delete all data.
+                                    If instances and
+                                    were created, they will be terminated.
+                                    ALL DATA WILL BE DELETED.
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  destroy                           Terminate the currently running
-                                    AppScale deployment. If instances were
-                                    created, they will be terminated. No
-                                    volume or data will be deleted.
   down                              Gracefully terminates the currently
                                     running AppScale deployments. If
                                     instances were created, they will not
@@ -113,6 +109,12 @@ Available commands:
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
                                     AppScale deployment.
+  terminate                         Terminate the currently running
+                                    AppScale deployment. If instances were
+                                    created, they will be terminated. No
+                                    data will be deleted. It is an alias
+                                    for 'down' if no instances were
+                                    started.
   up                                Starts the AppScale deployment (requires
                                     an AppScalefile).
   undeploy <appid>                  Removes <appid> from the current
@@ -129,7 +131,7 @@ Available commands:
   def get_appscalefile_location(self):
     """ Constructs a string that corresponds to the location of the
     AppScalefile for this deployment.
-    
+
     Returns:
       The location where the user's AppScalefile can be found.
     """
