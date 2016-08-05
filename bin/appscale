@@ -141,7 +141,13 @@ elif command == "logs":
     sys.exit(1)
 elif command == "destroy" or command == "down":
   try:
-    appscale.destroy()
+    appscale.down()
+  except Exception as exception:
+    LocalState.generate_crash_log(exception, traceback.format_exc())
+    sys.exit(1)
+elif command == "terminate":
+  try:
+    appscale.down(terminate_instances=True)
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)

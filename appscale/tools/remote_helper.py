@@ -824,7 +824,7 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"
+    AppScaleLogger.log("Will terminate deployment and instances spawned with keyname {0}"
       .format(keyname))
     # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
@@ -851,6 +851,8 @@ class RemoteHelper(object):
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
     # terminate all the machines
+    AppScaleLogger.log("Terminating instances spawned with keyname {0}"
+      .format(keyname))
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
@@ -888,8 +890,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
-      "keyname {0}".format(keyname))
+    AppScaleLogger.log("Terminating appscale deployment with keyname" +
+      " keyname {0}".format(keyname))
     time.sleep(2)
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')

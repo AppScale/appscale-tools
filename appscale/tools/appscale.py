@@ -749,8 +749,8 @@ Available commands:
     AppScaleTools.relocate_app(options)
 
 
-  def destroy(self):
-    """ 'destroy' provides a nicer experience for users than the
+  def down(self, terminate_intances=False):
+    """ 'down' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
     present in the AppScalefile found in the current working directory.
 
@@ -779,6 +779,9 @@ Available commands:
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
+
+    if terminate_instances:
+      command.append("--terminate")
 
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append("--test")
