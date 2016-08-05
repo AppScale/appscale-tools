@@ -74,18 +74,15 @@ class AppScale():
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  clean                             Forcefully terminates the AppScale
-                                    deployment and delete all data.
-                                    If instances and
-                                    were created, they will be terminated.
-                                    ALL DATA WILL BE DELETED.
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  down                              Gracefully terminates the currently
+  down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
-                                    instances were created, they will not
-                                    be terminated.
+                                    instances were created, they will NOT
+                                    be terminated, unless --terminate is
+                                    specified. If --clean option is
+                                    specified, ALL DATA WILL BE DELETED.
   get <regex>                       Gets all AppController properties matching
                                     the provided regex: for developers only.
   help                              Displays this message.
@@ -109,12 +106,6 @@ Available commands:
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
                                     AppScale deployment.
-  terminate                         Terminate the currently running
-                                    AppScale deployment. If instances were
-                                    created, they will be terminated. No
-                                    data will be deleted. It is an alias
-                                    for 'down' if no instances were
-                                    started.
   up                                Starts the AppScale deployment (requires
                                     an AppScalefile).
   undeploy <appid>                  Removes <appid> from the current
@@ -749,10 +740,14 @@ Available commands:
     AppScaleTools.relocate_app(options)
 
 
-  def down(self, terminate_intances=False):
+  def down(self, clean=False, terminate=False):
     """ 'down' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
     present in the AppScalefile found in the current working directory.
+
+    Args:
+      terminate: A boolean to indicate if instances needs to be terminated
+        (valid only if we spawn instances at start).
 
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
@@ -780,7 +775,7 @@ Available commands:
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
-    if terminate_instances:
+    if terminate:
       command.append("--terminate")
 
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
@@ -792,9 +787,13 @@ Available commands:
     AppScaleTools.terminate_instances(options)
 
 
-  def clean(self):
+  def clean(self, terminate=False):
     """ 'clean' provides a mechanism that will forcefully shut down all AppScale-
     related services on virtual machines in a cluster deployment.
+
+    Args:
+      terminate: A boolean to indicate if instances needs to be terminated
+        (valid only if we spawn instances at start).
 
     Returns:
       A list of the IP addresses where AppScale was shut down.

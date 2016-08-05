@@ -140,20 +140,31 @@ elif command == "logs":
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)
 elif command == "destroy" or command == "down":
+  if len(sys.argv) > 4:
+    cprint("Usage: appscale down [--clean][--terminate]", 'red')
+    sys.exit(1)
+  to_clean = False
+  to_terminate = False
+  for index in range(2, len(sys.argv)):
+    if sys.argv[index] == "--terminate":
+      to_terminate = True
+    elif sys.argv[index] == "--clean":
+      to_terminate = True
+    else
+      cprint("Usage: appscale down [--clean][--terminate]", 'red')
+      sys.exit(1)
+
   try:
-    appscale.down()
+    if to_clean:
+      appscale.clean(terminate=to_terminate)
+    else
+      appscale.down(terminate=to_terminate)
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)
 elif command == "terminate":
   try:
     appscale.down(terminate_instances=True)
-  except Exception as exception:
-    LocalState.generate_crash_log(exception, traceback.format_exc())
-    sys.exit(1)
-elif command == "clean":
-  try:
-    appscale.clean()
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)
