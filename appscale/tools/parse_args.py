@@ -224,6 +224,8 @@ class ParseArgs(object):
         help="the tag set for an Azure resource group")
       self.parser.add_argument('--resource_group',
         help="the resource group to use")
+      self.parser.add_argument('--storage_account',
+        help="the storage account name under an Azure resource group")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',

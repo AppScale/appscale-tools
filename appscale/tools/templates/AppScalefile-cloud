@@ -52,6 +52,10 @@ zone : 'us-east-1b' # For Amazon EC2
 # to be created.
 #group_tag: 'test-tag'
 
+# The Azure storage account name that should be used while creating the
+# virtual machines.
+#storage_account: 'appscalestorage'
+
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
