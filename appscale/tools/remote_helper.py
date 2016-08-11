@@ -121,7 +121,20 @@ class RemoteHelper(object):
       options.verbose)
 
     if options.infrastructure:
-      instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
+      agent = InfrastructureAgentFactory.create_agent(
+          LocalState.get_infrastructure(keyname))
+
+      params = agent.get_params_from_args(options)
+      public_ips, private_ips, instance_ids = agent.describe_instances(params)
+      login_ip = LocalState.get_login_host(keyname)
+      if login_ip in public_ips:
+        index = public_ips.index(login_ip)
+        public_ip = public_ips[index]
+        private_ip = private_ips[index]
+        instance_id = instance_ids[index]
+        public_ip = login_ip
+      else:
+        instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
       instance_id = cls.DUMMY_INSTANCE_ID
       public_ip = node_layout.head_node().public_ip

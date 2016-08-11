@@ -93,9 +93,18 @@ class LocalState(object):
       return
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
-      raise BadConfigurationException("AppScale is already running. Terminate" +
-        " it, set 'force: True' in your AppScalefile, or use the --force flag" +
-        " to run anyways.")
+      login_host = LocalState.get_login_host(options.keyname)
+      secret_key = LocalState.get_secret_key(options.keyname)
+      acc = AppControllerClient(login_host, secret_key)
+      try:
+        AppScaleLogger.log(acc.get_status())
+        raise BadConfigurationException("AppScale is already running. Terminate" +
+          " it, set 'force: True' in your AppScalefile, or use the --force flag" +
+          " to run anyways.")
+      except Exception as exception:
+        # AC is not running, so we assume appscale is not up and running.
+        AppScaleLogger.verbose("AppController not running on login node.")
+
 
 
   @classmethod

@@ -614,8 +614,8 @@ class AppScaleTools(object):
       options.keyname) and not options.test:
       LocalState.ensure_user_wants_to_terminate()
 
-    if infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
-          options.terminate:
+    if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
+          options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
     else:
