@@ -9,12 +9,36 @@ import adal
 import json
 import os.path
 import shutil
+import time
 
 # Azure specific imports
+from azure.batch.models import OSType
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.authorization import AuthorizationManagementClient
+
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.compute.models import HardwareProfile
+from azure.mgmt.compute.models import OSProfile
+from azure.mgmt.compute.models import CachingTypes
+from azure.mgmt.compute.models import DiskCreateOptionTypes
+from azure.mgmt.compute.models import ImageReference
+from azure.mgmt.compute.models import NetworkProfile
+from azure.mgmt.compute.models import NetworkInterfaceReference
+from azure.mgmt.compute.models import OSDisk
+from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import VirtualHardDisk
+from azure.mgmt.compute.models import VirtualMachine
+from azure.mgmt.compute.models import VirtualMachineSizeTypes
+
 from azure.mgmt.network import NetworkManagementClient
+from azure.mgmt.network.models import NetworkInterfaceIPConfiguration
+from azure.mgmt.network.models import AddressSpace
+from azure.mgmt.network.models import IPAllocationMethod
+from azure.mgmt.network.models import NetworkInterface
+from azure.mgmt.network.models import PublicIPAddress
+from azure.mgmt.network.models import Subnet
+from azure.mgmt.network.models import VirtualNetwork
+
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.resource.resources.models import ResourceGroup
 from azure.mgmt.storage import StorageManagementClient
@@ -32,7 +56,6 @@ class AzureAgent(BaseAgent):
   with Microsoft Azure. It authenticates using the ADAL (Active Directory
   Authentication Library).
   """
-
   # The Azure URL endpoint that receives all the authentication requests.
   AZURE_AUTH_ENDPOINT = 'https://login.microsoftonline.com/'
 
@@ -67,6 +90,35 @@ class AzureAgent(BaseAgent):
   # A set that contains all of the items necessary to run AppScale in Azure.
   REQUIRED_CREDENTIALS = (PARAM_CREDS, PARAM_ZONE)
 
+  # The following constants are the strings needed to start an Azure VM instance.
+  BASE_NAME = 'azure-appscale'
+
+  VIRTUAL_NETWORK_NAME = BASE_NAME
+
+  SUBNET_NAME = BASE_NAME
+
+  NETWORK_INTERFACE_NAME = BASE_NAME
+
+  VM_NAME = "azure-vm"
+
+  OS_DISK_NAME = BASE_NAME
+
+  PUBLIC_IP_NAME = BASE_NAME
+
+  COMPUTER_NAME = BASE_NAME
+
+  ADMIN_USERNAME = 'azureadminuser'
+
+  ADMIN_PASSWORD = 'appscale'
+
+  IMAGE_PUBLISHER = 'Canonical'
+
+  IMAGE_OFFER = 'UbuntuServer'
+
+  IMAGE_SKU = '16.04.0-LTS'
+
+  IMAGE_VERSION = 'latest'
+
   def assert_credentials_are_valid(self, parameters):
     """ Contacts Azure with the given credentials to ensure that they are
     valid. Gets an access token and a Credentials instance in order to be
@@ -95,10 +147,8 @@ class AzureAgent(BaseAgent):
 
   def configure_instance_security(self, parameters):
     """Configure and setup security features for the VMs spawned via this
-    agent.
-
-    This method is called before starting virtual machines. Implementations may
-    configure security features such as VM login and firewalls in this method.
+    agent. This method is called before starting virtual machines. Implementations
+    may configure security features such as VM login and firewalls in this method.
 
     Args:
       parameters: A dict containing values necessary to authenticate with the
@@ -112,6 +162,24 @@ class AzureAgent(BaseAgent):
       AgentRuntimeException: If security features could not be successfully
         configured in the underlying cloud.
     """
+    creds_dict, credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+    zone = parameters[self.PARAM_ZONE]
+    AppScaleLogger.log("Starting machines under resource group '{0}' with "
+                       "storage account '{1}' in zone '{2}'".
+                       format(resource_group, storage_account, zone))
+    # Create a resource group and an associated storage account to access resources.
+    self.create_resource_group(parameters, creds_dict, credentials)
+
+    resource_client = ResourceManagementClient(credentials, str(creds_dict['subscription_id']))
+    resource_client.providers.register('Microsoft.Compute')
+    resource_client.providers.register('Microsoft.Network')
+
+    network_client = NetworkManagementClient(credentials, str(creds_dict['subscription_id']))
+    network_id = self.create_network_interface(network_client, zone, resource_group,
+                                               self.NETWORK_INTERFACE_NAME, self.VIRTUAL_NETWORK_NAME,
+                                               self.SUBNET_NAME, self.PUBLIC_IP_NAME)
 
   def describe_instances(self, parameters, pending=False):
     """Query the underlying cloud platform regarding VMs that are running.
@@ -141,15 +209,6 @@ class AzureAgent(BaseAgent):
       security_configured: Unused, as we assume that the network and firewall
         has already been set up.
     """
-    creds_dict, credentials = self.open_connection(parameters)
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
-    zone = parameters[self.PARAM_ZONE]
-    AppScaleLogger.log("Starting {0} machines under resource group '{1}' with "
-                       "storage account '{2}' in zone '{3}'".
-                       format(count,resource_group, storage_account, zone))
-    # Create a resource group and an associated storage account to access resources.
-    self.create_resource_group(parameters, creds_dict, credentials)
 
   def associate_static_ip(self, instance_id, static_ip):
     """Associates the given static IP address with the given instance ID.
@@ -284,6 +343,9 @@ class AzureAgent(BaseAgent):
 
     if args[self.PARAM_RESOURCE_GROUP] in rg_names:
       params[self.PARAM_EXISTING_RG] = True
+
+    if not args[self.PARAM_STORAGE_ACCOUNT]:
+      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
     return params
 
   def assert_required_parameters(self, parameters, operation):
@@ -349,6 +411,56 @@ class AzureAgent(BaseAgent):
                                                  tenant=creds['tenant_id'])
     return creds, sp_credentials
 
+
+  def create_network_interface(self, network_client, region, group_name, interface_name,
+    network_name, subnet_name, ip_name):
+    """ Helper function that creates the network resources, such as virtual network,
+    public ip and network interface.
+
+    Args:
+      network_client: A NetworkManagementClient instance
+      region: The location specified in the AppScalefile
+      group_name: The Azure resource group name
+      interface_name: The name to use for the Network Interface resource.
+      network_name: The name to use for the Virtual Network resource.
+      subnet_name: The name to use for the Subnet resource.
+      ip_name: The name to use for the Public IP Address resource.
+
+    Returns: A ID, for the network interface created.
+    """
+    AppScaleLogger.log("Creating/Updating the Virtual Network '{}'".format(network_name))
+    address_space = AddressSpace(address_prefixes=['10.1.0.0/16', ], )
+    subnet1 = Subnet(name=subnet_name, address_prefix='10.1.0.0/24', )
+    result = network_client.virtual_networks.create_or_update(group_name,
+      network_name, VirtualNetwork(location=region,
+                                   address_space=address_space,
+                                   subnets=[subnet1]))
+
+    time.sleep(10)
+    subnet = network_client.subnets.get(group_name, network_name, subnet_name)
+
+    AppScaleLogger.log("Creating/Updating the Public IP Address '{}'".format(ip_name))
+    ip_address = PublicIPAddress(location=region, public_ip_allocation_method=IPAllocationMethod.dynamic,
+                                 idle_timeout_in_minutes=4, )
+    result = network_client.public_ip_addresses.create_or_update(group_name, ip_name, ip_address)
+
+    time.sleep(10)
+    public_ip_address = network_client.public_ip_addresses.get(group_name, ip_name)
+    public_ip_id = public_ip_address.id
+
+    AppScaleLogger.log("Creating/Updating the Network Interface '{}'".format(interface_name))
+    network_interface_ip_conf = NetworkInterfaceIPConfiguration(
+      name='default', private_ip_allocation_method=IPAllocationMethod.dynamic,
+      subnet=subnet, public_ip_address=PublicIPAddress(id=public_ip_id))
+
+    result = network_client.network_interfaces.create_or_update(
+      group_name, interface_name, NetworkInterface(location=region,
+                                                   ip_configurations=[network_interface_ip_conf])
+    )
+    time.sleep(10)
+    network_interface = network_client.network_interfaces.get(group_name, interface_name)
+    return network_interface.id
+
   def create_resource_group(self, parameters, creds_dict, credentials):
     """ Creates a Resource Group for the application using the Service Principal
     Credentials, if it does not already exist. In the case where no resource
@@ -373,6 +485,7 @@ class AzureAgent(BaseAgent):
       tag_name = parameters[self.PARAM_TAG]
 
     storage_client = StorageManagementClient(credentials, subscription_id)
+    resource_client.providers.register('Microsoft.Storage')
     try:
       # If the resource group does not already exist, create a new one with the
       # specified storage account.
@@ -394,7 +507,7 @@ class AzureAgent(BaseAgent):
         if parameters[self.PARAM_STORAGE_ACCOUNT] or self.DEFAULT_STORAGE_ACCT in stg_account_names:
             AppScaleLogger.log("Storage account '{0}' under '{1}' resource group "
                                "already exists. So not creating it again.".
-                               format(account.name, rg_name))
+                               format(parameters[self.PARAM_STORAGE_ACCOUNT], rg_name))
         else:
           self.create_storage_account(parameters, storage_client)
     except CloudError as error:
@@ -416,10 +529,8 @@ class AzureAgent(BaseAgent):
       AgentConfigurationException: If there was a problem creating or accessing
         a storage account with the given subscription.
     """
-    storage_account = self.DEFAULT_STORAGE_ACCT
+    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     rg_name = parameters[self.PARAM_RESOURCE_GROUP]
-    if parameters[self.PARAM_STORAGE_ACCOUNT]:
-      storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
 
     try:
       AppScaleLogger.log("Creating a new storage account '{0}' under the resource "
