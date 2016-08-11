@@ -367,6 +367,8 @@ class AppScaleTools(object):
       AppScaleLogger.success("Successfully issued request to move {0} to " \
         "ports {1} and {2}.".format(options.appname, options.http_port,
         options.https_port))
+      RemoteHelper.sleep_until_port_is_open(login_host, options.http_port,
+        options.verbose)
       AppScaleLogger.success("Your app serves unencrypted traffic at: " +
         "http://{0}:{1}".format(login_host, options.http_port))
       AppScaleLogger.success("Your app serves encrypted traffic at: " +
