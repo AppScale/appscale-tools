@@ -181,6 +181,54 @@ class AzureAgent(BaseAgent):
                                                self.NETWORK_INTERFACE_NAME, self.VIRTUAL_NETWORK_NAME,
                                                self.SUBNET_NAME, self.PUBLIC_IP_NAME)
 
+    self.create_virtual_machine(credentials, creds_dict, network_client, network_id,
+                                resource_group, storage_account, zone)
+
+  def create_virtual_machine(self, credentials, creds_dict, network_client,
+    network_id, resource_group, storage_account, zone):
+    """ Creates an Azure virtual machine using the network interface created.
+
+    Args:
+      credentials: A ServicePrincipalCredentials instance, that can be used to access or
+        create any resources.
+      creds_dict: A dict, containing all the credentials needed to talk to Azure.
+      network_client: A NetworkManagementClient instance.
+      network_id: The network id of the network interface created.
+      resource_group: The Azure resource group name
+      storage_account: The storage account
+      zone:
+    """
+
+    AppScaleLogger.log("Creating a Virtual Machine {}".format(self.VM_NAME))
+    compute_client = ComputeManagementClient(credentials, str(creds_dict['subscription_id']))
+
+    os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
+                           admin_password=self.ADMIN_PASSWORD,
+                           computer_name=self.COMPUTER_NAME)
+    hardware_profile = HardwareProfile(vm_size=VirtualMachineSizeTypes.standard_a0)
+
+    network_profile = NetworkProfile(network_interfaces=[NetworkInterfaceReference(id=network_id)])
+
+    virtual_hd = VirtualHardDisk(uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
+                                 format(storage_account, self.OS_DISK_NAME))
+
+    os_disk = OSDisk(os_type=OSType.linux, caching=CachingTypes.none,
+                     create_option=DiskCreateOptionTypes.from_image,
+                     name=self.OS_DISK_NAME, vhd=virtual_hd)
+
+    image_reference = ImageReference(publisher=self.IMAGE_PUBLISHER, offer=self.IMAGE_OFFER,
+                                     sku=self.IMAGE_SKU, version=self.IMAGE_VERSION)
+
+    result = compute_client.virtual_machines.create_or_update(
+      resource_group, self.VM_NAME, VirtualMachine(location=zone, os_profile=os_profile,
+        hardware_profile=hardware_profile, network_profile=network_profile, storage_profile=StorageProfile(
+          os_disk=os_disk, image_reference=image_reference)))
+
+    # Display the public ip address.
+    # You can now connect to the machine using SSH.
+    public_ip_address = network_client.public_ip_addresses.get(resource_group, self.PUBLIC_IP_NAME)
+    print('VM available at {}'.format(public_ip_address.ip_address))
+
   def describe_instances(self, parameters, pending=False):
     """Query the underlying cloud platform regarding VMs that are running.
 
