@@ -71,13 +71,19 @@ class AzureAgent(BaseAgent):
   # The following constants are string literals that can be used by callers to
   # index into the parameters that the user passes in, as opposed to having to
   # type out the strings each time we need them.
-  PARAM_CREDS = 'azure_creds'
+  PARAM_APP_ID = "app_id"
+
+  PARAM_APP_SECRET = "app_secret_key"
 
   PARAM_EXISTING_RG = 'does_exist'
 
   PARAM_RESOURCE_GROUP = 'resource_group'
 
   PARAM_STORAGE_ACCOUNT = 'storage_account'
+
+  PARAM_SUBCR_ID = "subscription_id"
+
+  PARAM_TENANT_ID = "tenant_id"
 
   PARAM_TEST = 'test'
 
@@ -88,7 +94,13 @@ class AzureAgent(BaseAgent):
   PARAM_ZONE = 'zone'
 
   # A set that contains all of the items necessary to run AppScale in Azure.
-  REQUIRED_CREDENTIALS = (PARAM_CREDS, PARAM_ZONE)
+  REQUIRED_CREDENTIALS = (
+    PARAM_APP_SECRET,
+    PARAM_APP_ID,
+    PARAM_SUBCR_ID,
+    PARAM_TENANT_ID,
+    PARAM_ZONE
+  )
 
   # The following constants are the strings needed to start an Azure VM instance.
   BASE_NAME = 'azure-appscale'
@@ -136,10 +148,10 @@ class AzureAgent(BaseAgent):
       AgentConfigurationException: If an error is encountered during
         authentication.
     """
-    creds_dict, credentials = self.open_connection(parameters)
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
     try:
-      resource_client = ResourceManagementClient(credentials,
-                                                 str(creds_dict['subscription_id']))
+      resource_client = ResourceManagementClient(credentials, subscription_id)
       resource_groups = resource_client.resource_groups.list()
       rg_names = []
       for rg in resource_groups:
@@ -164,23 +176,22 @@ class AzureAgent(BaseAgent):
       AgentRuntimeException: If security features could not be successfully
         configured in the underlying cloud.
     """
-    creds_dict, credentials = self.open_connection(parameters)
+    credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
     AppScaleLogger.log("Starting machines under resource group '{0}' with "
                        "storage account '{1}' in zone '{2}'".
                        format(resource_group, storage_account, zone))
     # Create a resource group and an associated storage account to access resources.
-    self.create_resource_group(parameters, creds_dict, credentials)
+    self.create_resource_group(parameters, credentials)
 
-    resource_client = ResourceManagementClient(credentials,
-                                               str(creds_dict['subscription_id']))
+    resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_client.providers.register('Microsoft.Compute')
     resource_client.providers.register('Microsoft.Network')
 
-    network_client = NetworkManagementClient(credentials,
-                                             str(creds_dict['subscription_id']))
+    network_client = NetworkManagementClient(credentials, subscription_id)
     self.create_network_interface(network_client, zone, resource_group,
                                   self.NETWORK_INTERFACE_NAME,
                                   self.VIRTUAL_NETWORK_NAME,
@@ -212,22 +223,21 @@ class AzureAgent(BaseAgent):
       security_configured: Unused, as we assume that the network and firewall
         has already been set up.
     """
-    creds_dict, credentials = self.open_connection(parameters)
+    credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    network_client = NetworkManagementClient(credentials,
-                                             str(creds_dict['subscription_id']))
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    network_client = NetworkManagementClient(credentials, subscription_id)
     network_interface = network_client.network_interfaces.get(
       resource_group, self.NETWORK_INTERFACE_NAME)
-    public_ip = self.create_virtual_machine(credentials, creds_dict, network_client,
+    public_ip = self.create_virtual_machine(credentials, network_client,
                                             network_interface.id, parameters)
 
-  def create_virtual_machine(self, credentials, creds_dict, network_client, network_id, parameters):
+  def create_virtual_machine(self, credentials, network_client, network_id, parameters):
     """ Creates an Azure virtual machine using the network interface created.
 
     Args:
       credentials: A ServicePrincipalCredentials instance, that can be used to access or
         create any resources.
-      creds_dict: A dict, containing all the credentials needed to talk to Azure.
       network_client: A NetworkManagementClient instance.
       network_id: The network id of the network interface created.
       parameters: A dict, containing all the parameters necessary to
@@ -238,8 +248,8 @@ class AzureAgent(BaseAgent):
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.log("Creating a Virtual Machine '{}'".format(self.VM_NAME))
-    compute_client = ComputeManagementClient(credentials,
-                                             str(creds_dict['subscription_id']))
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
 
     os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
                            admin_password=self.ADMIN_PASSWORD,
@@ -281,7 +291,7 @@ class AzureAgent(BaseAgent):
         print('Azure VM is available at {}'.format(public_ip_address.ip_address))
         break
       AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
-        "available".format(sleep_time), parameters[self.PARAM_VERBOSE])
+        "available".format(sleep_time), verbose)
       time.sleep(sleep_time)
       sleep_time = min(sleep_time * 2, 20)
     return public_ip_address.ip_address
@@ -377,30 +387,14 @@ class AzureAgent(BaseAgent):
     if not isinstance(args, dict):
       args = vars(args)
 
-    if not args.get('azure_creds'):
-      raise AgentConfigurationException("Please specify a JSON file location "
-        "in the azure_creds section of your AppScalefile when running "
-        "over Microsoft Azure.")
-
-    credentials_file = args.get('azure_creds')
-    full_credentials = os.path.expanduser(credentials_file)
-    if not os.path.exists(full_credentials):
-      raise AgentConfigurationException("Couldn't find your credentials at {0}".
-        format(full_credentials))
-
-    destination = LocalState.get_client_secrets_location(args['keyname'])
-    # Make sure the destination's parent directory exists.
-    destination_parent = os.path.abspath(os.path.join(destination, os.pardir))
-    if not os.path.exists(destination_parent):
-      os.makedirs(destination_parent)
-
-    shutil.copy(full_credentials, destination)
-
     params = {
-      self.PARAM_CREDS: args[self.PARAM_CREDS],
+      self.PARAM_APP_ID: args[self.PARAM_APP_ID],
+      self.PARAM_APP_SECRET: args[self.PARAM_APP_SECRET],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
+      self.PARAM_SUBCR_ID: args[self.PARAM_SUBCR_ID],
       self.PARAM_TAG: args[self.PARAM_TAG],
+      self.PARAM_TENANT_ID: args[self.PARAM_TENANT_ID],
       self.PARAM_TEST: args[self.PARAM_TEST],
       self.PARAM_VERBOSE : args.get('verbose', False),
       self.PARAM_ZONE : args[self.PARAM_ZONE]
@@ -444,12 +438,6 @@ class AzureAgent(BaseAgent):
         raise AgentConfigurationException('The required parameter, {0}, was not'
                                           ' specified.'.format(param))
 
-    # Next, make sure that the azure_creds JSON file exists.
-    credentials_file = parameters.get(self.PARAM_CREDS)
-    if not os.path.exists(os.path.expanduser(credentials_file)):
-      raise AgentConfigurationException('Could not find your credentials ' \
-                                        'file at {0}'.format(credentials_file))
-
   def open_connection(self, parameters):
     """ Connects to Microsoft Azure with the given credentials, creates a
     an authentication token and uses that to get the ServicePrincipalCredentials
@@ -465,26 +453,22 @@ class AzureAgent(BaseAgent):
       A ServicePrincipalCredentials instance, that can be used to access or
       create any resources.
     """
-    # Creates a credentials dictionary from the JSON file specified in the
-    # AppScalefile.
-    creds_location = os.path.expanduser(parameters[self.PARAM_CREDS])
-    with open(creds_location) as creds_file:
-      creds_json = creds_file.read()
-    creds = json.loads(creds_json)
+    app_id = parameters[self.PARAM_APP_ID]
+    app_secret_key = parameters[self.PARAM_APP_SECRET]
+    tenant_id = parameters[self.PARAM_TENANT_ID]
 
     # Get an Authentication token using ADAL.
-    context = adal.AuthenticationContext(
-      self.AZURE_AUTH_ENDPOINT + creds['tenant_id'])
+    context = adal.AuthenticationContext(self.AZURE_AUTH_ENDPOINT + tenant_id)
     token_response = context.acquire_token_with_client_credentials(
-      self.AZURE_RESOURCE_URL, creds['app_id'], creds['app_secret'])
+      self.AZURE_RESOURCE_URL, app_id, app_secret_key)
     token_response.get('accessToken')
 
     # To access Azure resources for an application, we need a Service Principal
     # which contains a role assignment. It can be created using the Azure CLI.
-    sp_credentials = ServicePrincipalCredentials(client_id=creds['app_id'],
-                                                 secret=creds['app_secret'],
-                                                 tenant=creds['tenant_id'])
-    return creds, sp_credentials
+    credentials = ServicePrincipalCredentials(client_id=app_id,
+                                              secret=app_secret_key,
+                                              tenant=tenant_id)
+    return credentials
 
 
   def create_network_interface(self, network_client, region, group_name,
@@ -526,12 +510,12 @@ class AzureAgent(BaseAgent):
       name='default', private_ip_allocation_method=IPAllocationMethod.dynamic,
       subnet=subnet, public_ip_address=PublicIPAddress(id=(public_ip_address.id)))
 
-    result = network_client.network_interfaces.create_or_update(
+    network_client.network_interfaces.create_or_update(
       group_name, interface_name, NetworkInterface(
         location=region, ip_configurations=[network_interface_ip_conf]))
     time.sleep(self.SLEEP_TIME)
 
-  def create_resource_group(self, parameters, creds_dict, credentials):
+  def create_resource_group(self, parameters, credentials):
     """ Creates a Resource Group for the application using the Service Principal
     Credentials, if it does not already exist. In the case where no resource
     group is specified, a default 'appscale-group' is created.
@@ -539,14 +523,13 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
-      creds_dict: A dict, containing all the credentials needed to talk to Azure.
       credentials: A ServicePrincipalCredentials instance, that can be used to
       access or create any resources.
     Raises:
       AgentConfigurationException: If there was a problem creating or accessing
         a resource group with the given subscription.
     """
-    subscription_id = str(creds_dict['subscription_id'])
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
     resource_client = ResourceManagementClient(credentials, subscription_id)
     rg_name = parameters[self.PARAM_RESOURCE_GROUP]
 
@@ -593,7 +576,6 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict, containing all the parameters necessary to authenticate
         this user with Azure.
-      creds_dict: A dict, containing all the credentials needed to talk to Azure.
       credentials: A ServicePrincipalCredentials instance, that can be used to access or
       create any resources.
     Raises:

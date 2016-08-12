@@ -50,7 +50,7 @@ zone : 'us-east-1b' # For Amazon EC2
 
 # The tag for the resource group in case a new resource group for Azure has
 # to be created.
-#group_tag: 'test-tag'
+#group_tag: 'group-tag'
 
 # The Azure storage account name that should be used while creating the
 # virtual machines.
@@ -74,9 +74,17 @@ max : 1
 # Compute Engine on your behalf.
 #client_secrets: '~/client_secrets.json'
 
-# The location to a json file on your computer where the Azure credentials can be found,
-# which enables the AppScale Tools to talk to Azure on your behalf.
-#azure_creds: '~/azure_creds.json'
+# The Azure subscription ID for your account to use for AppScale deployment.
+#subscription_id :
+
+# The application or the client ID from the Azure Portal.
+#app_id :
+
+# The tenant ID from the view endpoints section on the Azure Portal.
+#tenant_id :
+
+# The authentication key for the application on the Azure Portal.
+#app_secret_key :
 
 # The Project ID associated with your Google Compute Engine project.
 # Note: Do not use the Project Name or the Project Number.

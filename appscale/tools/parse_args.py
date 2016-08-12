@@ -226,6 +226,14 @@ class ParseArgs(object):
         help="the resource group to use")
       self.parser.add_argument('--storage_account',
         help="the storage account name under an Azure resource group")
+      self.parser.add_argument('--subscription_id',
+        help="the Azure subscription ID for the account")
+      self.parser.add_argument('--app_id',
+        help="the application or the client ID")
+      self.parser.add_argument('--tenant_id',
+        help="the tenant ID of the Azure endpoints")
+      self.parser.add_argument('--app_secret_key',
+        help="the authentication key for the application")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
