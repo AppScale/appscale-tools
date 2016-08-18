@@ -15,17 +15,20 @@ import time
 from azure.batch.models import OSType
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.authorization import AuthorizationManagementClient
-
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import HardwareProfile
 from azure.mgmt.compute.models import OSProfile
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import ImageReference
+from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OSDisk
+from azure.mgmt.compute.models import SshConfiguration
+from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import VirtualHardDisk
 from azure.mgmt.compute.models import VirtualMachine
 from azure.mgmt.compute.models import VirtualMachineSizeTypes
@@ -49,6 +52,7 @@ from msrestazure.azure_exceptions import CloudError
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.local_state import LocalState
 from base_agent import AgentConfigurationException
+from base_agent import AgentRuntimeException
 from base_agent import BaseAgent
 
 class AzureAgent(BaseAgent):
@@ -68,6 +72,8 @@ class AzureAgent(BaseAgent):
   # Default resource group name to use for Azure.
   DEFAULT_RESOURCE_GROUP = 'appscale-group'
 
+  DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
+
   # The following constants are string literals that can be used by callers to
   # index into the parameters that the user passes in, as opposed to having to
   # type out the strings each time we need them.
@@ -75,7 +81,13 @@ class AzureAgent(BaseAgent):
 
   PARAM_APP_SECRET = "app_secret_key"
 
+  PARAM_CREDENTIALS = 'credentials'
+
   PARAM_EXISTING_RG = 'does_exist'
+
+  PARAM_KEYNAME = 'keyname'
+
+  PARAM_REGION = 'region'
 
   PARAM_RESOURCE_GROUP = 'resource_group'
 
@@ -97,6 +109,7 @@ class AzureAgent(BaseAgent):
   REQUIRED_CREDENTIALS = (
     PARAM_APP_SECRET,
     PARAM_APP_ID,
+    PARAM_KEYNAME,
     PARAM_SUBCR_ID,
     PARAM_TENANT_ID,
     PARAM_ZONE
@@ -121,13 +134,11 @@ class AzureAgent(BaseAgent):
 
   ADMIN_USERNAME = 'azureuser'
 
-  ADMIN_PASSWORD = 'AppScale1!'
-
   IMAGE_PUBLISHER = 'Canonical'
 
   IMAGE_OFFER = 'UbuntuServer'
 
-  IMAGE_SKU = '16.04.0-LTS'
+  IMAGE_SKU = '14.04.0-LTS'
 
   IMAGE_VERSION = 'latest'
 
@@ -181,9 +192,9 @@ class AzureAgent(BaseAgent):
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
-    AppScaleLogger.log("Starting machines under resource group '{0}' with "
-                       "storage account '{1}' in zone '{2}'".
-                       format(resource_group, storage_account, zone))
+    AppScaleLogger.log("Configuring network for machine/s under "
+                       "resource group '{0}' with storage account '{1}' "
+                       "in zone '{2}'".format(resource_group, storage_account, zone))
     # Create a resource group and an associated storage account to access resources.
     self.create_resource_group(parameters, credentials)
 
@@ -197,6 +208,17 @@ class AzureAgent(BaseAgent):
                                   self.VIRTUAL_NETWORK_NAME,
                                   self.SUBNET_NAME, self.PUBLIC_IP_NAME)
 
+    AppScaleLogger.log("Verifying that SSH key exists locally.")
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
+
+    if os.path.exists(private_key) or os.path.exists(public_key):
+      raise AgentRuntimeException("SSH key already found locally - please "
+        "use a different keyname.")
+
+    LocalState.generate_rsa_key(keyname, parameters[self.PARAM_VERBOSE])
+
   def describe_instances(self, parameters, pending=False):
     """Query the underlying cloud platform regarding VMs that are running.
 
@@ -209,6 +231,21 @@ class AzureAgent(BaseAgent):
       of private IP addresses, private is a list of private IP addresses,
       and id is a list of platform specific VM identifiers.
     """
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    public_ips = []
+    private_ips = []
+    instance_ids = []
+    public_ip_addresses = network_client.public_ip_addresses.get(resource_group,
+                                                                 self.PUBLIC_IP_NAME)
+    public_ips.append(public_ip_addresses.ip_address)
+    network_interfaces = network_client.network_interfaces.get(resource_group,
+                                                               self.NETWORK_INTERFACE_NAME)
+    private_ips.append(network_interfaces.ip_configurations[0].private_ip_address)
+    instance_ids.append(self.DUMMY_INSTANCE_ID)
+    return instance_ids, public_ips, private_ips
 
   def run_instances(self, count, parameters, security_configured):
     """ Starts 'count' instances in Microsoft Azure, and returns once they
@@ -227,10 +264,14 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
+    resource_client = ResourceManagementClient(credentials, subscription_id)
     network_interface = network_client.network_interfaces.get(
       resource_group, self.NETWORK_INTERFACE_NAME)
-    public_ip = self.create_virtual_machine(credentials, network_client,
-                                            network_interface.id, parameters)
+    self.create_virtual_machine(credentials, network_client,
+                                network_interface.id, parameters)
+
+    instance_ids, public_ips, private_ips = self.describe_instances(parameters)
+    return instance_ids, public_ips, private_ips
 
   def create_virtual_machine(self, credentials, network_client, network_id, parameters):
     """ Creates an Azure virtual machine using the network interface created.
@@ -251,9 +292,22 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key_path = private_key_path + ".pub"
+
+    with open(public_key_path, 'r') as pub_ssh_key_fd:
+      pub_ssh_key = pub_ssh_key_fd.read()
+
+    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
+    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
+    ssh_config = SshConfiguration(public_keys=public_keys)
+    linux_config = LinuxConfiguration(disable_password_authentication=True,
+                                      ssh=ssh_config)
     os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
-                           admin_password=self.ADMIN_PASSWORD,
-                           computer_name=self.COMPUTER_NAME)
+                           computer_name=self.COMPUTER_NAME,
+                           linux_configuration=linux_config)
+
     hardware_profile = HardwareProfile(
       vm_size=VirtualMachineSizeTypes.standard_a0)
 
@@ -294,7 +348,6 @@ class AzureAgent(BaseAgent):
         "available".format(sleep_time), verbose)
       time.sleep(sleep_time)
       sleep_time = min(sleep_time * 2, 20)
-    return public_ip_address.ip_address
 
   def associate_static_ip(self, instance_id, static_ip):
     """Associates the given static IP address with the given instance ID.
@@ -388,9 +441,12 @@ class AzureAgent(BaseAgent):
       args = vars(args)
 
     params = {
+      self.PARAM_CREDENTIALS: {},
       self.PARAM_APP_ID: args[self.PARAM_APP_ID],
       self.PARAM_APP_SECRET: args[self.PARAM_APP_SECRET],
+      self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
+      self.PARAM_REGION: args[self.PARAM_ZONE],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
       self.PARAM_SUBCR_ID: args[self.PARAM_SUBCR_ID],
       self.PARAM_TAG: args[self.PARAM_TAG],
@@ -598,4 +654,3 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a storage account "
         "using the credentials provided: {}".format(error.message))
-    
