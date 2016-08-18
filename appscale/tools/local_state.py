@@ -390,6 +390,15 @@ class LocalState(object):
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
 
+    if infrastructure == 'azure':
+      yaml_contents['subscription_id'] = options.subscription_id
+      yaml_contents['app_id'] = options.app_id
+      yaml_contents['app_secret_key'] = options.app_secret_key
+      yaml_contents['tenant_id'] = options.tenant_id
+      yaml_contents['resource_group'] = options.resource_group
+      yaml_contents['storage_account'] = options.storage_account
+      yaml_contents['group_tag'] = options.group_tag
+
     with open(cls.get_locations_yaml_location(options.keyname), 'w') \
         as file_handle:
       file_handle.write(yaml.dump(yaml_contents, default_flow_style=False))
@@ -675,6 +684,93 @@ class LocalState(object):
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
       return yaml.safe_load(file_handle.read())["zone"]
 
+  @classmethod
+  def get_subscription_id(cls, keyname):
+    """Reads the locations.yaml file to see what subscription ID is used to interact
+    with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the subscription ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["subscription_id"]
+
+  @classmethod
+  def get_app_id(cls, keyname):
+    """Reads the locations.yaml file to see what application is used to interact
+    with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the application ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["app_id"]
+
+  @classmethod
+  def get_app_secret_key(cls, keyname):
+    """Reads the locations.yaml file to get the secret key for the application
+    that is used to interact with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the secret key for the application running for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["app_secret_key"]
+
+  @classmethod
+  def get_tenant_id(cls, keyname):
+    """Reads the locations.yaml file to get the tenant ID that is used to
+    interact with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the tenant ID for this account being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["tenant_id"]
+
+  @classmethod
+  def get_resource_group(cls, keyname):
+    """Reads the locations.yaml file to get the Azure resource group under
+    which the instances are placed in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the resource group name being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["resource_group"]
+
+  @classmethod
+  def get_storage_account(cls, keyname):
+    """Reads the locations.yaml file to get the Azure storage account
+    associated with the resource group in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the storage account name being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["storage_account"]
 
   @classmethod
   def get_client_secrets_location(cls, keyname):

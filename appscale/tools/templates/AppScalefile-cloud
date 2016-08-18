@@ -46,11 +46,11 @@ zone : 'us-east-1b' # For Amazon EC2
 
 # The Azure resource group name that should be used for all the machines in
 # this AppScale deployment.
-#resource_group: 'appscale-group'
+#resource_group: 'appscalegroup'
 
 # The tag for the resource group in case a new resource group for Azure has
 # to be created.
-#group_tag: 'group-tag'
+#group_tag: 'grouptag'
 
 # The Azure storage account name that should be used while creating the
 # virtual machines.

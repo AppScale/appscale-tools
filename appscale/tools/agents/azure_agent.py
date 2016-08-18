@@ -78,31 +78,20 @@ class AzureAgent(BaseAgent):
   # index into the parameters that the user passes in, as opposed to having to
   # type out the strings each time we need them.
   PARAM_APP_ID = "app_id"
-
   PARAM_APP_SECRET = "app_secret_key"
-
   PARAM_CREDENTIALS = 'credentials'
-
   PARAM_EXISTING_RG = 'does_exist'
-
+  PARAM_GROUP = 'group'
+  PARAM_INSTANCE_IDS = 'instance_ids'
   PARAM_KEYNAME = 'keyname'
-
   PARAM_REGION = 'region'
-
   PARAM_RESOURCE_GROUP = 'resource_group'
-
   PARAM_STORAGE_ACCOUNT = 'storage_account'
-
   PARAM_SUBCR_ID = "subscription_id"
-
   PARAM_TENANT_ID = "tenant_id"
-
   PARAM_TEST = 'test'
-
   PARAM_TAG = 'group_tag'
-
   PARAM_VERBOSE = 'is_verbose'
-
   PARAM_ZONE = 'zone'
 
   # A set that contains all of the items necessary to run AppScale in Azure.
@@ -244,8 +233,8 @@ class AzureAgent(BaseAgent):
     network_interfaces = network_client.network_interfaces.get(resource_group,
                                                                self.NETWORK_INTERFACE_NAME)
     private_ips.append(network_interfaces.ip_configurations[0].private_ip_address)
-    instance_ids.append(self.DUMMY_INSTANCE_ID)
-    return instance_ids, public_ips, private_ips
+    instance_ids.append(self.VM_NAME)
+    return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
     """ Starts 'count' instances in Microsoft Azure, and returns once they
@@ -270,7 +259,7 @@ class AzureAgent(BaseAgent):
     self.create_virtual_machine(credentials, network_client,
                                 network_interface.id, parameters)
 
-    instance_ids, public_ips, private_ips = self.describe_instances(parameters)
+    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     return instance_ids, public_ips, private_ips
 
   def create_virtual_machine(self, credentials, network_client, network_id, parameters):
@@ -327,7 +316,7 @@ class AzureAgent(BaseAgent):
                                      sku=self.IMAGE_SKU,
                                      version=self.IMAGE_VERSION)
 
-    result = compute_client.virtual_machines.create_or_update(
+    compute_client.virtual_machines.create_or_update(
       resource_group, self.VM_NAME, VirtualMachine(location=zone,
                                                    os_profile=os_profile,
                                                    hardware_profile=hardware_profile,
@@ -365,6 +354,15 @@ class AzureAgent(BaseAgent):
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
     """
+    credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    AppScaleLogger.log("Terminating the vm instance/s '{}'".format(self.VM_NAME))
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    vm_names = parameters[self.PARAM_INSTANCE_IDS]
+    for vm in vm_names:
+      compute_client.virtual_machines.delete(resource_group, vm)
+
 
   def does_address_exist(self, parameters):
     """Verifies that the specified static IP address has been allocated, and
@@ -417,11 +415,30 @@ class AzureAgent(BaseAgent):
   def cleanup_state(self, parameters):
     """Removes any remote state that was created to run AppScale instances
     during this deployment.
-
     Args:
       parameters: A dict that includes keys indicating the remote state
         that should be deleted.
     """
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    credentials = self.open_connection(parameters)
+    verbose = parameters[self.PARAM_VERBOSE]
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    public_ip_address = network_client.public_ip_addresses.get(resource_group,
+                                                               self.PUBLIC_IP_NAME)
+    sleep_time = 1
+    while public_ip_address.ip_address:
+      AppScaleLogger.verbose("Waiting {} second(s) for VM instance/s to be terminated."
+        .format(sleep_time), verbose)
+      time.sleep(sleep_time)
+      sleep_time = min(sleep_time * 2, 20)
+
+    AppScaleLogger.log("Deleting the Virtual Network, Public IP Address "
+      "and Network Interface created for this deployment.")
+
+    network_client.virtual_networks.delete(resource_group, self.VIRTUAL_NETWORK_NAME)
+    network_client.public_ip_addresses.delete(resource_group, self.PUBLIC_IP_NAME)
+    network_client.network_interfaces.delete(resource_group, self.NETWORK_INTERFACE_NAME)
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
@@ -472,6 +489,30 @@ class AzureAgent(BaseAgent):
 
     if not args[self.PARAM_STORAGE_ACCOUNT]:
       params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+    return params
+
+  def get_params_from_yaml(self, keyname):
+    """ Searches through the locations.yaml file to build a dict containing the
+    parameters necessary to interact with Microsoft Azure.
+
+    Args:
+      keyname: A str that uniquely identifies this AppScale deployment.
+    Returns:
+      A dict containing all of the credentials necessary to interact with
+        Microsoft Azure.
+    """
+    params = {
+      self.PARAM_GROUP: LocalState.get_group(keyname),
+      self.PARAM_KEYNAME: keyname,
+      self.PARAM_VERBOSE: False,
+      self.PARAM_ZONE: LocalState.get_zone(keyname),
+      self.PARAM_SUBCR_ID: LocalState.get_subscription_id(keyname),
+      self.PARAM_APP_ID: LocalState.get_app_id(keyname),
+      self.PARAM_APP_SECRET: LocalState.get_app_secret_key(keyname),
+      self.PARAM_TENANT_ID: LocalState.get_tenant_id(keyname),
+      self.PARAM_RESOURCE_GROUP: LocalState.get_resource_group(keyname),
+      self.PARAM_STORAGE_ACCOUNT: LocalState.get_storage_account(keyname),
+    }
     return params
 
   def assert_required_parameters(self, parameters, operation):
