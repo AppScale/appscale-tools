@@ -113,7 +113,7 @@ class AzureAgent(BaseAgent):
 
   NETWORK_INTERFACE_NAME = BASE_NAME
 
-  VM_NAME = "azure-vm"
+  VM_NAME = BASE_NAME
 
   OS_DISK_NAME = BASE_NAME
 
@@ -165,7 +165,6 @@ class AzureAgent(BaseAgent):
     """Configure and setup security features for the VMs spawned via this
     agent. This method is called before starting virtual machines. Implementations
     may configure security features such as VM login and firewalls in this method.
-
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
@@ -181,6 +180,18 @@ class AzureAgent(BaseAgent):
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
+
+    AppScaleLogger.log("Verifying that SSH key exists locally.")
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key = private_key + ".pub"
+
+    if os.path.exists(private_key) or os.path.exists(public_key):
+      raise AgentRuntimeException("SSH key already found locally - please "
+                                  "use a different keyname.")
+
+    LocalState.generate_rsa_key(keyname, parameters[self.PARAM_VERBOSE])
+
     AppScaleLogger.log("Configuring network for machine/s under "
                        "resource group '{0}' with storage account '{1}' "
                        "in zone '{2}'".format(resource_group, storage_account, zone))
@@ -196,17 +207,6 @@ class AzureAgent(BaseAgent):
                                   self.NETWORK_INTERFACE_NAME,
                                   self.VIRTUAL_NETWORK_NAME,
                                   self.SUBNET_NAME, self.PUBLIC_IP_NAME)
-
-    AppScaleLogger.log("Verifying that SSH key exists locally.")
-    keyname = parameters[self.PARAM_KEYNAME]
-    private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
-    public_key = private_key + ".pub"
-
-    if os.path.exists(private_key) or os.path.exists(public_key):
-      raise AgentRuntimeException("SSH key already found locally - please "
-        "use a different keyname.")
-
-    LocalState.generate_rsa_key(keyname, parameters[self.PARAM_VERBOSE])
 
   def describe_instances(self, parameters, pending=False):
     """Query the underlying cloud platform regarding VMs that are running.
@@ -224,16 +224,23 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     network_client = NetworkManagementClient(credentials, subscription_id)
+    compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
     private_ips = []
     instance_ids = []
-    public_ip_addresses = network_client.public_ip_addresses.get(resource_group,
-                                                                 self.PUBLIC_IP_NAME)
-    public_ips.append(public_ip_addresses.ip_address)
-    network_interfaces = network_client.network_interfaces.get(resource_group,
-                                                               self.NETWORK_INTERFACE_NAME)
-    private_ips.append(network_interfaces.ip_configurations[0].private_ip_address)
-    instance_ids.append(self.VM_NAME)
+
+    public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
+    for public_ip in public_ip_addresses:
+      public_ips.append(public_ip.ip_address)
+
+    network_interfaces = network_client.network_interfaces.list(resource_group)
+    for network_interface in network_interfaces:
+      for ip_config in network_interface.ip_configurations:
+        private_ips.append(ip_config.private_ip_address)
+
+    virtual_machines = compute_client.virtual_machines.list(resource_group)
+    for vm in virtual_machines:
+      instance_ids.append(vm.name)
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
@@ -253,12 +260,10 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
-    resource_client = ResourceManagementClient(credentials, subscription_id)
     network_interface = network_client.network_interfaces.get(
       resource_group, self.NETWORK_INTERFACE_NAME)
     self.create_virtual_machine(credentials, network_client,
                                 network_interface.id, parameters)
-
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     return instance_ids, public_ips, private_ips
 
@@ -298,7 +303,7 @@ class AzureAgent(BaseAgent):
                            linux_configuration=linux_config)
 
     hardware_profile = HardwareProfile(
-      vm_size=VirtualMachineSizeTypes.standard_a0)
+      vm_size=VirtualMachineSizeTypes.standard_a3)
 
     network_profile = NetworkProfile(
       network_interfaces=[NetworkInterfaceReference(id=network_id)])
@@ -356,13 +361,13 @@ class AzureAgent(BaseAgent):
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    AppScaleLogger.log("Terminating the vm instance/s '{}'".format(self.VM_NAME))
     subscription_id = parameters[self.PARAM_SUBCR_ID]
-    compute_client = ComputeManagementClient(credentials, subscription_id)
-    vm_names = parameters[self.PARAM_INSTANCE_IDS]
-    for vm in vm_names:
-      compute_client.virtual_machines.delete(resource_group, vm)
+    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
 
+    AppScaleLogger.log("Terminating the vm instance/s '{}'".format(instance_ids))
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    for vm_name in instance_ids:
+      compute_client.virtual_machines.delete(resource_group, vm_name)
 
   def does_address_exist(self, parameters):
     """Verifies that the specified static IP address has been allocated, and
@@ -433,12 +438,22 @@ class AzureAgent(BaseAgent):
       time.sleep(sleep_time)
       sleep_time = min(sleep_time * 2, 20)
 
+    time.sleep(60)
     AppScaleLogger.log("Deleting the Virtual Network, Public IP Address "
       "and Network Interface created for this deployment.")
 
-    network_client.virtual_networks.delete(resource_group, self.VIRTUAL_NETWORK_NAME)
-    network_client.public_ip_addresses.delete(resource_group, self.PUBLIC_IP_NAME)
-    network_client.network_interfaces.delete(resource_group, self.NETWORK_INTERFACE_NAME)
+    virtual_networks = network_client.virtual_networks.list(resource_group)
+    for network in virtual_networks:
+      network_client.virtual_networks.delete(resource_group, network.name)
+
+    public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
+    for public_ip in public_ip_addresses:
+      network_client.public_ip_addresses.delete(resource_group, public_ip.name)
+
+    network_interfaces = network_client.network_interfaces.list(resource_group)
+    for interface in network_interfaces:
+      network_client.network_interfaces.delete(resource_group, interface.name)
+
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
