@@ -16,16 +16,16 @@ from azure.batch.models import OSType
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.compute import ComputeManagementClient
-from azure.mgmt.compute.models import HardwareProfile
-from azure.mgmt.compute.models import OSProfile
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
+from azure.mgmt.compute.models import HardwareProfile
 from azure.mgmt.compute.models import ImageReference
 from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
 from azure.mgmt.compute.models import OSDisk
+from azure.mgmt.compute.models import OSProfile
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
@@ -143,8 +143,9 @@ class AzureAgent(BaseAgent):
         "credentials provided. Reason: {}".format(error.message))
 
   def configure_instance_security(self, parameters):
-    """Configure and setup groups and storage accounts for the VMs spawned.
-    This method is called before starting virtual machines.
+    """ Configure the resource group and storage account needed to create the
+    network interface for the VMs to be spawned. This method is called before
+    starting virtual machines.
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
@@ -183,16 +184,16 @@ class AzureAgent(BaseAgent):
     resource_client.providers.register('Microsoft.Network')
 
   def describe_instances(self, parameters, pending=False):
-    """Queries Microsoft Azure to see which instances are currently
+    """ Queries Microsoft Azure to see which instances are currently
     running, and retrieves information about their public and private IPs.
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
       pending: If we should show pending instances.
     Returns:
-      A tuple of the form (public, private, id) where public is a list
-      of private IP addresses, private is a list of private IP addresses,
-      and id is a list of Azure VM names.
+      public_ips: A list of public IP addresses.
+      private_ips: A list of private IP addresses.
+      instance_ids: A list of unique Azure VM names.
     """
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBCR_ID]
@@ -228,6 +229,10 @@ class AzureAgent(BaseAgent):
         authenticate this user with Azure.
       security_configured: Unused, as we assume that the network and firewall
         has already been set up.
+    Returns:
+      instance_ids: A list of unique Azure VM names.
+      public_ips: A list of public IP addresses.
+      private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
@@ -320,7 +325,7 @@ class AzureAgent(BaseAgent):
       sleep_time = min(sleep_time * 2, 20)
 
   def associate_static_ip(self, instance_id, static_ip):
-    """Associates the given static IP address with the given instance ID.
+    """ Associates the given static IP address with the given instance ID.
 
     Args:
       instance_id: A str that names the instance that the static IP should be
@@ -362,7 +367,7 @@ class AzureAgent(BaseAgent):
       sleep_time = min(sleep_time * 2, 20)
 
   def does_address_exist(self, parameters):
-    """Verifies that the specified static IP address has been allocated, and
+    """ Verifies that the specified static IP address has been allocated, and
     belongs to the user with the given credentials.
 
     Args:
@@ -375,7 +380,7 @@ class AzureAgent(BaseAgent):
     """
 
   def does_image_exist(self, parameters):
-    """Verifies that the specified machine image exists in this cloud.
+    """ Verifies that the specified machine image exists in this cloud.
 
     Args:
       parameters: A dict containing values necessary to authenticate with the
@@ -387,7 +392,7 @@ class AzureAgent(BaseAgent):
     return True
 
   def does_disk_exist(self, parameters, disk):
-    """Verifies that the specified persistent disk exists in this cloud.
+    """ Verifies that the specified persistent disk exists in this cloud.
 
     Args:
       parameters: A dict that includes the parameters needed to authenticate
@@ -399,7 +404,7 @@ class AzureAgent(BaseAgent):
     """
 
   def does_zone_exist(self, parameters):
-    """Verifies that the specified zone exists in this cloud.
+    """ Verifies that the specified zone exists in this cloud.
 
     Args:
       parameters: A dict that includes a key indicating the zone to check for
