@@ -29,15 +29,14 @@ from azure.mgmt.compute.models import OSDisk
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
-from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import VirtualHardDisk
 from azure.mgmt.compute.models import VirtualMachine
 from azure.mgmt.compute.models import VirtualMachineSizeTypes
 
 from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.network.models import NetworkInterfaceIPConfiguration
 from azure.mgmt.network.models import AddressSpace
 from azure.mgmt.network.models import IPAllocationMethod
+from azure.mgmt.network.models import NetworkInterfaceIPConfiguration
 from azure.mgmt.network.models import NetworkInterface
 from azure.mgmt.network.models import PublicIPAddress
 from azure.mgmt.network.models import Subnet
@@ -45,8 +44,10 @@ from azure.mgmt.network.models import VirtualNetwork
 
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.resource.resources.models import ResourceGroup
+
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
+
 from msrestazure.azure_exceptions import CloudError
 
 from haikunator import Haikunator
@@ -73,7 +74,7 @@ class AzureAgent(BaseAgent):
   DEFAULT_STORAGE_ACCT = 'appscalestorage'
 
   # Default resource group name to use for Azure.
-  DEFAULT_RESOURCE_GROUP = 'appscale-group'
+  DEFAULT_RESOURCE_GROUP = 'appscalegroup'
 
   # The following constants are string literals that can be used by callers to
   # index into the parameters that the user passes in, as opposed to having to
@@ -89,7 +90,7 @@ class AzureAgent(BaseAgent):
   PARAM_REGION = 'region'
   PARAM_RESOURCE_GROUP = 'resource_group'
   PARAM_STORAGE_ACCOUNT = 'storage_account'
-  PARAM_SUBCR_ID = "subscription_id"
+  PARAM_SUBCR_ID = 'subscription_id'
   PARAM_TENANT_ID = 'tenant_id'
   PARAM_TEST = 'test'
   PARAM_TAG = 'group_tag'
@@ -107,10 +108,11 @@ class AzureAgent(BaseAgent):
     PARAM_ZONE
   )
 
-  # The following constants are the strings needed to start an Azure VM instance.
+  # The admin username needed to create an Azure VM instance.
   ADMIN_USERNAME = 'azureuser'
 
-  # The mininum number of time to sleep for Azure resources to get created.
+  # The maximum number of seconds to sleep while waiting for
+  # Azure resources to get created.
   SLEEP_TIME = 10
 
   def assert_credentials_are_valid(self, parameters):
@@ -141,15 +143,14 @@ class AzureAgent(BaseAgent):
         "credentials provided. Reason: {}".format(error.message))
 
   def configure_instance_security(self, parameters):
-    """Configure and setup security features for the VMs spawned via this
-    agent. This method is called before starting virtual machines. Implementations
-    may configure security features such as VM login and firewalls in this method.
+    """Configure and setup groups and storage accounts for the VMs spawned.
+    This method is called before starting virtual machines.
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
     Returns:
-      True if some action was taken to configure security for the VMs
-      and False otherwise.
+      True, if the group and account were created successfully.
+      False, otherwise.
     Raises:
       AgentRuntimeException: If security features could not be successfully
         configured in the underlying cloud.
@@ -183,8 +184,7 @@ class AzureAgent(BaseAgent):
 
   def describe_instances(self, parameters, pending=False):
     """Queries Microsoft Azure to see which instances are currently
-    running, and retrieve information about their public and private IPs.
-
+    running, and retrieves information about their public and private IPs.
     Args:
       parameters: A dict containing values necessary to authenticate with the
         underlying cloud.
@@ -192,7 +192,7 @@ class AzureAgent(BaseAgent):
     Returns:
       A tuple of the form (public, private, id) where public is a list
       of private IP addresses, private is a list of private IP addresses,
-      and id is a list of platform specific VM identifiers.
+      and id is a list of Azure VM names.
     """
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBCR_ID]
@@ -222,7 +222,6 @@ class AzureAgent(BaseAgent):
     have been started. Callers should create a network and attach a firewall
     to it before using this method, or the newly created instances will not
     have a network and firewall to attach to (and thus this method will fail).
-
     Args:
       count: An int, that specifies how many virtual machines should be started.
       parameters: A dict, containing all the parameters necessary to
@@ -251,10 +250,9 @@ class AzureAgent(BaseAgent):
   def create_virtual_machine(self, credentials, network_client, network_id, parameters,
     vm_network_name):
     """ Creates an Azure virtual machine using the network interface created.
-
     Args:
-      credentials: A ServicePrincipalCredentials instance, that can be used to access or
-        create any resources.
+      credentials: A ServicePrincipalCredentials instance, that can be used to
+        access or create any resources.
       network_client: A NetworkManagementClient instance.
       network_id: The network id of the network interface created.
       parameters: A dict, containing all the parameters necessary to
@@ -331,16 +329,14 @@ class AzureAgent(BaseAgent):
     """
 
   def terminate_instances(self, parameters):
-    """Terminate a set of virtual machines using the parameters given.
-
+    """ Deletes the instances specified in 'parameters' running in Azure.
     Args:
-      parameters: A dict containing values necessary to authenticate with the
-        underlying cloud.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
-    verbose = parameters[self.PARAM_VERBOSE]
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
 
     AppScaleLogger.log("Terminating the vm instance/s '{}'".format(instance_ids))
@@ -414,7 +410,7 @@ class AzureAgent(BaseAgent):
     return True
 
   def cleanup_state(self, parameters):
-    """Removes any remote state that was created to run AppScale instances
+    """ Removes any remote state that was created to run AppScale instances
     during this deployment.
     Args:
       parameters: A dict that includes keys indicating the remote state
@@ -425,7 +421,6 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     network_client = NetworkManagementClient(credentials, subscription_id)
 
-    time.sleep(60)
     AppScaleLogger.log("Deleting the Virtual Network, Public IP Address "
       "and Network Interface created for this deployment.")
     network_interfaces = network_client.network_interfaces.list(resource_group)
@@ -448,8 +443,7 @@ class AzureAgent(BaseAgent):
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
-    Microsoft Azure (mainly the Azure credentials JSON file).
-
+    Microsoft Azure.
     Args:
       args: A Namespace or dict, that maps all of the arguments the user has
         invoked an AppScale command with their associated value.
@@ -457,8 +451,8 @@ class AzureAgent(BaseAgent):
       A dict, that maps each argument given to the value that was associated with
       it.
     Raises:
-      AgentConfigurationException: If the caller fails to specify an Azure
-      credentials JSON file, or if it doesn't exist on the local filesystem.
+      AgentConfigurationException: If unable to authenticate using the credentials
+      provided in the AppScalefile.
     """
     if not isinstance(args, dict):
       args = vars(args)
@@ -486,7 +480,7 @@ class AzureAgent(BaseAgent):
 
     # Check if the resource group passed in exists already, if it does, then
     # pass an existing group flag so that it is not created again.
-    # In case no resource group is passed, pass a default appscale-group.
+    # In case no resource group is passed, pass a default group.
     params[self.PARAM_EXISTING_RG] = False
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
@@ -501,7 +495,6 @@ class AzureAgent(BaseAgent):
   def get_params_from_yaml(self, keyname):
     """ Searches through the locations.yaml file to build a dict containing the
     parameters necessary to interact with Microsoft Azure.
-
     Args:
       keyname: A str that uniquely identifies this AppScale deployment.
     Returns:
@@ -523,14 +516,11 @@ class AzureAgent(BaseAgent):
     return params
 
   def assert_required_parameters(self, parameters, operation):
-    """Check whether all the platform specific parameters are present in the
-    provided dict. If all the parameters required to perform the given operation
-    is available this method simply returns. Otherwise it throws an
-    AgentConfigurationException.
-
+    """ Check whether all the parameters required to interact with Azure are
+    present in the provided dict.
     Args:
       parameters: A dict containing values necessary to authenticate with the
-        underlying cloud.
+        Azure.
       operation: A str representing the operation for which the parameters
         should be checked.
     Raises:
@@ -546,14 +536,12 @@ class AzureAgent(BaseAgent):
     """ Connects to Microsoft Azure with the given credentials, creates a
     an authentication token and uses that to get the ServicePrincipalCredentials
     which is needed to access any resources.
-
     Args:
       parameters: A dict, containing all the parameters necessary to authenticate
       this user with Azure. We assume that the user has already authorized this
       account by creating a Service Principal with the appropriate (Contributor)
       role.
     Returns:
-      A dict, created from the path specified for credentials JSON file.
       A ServicePrincipalCredentials instance, that can be used to access or
       create any resources.
     """
@@ -568,7 +556,7 @@ class AzureAgent(BaseAgent):
     token_response.get('accessToken')
 
     # To access Azure resources for an application, we need a Service Principal
-    # which contains a role assignment. It can be created using the Azure CLI.
+    # with the accurate role assignment. It can be created using the Azure CLI.
     credentials = ServicePrincipalCredentials(client_id=app_id,
                                               secret=app_secret_key,
                                               tenant=tenant_id)
@@ -579,7 +567,6 @@ class AzureAgent(BaseAgent):
     interface_name, network_name, subnet_name, ip_name):
     """ A helper function that creates the network resources, such as virtual
     network, public ip and network interface.
-
     Args:
       network_client: A NetworkManagementClient instance
       region: The location specified in the AppScalefile
@@ -622,8 +609,7 @@ class AzureAgent(BaseAgent):
   def create_resource_group(self, parameters, credentials):
     """ Creates a Resource Group for the application using the Service Principal
     Credentials, if it does not already exist. In the case where no resource
-    group is specified, a default 'appscale-group' is created.
-
+    group is specified, a default group is created.
     Args:
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
@@ -675,8 +661,7 @@ class AzureAgent(BaseAgent):
   def create_storage_account(self, parameters, storage_client):
     """ Creates a Storage Account under the Resource Group, if it does not
     already exist. In the case where no resource group is specified, a default
-    'appscalestorage' account is created.
-
+    storage account is created.
     Args:
       parameters: A dict, containing all the parameters necessary to authenticate
         this user with Azure.
