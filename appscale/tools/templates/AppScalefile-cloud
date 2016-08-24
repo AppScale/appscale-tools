@@ -5,10 +5,12 @@
 # Microsoft Azure.
 infrastructure : 'ec2'
 
-# The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
-# installed on it. When running on Google Compute Engine, set this to the name
-# of the image you set when you ran 'gcutil addimage'.
+# The Amazon / Eucalyptus Machine Image (ami or emi) or Azure image resource
+# url that has AppScale installed on it. When running on Google Compute Engine,
+# set this to the name of the image you set when you ran 'gcutil addimage'.
 machine : 'ami-XXXXXX'
+# machine: 'https://{storageaccount}.blob.core.windows.net/system/' +
+#   'Microsoft.Compute/Images/{containerName}/{VhdPrefix-Name}.vhd' # For Azure
 
 # The instance type that should be used for all virtual machines in your
 # AppScale deployment, if running in Amazon EC2 or Eucalyptus.

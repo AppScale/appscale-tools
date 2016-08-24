@@ -217,6 +217,10 @@ class ParseArgs(object):
         help="the Google Compute Engine instance type to use")
 
       # Microsoft Azure specific flags
+      self.parser.add_argument('--app_secret_key',
+        help="the authentication key for the application")
+      self.parser.add_argument('--app_id',
+        help="the application or the client ID")
       self.parser.add_argument('--azure_creds',
         help="the JSON file with Azure credentials that can be used to "
           "authenticate via OAuth")
@@ -228,12 +232,8 @@ class ParseArgs(object):
         help="the storage account name under an Azure resource group")
       self.parser.add_argument('--subscription_id',
         help="the Azure subscription ID for the account")
-      self.parser.add_argument('--app_id',
-        help="the application or the client ID")
       self.parser.add_argument('--tenant_id',
         help="the tenant ID of the Azure endpoints")
-      self.parser.add_argument('--app_secret_key',
-        help="the authentication key for the application")
 
       # flags relating to the datastore used
       self.parser.add_argument('--table',
