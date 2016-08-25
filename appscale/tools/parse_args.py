@@ -620,6 +620,19 @@ class ParseArgs(object):
         "consider using a larger instance type.".format(
         self.args.gce_instance_type))
 
+    if self.args.infrastructure == 'azure':
+      if not self.args.subscription_id:
+        raise BadConfigurationException("Cannot start an Azure instance without " \
+                                        "the Subscription ID.")
+      if not self.args.app_id:
+        raise BadConfigurationException("Cannot authenticate an Azure instance " \
+                                        "without the App ID.")
+      if not self.args.app_secret_key:
+        raise BadConfigurationException("Cannot authenticate an Azure instance " \
+                                        "without the App Secret Key.")
+      if not self.args.tenant_id:
+        raise BadConfigurationException("Cannot authenticate an Azure instance " \
+                                        "without the Tenant ID.")
 
   def validate_credentials(self):
     """If running over a cloud infrastructure, makes sure that all of the

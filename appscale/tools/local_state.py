@@ -686,7 +686,7 @@ class LocalState(object):
 
   @classmethod
   def get_subscription_id(cls, keyname):
-    """Reads the locations.yaml file to see what subscription ID is used to interact
+    """ Reads the locations.yaml file to see what subscription ID is used to interact
     with Microsoft Azure in this AppScale deployment.
 
     Args:
@@ -700,7 +700,7 @@ class LocalState(object):
 
   @classmethod
   def get_app_id(cls, keyname):
-    """Reads the locations.yaml file to see what application is used to interact
+    """ Reads the locations.yaml file to see what application is used to interact
     with Microsoft Azure in this AppScale deployment.
 
     Args:
@@ -714,7 +714,7 @@ class LocalState(object):
 
   @classmethod
   def get_app_secret_key(cls, keyname):
-    """Reads the locations.yaml file to get the secret key for the application
+    """ Reads the locations.yaml file to get the secret key for the application
     that is used to interact with Microsoft Azure in this AppScale deployment.
 
     Args:
@@ -729,7 +729,7 @@ class LocalState(object):
 
   @classmethod
   def get_tenant_id(cls, keyname):
-    """Reads the locations.yaml file to get the tenant ID that is used to
+    """ Reads the locations.yaml file to get the tenant ID that is used to
     interact with Microsoft Azure in this AppScale deployment.
 
     Args:
@@ -744,7 +744,7 @@ class LocalState(object):
 
   @classmethod
   def get_resource_group(cls, keyname):
-    """Reads the locations.yaml file to get the Azure resource group under
+    """ Reads the locations.yaml file to get the Azure resource group under
     which the instances are placed in this AppScale deployment.
 
     Args:
@@ -759,7 +759,7 @@ class LocalState(object):
 
   @classmethod
   def get_storage_account(cls, keyname):
-    """Reads the locations.yaml file to get the Azure storage account
+    """ Reads the locations.yaml file to get the Azure storage account
     associated with the resource group in this AppScale deployment.
 
     Args:
