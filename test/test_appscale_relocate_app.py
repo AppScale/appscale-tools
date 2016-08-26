@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -22,6 +21,7 @@ from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScaleRelocateApp(unittest.TestCase):
@@ -128,6 +128,9 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
+
+    rh = flexmock(RemoteHelper)
+    rh.should_receive('sleep_until_port_is_open').and_return()
 
     argv = [
       '--keyname', self.keyname,
