@@ -25,7 +25,7 @@ gce_instance_type : 'n1-standard-1'
 # they should be in the same zone that you specify here.
 zone : 'us-east-1b' # For Amazon EC2
 #zone: 'us-central1-a' # For Google Compute Engine
-#zone: 'westus' # For Microsoft Azure
+#zone: 'West US' # For Microsoft Azure
 
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.

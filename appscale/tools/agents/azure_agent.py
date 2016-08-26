@@ -238,7 +238,6 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
-    zone = parameters[self.PARAM_ZONE]
 
     for _ in range(count):
       vm_network_name = Haikunator().haikunate()
@@ -411,7 +410,16 @@ class AzureAgent(BaseAgent):
     Returns:
       True if the zone exists, and False otherwise.
     """
-    return True
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    zone = parameters[self.PARAM_ZONE]
+    resource_client = ResourceManagementClient(credentials, subscription_id)
+    resource_providers = resource_client.providers.list()
+    for provider in resource_providers:
+      for resource_type in provider.resource_types:
+        if zone in resource_type.locations:
+          return True
+    return False
 
   def cleanup_state(self, parameters):
     """ Removes any remote state that was created to run AppScale instances
@@ -463,13 +471,11 @@ class AzureAgent(BaseAgent):
       args = vars(args)
 
     params = {
-      self.PARAM_CREDENTIALS: {},
       self.PARAM_APP_ID: args[self.PARAM_APP_ID],
       self.PARAM_APP_SECRET: args[self.PARAM_APP_SECRET],
       self.PARAM_IMAGE_ID: args['machine'],
       self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
-      self.PARAM_REGION: args[self.PARAM_ZONE],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
       self.PARAM_SUBCR_ID: args[self.PARAM_SUBCR_ID],
       self.PARAM_TAG: args[self.PARAM_TAG],

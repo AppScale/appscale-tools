@@ -213,7 +213,14 @@ class LocalState(object):
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
         iaas_creds['instance_type'] = options.gce_instance_type
-
+      elif options.infrastructure == 'azure':
+        iaas_creds['subscription_id'] = options.subscription_id
+        iaas_creds['app_id'] = options.app_id
+        iaas_creds['app_secret_key'] = options.app_secret_key
+        iaas_creds['tenant_id'] = options.tenant_id
+        iaas_creds['resource_group'] = options.resource_group
+        iaas_creds['group_tag'] = options.group_tag
+        iaas_creds['storage_account'] = options.storage_account
       creds.update(iaas_creds)
 
     return creds

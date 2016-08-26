@@ -58,6 +58,7 @@ setup(
     'msrestazure',
     'oauth2client>=2.0.0',
     'PyYAML',
+    'requests>=2.7.0',
     'SOAPpy',
     'termcolor',
     'wstools==0.4.3'
