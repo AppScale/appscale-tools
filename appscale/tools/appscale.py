@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # First party Python libraries
@@ -336,7 +335,7 @@ Available commands:
     if not os.path.exists(ssh_key_location):
       return False
 
-    all_ips = self.get_all_ips(config["ips_layout"])
+    all_ips = LocalState.get_all_public_ips(keyname)
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
@@ -365,29 +364,6 @@ Available commands:
 
     return True
 
-
-  def get_all_ips(self, ips_layout):
-    """ Searches through the given IPs layout and finds all the unique IP
-    addresses.
-
-    Args:
-      ips_layout: A dict that maps AppScale roles to either an IP address or a
-        list of IP addresses that host that role.
-    Returns:
-      A list containing all of the IP addresses in the IPs layout, without
-        duplicates.
-    """
-    all_ips = []
-    for _, ip_or_ips in ips_layout.items():
-      if isinstance(ip_or_ips, str):
-        if not ip_or_ips in all_ips:
-          all_ips.append(ip_or_ips)
-      elif isinstance(ip_or_ips, list):
-        for ip in ip_or_ips:
-          if not ip in all_ips:
-            all_ips.append(ip)
-
-    return all_ips
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the

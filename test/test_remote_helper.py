@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch, Brian Drawert
 
 
 # General-purpose Python library imports

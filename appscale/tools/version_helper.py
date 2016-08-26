@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 """ version_helper defines methods that can be used to check underlying
 assumptions we make about the platform we're running on.
 
