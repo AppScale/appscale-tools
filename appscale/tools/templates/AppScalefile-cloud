@@ -46,18 +46,6 @@ zone : 'us-east-1b' # For Amazon EC2
 # for your GCE instances. By default, we randomly generate a group for you.
 #group : 'appscalegroup'
 
-# The Azure resource group name that should be used for all the machines in
-# this AppScale deployment.
-#resource_group: 'appscalegroup'
-
-# The tag for the resource group in case a new resource group for Azure has
-# to be created.
-#group_tag: 'grouptag'
-
-# The Azure storage account name that should be used while creating the
-# virtual machines.
-#storage_account: 'appscalestorage'
-
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
@@ -75,6 +63,18 @@ max : 1
 # application can be found, which enables the AppScale Tools to talk to Google
 # Compute Engine on your behalf.
 #client_secrets: '~/client_secrets.json'
+
+# The Azure resource group name that should be used for all the machines in
+# this AppScale deployment.
+#resource_group: 'azureresourcegroup'
+
+# The tag for the resource group in case a new resource group for Azure has
+# to be created.
+#group_tag: 'azuregrouptag'
+
+# The Azure storage account name that should be used while creating the
+# virtual machines.
+#storage_account: 'azurestorageaccount'
 
 # The Azure subscription ID for your account to use for AppScale deployment.
 #subscription_id :

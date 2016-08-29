@@ -6,20 +6,15 @@ interact with Microsoft Azure.
 
 # General-purpose Python library imports
 import adal
-import json
 import os.path
-import shutil
 import time
 
 # Azure specific imports
-from azure.batch.models import OSType
 from azure.common.credentials import ServicePrincipalCredentials
-from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
-from azure.mgmt.compute.models import ImageReference
 from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference

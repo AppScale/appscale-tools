@@ -17,7 +17,7 @@ class InfrastructureAgentFactory:
 
   # A set containing each of the cloud infrastructures that AppScale can
   # deploy over.
-  VALID_AGENTS = ('ec2', 'euca', 'gce','openstack', 'azure')
+  VALID_AGENTS = ('ec2', 'euca', 'gce', 'openstack', 'azure')
 
 
   # A dict that maps each VALID_AGENT above to the class that implements
