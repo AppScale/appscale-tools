@@ -87,6 +87,24 @@ class ParseArgs(object):
     "n1-highmem-8"
   ]
 
+  # The Azure instance type that should be used if the user does not specify one.
+  DEFAULT_AZURE_INSTANCE_TYPE = 'Standard_A3'
+
+  # A list of instance types we allow users to run AppScale over in Azure.
+  ALLOWED_AZURE_INSTANCE_TYPES = [
+    "Standard_A3", "Standard_A4", "Standard_A5", "Standard_A6", "Standard_A7",
+    "Standard_A8", "Standard_A9", "Standard_A10", "Standard_A11", "Standard_D2",
+    "Standard_D3", "Standard_D4", "Standard_D11", "Standard_D12", "Standard_D13",
+    "Standard_D14", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2",
+    "Standard_D5_v2", "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2",
+    "Standard_D14_v2", "Standard_D15_v2", "Standard_DS2", "Standard_DS3",
+    "Standard_DS4", "Standard_DS11", "Standard_DS12", "Standard_DS13",
+    "Standard_DS14", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
+    "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
+    "Standard_DS14_v2", "Standard_DS15_v2", "Standard_G1", "Standard_G2",
+    "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
+    "Standard_GS3", "Standard_GS4", "Standard_GS5"]
+
   # The default security group to create and use for AppScale cloud deployments.
   DEFAULT_SECURITY_GROUP = "appscale"
 
@@ -226,6 +244,10 @@ class ParseArgs(object):
           "authenticate via OAuth")
       self.parser.add_argument('--group_tag',
         help="the tag set for an Azure resource group")
+      self.parser.add_argument('--azure_instance_type',
+        default=self.DEFAULT_AZURE_INSTANCE_TYPE,
+        choices=self.ALLOWED_AZURE_INSTANCE_TYPES,
+        help="the Microsoft Azure instance type to use")
       self.parser.add_argument('--resource_group',
         help="the resource group to use")
       self.parser.add_argument('--storage_account',

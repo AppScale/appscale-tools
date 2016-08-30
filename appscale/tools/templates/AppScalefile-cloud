@@ -20,6 +20,10 @@ instance_type : 'm3.medium'
 # AppScale deployment, if running in Google Compute Engine.
 gce_instance_type : 'n1-standard-1'
 
+# The instance type that should be used for all virtual machines in your
+# AppScale deployment, if running in Azure.
+azure_instance_type : 'Standard_A3'
+
 # The availability zone that should be used for all virtual machines in your
 # AppScale deployment. If using persistent disks in your AppScale deployment,
 # they should be in the same zone that you specify here.

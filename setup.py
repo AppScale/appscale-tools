@@ -47,7 +47,6 @@ setup(
   platforms='Posix; MacOS X',
   install_requires=[
     'adal',
-    'azure==2.0.0rc5',
     'cryptography',
     'argparse',
     'boto',

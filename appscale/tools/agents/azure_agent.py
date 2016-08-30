@@ -80,6 +80,7 @@ class AzureAgent(BaseAgent):
   PARAM_EXISTING_RG = 'does_exist'
   PARAM_GROUP = 'group'
   PARAM_INSTANCE_IDS = 'instance_ids'
+  PARAM_INSTANCE_TYPE = 'azure_instance_type'
   PARAM_KEYNAME = 'keyname'
   PARAM_IMAGE_ID = 'image_id'
   PARAM_REGION = 'region'
@@ -97,6 +98,7 @@ class AzureAgent(BaseAgent):
     PARAM_APP_SECRET,
     PARAM_APP_ID,
     PARAM_IMAGE_ID,
+    PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
     PARAM_SUBCR_ID,
     PARAM_TENANT_ID,
@@ -270,6 +272,7 @@ class AzureAgent(BaseAgent):
     AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
                            format(vm_network_name), verbose)
     subscription_id = parameters[self.PARAM_SUBCR_ID]
+    azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     keyname = parameters[self.PARAM_KEYNAME]
@@ -288,8 +291,7 @@ class AzureAgent(BaseAgent):
                            computer_name=vm_network_name,
                            linux_configuration=linux_config)
 
-    hardware_profile = HardwareProfile(
-      vm_size=VirtualMachineSizeTypes.standard_a3)
+    hardware_profile = HardwareProfile(vm_size=azure_instance_type)
 
     network_profile = NetworkProfile(
       network_interfaces=[NetworkInterfaceReference(id=network_id)])
@@ -475,6 +477,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_APP_ID: args[self.PARAM_APP_ID],
       self.PARAM_APP_SECRET: args[self.PARAM_APP_SECRET],
       self.PARAM_IMAGE_ID: args['machine'],
+      self.PARAM_INSTANCE_TYPE: args[self.PARAM_INSTANCE_TYPE],
       self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
