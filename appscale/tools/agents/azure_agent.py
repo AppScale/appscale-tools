@@ -110,6 +110,10 @@ class AzureAgent(BaseAgent):
   # Azure resources to get created.
   SLEEP_TIME = 10
 
+  # The Virtual Network and Subnet name to use while creating an Azure
+  # Virtual machine.
+  VIRTUAL_NETWORK = 'appscaleazure'
+
   def assert_credentials_are_valid(self, parameters):
     """ Contacts Azure with the given credentials to ensure that they are
     valid. Gets an access token and a Credentials instance in order to be
@@ -233,11 +237,12 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBCR_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
-
+    subnet = self.create_virtual_network(network_client, parameters,
+                                         self.VIRTUAL_NETWORK, self.VIRTUAL_NETWORK)
     for _ in range(count):
       vm_network_name = Haikunator().haikunate()
-      self.create_network_interface(network_client, parameters,
-        vm_network_name, vm_network_name, vm_network_name, vm_network_name)
+      self.create_network_interface(network_client, vm_network_name,
+        vm_network_name, subnet, parameters)
       network_interface = network_client.network_interfaces.get(
         resource_group, vm_network_name)
       self.create_virtual_machine(credentials, network_client,
@@ -256,6 +261,7 @@ class AzureAgent(BaseAgent):
       network_id: The network id of the network interface created.
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
+      vm_network_name: The name of the Virtual machine to use.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
@@ -569,18 +575,17 @@ class AzureAgent(BaseAgent):
     return credentials
 
 
-  def create_network_interface(self, network_client, parameters, interface_name,
-                               network_name, subnet_name, ip_name):
-    """ A helper function that creates the network resources, such as virtual
-    network, public ip and network interface.
+  def create_virtual_network(self, network_client, parameters, network_name,
+                             subnet_name):
+    """ Creates the network resources, such as Virtual network and Subnet.
     Args:
       network_client: A NetworkManagementClient instance.
       parameters:  A dict, containing all the parameters necessary to
         authenticate this user with Azure.
-      interface_name: The name to use for the Network Interface resource.
       network_name: The name to use for the Virtual Network resource.
       subnet_name: The name to use for the Subnet resource.
-      ip_name: The name to use for the Public IP Address resource.
+    Returns:
+      A Subnet instance from the Virtual Network created.
     """
     group_name = parameters[self.PARAM_RESOURCE_GROUP]
     region = parameters[self.PARAM_ZONE]
@@ -594,14 +599,30 @@ class AzureAgent(BaseAgent):
                      subnets=[subnet1]))
     self.sleep_until_update_operation_done(result, network_name, verbose)
     subnet = network_client.subnets.get(group_name, network_name, subnet_name)
+    return subnet
 
+  def create_network_interface(self, network_client, interface_name, ip_name,
+                               subnet, parameters):
+    """ Creates the Public IP Address resource and uses that to create the
+    Network Interface.
+    Args:
+      network_client: A NetworkManagementClient instance.
+      interface_name: The name to use for the Network Interface.
+      ip_name: The name to use for the Public IP Address.
+      subnet: The Subnet resource from the Virtual Network created.
+      parameters:  A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+    """
+    group_name = parameters[self.PARAM_RESOURCE_GROUP]
+    region = parameters[self.PARAM_ZONE]
+    verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Creating/Updating the Public IP Address '{}'".
                            format(ip_name), verbose)
     ip_address = PublicIPAddress(
       location=region, public_ip_allocation_method=IPAllocationMethod.dynamic,
       idle_timeout_in_minutes=4)
-    result = network_client.public_ip_addresses.create_or_update(group_name,
-                                                                 ip_name, ip_address)
+    result = network_client.public_ip_addresses.create_or_update(
+      group_name, ip_name, ip_address)
     self.sleep_until_update_operation_done(result, ip_name, verbose)
     public_ip_address = network_client.public_ip_addresses.get(group_name, ip_name)
 
@@ -612,8 +633,8 @@ class AzureAgent(BaseAgent):
       subnet=subnet, public_ip_address=PublicIPAddress(id=(public_ip_address.id)))
 
     result = network_client.network_interfaces.create_or_update(group_name,
-        interface_name, NetworkInterface(location=region,
-                                         ip_configurations=[network_interface_ip_conf]))
+      interface_name, NetworkInterface(location=region,
+                                       ip_configurations=[network_interface_ip_conf]))
     self.sleep_until_update_operation_done(result, interface_name, verbose)
 
   def sleep_until_update_operation_done(self, result, resource_name, verbose):
