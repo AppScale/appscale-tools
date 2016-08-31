@@ -118,7 +118,7 @@ class AzureAgent(BaseAgent):
 
   # The maximum number of seconds to wait for an Azure VM to be created.
   # (Takes longer than the creation time for other resources.)
-  MAX_VM_CREATION_TIME = 180
+  MAX_VM_CREATION_TIME = 240
 
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
@@ -391,8 +391,8 @@ class AzureAgent(BaseAgent):
       time.sleep(self.SLEEP_TIME)
       total_sleep_time = time.time() - time_start
       if total_sleep_time > max_sleep:
-        AppScaleLogger.verbose("Waited {0} seconds for {1} to be deleted. "
-          "Operation has timed out.".format(total_sleep_time, resource_name), verbose)
+        AppScaleLogger.log("Waited {0} second(s) for {1} to be deleted. "
+          "Operation has timed out.".format(total_sleep_time, resource_name))
         break
 
   def does_address_exist(self, parameters):
@@ -663,7 +663,7 @@ class AzureAgent(BaseAgent):
     AppScaleLogger.verbose("Creating/Updating the Network Interface '{}'".
                            format(interface_name), verbose)
     network_interface_ip_conf = NetworkInterfaceIPConfiguration(
-      name='default', private_ip_allocation_method=IPAllocationMethod.dynamic,
+      name=interface_name, private_ip_allocation_method=IPAllocationMethod.dynamic,
       subnet=subnet, public_ip_address=PublicIPAddress(id=(public_ip_address.id)))
 
     result = network_client.network_interfaces.create_or_update(group_name,
@@ -686,8 +686,8 @@ class AzureAgent(BaseAgent):
       time.sleep(self.SLEEP_TIME)
       total_sleep_time = time.time() - time_start
       if total_sleep_time > self.MAX_SLEEP_TIME:
-        AppScaleLogger.log("Waited {0} seconds for {1} to be created/updated. "
-          "Operation has timed out.".format(total_sleep_time, resource_name), verbose)
+        AppScaleLogger.log("Waited {0} second(s) for {1} to be created/updated. "
+          "Operation has timed out.".format(total_sleep_time, resource_name))
         break
 
   def create_resource_group(self, parameters, credentials):
