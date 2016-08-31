@@ -86,7 +86,7 @@ class AzureAgent(BaseAgent):
   PARAM_REGION = 'region'
   PARAM_RESOURCE_GROUP = 'resource_group'
   PARAM_STORAGE_ACCOUNT = 'storage_account'
-  PARAM_SUBCR_ID = 'subscription_id'
+  PARAM_SUBSCRIBER_ID = 'subscription_id'
   PARAM_TENANT_ID = 'tenant_id'
   PARAM_TEST = 'test'
   PARAM_TAG = 'group_tag'
@@ -100,7 +100,7 @@ class AzureAgent(BaseAgent):
     PARAM_IMAGE_ID,
     PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
-    PARAM_SUBCR_ID,
+    PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
     PARAM_ZONE
   )
@@ -108,13 +108,30 @@ class AzureAgent(BaseAgent):
   # The admin username needed to create an Azure VM instance.
   ADMIN_USERNAME = 'azureuser'
 
-  # The maximum number of seconds to sleep while waiting for
-  # Azure resources to get created.
+  # The number of seconds to sleep while polling for
+  # Azure resources to get created/updated.
   SLEEP_TIME = 10
+
+  # The maximum number of seconds to wait for Azure resources
+  # to get created/updated.
+  MAX_SLEEP_TIME = 60
+
+  # The maximum number of seconds to wait for an Azure VM to be created.
+  # (Takes longer than the creation time for other resources.)
+  MAX_VM_CREATION_TIME = 180
 
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
   VIRTUAL_NETWORK = 'appscaleazure'
+
+  # The Compute Azure Resource provider namespace.
+  MICROSOFT_COMPUTE_RESOURCE = 'Microsoft.Compute'
+
+  # The Network Azure Resource provider namespace.
+  MICROSOFT_NETWORK_RESOURCE = 'Microsoft.Network'
+
+  # The Storage Azure Resource provider namespace.
+  MICROSOFT_STORAGE_RESOURCE = 'Microsoft.Storage'
 
   def assert_credentials_are_valid(self, parameters):
     """ Contacts Azure with the given credentials to ensure that they are
@@ -131,7 +148,7 @@ class AzureAgent(BaseAgent):
         authentication.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     try:
       resource_client = ResourceManagementClient(credentials, subscription_id)
       resource_groups = resource_client.resource_groups.list()
@@ -161,7 +178,7 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
 
     AppScaleLogger.log("Verifying that SSH key exists locally.")
     keyname = parameters[self.PARAM_KEYNAME]
@@ -181,8 +198,8 @@ class AzureAgent(BaseAgent):
     self.create_resource_group(parameters, credentials)
 
     resource_client = ResourceManagementClient(credentials, subscription_id)
-    resource_client.providers.register('Microsoft.Compute')
-    resource_client.providers.register('Microsoft.Network')
+    resource_client.providers.register(self.MICROSOFT_COMPUTE_RESOURCE)
+    resource_client.providers.register(self.MICROSOFT_NETWORK_RESOURCE)
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Microsoft Azure to see which instances are currently
@@ -197,7 +214,7 @@ class AzureAgent(BaseAgent):
       instance_ids: A list of unique Azure VM names.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     network_client = NetworkManagementClient(credentials, subscription_id)
     compute_client = ComputeManagementClient(credentials, subscription_id)
@@ -237,7 +254,7 @@ class AzureAgent(BaseAgent):
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
     subnet = self.create_virtual_network(network_client, parameters,
                                          self.VIRTUAL_NETWORK, self.VIRTUAL_NETWORK)
@@ -263,7 +280,7 @@ class AzureAgent(BaseAgent):
       network_id: The network id of the network interface created.
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
-      vm_network_name: The name of the Virtual machine to use.
+      vm_network_name: The name of the virtual machine to use.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
@@ -271,7 +288,7 @@ class AzureAgent(BaseAgent):
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
                            format(vm_network_name), verbose)
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
@@ -343,7 +360,7 @@ class AzureAgent(BaseAgent):
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     verbose = parameters[self.PARAM_VERBOSE]
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     AppScaleLogger.verbose("Terminating the vm instance/s '{}'".
@@ -352,20 +369,31 @@ class AzureAgent(BaseAgent):
     for vm_name in instance_ids:
       result = compute_client.virtual_machines.delete(resource_group, vm_name)
       resource_name  = 'Virtual Machine' + ':' + vm_name
-      self.sleep_until_delete_operation_done(result, resource_name, verbose)
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_VM_CREATION_TIME, verbose)
 
-  def sleep_until_delete_operation_done(self, result, resource_name, verbose):
+  def sleep_until_delete_operation_done(self, result, resource_name,
+                                        max_sleep, verbose):
     """ Sleeps until the delete operation for the resource is completed
     successfully.
     Args:
       result: An instance, of the AzureOperationPoller to poll for the status
         of the operation being performed.
       resource_name: The name of the resource being deleted.
+      max_sleep: The maximum number of seconds to sleep for the resources to
+        be deleted.
+      verbose: A boolean indicating whether or not in verbose mode.
     """
+    time_start = time.time()
     while not result.done():
-      AppScaleLogger.verbose("Waiting {0} second(s) for '{1}' to be deleted".
+      AppScaleLogger.verbose("Waiting {0} second(s) for {1} to be deleted.".
                              format(self.SLEEP_TIME, resource_name), verbose)
       time.sleep(self.SLEEP_TIME)
+      total_sleep_time = time.time() - time_start
+      if total_sleep_time > max_sleep:
+        AppScaleLogger.verbose("Waited {0} seconds for {1} to be deleted. "
+          "Operation has timed out.".format(total_sleep_time, resource_name), verbose)
+        break
 
   def does_address_exist(self, parameters):
     """ Verifies that the specified static IP address has been allocated, and
@@ -414,7 +442,7 @@ class AzureAgent(BaseAgent):
       True if the zone exists, and False otherwise.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     zone = parameters[self.PARAM_ZONE]
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_providers = resource_client.providers.list()
@@ -431,7 +459,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict that includes keys indicating the remote state
         that should be deleted.
     """
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     credentials = self.open_connection(parameters)
     network_client = NetworkManagementClient(credentials, subscription_id)
@@ -443,19 +471,22 @@ class AzureAgent(BaseAgent):
     for interface in network_interfaces:
       result = network_client.network_interfaces.delete(resource_group, interface.name)
       resource_name = 'Network Interface' + ':' + interface.name
-      self.sleep_until_delete_operation_done(result, resource_name, verbose)
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_SLEEP_TIME, verbose)
 
     public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
     for public_ip in public_ip_addresses:
       result = network_client.public_ip_addresses.delete(resource_group, public_ip.name)
       resource_name = 'Public IP Address' + ':' + public_ip.name
-      self.sleep_until_delete_operation_done(result, resource_name, verbose)
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_SLEEP_TIME, verbose)
 
     virtual_networks = network_client.virtual_networks.list(resource_group)
     for network in virtual_networks:
       result = network_client.virtual_networks.delete(resource_group, network.name)
       resource_name = 'Virtual Network' + ':' + network.name
-      self.sleep_until_delete_operation_done(result, resource_name, verbose)
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_SLEEP_TIME, verbose)
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
@@ -481,7 +512,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
-      self.PARAM_SUBCR_ID: args[self.PARAM_SUBCR_ID],
+      self.PARAM_SUBSCRIBER_ID: args[self.PARAM_SUBSCRIBER_ID],
       self.PARAM_TAG: args[self.PARAM_TAG],
       self.PARAM_TENANT_ID: args[self.PARAM_TENANT_ID],
       self.PARAM_TEST: args[self.PARAM_TEST],
@@ -521,7 +552,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_KEYNAME: keyname,
       self.PARAM_VERBOSE: True,
       self.PARAM_ZONE: LocalState.get_zone(keyname),
-      self.PARAM_SUBCR_ID: LocalState.get_subscription_id(keyname),
+      self.PARAM_SUBSCRIBER_ID: LocalState.get_subscription_id(keyname),
       self.PARAM_APP_ID: LocalState.get_app_id(keyname),
       self.PARAM_APP_SECRET: LocalState.get_app_secret_key(keyname),
       self.PARAM_TENANT_ID: LocalState.get_tenant_id(keyname),
@@ -648,10 +679,16 @@ class AzureAgent(BaseAgent):
           of the operation being performed.
         resource_name: The name of the resource being updated.
     """
+    time_start = time.time()
     while not result.done():
       AppScaleLogger.verbose("Waiting {0} second(s) for {1} to be created/updated.".
                              format(self.SLEEP_TIME, resource_name), verbose)
       time.sleep(self.SLEEP_TIME)
+      total_sleep_time = time.time() - time_start
+      if total_sleep_time > self.MAX_SLEEP_TIME:
+        AppScaleLogger.log("Waited {0} seconds for {1} to be created/updated. "
+          "Operation has timed out.".format(total_sleep_time, resource_name), verbose)
+        break
 
   def create_resource_group(self, parameters, credentials):
     """ Creates a Resource Group for the application using the Service Principal
@@ -666,7 +703,7 @@ class AzureAgent(BaseAgent):
       AgentConfigurationException: If there was a problem creating or accessing
         a resource group with the given subscription.
     """
-    subscription_id = parameters[self.PARAM_SUBCR_ID]
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_client = ResourceManagementClient(credentials, subscription_id)
     rg_name = parameters[self.PARAM_RESOURCE_GROUP]
 
@@ -675,7 +712,7 @@ class AzureAgent(BaseAgent):
       tag_name = parameters[self.PARAM_TAG]
 
     storage_client = StorageManagementClient(credentials, subscription_id)
-    resource_client.providers.register('Microsoft.Storage')
+    resource_client.providers.register(self.MICROSOFT_STORAGE_RESOURCE)
     try:
       # If the resource group does not already exist, create a new one with the
       # specified storage account.

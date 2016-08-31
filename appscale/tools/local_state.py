@@ -221,6 +221,7 @@ class LocalState(object):
         iaas_creds['resource_group'] = options.resource_group
         iaas_creds['group_tag'] = options.group_tag
         iaas_creds['storage_account'] = options.storage_account
+        iaas_creds['instance_type'] = options.azure_instance_type
       creds.update(iaas_creds)
 
     return creds
