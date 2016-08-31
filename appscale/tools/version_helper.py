@@ -10,7 +10,23 @@ AppScale Tools.
 
 
 # First-party Python libraries
+import json
 import sys
+import urllib2
+
+# The location of appscale-tools on PyPI.
+PYPI_URL = 'https://pypi.python.org/pypi/appscale-tools'
+
+
+def latest_tools_version():
+  """ Fetches the latest tools version available on PyPI.
+
+  Returns:
+    A string containing a version number.
+  """
+  response = urllib2.urlopen('{}/json'.format(PYPI_URL))
+  pypi_info = json.loads(response.read())
+  return pypi_info['info']['version']
 
 
 def ensure_valid_python_is_used(system=sys):

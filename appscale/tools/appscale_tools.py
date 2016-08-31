@@ -32,6 +32,7 @@ from local_state import APPSCALE_VERSION
 from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
+from version_helper import latest_tools_version
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -763,6 +764,21 @@ class AppScaleTools(object):
     if not node_layout.is_valid():
       raise BadConfigurationException(
         'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
+
+    latest_tools = APPSCALE_VERSION
+    try:
+      AppScaleLogger.log(
+        'Checking if an update is available for appscale-tools')
+      latest_tools = latest_tools_version()
+    except:
+      # Continue if version metadata can't be fetched.
+      pass
+
+    if latest_tools > APPSCALE_VERSION:
+      raise AppScaleException(
+        "There is a newer version ({}) of appscale-tools available. Please "
+        "upgrade the tools package before running 'appscale upgrade'.".
+        format(latest_tools))
 
     master_ip = node_layout.head_node().public_ip
     upgrade_version_available = cls.get_upgrade_version_available()
