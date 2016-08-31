@@ -771,8 +771,13 @@ class AppScaleTools(object):
         'Checking if an update is available for appscale-tools')
       latest_tools = latest_tools_version()
     except:
-      # Continue if version metadata can't be fetched.
-      pass
+      # Prompt the user if version metadata can't be fetched.
+      if not options.test:
+        response = raw_input(
+          'Unable to check for the latest version of appscale-tools. Would '
+          'you like to continue upgrading anyway? (y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException('Cancelled AppScale upgrade.')
 
     if latest_tools > APPSCALE_VERSION:
       raise AppScaleException(
