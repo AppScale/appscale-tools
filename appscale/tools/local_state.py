@@ -214,14 +214,14 @@ class LocalState(object):
         iaas_creds['gce_user'] = getpass.getuser()
         iaas_creds['instance_type'] = options.gce_instance_type
       elif options.infrastructure == 'azure':
-        iaas_creds['subscription_id'] = options.subscription_id
-        iaas_creds['app_id'] = options.app_id
-        iaas_creds['app_secret_key'] = options.app_secret_key
-        iaas_creds['tenant_id'] = options.tenant_id
-        iaas_creds['resource_group'] = options.resource_group
-        iaas_creds['group_tag'] = options.group_tag
-        iaas_creds['storage_account'] = options.storage_account
-        iaas_creds['instance_type'] = options.azure_instance_type
+        iaas_creds['azure_subscription_id'] = options.azure_subscription_id
+        iaas_creds['azure_app_id'] = options.azure_app_id
+        iaas_creds['azure_app_secret_key'] = options.azure_app_secret_key
+        iaas_creds['azure_tenant_id'] = options.azure_tenant_id
+        iaas_creds['azure_resource_group'] = options.azure_resource_group
+        iaas_creds['azure_group_tag'] = options.azure_group_tag
+        iaas_creds['azure_storage_account'] = options.azure_storage_account
+        iaas_creds['azure_instance_type'] = options.azure_instance_type
       creds.update(iaas_creds)
 
     return creds
@@ -399,13 +399,13 @@ class LocalState(object):
       yaml_contents['project'] = options.project
 
     if infrastructure == 'azure':
-      yaml_contents['subscription_id'] = options.subscription_id
-      yaml_contents['app_id'] = options.app_id
-      yaml_contents['app_secret_key'] = options.app_secret_key
-      yaml_contents['tenant_id'] = options.tenant_id
-      yaml_contents['resource_group'] = options.resource_group
-      yaml_contents['storage_account'] = options.storage_account
-      yaml_contents['group_tag'] = options.group_tag
+      yaml_contents['azure_subscription_id'] = options.azure_subscription_id
+      yaml_contents['azure_app_id'] = options.azure_app_id
+      yaml_contents['azure_app_secret_key'] = options.azure_app_secret_key
+      yaml_contents['azure_tenant_id'] = options.azure_tenant_id
+      yaml_contents['azure_resource_group'] = options.azure_resource_group
+      yaml_contents['azure_storage_account'] = options.azure_storage_account
+      yaml_contents['azure_group_tag'] = options.azure_group_tag
 
     with open(cls.get_locations_yaml_location(options.keyname), 'w') \
         as file_handle:
@@ -704,7 +704,7 @@ class LocalState(object):
       A str containing the subscription ID used for this AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["subscription_id"]
+      return yaml.safe_load(file_handle.read())["azure_subscription_id"]
 
   @classmethod
   def get_app_id(cls, keyname):
@@ -718,7 +718,7 @@ class LocalState(object):
       A str containing the application ID used for this AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["app_id"]
+      return yaml.safe_load(file_handle.read())["azure_app_id"]
 
   @classmethod
   def get_app_secret_key(cls, keyname):
@@ -733,7 +733,7 @@ class LocalState(object):
       AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["app_secret_key"]
+      return yaml.safe_load(file_handle.read())["azure_app_secret_key"]
 
   @classmethod
   def get_tenant_id(cls, keyname):
@@ -748,7 +748,7 @@ class LocalState(object):
       AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["tenant_id"]
+      return yaml.safe_load(file_handle.read())["azure_tenant_id"]
 
   @classmethod
   def get_resource_group(cls, keyname):
@@ -763,7 +763,7 @@ class LocalState(object):
       AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["resource_group"]
+      return yaml.safe_load(file_handle.read())["azure_resource_group"]
 
   @classmethod
   def get_storage_account(cls, keyname):
@@ -778,7 +778,7 @@ class LocalState(object):
       AppScale deployment.
     """
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
-      return yaml.safe_load(file_handle.read())["storage_account"]
+      return yaml.safe_load(file_handle.read())["azure_storage_account"]
 
   @classmethod
   def get_client_secrets_location(cls, keyname):

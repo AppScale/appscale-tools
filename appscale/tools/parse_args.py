@@ -235,26 +235,23 @@ class ParseArgs(object):
         help="the Google Compute Engine instance type to use")
 
       # Microsoft Azure specific flags
-      self.parser.add_argument('--app_secret_key',
+      self.parser.add_argument('--azure_app_secret_key',
         help="the authentication key for the application")
-      self.parser.add_argument('--app_id',
+      self.parser.add_argument('--azure_app_id',
         help="the application or the client ID")
-      self.parser.add_argument('--azure_creds',
-        help="the JSON file with Azure credentials that can be used to "
-          "authenticate via OAuth")
-      self.parser.add_argument('--group_tag',
+      self.parser.add_argument('--azure_group_tag',
         help="the tag set for an Azure resource group")
       self.parser.add_argument('--azure_instance_type',
         default=self.DEFAULT_AZURE_INSTANCE_TYPE,
         choices=self.ALLOWED_AZURE_INSTANCE_TYPES,
         help="the Microsoft Azure instance type to use")
-      self.parser.add_argument('--resource_group',
+      self.parser.add_argument('--azure_resource_group',
         help="the resource group to use")
-      self.parser.add_argument('--storage_account',
+      self.parser.add_argument('--azure_storage_account',
         help="the storage account name under an Azure resource group")
-      self.parser.add_argument('--subscription_id',
+      self.parser.add_argument('--azure_subscription_id',
         help="the Azure subscription ID for the account")
-      self.parser.add_argument('--tenant_id',
+      self.parser.add_argument('--azure_tenant_id',
         help="the tenant ID of the Azure endpoints")
 
       # flags relating to the datastore used
@@ -643,16 +640,19 @@ class ParseArgs(object):
         self.args.gce_instance_type))
 
     if self.args.infrastructure == 'azure':
-      if not self.args.subscription_id:
+      if not self.args.azure_subscription_id:
         raise BadConfigurationException("Cannot start an Azure instance without " \
                                         "the Subscription ID.")
-      if not self.args.app_id:
+      if not self.args.azure_app_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the App ID.")
-      if not self.args.app_secret_key:
+      if not self.args.azure_app_secret_key:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the App Secret Key.")
-      if not self.args.tenant_id:
+      if not self.args.azure_instance_type:
+        raise BadConfigurationException("Cannot start an Azure instance without " \
+                                        "the Instance Type.")
+      if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")
 

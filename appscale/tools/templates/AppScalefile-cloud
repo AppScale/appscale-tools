@@ -70,27 +70,27 @@ max : 1
 
 # The Azure resource group name that should be used for all the machines in
 # this AppScale deployment.
-#resource_group: 'azureresourcegroup'
+#azure_resource_group: 'azureresourcegroup'
 
 # The tag for the resource group in case a new resource group for Azure has
 # to be created.
-#group_tag: 'azuregrouptag'
+#azure_group_tag: 'azuregrouptag'
 
 # The Azure storage account name that should be used while creating the
 # virtual machines.
-#storage_account: 'azurestorageaccount'
+#azure_storage_account: 'azurestorageaccount'
 
 # The Azure subscription ID for your account to use for AppScale deployment.
-#subscription_id :
+#azure_subscription_id :
 
 # The application or the client ID from the Azure Portal.
-#app_id :
+#azure_app_id :
 
 # The tenant ID from the view endpoints section on the Azure Portal.
-#tenant_id :
+#azure_tenant_id :
 
 # The authentication key for the application on the Azure Portal.
-#app_secret_key :
+#azure_app_secret_key :
 
 # The Project ID associated with your Google Compute Engine project.
 # Note: Do not use the Project Name or the Project Number.
