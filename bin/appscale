@@ -165,12 +165,6 @@ elif command == "down":
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)
-elif command == "terminate":
-  try:
-    appscale.down(terminate_instances=True)
-  except Exception as exception:
-    LocalState.generate_crash_log(exception, traceback.format_exc())
-    sys.exit(1)
 elif command == "relocate":
   if len(sys.argv) != 5:
     cprint("Usage: appscale relocate appid http_port https_port", 'red')

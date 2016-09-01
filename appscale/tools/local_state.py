@@ -92,8 +92,13 @@ class LocalState(object):
       return
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
-      login_host = LocalState.get_login_host(options.keyname)
-      secret_key = LocalState.get_secret_key(options.keyname)
+      try:
+        login_host = LocalState.get_login_host(keyname)
+        secret_key = LocalState.get_secret_key(keyname)
+      except BadConfigurationException:
+        # If we don't have the locations files, we are not running.
+        return
+
       acc = AppControllerClient(login_host, secret_key)
       try:
         AppScaleLogger.log(acc.get_status())

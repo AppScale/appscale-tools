@@ -121,12 +121,16 @@ class RemoteHelper(object):
       options.verbose)
 
     if options.infrastructure:
-      agent = InfrastructureAgentFactory.create_agent(
-          LocalState.get_infrastructure(keyname))
+      agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
 
       params = agent.get_params_from_args(options)
       public_ips, private_ips, instance_ids = agent.describe_instances(params)
-      login_ip = LocalState.get_login_host(keyname)
+      try:
+        login_ip = LocalState.get_login_host(options.keyname)
+      except (IOError, BadConfigurationException):
+        # We don't have the location file, we need to start instances.
+        login_ip = None
+
       if login_ip in public_ips:
         index = public_ips.index(login_ip)
         public_ip = public_ips[index]

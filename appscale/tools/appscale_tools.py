@@ -618,8 +618,6 @@ class AppScaleTools(object):
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
         options.verbose)
 
-    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
-
 
   @classmethod
   def upload_app(cls, options):

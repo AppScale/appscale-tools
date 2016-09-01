@@ -323,12 +323,9 @@ class ParseArgs(object):
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
-      self.parser.add_argument('--terminate', action='store_true',
+      self.parser.add_argument('--terminate', action="store_true"
         default=False,
-        help="terminate instances that were started at deploy time")
-      self.parser.add_argument('--terminate',
-        default=self.DEFAULT_KEYNAME,
-        help="the keypair name to use")
+        help="terminate running instances (if in cloud environment)")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
