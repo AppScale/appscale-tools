@@ -723,7 +723,7 @@ class LocalState(object):
     files_to_remove = [LocalState.get_secret_key_location(keyname)]
     if remove_location:
       files_to_remove += [LocalState.get_locations_yaml_location(keyname),
-      LocalState.get_locations_json_location(keyname)0
+      LocalState.get_locations_json_location(keyname)]
 
     for file_to_remove in files_to_remove:
       if os.path.exists(file_to_remove):
