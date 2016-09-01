@@ -139,7 +139,13 @@ elif command == "logs":
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)
-elif command == "destroy" or command == "down":
+elif command == "destroy":
+    cprint("Warning: destroy has been deprecated. Please use 'down'.", 'red')
+    sys.exit(1)
+elif command == "clean":
+    cprint("Warning: clean has been deprecated. Please use 'down --clean'.", 'red')
+    sys.exit(1)
+elif command == "down":
   if len(sys.argv) > 4:
     cprint("Usage: appscale down [--clean][--terminate]", 'red')
     sys.exit(1)
