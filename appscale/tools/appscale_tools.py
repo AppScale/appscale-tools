@@ -610,12 +610,8 @@ class AppScaleTools(object):
 
     infrastructure = LocalState.get_infrastructure(options.keyname)
 
-    # If the user is on a cloud deployment, and not backing their data to
-    # persistent disks, warn them before shutting down AppScale.
-    # Also, if we're in developer mode, skip the warning.
     if infrastructure != "xen" and not LocalState.are_disks_used(
       options.keyname) and not options.test:
-      LocalState.ensure_user_wants_to_terminate()
 
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):
@@ -625,7 +621,6 @@ class AppScaleTools(object):
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
         options.verbose)
 
-    LocalState.cleanup_appscale_files(options.keyname)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
 
 

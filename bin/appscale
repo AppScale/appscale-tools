@@ -155,16 +155,13 @@ elif command == "down":
     if sys.argv[index] == "--terminate":
       to_terminate = True
     elif sys.argv[index] == "--clean":
-      to_terminate = True
+      to_clean = True
     else:
       cprint("Usage: appscale down [--clean][--terminate]", 'red')
       sys.exit(1)
 
   try:
-    if to_clean:
-      appscale.clean(terminate=to_terminate)
-    else:
-      appscale.down(terminate=to_terminate)
+    appscale.down(clean=to_clean, terminate=to_terminate)
   except Exception as exception:
     LocalState.generate_crash_log(exception, traceback.format_exc())
     sys.exit(1)

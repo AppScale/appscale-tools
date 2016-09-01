@@ -713,16 +713,17 @@ class LocalState(object):
 
 
   @classmethod
-  def cleanup_appscale_files(cls, keyname):
+  def cleanup_appscale_files(cls, keyname, remove_location=True):
     """Removes all AppScale metadata files from this machine.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
     """
-    files_to_remove = [LocalState.get_locations_yaml_location(keyname),
-      LocalState.get_locations_json_location(keyname),
-      LocalState.get_secret_key_location(keyname)]
+    files_to_remove = [LocalState.get_secret_key_location(keyname)]
+    if remove_location:
+      files_to_remove += [LocalState.get_locations_yaml_location(keyname),
+      LocalState.get_locations_json_location(keyname)0
 
     for file_to_remove in files_to_remove:
       if os.path.exists(file_to_remove):
@@ -973,15 +974,15 @@ class LocalState(object):
 
 
   @classmethod
-  def ensure_user_wants_to_terminate(cls):
-    """ Asks the user for confirmation before we terminate their AppScale
+  def ensure_user_wants_to_clean(cls):
+    """ Asks the user for confirmation before we clean their AppScale
     deployment.
 
     Raises:
       AppScaleException: If the user does not want to terminate their
         AppScale deployment.
     """
-    cls.confirm_or_abort("Terminating AppScale will delete all stored data.")
+    cls.confirm_or_abort("Cleaning AppScale will delete all stored data.")
 
 
   @classmethod

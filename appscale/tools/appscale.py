@@ -735,6 +735,19 @@ Available commands:
     command = []
     contents_as_yaml = yaml.safe_load(contents)
 
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      is_verbose = contents_as_yaml['verbose']
+      command.append("--verbose")
+    else:
+      is_verbose = False
+
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+    else:
+      keyname = 'appscale'
+
     if "EC2_ACCESS_KEY" in contents_as_yaml:
       os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
 
@@ -744,12 +757,12 @@ Available commands:
     if "EC2_URL" in contents_as_yaml:
       os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
 
-    if 'keyname' in contents_as_yaml:
-      command.append("--keyname")
-      command.append(contents_as_yaml['keyname'])
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      command.append("--verbose")
+    if clean:
+      LocalState.ensure_user_wants_to_clean()
+      all_ips = LocalState.get_all_public_ips(keyname)
+      for ip in all_ips:
+        RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
+      AppScaleLogger.success("Successfully cleaned your AppScale deployment.")
 
     if terminate:
       command.append("--terminate")
@@ -762,52 +775,8 @@ Available commands:
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
 
-
-  def clean(self, terminate=False):
-    """ 'clean' provides a mechanism that will forcefully shut down all AppScale-
-    related services on virtual machines in a cluster deployment.
-
-    Args:
-      terminate: A boolean to indicate if instances needs to be terminated
-        (valid only if we spawn instances at start).
-
-    Returns:
-      A list of the IP addresses where AppScale was shut down.
-
-    Raises:
-      AppScalefileException: If there is no AppScalefile in the current working
-        directory.
-      BadConfigurationException: If this method is invoked and the AppScalefile
-        indicates that a cloud deployment is being used.
-    """
-    contents = self.read_appscalefile()
-
-    contents_as_yaml = yaml.safe_load(contents)
-    if 'infrastructure' in contents_as_yaml.keys():
-      raise BadConfigurationException("Cannot use 'appscale clean' in a " \
-        "cloud deployment.")
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      is_verbose = contents_as_yaml['verbose']
-    else:
-      is_verbose = False
-
-    if 'keyname' in contents_as_yaml:
-      keyname = contents_as_yaml['keyname']
-    else:
-      keyname = 'appscale'
-
-    all_ips = LocalState.get_all_public_ips(keyname)
-
-    if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
-      LocalState.ensure_user_wants_to_terminate()
-
-    for ip in all_ips:
-      RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
-
-    LocalState.cleanup_appscale_files(keyname)
+    LocalState.cleanup_appscale_files(options.keyname, options.clean)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
-    return all_ips
 
 
   def register(self, deployment_id):
