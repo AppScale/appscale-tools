@@ -912,7 +912,13 @@ class RemoteHelper(object):
     time.sleep(2)
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
-    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    try:
+      acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    except IOError:
+      # We couldn't find the secret key: AppScale is most likely not
+      # running.
+      AppScaleLogger.log("Couldn't find AppScale secret key.")
+      return
 
     try:
       all_ips = acc.get_all_public_ips()
