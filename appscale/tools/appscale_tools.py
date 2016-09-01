@@ -610,9 +610,6 @@ class AppScaleTools(object):
 
     infrastructure = LocalState.get_infrastructure(options.keyname)
 
-    if infrastructure != "xen" and not LocalState.are_disks_used(
-      options.keyname) and not options.test:
-
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,

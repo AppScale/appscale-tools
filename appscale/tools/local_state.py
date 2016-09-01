@@ -982,7 +982,7 @@ class LocalState(object):
       AppScaleException: If the user does not want to terminate their
         AppScale deployment.
     """
-    cls.confirm_or_abort("Cleaning AppScale will delete all stored data.")
+    cls.confirm_or_abort("Cleaning or terminating AppScale will delete all stored data.")
 
 
   @classmethod

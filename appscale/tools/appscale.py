@@ -765,6 +765,10 @@ Available commands:
       AppScaleLogger.success("Successfully cleaned your AppScale deployment.")
 
     if terminate:
+      infrastructure = LocalState.get_infrastructure(keyname)
+      if infrastructure != "xen" and not LocalState.are_disks_used(
+        keyname) and not options.test:
+        LocalState.ensure_user_wants_to_clean()
       command.append("--terminate")
 
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
@@ -775,7 +779,7 @@ Available commands:
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
 
-    LocalState.cleanup_appscale_files(options.keyname, options.clean)
+    LocalState.cleanup_appscale_files(options.keyname, options.terminate)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
 
 
