@@ -1,5 +1,8 @@
 from appscale.tools.custom_exceptions import UnknownInfrastructureException
-from azure_agent import AzureAgent
+try:
+  from azure_agent import AzureAgent
+except ImportError:
+  AzureAgent = None
 from ec2_agent import EC2Agent
 from euca_agent import EucalyptusAgent
 from gce_agent import GCEAgent
@@ -27,9 +30,10 @@ class InfrastructureAgentFactory:
     'euca': EucalyptusAgent,
     'gce': GCEAgent,
     'openstack': OpenStackAgent,
-    'azure': AzureAgent
   }
 
+  if AzureAgent is not None:
+    agents['azure'] = AzureAgent
 
   @classmethod
   def create_agent(cls, infrastructure):
