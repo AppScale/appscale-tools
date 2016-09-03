@@ -1,13 +1,16 @@
 ---
 # The underlying cloud infrastructure to deploy AppScale over.
 # Set this to 'ec2' if running on Amazon EC2, 'euca' if running on Eucalyptus,
-# or 'gce' if running on Google Compute Engine.
+# 'gce' if running on Google Compute Engine, or 'azure' if running on
+# Microsoft Azure.
 infrastructure : 'ec2'
 
-# The Amazon or Eucalyptus Machine Image (ami or emi) that has AppScale
-# installed on it. When running on Google Compute Engine, set this to the name
-# of the image you set when you ran 'gcutil addimage'.
+# The Amazon / Eucalyptus Machine Image (ami or emi) or Azure image resource
+# url that has AppScale installed on it. When running on Google Compute Engine,
+# set this to the name of the image you set when you ran 'gcutil addimage'.
 machine : 'ami-XXXXXX'
+# machine: 'https://{storageaccount}.blob.core.windows.net/system/' +
+#   'Microsoft.Compute/Images/{containerName}/{VhdPrefix-Name}.vhd' # For Azure
 
 # The instance type that should be used for all virtual machines in your
 # AppScale deployment, if running in Amazon EC2 or Eucalyptus.
@@ -17,11 +20,16 @@ instance_type : 'm3.medium'
 # AppScale deployment, if running in Google Compute Engine.
 gce_instance_type : 'n1-standard-1'
 
+# The instance type that should be used for all virtual machines in your
+# AppScale deployment, if running in Azure.
+azure_instance_type : 'Standard_A3'
+
 # The availability zone that should be used for all virtual machines in your
 # AppScale deployment. If using persistent disks in your AppScale deployment,
 # they should be in the same zone that you specify here.
 zone : 'us-east-1b' # For Amazon EC2
 #zone: 'us-central1-a' # For Google Compute Engine
+#zone: 'West US' # For Microsoft Azure
 
 # Whether or not the Datastore should be erased when AppScale starts up.
 # This defaults to False, to persist your data across AppScale runs.
@@ -59,6 +67,30 @@ max : 1
 # application can be found, which enables the AppScale Tools to talk to Google
 # Compute Engine on your behalf.
 #client_secrets: '~/client_secrets.json'
+
+# The Azure resource group name that should be used for all the machines in
+# this AppScale deployment.
+#azure_resource_group: 'azureresourcegroup'
+
+# The tag for the resource group in case a new resource group for Azure has
+# to be created.
+#azure_group_tag: 'azuregrouptag'
+
+# The Azure storage account name that should be used while creating the
+# virtual machines.
+#azure_storage_account: 'azurestorageaccount'
+
+# The Azure subscription ID for your account to use for AppScale deployment.
+#azure_subscription_id :
+
+# The application or the client ID from the Azure Portal.
+#azure_app_id :
+
+# The tenant ID from the view endpoints section on the Azure Portal.
+#azure_tenant_id :
+
+# The authentication key for the application on the Azure Portal.
+#azure_app_secret_key :
 
 # The Project ID associated with your Google Compute Engine project.
 # Note: Do not use the Project Name or the Project Number.

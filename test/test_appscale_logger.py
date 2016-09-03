@@ -94,7 +94,15 @@ class TestAppScaleLogger(unittest.TestCase):
       "user_commands" : [],
       "verbose" : False,
       "version" : False,
-      "zone" : "my-zone-1b"
+      "zone" : "my-zone-1b",
+      "azure_subscription_id" : None,
+      "azure_app_id" : None,
+      "azure_app_secret_key" : None,
+      "azure_tenant_id" : None,
+      "azure_resource_group" : None,
+      "azure_group_tag" : None,
+      "azure_storage_account" : None,
+      "azure_instance_type" : "Standard_A3"
     }
 
     # finally, construct a http payload for mocking that the below
