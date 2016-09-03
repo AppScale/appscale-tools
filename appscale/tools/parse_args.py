@@ -13,7 +13,10 @@ import yaml
 
 
 # AppScale-specific imports
-from agents.azure_agent import AzureAgent
+try:
+  from agents.azure_agent import AzureAgent
+except ImportError:
+  AzureAgent = None
 from agents.base_agent import BaseAgent
 from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
@@ -101,8 +104,10 @@ class ParseArgs(object):
                          ALLOWED_AZURE_INSTANCE_TYPES
 
   DISALLOWED_INSTANCE_TYPES = EC2Agent.DISALLOWED_INSTANCE_TYPES + \
-                              GCEAgent.DISALLOWED_INSTANCE_TYPES + \
-                              AzureAgent.DISALLOWED_INSTANCE_TYPES
+                              GCEAgent.DISALLOWED_INSTANCE_TYPES
+
+  if AzureAgent is not None:
+    DISALLOWED_INSTANCE_TYPES += AzureAgent.DISALLOWED_INSTANCE_TYPES
 
   # The default security group to create and use for AppScale cloud deployments.
   DEFAULT_SECURITY_GROUP = "appscale"
