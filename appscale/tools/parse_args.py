@@ -13,6 +13,7 @@ import yaml
 
 
 # AppScale-specific imports
+from agents.azure_agent import AzureAgent
 from agents.base_agent import BaseAgent
 from agents.ec2_agent import EC2Agent
 from agents.gce_agent import GCEAgent
@@ -38,10 +39,6 @@ class ParseArgs(object):
 
   # A list of the datastores that AppScale can deploy over.
   ALLOWED_DATASTORES = ["cassandra"]
-
-
-  # The EC2 instance type that should be used if the user does not specify one.
-  DEFAULT_EC2_INSTANCE_TYPE = "m3.medium"
 
 
   # A list of the instance types we allow users to run AppScale over in EC2.
@@ -71,9 +68,6 @@ class ParseArgs(object):
     "hs1.8xlarge",
     ]
 
-  # The GCE instance type that should be used if the user does not specify one.
-  DEFAULT_GCE_INSTANCE_TYPE = "n1-standard-1"
-
   ALLOWED_GCE_INSTANCE_TYPES = [
     "n1-standard-1",
     "n1-standard-2",
@@ -86,9 +80,6 @@ class ParseArgs(object):
     "n1-highmem-4",
     "n1-highmem-8"
   ]
-
-  # The Azure instance type that should be used if the user does not specify one.
-  DEFAULT_AZURE_INSTANCE_TYPE = 'Standard_A3'
 
   # A list of instance types we allow users to run AppScale over in Azure.
   ALLOWED_AZURE_INSTANCE_TYPES = [
@@ -104,6 +95,14 @@ class ParseArgs(object):
     "Standard_DS14_v2", "Standard_DS15_v2", "Standard_G1", "Standard_G2",
     "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
     "Standard_GS3", "Standard_GS4", "Standard_GS5"]
+
+  # A combined list of instance types for the different cloud infrastructures.
+  ALLOWED_INSTANCE_TYPES = ALLOWED_EC2_INSTANCE_TYPES + ALLOWED_GCE_INSTANCE_TYPES + \
+                         ALLOWED_AZURE_INSTANCE_TYPES
+
+  DISALLOWED_INSTANCE_TYPES = EC2Agent.DISALLOWED_INSTANCE_TYPES + \
+                              GCEAgent.DISALLOWED_INSTANCE_TYPES + \
+                              AzureAgent.DISALLOWED_INSTANCE_TYPES
 
   # The default security group to create and use for AppScale cloud deployments.
   DEFAULT_SECURITY_GROUP = "appscale"
@@ -197,8 +196,7 @@ class ParseArgs(object):
       self.parser.add_argument('--machine', '-m',
         help="the ami/emi that has AppScale installed")
       self.parser.add_argument('--instance_type', '-t',
-        default=self.DEFAULT_EC2_INSTANCE_TYPE,
-        choices=self.ALLOWED_EC2_INSTANCE_TYPES,
+        choices=self.ALLOWED_INSTANCE_TYPES,
         help="the EC2 instance type to use")
       self.parser.add_argument('--group', '-g', default=keyname,
         help="the security group to use")
@@ -229,10 +227,6 @@ class ParseArgs(object):
       self.parser.add_argument('--project',
         help="the name of the project that is allowed to use Google " + \
           "Compute Engine")
-      self.parser.add_argument('--gce_instance_type',
-        default=self.DEFAULT_GCE_INSTANCE_TYPE,
-        choices=self.ALLOWED_GCE_INSTANCE_TYPES,
-        help="the Google Compute Engine instance type to use")
 
       # Microsoft Azure specific flags
       self.parser.add_argument('--azure_app_secret_key',
@@ -241,10 +235,6 @@ class ParseArgs(object):
         help="the application or the client ID")
       self.parser.add_argument('--azure_group_tag',
         help="the tag set for an Azure resource group")
-      self.parser.add_argument('--azure_instance_type',
-        default=self.DEFAULT_AZURE_INSTANCE_TYPE,
-        choices=self.ALLOWED_AZURE_INSTANCE_TYPES,
-        help="the Microsoft Azure instance type to use")
       self.parser.add_argument('--azure_resource_group',
         help="the resource group to use")
       self.parser.add_argument('--azure_storage_account',
@@ -625,19 +615,16 @@ class ParseArgs(object):
         raise BadConfigurationException("--disks must be a dict, but was a " \
           "{0}".format(type(self.args.disks)))
 
-    if self.args.instance_type in EC2Agent.DISALLOWED_INSTANCE_TYPES and \
+    if not self.args.instance_type:
+      raise BadConfigurationException("Cannot start a cloud instance without " \
+                                      "the Instance type.")
+
+    if self.args.instance_type in self.DISALLOWED_INSTANCE_TYPES and \
       not (self.args.force or self.args.test):
       LocalState.confirm_or_abort("The {0} instance type does not have " \
         "enough RAM to run Cassandra in a production setting. Please " \
         "consider using a larger instance type.".format(
         self.args.instance_type))
-
-    if self.args.gce_instance_type in GCEAgent.DISALLOWED_INSTANCE_TYPES and \
-      not (self.args.force or self.args.test):
-      LocalState.confirm_or_abort("The {0} instance type does not have " \
-        "enough RAM to run Cassandra in a production setting. Please " \
-        "consider using a larger instance type.".format(
-        self.args.gce_instance_type))
 
     if self.args.infrastructure == 'azure':
       if not self.args.azure_subscription_id:
@@ -649,9 +636,6 @@ class ParseArgs(object):
       if not self.args.azure_app_secret_key:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the App Secret Key.")
-      if not self.args.azure_instance_type:
-        raise BadConfigurationException("Cannot start an Azure instance without " \
-                                        "the Instance Type.")
       if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")

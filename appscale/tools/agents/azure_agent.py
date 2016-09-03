@@ -71,6 +71,15 @@ class AzureAgent(BaseAgent):
   # Default resource group name to use for Azure.
   DEFAULT_RESOURCE_GROUP = 'appscalegroup'
 
+  # A list of Azure instance types that have less than 4 GB of RAM, the amount
+  # recommended by Cassandra. AppScale will still run on these instance types,
+  # but is likely to crash after a day or two of use (as Cassandra will attempt
+  # to malloc ~800MB of memory, which will fail on these instance types).
+  DISALLOWED_INSTANCE_TYPES = ["Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3"
+                               "Basic_A4", "Standard_A0", "Standard_A1",
+                               "Standard_A2", "Standard_D1", "Standard_D1_v2",
+                               "Standard_DS1", "Standard_DS1_v2"]
+
   # The following constants are string literals that can be used by callers to
   # index into the parameters that the user passes in, as opposed to having to
   # type out the strings each time we need them.
@@ -80,7 +89,7 @@ class AzureAgent(BaseAgent):
   PARAM_EXISTING_RG = 'does_exist'
   PARAM_GROUP = 'group'
   PARAM_INSTANCE_IDS = 'instance_ids'
-  PARAM_INSTANCE_TYPE = 'azure_instance_type'
+  PARAM_INSTANCE_TYPE = 'instance_type'
   PARAM_KEYNAME = 'keyname'
   PARAM_IMAGE_ID = 'image_id'
   PARAM_REGION = 'region'
