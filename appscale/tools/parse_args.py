@@ -103,9 +103,12 @@ class ParseArgs(object):
   ALLOWED_INSTANCE_TYPES = ALLOWED_EC2_INSTANCE_TYPES + ALLOWED_GCE_INSTANCE_TYPES + \
                          ALLOWED_AZURE_INSTANCE_TYPES
 
+  # A combined list of instance types for different clouds that have less
+  # than 4 GB RAM, the amount recommended by Cassandra.
   DISALLOWED_INSTANCE_TYPES = EC2Agent.DISALLOWED_INSTANCE_TYPES + \
                               GCEAgent.DISALLOWED_INSTANCE_TYPES
 
+  # This check is to avoid import errors whenever Azure agent is not required.
   if AzureAgent is not None:
     DISALLOWED_INSTANCE_TYPES += AzureAgent.DISALLOWED_INSTANCE_TYPES
 
