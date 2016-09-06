@@ -49,9 +49,9 @@ class TestAppScaleLogger(unittest.TestCase):
 
     # do argument parsing here, since the below tests do it the
     # same way every time
-    argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--machine",
-      "ami-ABCDEFG", "--group", "blargscale", "--keyname", "appscale", "--zone",
-      "my-zone-1b"]
+    argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--instance_type",
+      "m3.medium", "--machine", "ami-ABCDEFG", "--group", "blargscale", "--keyname",
+      "appscale", "--zone", "my-zone-1b"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
     self.my_id = "12345"
@@ -75,7 +75,6 @@ class TestAppScaleLogger(unittest.TestCase):
       "flower_password" : ParseArgs.DEFAULT_FLOWER_PASSWORD,
       "force" : False,
       "group" : "blargscale",
-      "gce_instance_type" : "n1-standard-1",
       "instance_type" : "m3.medium",
       "ips" : None,
       "ips_layout" : None,
@@ -102,7 +101,6 @@ class TestAppScaleLogger(unittest.TestCase):
       "azure_resource_group" : None,
       "azure_group_tag" : None,
       "azure_storage_account" : None,
-      "azure_instance_type" : "Standard_A3"
     }
 
     # finally, construct a http payload for mocking that the below

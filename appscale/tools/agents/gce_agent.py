@@ -124,6 +124,7 @@ class GCEAgent(BaseAgent):
   REQUIRED_CREDENTIALS = (
     PARAM_GROUP,
     PARAM_IMAGE_ID,
+    PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
     PARAM_PROJECT,
     PARAM_ZONE
@@ -536,7 +537,7 @@ class GCEAgent(BaseAgent):
     params = {
       self.PARAM_GROUP : args['group'],
       self.PARAM_IMAGE_ID : args['machine'],
-      self.PARAM_INSTANCE_TYPE : args['gce_instance_type'],
+      self.PARAM_INSTANCE_TYPE : args[self.PARAM_INSTANCE_TYPE],
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_PROJECT : args['project'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),

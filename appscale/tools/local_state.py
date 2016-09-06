@@ -200,6 +200,7 @@ class LocalState(object):
       iaas_creds = {
         'machine' : options.machine,
         'infrastructure' : options.infrastructure,
+        'instance_type' : options.instance_type,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
@@ -207,12 +208,9 @@ class LocalState(object):
         'zone' : json.dumps(options.zone)
       }
 
-      if options.infrastructure in ["ec2", "euca"]:
-        iaas_creds['instance_type'] = options.instance_type
-      elif options.infrastructure == "gce":
+      if options.infrastructure == "gce":
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
-        iaas_creds['instance_type'] = options.gce_instance_type
       elif options.infrastructure == 'azure':
         iaas_creds['azure_subscription_id'] = options.azure_subscription_id
         iaas_creds['azure_app_id'] = options.azure_app_id
@@ -221,7 +219,6 @@ class LocalState(object):
         iaas_creds['azure_resource_group'] = options.azure_resource_group
         iaas_creds['azure_group_tag'] = options.azure_group_tag
         iaas_creds['azure_storage_account'] = options.azure_storage_account
-        iaas_creds['instance_type'] = options.azure_instance_type
       creds.update(iaas_creds)
 
     return creds
