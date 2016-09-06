@@ -14,7 +14,7 @@ machine : 'ami-XXXXXX'
 
 # The instance type that should be used for all virtual machines in your
 # AppScale deployment, if running in Amazon EC2, Azure, Eucalyptus or
-# Google Compute Engine
+# Google Compute Engine.
 instance_type : 'm3.medium' # For Amazon EC2 and Eucalyptus
 #instance_type : 'n1-standard-1' # For Google Compute Engine
 #instance_type : 'Standard_A3' # For Azure

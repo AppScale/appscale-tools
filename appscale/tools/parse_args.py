@@ -101,10 +101,10 @@ class ParseArgs(object):
 
   # A combined list of instance types for the different cloud infrastructures.
   ALLOWED_INSTANCE_TYPES = ALLOWED_EC2_INSTANCE_TYPES + ALLOWED_GCE_INSTANCE_TYPES + \
-                         ALLOWED_AZURE_INSTANCE_TYPES
+                           ALLOWED_AZURE_INSTANCE_TYPES
 
   # A combined list of instance types for different clouds that have less
-  # than 4 GB RAM, the amount recommended by Cassandra.
+  # than 4 GB RAM, the amount recommended for Cassandra.
   DISALLOWED_INSTANCE_TYPES = EC2Agent.DISALLOWED_INSTANCE_TYPES + \
                               GCEAgent.DISALLOWED_INSTANCE_TYPES
 
@@ -625,10 +625,10 @@ class ParseArgs(object):
 
     if not self.args.instance_type:
       raise BadConfigurationException("Cannot start a cloud instance without " \
-                                      "the Instance type.")
+                                      "the instance type.")
 
     if self.args.instance_type in self.DISALLOWED_INSTANCE_TYPES and \
-      not (self.args.force or self.args.test):
+        not (self.args.force or self.args.test):
       LocalState.confirm_or_abort("The {0} instance type does not have " \
         "enough RAM to run Cassandra in a production setting. Please " \
         "consider using a larger instance type.".format(
