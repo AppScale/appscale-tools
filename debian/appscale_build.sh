@@ -18,8 +18,12 @@ if [ -f ./debian/control.${DIST} ]; then
 fi
 
 # These system packages are too old for google-api-python-client>=1.5.0.
+# The latest azure package needs to be installed with a --pre flag.
 case ${DIST} in
-    precise|trusty) pip install --upgrade httplib2 six ;;
+    precise|trusty)
+        pip install --upgrade httplib2 six
+        pip install --pre azure
+        ;;
 esac
 
 python2 setup.py install

@@ -229,6 +229,7 @@ class TestAppScale(unittest.TestCase):
     # file
     contents = {
       'infrastructure' : 'ec2',
+      'instance_type' : 'm3.medium',
       'machine' : 'ami-ABCDEFG',
       'keyname' : 'bookey',
       'group' : 'boogroup',
@@ -277,6 +278,7 @@ class TestAppScale(unittest.TestCase):
     contents = {
       'infrastructure' : 'ec2',
       'machine' : 'ami-ABCDEFG',
+      'instance_type' : 'm3.medium',
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'min' : 1,

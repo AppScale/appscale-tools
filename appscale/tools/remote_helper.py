@@ -349,6 +349,8 @@ class RemoteHelper(object):
     # First, see if we need to enable root login at all (some VMs have it
     # already enabled).
     try:
+      if infrastructure == "azure":
+        cls.merge_authorized_keys(host, keyname, 'azureuser', is_verbose)
       output = cls.ssh(host, keyname, 'ls', is_verbose, user='root')
     except ShellException as exception:
       # Google Compute Engine creates a user with the same name as the currently
