@@ -214,6 +214,7 @@ class LocalState(object):
       iaas_creds = {
         'machine' : options.machine,
         'infrastructure' : options.infrastructure,
+        'instance_type' : options.instance_type,
         'group' : options.group,
         'min_images' : node_layout.min_vms,
         'max_images' : node_layout.max_vms,
@@ -221,13 +222,17 @@ class LocalState(object):
         'zone' : json.dumps(options.zone)
       }
 
-      if options.infrastructure in ["ec2", "euca"]:
-        iaas_creds['instance_type'] = options.instance_type
-      elif options.infrastructure == "gce":
+      if options.infrastructure == "gce":
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
-        iaas_creds['instance_type'] = options.gce_instance_type
-
+      elif options.infrastructure == 'azure':
+        iaas_creds['azure_subscription_id'] = options.azure_subscription_id
+        iaas_creds['azure_app_id'] = options.azure_app_id
+        iaas_creds['azure_app_secret_key'] = options.azure_app_secret_key
+        iaas_creds['azure_tenant_id'] = options.azure_tenant_id
+        iaas_creds['azure_resource_group'] = options.azure_resource_group
+        iaas_creds['azure_group_tag'] = options.azure_group_tag
+        iaas_creds['azure_storage_account'] = options.azure_storage_account
       creds.update(iaas_creds)
 
     return creds
@@ -403,6 +408,15 @@ class LocalState(object):
 
     if infrastructure == "gce":
       yaml_contents['project'] = options.project
+
+    if infrastructure == 'azure':
+      yaml_contents['azure_subscription_id'] = options.azure_subscription_id
+      yaml_contents['azure_app_id'] = options.azure_app_id
+      yaml_contents['azure_app_secret_key'] = options.azure_app_secret_key
+      yaml_contents['azure_tenant_id'] = options.azure_tenant_id
+      yaml_contents['azure_resource_group'] = options.azure_resource_group
+      yaml_contents['azure_storage_account'] = options.azure_storage_account
+      yaml_contents['azure_group_tag'] = options.azure_group_tag
 
     with open(cls.get_locations_yaml_location(options.keyname), 'w') \
         as file_handle:
@@ -689,6 +703,93 @@ class LocalState(object):
     with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
       return yaml.safe_load(file_handle.read())["zone"]
 
+  @classmethod
+  def get_subscription_id(cls, keyname):
+    """ Reads the locations.yaml file to see what subscription ID is used to interact
+    with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the subscription ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_subscription_id"]
+
+  @classmethod
+  def get_app_id(cls, keyname):
+    """ Reads the locations.yaml file to see what application is used to interact
+    with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the application ID used for this AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_app_id"]
+
+  @classmethod
+  def get_app_secret_key(cls, keyname):
+    """ Reads the locations.yaml file to get the secret key for the application
+    that is used to interact with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the secret key for the application running for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_app_secret_key"]
+
+  @classmethod
+  def get_tenant_id(cls, keyname):
+    """ Reads the locations.yaml file to get the tenant ID that is used to
+    interact with Microsoft Azure in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the tenant ID for this account being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_tenant_id"]
+
+  @classmethod
+  def get_resource_group(cls, keyname):
+    """ Reads the locations.yaml file to get the Azure resource group under
+    which the instances are placed in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the resource group name being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_resource_group"]
+
+  @classmethod
+  def get_storage_account(cls, keyname):
+    """ Reads the locations.yaml file to get the Azure storage account
+    associated with the resource group in this AppScale deployment.
+
+    Args:
+      keyname: The SSH keypair name that uniquely identifies this AppScale
+        deployment.
+    Returns:
+      A str containing the storage account name being used for this
+      AppScale deployment.
+    """
+    with open(cls.get_locations_yaml_location(keyname), 'r') as file_handle:
+      return yaml.safe_load(file_handle.read())["azure_storage_account"]
 
   @classmethod
   def get_client_secrets_location(cls, keyname):

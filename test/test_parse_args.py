@@ -27,8 +27,8 @@ class TestParseArgs(unittest.TestCase):
 
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
-      '--infrastructure', 'ec2', '--machine', 'ami-ABCDEFG', '--zone',
-      'my-zone-1b']
+      '--infrastructure', 'ec2', '--instance_type', 'm3.medium',
+      '--machine', 'ami-ABCDEFG', '--zone', 'my-zone-1b']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
@@ -209,13 +209,6 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_instance_types(self):
-    # Not specifying an instance type should default to a predetermined
-    # value.
-    argv_1 = self.cloud_argv[:]
-    actual = ParseArgs(argv_1, self.function)
-    self.assertEquals(ParseArgs.DEFAULT_EC2_INSTANCE_TYPE, \
-      actual.args.instance_type)
-
     # Specifying m3.medium as the instance type is acceptable.
     argv_2 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
       'ami-ABCDEFG', '--instance_type', 'm3.medium']
