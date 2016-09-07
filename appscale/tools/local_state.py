@@ -19,6 +19,7 @@ import yaml
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -102,7 +103,7 @@ class LocalState(object):
       acc = AppControllerClient(login_host, secret_key)
       try:
         acc.get_status()
-      except Exception:
+      except AppControllerException:
         # AC is not running, so we assume appscale is not up and running.
         AppScaleLogger.log("AppController not running on login node.")
       else:
@@ -153,9 +154,15 @@ class LocalState(object):
         deployment.
     Returns:
       A str containing the secret key.
+    Raises:
+      BadConfigurationException: if the secret key file is not found.
     """
-    with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
-      return file_handle.read()
+    try:
+      with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
+        return file_handle.read()
+     except IOError:
+        raise BadConfigurationException(
+          "Couldn't find secret key for keyname {}.".format(keyname))
 
 
   @classmethod
@@ -1078,18 +1085,6 @@ class LocalState(object):
     AppScaleLogger.log("\nA log with more information is available " \
       "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
-
-
-  @classmethod
-  def ensure_user_wants_to_clean(cls):
-    """ Asks the user for confirmation before we clean their AppScale
-    deployment.
-
-    Raises:
-      AppScaleException: If the user does not want to terminate their
-        AppScale deployment.
-    """
-    cls.confirm_or_abort("Cleaning or terminating AppScale will delete all stored data.")
 
 
   @classmethod

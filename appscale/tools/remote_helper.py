@@ -124,14 +124,25 @@ class RemoteHelper(object):
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
 
       params = agent.get_params_from_args(options)
+      login_ip = None
       public_ips, private_ips, instance_ids = agent.describe_instances(params)
-      try:
-        login_ip = LocalState.get_login_host(options.keyname)
-      except (IOError, BadConfigurationException):
-        # We don't have the location file, we need to start instances.
-        login_ip = None
 
-      if public_ips != None and login_ip in public_ips:
+      # If we have running instances under the current keyname, we try to
+      # re-attach to them. If we have issue finding the location file or
+      # the IP of the head node, we throw an exception.
+      if public_ips:
+        try:
+          login_ip = LocalState.get_login_host(options.keyname)
+        except (IOError, BadConfigurationException):
+          raise AppControllerException(
+            "Couldn't get login ip for running deployment with keyname"
+            " {}.".format(options.keyname))
+        if login_ip not in public_ips:
+          raise AppControllerException(
+            "Couldn't recognize running instances for deployment with"
+            " keyname {}.".format(options.keyname))
+
+      if login_ip in public_ips:
         index = public_ips.index(login_ip)
         private_ip = private_ips[index]
         instance_id = instance_ids[index]
