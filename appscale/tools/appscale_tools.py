@@ -611,7 +611,7 @@ class AppScaleTools(object):
         format(options.keyname))
 
     if infrastructure == "xen" or not options.terminate:
-      # We are in cluster mode: let's chek AppScale is running.
+      # We are in cluster mode: let's check if AppScale is running.
       if not os.path.exists(LocalState.get_secret_key_location(options.keyname)):
         raise AppScaleException("AppScale is not running with the keyname {0}".
           format(options.keyname))
@@ -620,11 +620,11 @@ class AppScaleTools(object):
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
         options.verbose)
-    except:
+    except (IOError, AppScaleException):
       # Don't fail if we cannot find the configuration.
       pass
 
-    # And if we are on a cloud infrasrtucture, terminate instances if
+    # And if we are on a cloud infrastructure, terminate instances if
     # asked.
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):

@@ -131,9 +131,8 @@ class RemoteHelper(object):
         # We don't have the location file, we need to start instances.
         login_ip = None
 
-      if login_ip in public_ips:
+      if public_ips != None and login_ip in public_ips:
         index = public_ips.index(login_ip)
-        public_ip = public_ips[index]
         private_ip = private_ips[index]
         instance_id = instance_ids[index]
         public_ip = login_ip
@@ -841,8 +840,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("Will terminate deployment and instances spawned with keyname {0}"
-      .format(keyname))
+    AppScaleLogger.log("About to terminate deployment and instances with keyname {0}."
+      .format(keyname) + " Press Ctrl-C to stop.")
     # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
@@ -858,7 +857,6 @@ class RemoteHelper(object):
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.
-    cls.terminate_virtualized_cluster(keyname, is_verbose)
     nodes = LocalState.get_local_nodes_info(keyname)
     for node in nodes:
       if node.get('disk'):
@@ -913,13 +911,13 @@ class RemoteHelper(object):
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
     try:
-      acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+      secret = LocalState.get_secret_key(keyname)
     except IOError:
       # We couldn't find the secret key: AppScale is most likely not
       # running.
-      AppScaleLogger.log("Couldn't find AppScale secret key.")
-      return
+      raise AppScaleException("Couldn't find AppScale secret key.")
 
+    acc = AppControllerClient(shadow_host, secret)
     try:
       all_ips = acc.get_all_public_ips()
     except Exception as exception:

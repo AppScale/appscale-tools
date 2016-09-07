@@ -722,6 +722,8 @@ Available commands:
     present in the AppScalefile found in the current working directory.
 
     Args:
+      clean: A boolean to indicate if the deployment data and metadata
+        needs to be clean. This will clear the datastore.
       terminate: A boolean to indicate if instances needs to be terminated
         (valid only if we spawn instances at start).
 
@@ -758,7 +760,8 @@ Available commands:
       os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
 
     if clean:
-      LocalState.ensure_user_wants_to_clean()
+      if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
+        LocalState.ensure_user_wants_to_clean()
       all_ips = LocalState.get_all_public_ips(keyname)
       for ip in all_ips:
         RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
