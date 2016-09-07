@@ -160,9 +160,9 @@ class LocalState(object):
     try:
       with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
         return file_handle.read()
-     except IOError:
-        raise BadConfigurationException(
-          "Couldn't find secret key for keyname {}.".format(keyname))
+    except IOError:
+     raise BadConfigurationException(
+       "Couldn't find secret key for keyname {}.".format(keyname))
 
 
   @classmethod
