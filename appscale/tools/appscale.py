@@ -770,7 +770,7 @@ Available commands:
     if terminate:
       infrastructure = LocalState.get_infrastructure(keyname)
       if infrastructure != "xen" and not LocalState.are_disks_used(
-        keyname) and not 'test' in contents_as_yaml:
+        keyname) and 'test' not in contents_as_yaml:
         LocalState.ensure_user_wants_to_clean()
       command.append("--terminate")
 
