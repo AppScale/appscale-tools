@@ -24,7 +24,6 @@ import SOAPpy
 
 # AppScale import, the library that we're testing here
 from appscale.tools.agents.ec2_agent import EC2Agent
-from appscale.tools.agents.factory import InfrastructureAgentFactory
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
@@ -396,10 +395,6 @@ appengine:  1.2.3.4
     self.local_state.should_receive('get_key_path_from_name').and_return(
       local_appscale_path)
 
-    agent = flexmock(name="agent")
-    agent.should_receive("get_params_from_args").and_return("")
-    agent.should_receive("describe_instances").and_return([],[],[])
-
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
     fake_connection.should_receive('request').with_args('POST', '/upload', str,
@@ -527,6 +522,25 @@ appengine:  1.2.3.4
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
+
+    # Let's mock the call to describe_instances when checking for old
+    # instaces to re-use, and then to start the headnode.
+    pending_instance = flexmock(name='pending_instance', state='pending',
+      key_name=self.keyname, id='i-ABCDEFG')
+    pending_reservation = flexmock(name='pending_reservation',
+      instances=[pending_instance])
+
+    no_instances = flexmock(name='no_instances', instances=[])
+    running_instance = flexmock(name='running_instance', state='running',
+      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
+      private_dns_name='private1')
+    running_reservation = flexmock(name='running_reservation',
+      instances=[running_instance])
+
+    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+      .and_return(no_instances) \
+      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(running_reservation)
 
     argv = [
       "--min", "1",

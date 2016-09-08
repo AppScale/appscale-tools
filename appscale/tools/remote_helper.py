@@ -121,34 +121,7 @@ class RemoteHelper(object):
       options.verbose)
 
     if options.infrastructure:
-      agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
-
-      params = agent.get_params_from_args(options)
-      login_ip = None
-      public_ips, private_ips, instance_ids = agent.describe_instances(params)
-
-      # If we have running instances under the current keyname, we try to
-      # re-attach to them. If we have issue finding the location file or
-      # the IP of the head node, we throw an exception.
-      if public_ips:
-        try:
-          login_ip = LocalState.get_login_host(options.keyname)
-        except (IOError, BadConfigurationException):
-          raise AppScaleException(
-            "Couldn't get login ip for running deployment with keyname"
-            " {}.".format(options.keyname))
-        if login_ip not in public_ips:
-          raise AppScaleException(
-            "Couldn't recognize running instances for deployment with"
-            " keyname {}.".format(options.keyname))
-
-      if login_ip in public_ips:
-        index = public_ips.index(login_ip)
-        private_ip = private_ips[index]
-        instance_id = instance_ids[index]
-        public_ip = login_ip
-      else:
-        instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
+      instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
     else:
       instance_id = cls.DUMMY_INSTANCE_ID
       public_ip = node_layout.head_node().public_ip
@@ -259,6 +232,32 @@ class RemoteHelper(object):
     """
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
+
+    # If we have running instances under the current keyname, we try to
+    # re-attach to them. If we have issue finding the location file or the
+    # IP of the head node, we throw an exception.
+    login_ip = None
+    public_ips, private_ips, instance_ids = agent.describe_instances(params)
+    if public_ips:
+      try:
+        login_ip = LocalState.get_login_host(options.keyname)
+      except (IOError, BadConfigurationException):
+        raise AppScaleException(
+          "Couldn't get login ip for running deployment with keyname"
+          " {}.".format(options.keyname))
+      if login_ip not in public_ips:
+        raise AppScaleException(
+          "Couldn't recognize running instances for deployment with"
+          " keyname {}.".format(options.keyname))
+
+    if login_ip in public_ips:
+      index = public_ips.index(login_ip)
+      private_ip = private_ips[index]
+      instance_id = instance_ids[index]
+      public_ip = login_ip
+      AppScaleLogger.log("Reusing already running instances.")
+      return instance_id, public_ip, private_ip
+
     agent.configure_instance_security(params)
     instance_ids, public_ips, private_ips = agent.run_instances(count=1,
       parameters=params, security_configured=True)

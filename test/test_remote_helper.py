@@ -121,7 +121,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
-      .and_return([]) \
+      .and_return([]).and_return([]) \
       .and_return([fake_pending_reservation]) \
       .and_return([fake_running_reservation])
 
@@ -285,21 +285,6 @@ class TestRemoteHelper(unittest.TestCase):
     self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
       self.options, self.my_id, self.node_layout)
 
-  def test_start_head_node_in_cloud_but_instances_are_running(self):
-    local_state = flexmock(LocalState)
-
-    # mock the generation of the secret key.
-    local_state.should_receive("generate_secret_key").and_return("supersecret")
-
-    agent = flexmock(name="agent")
-    agent.should_receive("get_params_from_args").and_return("")
-    agent.should_receive("describe_instances").\
-      and_return(["1.1.1.1"],["2.2.2.2"],["i-xxxxxxxx"])
-
-    local_state.should_receive("get_login_host").and_return("3.3.3.3")
-
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
     # if the user specifies that we should copy from a directory that doesn't
