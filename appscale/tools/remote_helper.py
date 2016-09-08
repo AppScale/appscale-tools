@@ -113,7 +113,7 @@ class RemoteHelper(object):
       The public IP and instance ID (a dummy value in non-cloud deployments)
       corresponding to the node that was started.
     Raises:
-      AppControllerException: If the AppController on the head node crashes.
+      AppScaleException: If the AppController on the head node crashes.
         The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
@@ -134,11 +134,11 @@ class RemoteHelper(object):
         try:
           login_ip = LocalState.get_login_host(options.keyname)
         except (IOError, BadConfigurationException):
-          raise AppControllerException(
+          raise AppScaleException(
             "Couldn't get login ip for running deployment with keyname"
             " {}.".format(options.keyname))
         if login_ip not in public_ips:
-          raise AppControllerException(
+          raise AppScaleException(
             "Couldn't recognize running instances for deployment with"
             " keyname {}.".format(options.keyname))
 

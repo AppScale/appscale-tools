@@ -24,6 +24,7 @@ import SOAPpy
 
 # AppScale import, the library that we're testing here
 from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.tools.agents.factory import InfrastructureAgentFactory
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
@@ -394,6 +395,10 @@ appengine:  1.2.3.4
     self.local_state.should_receive('make_appscale_directory').and_return()
     self.local_state.should_receive('get_key_path_from_name').and_return(
       local_appscale_path)
+
+    agent = flexmock(name="agent")
+    agent.should_receive("get_params_from_args").and_return("")
+    agent.should_receive("describe_instances").and_return([],[],[])
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
