@@ -1,11 +1,9 @@
-import logging
 import struct
 
 from appscale.tools.custom_exceptions import UnknownInfrastructureException
 try:
   from azure_agent import AzureAgent
 except (ImportError, struct.error):
-  logging.exception('AzureAgent disabled')
   AzureAgent = None
 from ec2_agent import EC2Agent
 from euca_agent import EucalyptusAgent
