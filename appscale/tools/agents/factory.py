@@ -1,7 +1,9 @@
+import struct
+
 from appscale.tools.custom_exceptions import UnknownInfrastructureException
 try:
   from azure_agent import AzureAgent
-except ImportError:
+except (ImportError, struct.error):
   AzureAgent = None
 from ec2_agent import EC2Agent
 from euca_agent import EucalyptusAgent

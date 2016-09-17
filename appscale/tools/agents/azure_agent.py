@@ -7,6 +7,7 @@ interact with Microsoft Azure.
 # General-purpose Python library imports
 import adal
 import os.path
+import threading
 import time
 
 # Azure specific imports
@@ -375,11 +376,30 @@ class AzureAgent(BaseAgent):
     AppScaleLogger.verbose("Terminating the vm instance/s '{}'".
                            format(instance_ids), verbose)
     compute_client = ComputeManagementClient(credentials, subscription_id)
+    threads = []
     for vm_name in instance_ids:
-      result = compute_client.virtual_machines.delete(resource_group, vm_name)
-      resource_name  = 'Virtual Machine' + ':' + vm_name
-      self.sleep_until_delete_operation_done(result, resource_name,
-                                             self.MAX_VM_CREATION_TIME, verbose)
+      thread = threading.Thread(target=self.delete_virtual_machine,
+                                args=(compute_client, resource_group, verbose,
+                                      vm_name))
+      thread.start()
+      threads.append(thread)
+
+    for x in threads:
+      x.join()
+
+  def delete_virtual_machine(self, compute_client, resource_group, verbose,
+                             vm_name):
+    """ Deletes the virtual machine from the resource_group specified.
+    Args:
+      compute_client: An instance of the Compute Management client.
+      resource_group: The resource group name to use for this deployment.
+      verbose: A boolean indicating whether or not the verbose mode is on.
+      vm_name: The name of the virtual machine to be deleted.
+    """
+    result = compute_client.virtual_machines.delete(resource_group, vm_name)
+    resource_name = 'Virtual Machine' + ':' + vm_name
+    self.sleep_until_delete_operation_done(result, resource_name,
+                                           self.MAX_VM_CREATION_TIME, verbose)
 
   def sleep_until_delete_operation_done(self, result, resource_name,
                                         max_sleep, verbose):
