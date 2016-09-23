@@ -46,7 +46,7 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'adal',
+    'adal==0.4.0',
     'cryptography',
     'argparse',
     'boto',
