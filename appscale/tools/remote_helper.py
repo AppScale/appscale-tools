@@ -712,12 +712,6 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the SCP commands we
         exec to stdout.
     """
-    # copy the metadata files for AppScale itself to use
-    cls.scp(host, keyname, LocalState.get_locations_yaml_location(keyname),
-      '{}/locations-{}.yaml'.format(cls.CONFIG_DIR, keyname), is_verbose)
-    cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
-      '{}/locations-{}.json'.format(cls.CONFIG_DIR, keyname), is_verbose)
-
     # and copy the json file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
       '/root/.appscale/locations-{0}.json'.format(keyname), is_verbose)
