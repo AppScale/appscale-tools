@@ -580,8 +580,16 @@ class LocalState(object):
         username = raw_input('Enter your desired e-mail address: ')
 
       username = username.lstrip().rstrip()
-      email_regex = \
-        '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
+      email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.' \
+                    '([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
+
+      # If the username belongs to an admin, allow the domain token to be
+      # 'appscale'. The fast-start script assigns admin@local.appscale
+      # as the cloud admin.
+      if is_admin:
+        email_regex = '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.' \
+                      '([a-zA-Z]{2,3}|[0-9]{1,3}|appscale)(\\]?)$'
+
       if re.match(email_regex, username):
         return username
       else:
