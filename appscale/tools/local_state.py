@@ -580,8 +580,11 @@ class LocalState(object):
         username = raw_input('Enter your desired e-mail address: ')
 
       username = username.lstrip().rstrip()
+
+      # Currently, a TLD label can occupy up to 63 octets.
       email_regex = \
-        '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$'
+        '^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,63}|[0-9]{1,3})(\\]?)$'
+
       if re.match(email_regex, username):
         return username
       else:
