@@ -56,7 +56,7 @@ setup(
     'jwt',
     'msrest',
     'msrestazure',
-    'oauth2client>=2.0.0',
+    'oauth2client>=2.0.0,<4.0.0',
     'PyYAML',
     'requests>=2.7.0',
     'SOAPpy',
