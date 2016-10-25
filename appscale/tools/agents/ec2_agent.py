@@ -370,8 +370,8 @@ class EC2Agent(BaseAgent):
       if (i.state == 'running' or (pending and i.state == 'pending'))\
            and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
@@ -831,6 +831,6 @@ class EC2Agent(BaseAgent):
     for i in instances:
       if i.state == status and i.key_name == keyname:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
