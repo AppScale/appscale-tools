@@ -486,11 +486,8 @@ class AppScaleTools(object):
     if options.infrastructure:
       if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
-      AppScaleLogger.log("Starting AppScale " + reduced_version +
-        " over the " + options.infrastructure + " cloud.")
-    else:
-      AppScaleLogger.log("Starting AppScale " + reduced_version +
-        " over a virtualized cluster.")
+    AppScaleLogger.log("Starting AppScale " + reduced_version)
+
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
       APPSCALE_VERSION)
