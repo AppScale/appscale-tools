@@ -188,7 +188,7 @@ class LocalState(object):
       "appengine" : str(options.appengine),
       "autoscale" : str(options.autoscale),
       "alter_etc_resolv" : str(options.alter_etc_resolv),
-      "clear_datastore" : str(options.clear_datastore),
+      "clear_datastore" : str(False),
       "user_commands" : json.dumps(options.user_commands),
       "verbose" : str(options.verbose),
       "flower_password" : options.flower_password,

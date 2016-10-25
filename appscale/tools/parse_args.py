@@ -259,9 +259,6 @@ class ParseArgs(object):
         help="the datastore to use")
       self.parser.add_argument('--replication', '--n', type=int,
         help="the database replication factor")
-      self.parser.add_argument('--clear_datastore', action='store_true',
-        default=False,
-        help="erases all stored user and application data")
 
       # flags relating to application servers
       self.parser.add_argument('--max_memory', type=int,

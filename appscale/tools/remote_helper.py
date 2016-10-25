@@ -722,8 +722,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def create_user_accounts(cls, email, password, public_ip, keyname,
-    clear_datastore):
+  def create_user_accounts(cls, email, password, public_ip, keyname):
     """Registers two new user accounts with the UserAppServer.
 
     One account is the standard account that users log in with (via their
@@ -738,14 +737,12 @@ class RemoteHelper(object):
         accounts.
       public_ip: The location where the AppController can be found.
       keyname: The name of the SSH keypair used for this AppScale deployment.
-      clear_datastore: A bool that indicates if we expect the datastore to be
-        emptied, and thus not contain any user accounts.
     """
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(keyname))
 
     # first, create the standard account
     encrypted_pass = LocalState.encrypt_password(email, password)
-    if not clear_datastore and acc.does_user_exist(email):
+    if acc.does_user_exist(email):
       AppScaleLogger.log("User {0} already exists, so not creating it again.".
         format(email))
     else:
@@ -758,7 +755,7 @@ class RemoteHelper(object):
     xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
-    if not clear_datastore and acc.does_user_exist(xmpp_user):
+    if acc.does_user_exist(xmpp_user):
       AppScaleLogger.log(
         "XMPP User {0} already exists, so not creating it again.".
         format(xmpp_user))
