@@ -497,20 +497,34 @@ class AppScaleTools(object):
       raise BadConfigurationException("There were errors with your " + \
         "placement strategy:\n{0}".format(str(node_layout.errors())))
 
-    public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
-      node_layout)
-    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
-      "for use. This can take few minutes.")
+    if options.infrastructure:
+      instance_ids, public_ips, private_ips = RemoteHelper.start_all_nodes(
+        options, len(node_layout.nodes))
+      AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
+        "for use. This can take few minutes.")
+
+      # Set node info for this deployment.
+      for i in range(len(instance_ids)):
+        node_layout.nodes[i].public_ip = public_ips[i]
+        node_layout.nodes[i].private_ip = private_ips[i]
+        node_layout.nodes[i].instance_id = instance_ids[i]
+
+    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
+                           options.verbose)
+
+    try:
+      RemoteHelper.start_head_node(options, my_id, node_layout)
+    except AppControllerException as app_controller_exception:
+      raise app_controller_exception
 
     # Write our metadata as soon as possible to let users SSH into those
     # machines via 'appscale ssh'.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
+    LocalState.update_local_metadata(options,
+                                     node_layout.db_master().public_ip,
+                                     node_layout.head_node().public_ip)
 
-    acc = AppControllerClient(public_ip, LocalState.get_secret_key(
-      options.keyname))
+    acc = AppControllerClient(node_layout.head_node().public_ip,
+                              LocalState.get_secret_key(options.keyname))
 
     # Let's now wait till the server is initialized.
     try:
@@ -523,7 +537,7 @@ class AppScaleTools(object):
       AppScaleLogger.warn(
         'Unable to initialize AppController: {}'.format(socket_error.message))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        public_ip, options.keyname, options.verbose)
+        node_layout.head_node().public_ip, options.keyname, options.verbose)
       raise AppControllerException(message)
 
     try:
@@ -534,13 +548,6 @@ class AppScaleTools(object):
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
 
-    # Update our metadata again so that users can SSH into other boxes that
-    # may have been started.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
-
     if options.admin_user and options.admin_pass:
       AppScaleLogger.log("Using the provided admin username/password")
       username, password = options.admin_user, options.admin_pass
@@ -550,17 +557,13 @@ class AppScaleTools(object):
     else:
       username, password = LocalState.get_credentials()
 
-    RemoteHelper.create_user_accounts(username, password, public_ip,
-      options.keyname, options.clear_datastore)
+    RemoteHelper.create_user_accounts(username, password,
+                                      node_layout.head_node().public_ip,
+                                      options.keyname)
     acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
 
-    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
-    # Finally, update our metadata once we know that all of the machines are
-    # up and have started all their API services.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
+    RemoteHelper.wait_for_machines_to_finish_loading(
+      node_layout.head_node().public_ip, options.keyname)
 
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)

@@ -95,6 +95,55 @@ class RemoteHelper(object):
 
 
   @classmethod
+  def start_all_nodes(cls, options, count):
+    """ Starts all nodes in the designated public cloud.
+
+    Args:
+      options: A Namespace that includes parameters passed in by the user that
+        define non-placement-strategy-related deployment options (e.g., keypair
+        names, security group names).
+      count: A int, the number of nodes to spawn.
+    Returns:
+      The public IPs and instance IDs (dummy values in non-cloud deployments)
+      corresponding to the nodes that were started.
+    """
+    if not options.infrastructure:
+      return [], [], []
+
+    instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
+      options, count=count)
+
+    for instance_id, public_ip in zip(instance_ids, public_ips):
+      try:
+        cls.ensure_machine_is_compatible(public_ip, options.keyname,
+          options.table, options.verbose)
+      except AppScaleException as ase:
+        # On failure shutdown the cloud instances, cleanup the keys, but only
+        # if --test is not set.
+        if options.infrastructure:
+          if not options.test:
+            try:
+              cls.terminate_cloud_instance(instance_id, options)
+            except Exception as tcie:
+              AppScaleLogger.log("Error terminating instances: {0}"
+                .format(str(tcie)))
+          raise AppScaleException("{0} Please ensure that the "\
+            "image {1} has AppScale {2} installed on it."
+            .format(str(ase), options.machine, APPSCALE_VERSION))
+        else:
+          raise AppScaleException("{0} Please login to that machine and ensure "\
+            "that AppScale {1} is installed on it."
+            .format(str(ase), APPSCALE_VERSION))
+
+      if options.scp:
+        AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
+          options.scp))
+        cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
+
+    return instance_ids, public_ips, private_ips
+
+
+  @classmethod
   def start_head_node(cls, options, my_id, node_layout):
     """Starts the first node in an AppScale deployment and instructs it to start
     API services on its own node, as well as the other nodes in the deployment.
@@ -118,52 +167,14 @@ class RemoteHelper(object):
         The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
-    AppScaleLogger.verbose("Secret key is {0}".format(secret_key),
-      options.verbose)
-
-    if options.infrastructure:
-      instance_id, public_ip, private_ip = cls.spawn_node_in_cloud(options)
-    else:
-      instance_id = cls.DUMMY_INSTANCE_ID
-      public_ip = node_layout.head_node().public_ip
-      private_ip = node_layout.head_node().private_ip
+    AppScaleLogger.verbose("Secret key is {0}".
+                           format(secret_key), options.verbose)
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
-      LocalState.get_key_path_from_name(options.keyname), public_ip))
+      LocalState.get_key_path_from_name(options.keyname),
+      node_layout.head_node().public_ip))
 
-    try:
-      cls.ensure_machine_is_compatible(public_ip, options.keyname,
-        options.table, options.verbose)
-    except AppScaleException as ase:
-      # On failure shutdown the cloud instances, cleanup the keys, but only
-      # if --test is not set.
-      if options.infrastructure:
-        if not options.test:
-          try:
-            cls.terminate_cloud_instance(instance_id, options)
-          except Exception as tcie:
-            AppScaleLogger.log("Error terminating instances: {0}"
-              .format(str(tcie)))
-        raise AppScaleException("{0} Please ensure that the "\
-          "image {1} has AppScale {2} installed on it."
-          .format(str(ase), options.machine, APPSCALE_VERSION))
-      else:
-        raise AppScaleException("{0} Please login to that machine and ensure "\
-          "that AppScale {1} is installed on it."
-          .format(str(ase), APPSCALE_VERSION))
-
-    if options.scp:
-      AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
-        options.scp))
-      cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
-
-    # On Euca, we've seen issues where attaching the EBS volume right after
-    # the instance starts doesn't work. This sleep lets the instance fully
-    # start up and get volumes attached to it correctly.
-    if options.infrastructure and options.infrastructure == 'euca' and \
-      options.disks:
-      time.sleep(30)
-
+    additional_params = {}
     if options.infrastructure:
       agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
       params = agent.get_params_from_args(options)
@@ -178,46 +189,45 @@ class RemoteHelper(object):
 
       if agent.PARAM_REGION in params:
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
-    else:
-      additional_params = {}
 
-    deployment_params = LocalState.generate_deployment_params(options,
-      node_layout, public_ip, additional_params)
+    deployment_params = LocalState.generate_deployment_params(
+      options, node_layout, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
-      options.verbose)
-    AppScaleLogger.log("Head node successfully initialized at {0}.".format(public_ip))
-
-    AppScaleLogger.remote_log_tools_state(options, my_id, "started head node",
-      APPSCALE_VERSION)
+                           options.verbose)
+    AppScaleLogger.log("Head node successfully initialized at {0}.".
+      format(node_layout.head_node().public_ip))
+    AppScaleLogger.remote_log_tools_state(
+      options, my_id, "started head node", APPSCALE_VERSION)
     time.sleep(10)  # gives machines in cloud extra time to boot up
 
-    cls.copy_deployment_credentials(public_ip, options)
-    cls.run_user_commands(public_ip, options.user_commands, options.keyname,
-      options.verbose)
-    cls.start_remote_appcontroller(public_ip, options.keyname, options.verbose)
+    cls.copy_deployment_credentials(node_layout.head_node().public_ip, options)
+    cls.run_user_commands(node_layout.head_node().public_ip,
+                          options.user_commands, options.keyname,
+                          options.verbose)
+    cls.start_remote_appcontroller(node_layout.head_node().public_ip,
+                                   options.keyname, options.verbose)
 
-    acc = AppControllerClient(public_ip, secret_key)
+    acc = AppControllerClient(node_layout.head_node().public_ip, secret_key)
     locations = [{
-      'public_ip' : public_ip,
-      'private_ip' : private_ip,
+      'public_ip' : node_layout.head_node().public_ip,
+      'private_ip' : node_layout.head_node().private_ip,
       'jobs' : node_layout.head_node().roles,
-      'instance_id' : instance_id,
+      'instance_id' : node_layout.head_node().instance_id,
       'disk' : node_layout.head_node().disk
     }]
+
     try:
       acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
     except Exception as exception:
       AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
         .format(str(exception)))
-      message = RemoteHelper.collect_appcontroller_crashlog(public_ip,
-        options.keyname, options.verbose)
+      message = RemoteHelper.collect_appcontroller_crashlog(
+        node_layout.head_node().public_ip, options.keyname, options.verbose)
       raise AppControllerException(message)
-
-    return public_ip, instance_id
 
 
   @classmethod
-  def spawn_node_in_cloud(cls, options):
+  def spawn_nodes_in_cloud(cls, options, count=1):
     """Starts a single virtual machine in a cloud infrastructure.
 
     This method also prepares the virual machine for use by the AppScale Tools.
@@ -227,6 +237,7 @@ class RemoteHelper(object):
     Args:
       options: A Namespace that specifies the cloud infrastructure to use, as
         well as how to interact with that cloud.
+      count: A int, the number of instances to start.
     Returns:
       The instance ID, public IP address, and private IP address of the machine
         that was started.
@@ -234,28 +245,30 @@ class RemoteHelper(object):
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
     agent.configure_instance_security(params)
-    instance_ids, public_ips, private_ips = agent.run_instances(count=1,
+    instance_ids, public_ips, private_ips = agent.run_instances(count=count,
       parameters=params, security_configured=True)
 
     if options.static_ip:
       agent.associate_static_ip(params, instance_ids[0], options.static_ip)
       public_ips[0] = options.static_ip
+      AppScaleLogger.log("Static IP associated with head node.")
 
-    AppScaleLogger.log("Please wait for your instance to boot up.")
-    cls.sleep_until_port_is_open(public_ips[0], cls.SSH_PORT, options.verbose)
+    for public_ip in public_ips:
+      cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
 
     # Since GCE v1beta15, SSH keys don't immediately get injected to newly
     # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
     # sure.
     if options.infrastructure == 'gce':
-      AppScaleLogger.log("Waiting for SSH keys to get injected to your "
-        "machine.")
+      AppScaleLogger.log("Waiting for SSH keys to get injected in your "
+        "machine(s).")
       time.sleep(60)
 
-    cls.enable_root_login(public_ips[0], options.keyname,
-      options.infrastructure, options.verbose)
-    cls.copy_ssh_keys_to_node(public_ips[0], options.keyname, options.verbose)
-    return instance_ids[0], public_ips[0], private_ips[0]
+    for public_ip in public_ips:
+      cls.enable_root_login(public_ip, options.keyname,
+        options.infrastructure, options.verbose)
+      cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
+    return instance_ids, public_ips, private_ips
 
 
   @classmethod
