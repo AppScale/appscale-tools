@@ -324,7 +324,8 @@ class RemoteHelper(object):
       is_verbose: A bool indicating if we should print the command we execute to
         enable root login to stdout.
     """
-    AppScaleLogger.log('Root login not enabled - enabling it now.')
+    AppScaleLogger.log('Root login not enabled for {} - enabling it '
+                       'now.'.format(host))
 
     create_root_keys = 'sudo touch /root/.ssh/authorized_keys'
     cls.ssh(host, keyname, create_root_keys, is_verbose, user=user)
@@ -380,11 +381,11 @@ class RemoteHelper(object):
     if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
       cls.merge_authorized_keys(host, keyname, 'ubuntu', is_verbose)
     else:
-      AppScaleLogger.log("Root login already enabled - not re-enabling it.")
+      AppScaleLogger.log("Root login already enabled for {}.".format(host))
 
 
   @classmethod
-  def ssh(cls, host, keyname, command, is_verbose, user='root', \
+  def ssh(cls, host, keyname, command, is_verbose, user='root',
             num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
