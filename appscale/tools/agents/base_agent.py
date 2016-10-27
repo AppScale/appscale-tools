@@ -222,16 +222,22 @@ class BaseAgent:
 
 
   def diff(self, list1, list2):
-    """Returns the list of entries that are present in list1 but not in list2.
+    """
+    Returns the list of entries that are present in list1 but not
+    in list2.
 
     Args:
-      list1: A list of elements
-      list2: Another list of elements
+      list1 A list of elements
+      list2 Another list of elements
 
     Returns:
       A list of elements unique to list1
     """
-    return sorted(set(list1) - set(list2))
+    diffed_list = []
+    for item in list1:
+      if item not in list2:
+        diffed_list.append(item)
+    return diffed_list
 
 
 class AgentConfigurationException(Exception):
