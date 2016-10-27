@@ -214,7 +214,8 @@ class RemoteHelper(object):
     }]
 
     try:
-      acc.set_parameters(locations, LocalState.map_to_array(deployment_params))
+      layout = node_layout.to_list()
+      acc.set_parameters(layout, deployment_params)
     except Exception as exception:
       AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
         .format(str(exception)))

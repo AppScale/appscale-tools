@@ -179,7 +179,6 @@ class LocalState(object):
     creds = {
       "table": options.table,
       "login": node_layout.head_node().public_ip,
-      "ips": json.dumps(node_layout.to_list()),
       "keyname": options.keyname,
       "replication": str(options.replication),
       "appengine": str(options.appengine),
@@ -189,7 +188,7 @@ class LocalState(object):
       "user_commands": json.dumps(options.user_commands),
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
-      "max_memory": options.max_memory
+      "max_memory": str(options.max_memory)
     }
     creds.update(additional_creds)
 
