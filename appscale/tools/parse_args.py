@@ -293,9 +293,6 @@ class ParseArgs(object):
         help="uses the given e-mail instead of prompting for one")
       self.parser.add_argument('--admin_pass',
         help="uses the given password instead of prompting for one")
-      self.parser.add_argument('--alter_etc_resolv', action='store_true',
-        default=False,
-        help="removes all nameservers in /etc/resolv.conf on all VMs")
       self.parser.add_argument('--user_commands',
         help="a base64-encoded YAML dictating the commands to run before " +
           "starting each AppController")

@@ -66,12 +66,6 @@ ips_layout :
 # a production environment but acceptable for testing.
 # test : True
 
-# AppScale developers only: Removes all nameserver entries from /etc/resolv.conf
-# on each VM running AppScale. This experimental flag may improve performance
-# when resolving public IPs or public DNS is expensive (e.g., a heavily
-# burdened Eucalyptus cloud).
-# alter_etc_resolv : True
-
 # The number of AppServers that should be used to host each Google App
 # Engine application running in this deployment. By default, we start
 # with one AppServer and dynamically scale up or down based on
