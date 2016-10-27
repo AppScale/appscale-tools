@@ -550,8 +550,6 @@ class LocalState(object):
     Returns:
       A tuple containing the username and password that the user typed in.
     """
-    username, password = None, None
-
     username = cls.get_username_from_stdin(is_admin)
     password = cls.get_password_from_stdin()
     return username, password
@@ -604,24 +602,6 @@ class LocalState(object):
         return password
       else:
         AppScaleLogger.warn('Passwords entered do not match. Please try again.')
-
-
-  @classmethod
-  def map_to_array(cls, the_map):
-    """Converts a dict into list. Given a map {k1:v1, k2:v2,...kn:vn}, this will
-    return a list [k1,v1,k2,v2,...,kn,vn].
-
-    Args:
-      the_map: A dictionary of objects to convert into a list.
-
-    Returns:
-      A list containing all the keys and values in the input dictionary.
-    """
-    the_list = []
-    for key, value in the_map.items():
-      the_list.append(key)
-      the_list.append(value)
-    return the_list
 
 
   @classmethod

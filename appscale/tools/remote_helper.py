@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -205,14 +204,6 @@ class RemoteHelper(object):
                                    options.keyname, options.verbose)
 
     acc = AppControllerClient(node_layout.head_node().public_ip, secret_key)
-    locations = [{
-      'public_ip' : node_layout.head_node().public_ip,
-      'private_ip' : node_layout.head_node().private_ip,
-      'jobs' : node_layout.head_node().roles,
-      'instance_id' : node_layout.head_node().instance_id,
-      'disk' : node_layout.head_node().disk
-    }]
-
     try:
       layout = node_layout.to_list()
       acc.set_parameters(layout, deployment_params)
