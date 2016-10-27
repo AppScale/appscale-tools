@@ -39,9 +39,6 @@ class RemoteHelper(object):
   """
 
 
-  DUMMY_INSTANCE_ID = "i-ZFOOBARZ"
-
-
   # The port the AppDashboard runs on, by default.
   APP_DASHBOARD_PORT = 1080
 

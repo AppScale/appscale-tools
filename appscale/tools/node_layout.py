@@ -719,6 +719,7 @@ class Node():
   or AdvancedNode, depending on the deployment type.
   """
 
+  DUMMY_INSTANCE_ID = "i-APPSCALE"
 
   def __init__(self, public_ip, cloud, roles=[], disk=None):
     """Creates a new Node, representing the given id in the specified cloud.
@@ -734,7 +735,7 @@ class Node():
     """
     self.public_ip = public_ip
     self.private_ip = public_ip
-    self.instance_id = None
+    self.instance_id = self.DUMMY_INSTANCE_ID
     self.cloud = cloud
     self.roles = roles
     self.disk = disk
