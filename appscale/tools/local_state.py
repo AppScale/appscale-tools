@@ -196,11 +196,11 @@ class LocalState(object):
         'infrastructure': options.infrastructure,
         'machine': options.machine,
         'instance_type': options.instance_type,
-        'zone': json.dumps(options.zone),
+        'zone': options.zone,
         'group': options.group,
         'use_spot_instances': options.use_spot_instances,
-        'min_images': node_layout.min_vms,
-        'max_images': node_layout.max_vms,
+        'min_images': str(node_layout.min_vms),
+        'max_images': str(node_layout.max_vms),
       }
 
       if options.infrastructure == "gce":
