@@ -26,13 +26,6 @@ zone : 'us-east-1b' # For Amazon EC2
 #zone: 'us-central1-a' # For Google Compute Engine
 #zone: 'West US' # For Microsoft Azure
 
-# Whether or not the Datastore should be erased when AppScale starts up.
-# This defaults to False, to persist your data across AppScale runs.
-# Note that your data is only persisted if you are using non-ephemeral
-# storage (EBS on EC2, and PD on GCE). This will also clear the taskqueue
-# and search state.
-#clear_datastore: True
-
 # The AWS keyname that should be used for all machines in this AppScale
 # deployment. This should refer to a keyname that does not already exist
 # in your AWS account. By default, we randomly generate a keyname for you.

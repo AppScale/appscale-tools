@@ -34,11 +34,6 @@ ips_layout :
 
 # The search API is optional, and can be added with the "search" role.
 
-# Whether or not the Datastore should be erased when AppScale starts up.
-# This defaults to False, to persist your data across AppScale runs.
-# This clears the datastore, taskqueue, and search state.
-# clear_datastore: True
-
 # Whether or not increased output should be presented to standard output.
 # We recommend setting this to True if you are encountering issues with
 # AppScale and wish to see precisely where they are coming from.
