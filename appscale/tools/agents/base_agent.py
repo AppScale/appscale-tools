@@ -227,8 +227,8 @@ class BaseAgent:
     in list2.
 
     Args:
-      list1 A list of elements
-      list2 Another list of elements
+      list1: A list of elements
+      list2: Another list of elements
 
     Returns:
       A list of elements unique to list1
