@@ -612,17 +612,6 @@ class RemoteHelper(object):
       format(cls.CONFIG_DIR, hash_id.rstrip())
     cls.ssh(host, options.keyname, symlink_cert, options.verbose)
 
-    AppScaleLogger.log("Copying over deployment credentials")
-    cert = LocalState.get_certificate_location(options.keyname)
-    private_key = LocalState.get_private_key_location(options.keyname)
-
-    cls.ssh(host, options.keyname,
-      'mkdir -p {}/keys/cloud1'.format(cls.CONFIG_DIR), options.verbose)
-    cls.scp(host, options.keyname, cert,
-      '{}/keys/cloud1/mycert.pem'.format(cls.CONFIG_DIR), options.verbose)
-    cls.scp(host, options.keyname, private_key,
-      '{}/keys/cloud1/mykey.pem'.format(cls.CONFIG_DIR), options.verbose)
-
     # In Google Compute Engine, we also need to copy over our client_secrets
     # file and the OAuth2 file that the user has approved for use with their
     # credentials, otherwise the AppScale VMs won't be able to interact with
