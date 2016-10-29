@@ -48,10 +48,28 @@ class TestRemoteHelper(unittest.TestCase):
 
     # set up some fake options so that we don't have to generate them via
     # ParseArgs
-    self.options = flexmock(infrastructure='ec2', group='boogroup',
-      machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False,
-      zone='my-zone-1b', static_ip=None)
+    self.options = flexmock(
+      infrastructure='ec2',
+      group='boogroup',
+      machine='ami-ABCDEFG',
+      instance_type='m1.large',
+      keyname='bookey',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='my-zone-1b',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='400',
+      ips={
+        'zookeeper': 'node-2', 'master': 'node-1',
+        'appengine': 'node-3', 'database': 'node-4'}
+    )
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -118,7 +136,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_pending_reservation = flexmock(instances=fake_pending_instance)
 
     fake_running_instance = flexmock(state='running', key_name='bookey',
-      id='i-12345678', public_dns_name='public1', private_dns_name='private1')
+      id='i-12345678', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
@@ -178,113 +196,6 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*/root/.appscale/bookey.key'),False,5)\
       .and_return()
-
-
-  def test_start_head_node_in_cloud_but_ami_not_appscale(self):
-    local_state = flexmock(LocalState)
-
-    # Mock out our attempts to enable the root login.
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
-
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sed -n '
-        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
-    ).and_return()
-
-    # Assume AppScale is not installed.
-    flexmock(RemoteHelper).\
-      should_receive('get_host_appscale_version').and_return(None)
-
-    # Check that the cleanup routine is called on error.
-    flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return().ordered()
-
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
-
-
-  def test_start_head_node_in_cloud_but_ami_wrong_version(self):
-    local_state = flexmock(LocalState)
-    # mock out our attempts to enable the root login.
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
-
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sed -n '
-        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
-    ).and_return()
-
-    # Assume configuration directory exists.
-    local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5,
-      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
-    ).and_return()
-
-    # Assume AppScale is not installed.
-    flexmock(RemoteHelper).\
-      should_receive('get_host_appscale_version').and_return('X.Y.Z')
-
-    # check that the cleanup routine is called on error
-    flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return()
-
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
 
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
@@ -454,7 +365,7 @@ class TestRemoteHelper(unittest.TestCase):
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey', False)
+      'bookey')
 
 
   def test_wait_for_machines_to_finish_loading(self):

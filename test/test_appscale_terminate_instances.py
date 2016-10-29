@@ -250,22 +250,22 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # let's say that three instances are running, and that two of them are in
     # our deployment
     fake_one_running = flexmock(name='fake_one', key_name=self.keyname, state='running',
-      id='i-ONE', public_dns_name='public1', private_dns_name='private1')
+      id='i-ONE', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_two_running = flexmock(name='fake_two', key_name=self.keyname, state='running',
-      id='i-TWO', public_dns_name='public2', private_dns_name='private2')
+      id='i-TWO', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_three_running = flexmock(name='fake_three', key_name='abcdefg',
-      state='running', id='i-THREE', public_dns_name='public3',
-      private_dns_name='private3')
+      state='running', id='i-THREE', ip_address='1.2.3.4',
+      private_ip_address='1.2.3.4')
     fake_reservation_running = flexmock(name='fake_reservation', instances=[fake_one_running,
       fake_two_running, fake_three_running])
 
     fake_one_terminated = flexmock(name='fake_one', key_name=self.keyname, state='terminated',
-      id='i-ONE', public_dns_name='public1', private_dns_name='private1')
+      id='i-ONE', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_two_terminated = flexmock(name='fake_two', key_name=self.keyname, state='terminated',
-      id='i-TWO', public_dns_name='public2', private_dns_name='private2')
+      id='i-TWO', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_three_terminated = flexmock(name='fake_three', key_name='abcdefg',
-      state='terminated', id='i-THREE', public_dns_name='public3',
-      private_dns_name='private3')
+      state='terminated', id='i-THREE', ip_address='1.2.3.4',
+      private_ip_address='1.2.3.4')
     fake_reservation_terminated = flexmock(name='fake_reservation', instances=[fake_one_terminated,
       fake_two_terminated, fake_three_terminated])
 

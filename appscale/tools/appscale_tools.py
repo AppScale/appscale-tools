@@ -500,7 +500,7 @@ class AppScaleTools(object):
     if options.infrastructure:
       instance_ids, public_ips, private_ips = RemoteHelper.start_all_nodes(
         options, len(node_layout.nodes))
-      AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
+      AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
         "for use. This can take few minutes.")
 
       # Set node info for this deployment.
