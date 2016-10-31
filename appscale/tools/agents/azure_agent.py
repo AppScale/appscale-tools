@@ -267,7 +267,6 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
     virtual_network = parameters[self.PARAM_GROUP]
-    AppScaleLogger.warn("Virtual Networl: {}".format(virtual_network))
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
     for _ in range(count):
