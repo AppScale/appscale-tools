@@ -1,7 +1,6 @@
 import glob
 import sys
 
-from appscale.tools import version_helper
 from setuptools import setup
 
 # Require users to uninstall versions that used the appscale namespace.
@@ -13,8 +12,6 @@ try:
 except ImportError:
   pass
 
-
-version_helper.ensure_valid_python_is_used()
 
 long_description = """AppScale Tools
 --------------
