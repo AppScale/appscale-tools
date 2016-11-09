@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -202,6 +201,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
+
 
     # mock out reading the locations.yaml file, and pretend that we're on
     # a virtualized cluster
@@ -321,6 +323,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_client_secrets_location(self.keyname)).and_return(True)
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     # mock out reading the locations.yaml file, and pretend that we're on
     # GCE

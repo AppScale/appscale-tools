@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -114,7 +113,7 @@ class RemoteHelper(object):
       The public IP and instance ID (a dummy value in non-cloud deployments)
       corresponding to the node that was started.
     Raises:
-      AppControllerException: If the AppController on the head node crashes.
+      AppScaleException: If the AppController on the head node crashes.
         The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
@@ -233,6 +232,32 @@ class RemoteHelper(object):
     """
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
+
+    # If we have running instances under the current keyname, we try to
+    # re-attach to them. If we have issue finding the location file or the
+    # IP of the head node, we throw an exception.
+    login_ip = None
+    public_ips, private_ips, instance_ids = agent.describe_instances(params)
+    if public_ips:
+      try:
+        login_ip = LocalState.get_login_host(options.keyname)
+      except (IOError, BadConfigurationException):
+        raise AppScaleException(
+          "Couldn't get login ip for running deployment with keyname"
+          " {}.".format(options.keyname))
+      if login_ip not in public_ips:
+        raise AppScaleException(
+          "Couldn't recognize running instances for deployment with"
+          " keyname {}.".format(options.keyname))
+
+    if login_ip in public_ips:
+      index = public_ips.index(login_ip)
+      private_ip = private_ips[index]
+      instance_id = instance_ids[index]
+      public_ip = login_ip
+      AppScaleLogger.log("Reusing already running instances.")
+      return instance_id, public_ip, private_ip
+
     agent.configure_instance_security(params)
     instance_ids, public_ips, private_ips = agent.run_instances(count=1,
       parameters=params, security_configured=True)
@@ -810,8 +835,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"
-      .format(keyname))
+    AppScaleLogger.log("About to terminate deployment and instances with keyname {0}."
+      .format(keyname) + " Press Ctrl-C to stop.")
     # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
@@ -827,7 +852,6 @@ class RemoteHelper(object):
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.
-    cls.terminate_virtualized_cluster(keyname, is_verbose)
     nodes = LocalState.get_local_nodes_info(keyname)
     for node in nodes:
       if node.get('disk'):
@@ -837,6 +861,8 @@ class RemoteHelper(object):
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
     # terminate all the machines
+    AppScaleLogger.log("Terminating instances spawned with keyname {0}"
+      .format(keyname))
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
@@ -874,13 +900,19 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
-      "keyname {0}".format(keyname))
+    AppScaleLogger.log("Terminating appscale deployment with keyname" +
+      " keyname {0}".format(keyname))
     time.sleep(2)
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
-    acc = AppControllerClient(shadow_host, LocalState.get_secret_key(keyname))
+    try:
+      secret = LocalState.get_secret_key(keyname)
+    except IOError:
+      # We couldn't find the secret key: AppScale is most likely not
+      # running.
+      raise AppScaleException("Couldn't find AppScale secret key.")
 
+    acc = AppControllerClient(shadow_host, secret)
     try:
       all_ips = acc.get_all_public_ips()
     except Exception as exception:

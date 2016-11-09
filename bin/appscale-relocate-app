@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Programmer: Chris Bunch (chris@appscale.com)
+"""
 
 appscale-relocate-app provides an executable that can be used to tell AppScale
 that an already running application should be migrated to a different HTTP and

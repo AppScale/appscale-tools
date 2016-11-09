@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch, Brian Drawert
 
 
 # General-purpose Python library imports
@@ -122,7 +121,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
-      .and_return([]) \
+      .and_return([]).and_return([]) \
       .and_return([fake_pending_reservation]) \
       .and_return([fake_running_reservation])
 

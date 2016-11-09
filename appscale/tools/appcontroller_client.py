@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
-# Adapted from Hiranya's version
 
 
 # General-purpose Python library imports
@@ -123,7 +121,9 @@ class AppControllerClient():
         return self.run_with_timeout(timeout_time, default, num_retries - 1,
           function, *args)
       else:
-        raise exception
+        raise AppControllerException("Got exception from socket: {}".format(
+          exception))
+
     except ssl.SSLError:
       # these are intermittent, so don't decrement our retry count for this
       signal.alarm(0)  # turn off the alarm before we retry
