@@ -1,7 +1,6 @@
 import glob
 import sys
 
-from appscale.tools import version_helper
 from setuptools import setup
 
 # Require users to uninstall versions that used the appscale namespace.
@@ -13,8 +12,6 @@ try:
 except ImportError:
   pass
 
-
-version_helper.ensure_valid_python_is_used()
 
 long_description = """AppScale Tools
 --------------
@@ -50,13 +47,13 @@ setup(
     'cryptography',
     'argparse',
     'boto',
-    'google-api-python-client>=1.5.0',
+    'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
     'jwt',
     'msrest',
     'msrestazure',
-    'oauth2client>=2.0.0,<4.0.0',
+    'oauth2client==4.0.0',
     'PyYAML',
     'requests>=2.7.0',
     'SOAPpy',

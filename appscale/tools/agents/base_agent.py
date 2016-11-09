@@ -234,6 +234,7 @@ class BaseAgent:
       A list of elements unique to list1
     """
     diffed_list = []
+    list2 = set(list2)
     for item in list1:
       if item not in list2:
         diffed_list.append(item)
