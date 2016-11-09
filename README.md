@@ -11,7 +11,7 @@ See [Installing the AppScale Tools](https://github.com/AppScale/appscale-tools/w
 To install the very latest code on your system:
 
 1. Make sure [setuptools](https://pypi.python.org/pypi/setuptools) is installed.
-2. Run `# python setup.py install` from this directory.
+2. Run `# pip install .` from this directory.
 
 ## What is AppScale?
 AppScale is an open-source cloud computing platform that automatically deploys and scales unmodified Google App Engine
