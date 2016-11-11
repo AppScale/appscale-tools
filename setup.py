@@ -1,4 +1,3 @@
-import glob
 import sys
 
 from setuptools import setup
@@ -71,7 +70,27 @@ setup(
     'Topic :: Utilities'
   ],
   namespace_packages=['appscale'],
-  packages=['appscale', 'appscale.tools', 'appscale.tools.agents'],
-  scripts=glob.glob('bin/*'),
+  packages=['appscale', 'appscale.tools', 'appscale.tools.agents',
+            'appscale.tools.scripts'],
+  entry_points={
+    'console_scripts': [
+      'appscale=appscale.tools.scripts.appscale:main',
+      'appscale-add-instances=appscale.tools.scripts.add_instances:main',
+      'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
+      'appscale-describe-instances='
+        'appscale.tools.scripts.describe_instances:main',
+      'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
+      'appscale-get-property=appscale.tools.scripts.get_property:main',
+      'appscale-relocate-app=appscale.tools.scripts.relocate_app:main',
+      'appscale-remove-app=appscale.tools.scripts.remove_app:main',
+      'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
+      'appscale-run-instances=appscale.tools.scripts.run_instances:main',
+      'appscale-set-property=appscale.tools.scripts.set_property:main',
+      'appscale-terminate-instances='
+        'appscale.tools.scripts.terminate_instances:main',
+      'appscale-upgrade=appscale.tools.scripts.upgrade:main',
+      'appscale-upload-app=appscale.tools.scripts.upload_app:main'
+    ]
+  },
   package_data={'appscale.tools': ['templates/*']}
 )

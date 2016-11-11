@@ -26,7 +26,9 @@ case ${DIST} in
         ;;
 esac
 
-python2 setup.py install
+# Fill in new dependencies.
+# See pip.pypa.io/en/stable/user_guide/#only-if-needed-recursive-upgrade.
+pip install --upgrade --no-deps . && pip install .
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
     exit 1
