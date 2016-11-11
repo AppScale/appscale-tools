@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-
-
 # General-purpose Python library imports
-import os
 import sys
 import traceback
 
@@ -10,18 +6,17 @@ import traceback
 # AppScale library imports
 # Make sure we're on Python 2.6 or greater before importing any code
 # that's incompatible with older versions.
-from appscale.tools import version_helper
+from .. import version_helper
 version_helper.ensure_valid_python_is_used()
 
 
-from appscale.tools.appscale_logger import AppScaleLogger
-from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.local_state import LocalState
-from appscale.tools.parse_args import ParseArgs
+from ..appscale_tools import AppScaleTools
+from ..local_state import LocalState
+from ..parse_args import ParseArgs
 
 
-
-if __name__ == "__main__":
+def main():
+  """ Execute appscale-upgrade script. """
   options = ParseArgs(sys.argv[1:], "appscale-upgrade").args
   try:
     AppScaleTools.upgrade(options)
