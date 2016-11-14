@@ -980,7 +980,8 @@ class RemoteHelper(object):
     cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
             remote_app_tar, is_verbose)
 
-    AppScaleLogger.verbose("Removing local copy of tarred application")
+    AppScaleLogger.verbose("Removing local copy of tarred application",
+                           is_verbose)
     os.remove(local_tarred_app)
     return remote_app_tar
 
