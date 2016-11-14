@@ -103,38 +103,8 @@ class RemoteHelper(object):
       The public IPs and instance IDs (dummy values in non-cloud deployments)
       corresponding to the nodes that were started.
     """
-    if not options.infrastructure:
-      return [], [], []
-
     instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
       options, count=count)
-
-    for instance_id, public_ip in zip(instance_ids, public_ips):
-      try:
-        cls.ensure_machine_is_compatible(public_ip, options.keyname,
-          options.table, options.verbose)
-      except AppScaleException as ase:
-        # On failure shutdown the cloud instances, cleanup the keys, but only
-        # if --test is not set.
-        if options.infrastructure:
-          if not options.test:
-            try:
-              cls.terminate_cloud_instance(instance_id, options)
-            except Exception as tcie:
-              AppScaleLogger.log("Error terminating instances: {0}"
-                .format(str(tcie)))
-          raise AppScaleException("{0} Please ensure that the "\
-            "image {1} has AppScale {2} installed on it."
-            .format(str(ase), options.machine, APPSCALE_VERSION))
-        else:
-          raise AppScaleException("{0} Please login to that machine and ensure "\
-            "that AppScale {1} is installed on it."
-            .format(str(ase), APPSCALE_VERSION))
-
-      if options.scp:
-        AppScaleLogger.log("Copying over local copy of AppScale from {0}".format(
-          options.scp))
-        cls.rsync_files(public_ip, options.keyname, options.scp, options.verbose)
 
     return instance_ids, public_ips, private_ips
 
@@ -165,10 +135,10 @@ class RemoteHelper(object):
     secret_key = LocalState.generate_secret_key(options.keyname)
     AppScaleLogger.verbose("Secret key is {0}".
                            format(secret_key), options.verbose)
+    head_node = node_layout.head_node().public_ip
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
-      LocalState.get_key_path_from_name(options.keyname),
-      node_layout.head_node().public_ip))
+      LocalState.get_key_path_from_name(options.keyname), head_node))
 
     additional_params = {}
     if options.infrastructure:
@@ -186,32 +156,33 @@ class RemoteHelper(object):
       if agent.PARAM_REGION in params:
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
 
+    time.sleep(10)  # gives machines in cloud extra time to boot up
+
+    cls.copy_deployment_credentials(head_node, options)
+
+    cls.run_user_commands(head_node, options.user_commands, options.keyname,
+                          options.verbose)
+
+    cls.start_remote_appcontroller(head_node, options.keyname, options.verbose)
+    AppScaleLogger.log("Head node successfully initialized at {0}.".
+                       format(head_node))
+    AppScaleLogger.remote_log_tools_state(
+      options, my_id, "started head node", APPSCALE_VERSION)
+
+    # Construct serverside compatible parameters.
     deployment_params = LocalState.generate_deployment_params(
       options, node_layout, additional_params)
     AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
                            options.verbose)
-    AppScaleLogger.log("Head node successfully initialized at {0}.".
-      format(node_layout.head_node().public_ip))
-    AppScaleLogger.remote_log_tools_state(
-      options, my_id, "started head node", APPSCALE_VERSION)
-    time.sleep(10)  # gives machines in cloud extra time to boot up
 
-    cls.copy_deployment_credentials(node_layout.head_node().public_ip, options)
-    cls.run_user_commands(node_layout.head_node().public_ip,
-                          options.user_commands, options.keyname,
-                          options.verbose)
-    cls.start_remote_appcontroller(node_layout.head_node().public_ip,
-                                   options.keyname, options.verbose)
-
-    acc = AppControllerClient(node_layout.head_node().public_ip, secret_key)
+    acc = AppControllerClient(head_node, secret_key)
     try:
-      layout = node_layout.to_list()
-      acc.set_parameters(layout, deployment_params)
+      acc.set_parameters(node_layout.to_list(), deployment_params)
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}' \
-        .format(str(exception)))
+      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}'.
+                          format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        node_layout.head_node().public_ip, options.keyname, options.verbose)
+        head_node, options.keyname, options.verbose)
       raise AppControllerException(message)
 
 
@@ -464,7 +435,51 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def ensure_machine_is_compatible(cls, host, keyname, database, is_verbose):
+  def ensure_machines_are_compatible(cls, options, node_layout):
+    """Verifies that all nodes have AppScale installed on it.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+      node_layout: A NodeLayout that describes the placement strategy that
+        should be used for this AppScale deployment.
+    Raises:
+      AppScaleException: If the specified host does not have AppScale installed,
+        or has the wrong version of AppScale installed.
+    """
+    for node in node_layout.nodes:
+      try:
+        RemoteHelper.ensure_machine_is_compatible(
+          node.public_ip, options.keyname, options.verbose)
+      except AppScaleException as ase:
+        if options.infrastructure:
+          if not options.test:
+            try:
+              RemoteHelper.terminate_cloud_instance(node.instance_id, options)
+            except Exception as tcie:
+              AppScaleLogger.log("Error terminating instance {ip}: "
+                                 "{exception}".format(ip=node.public_ip,
+                                                      exception=str(tcie)))
+            abort_msg = "{exception} Please ensure that image {image} has " \
+                        "AppScale {version} installed on it.".\
+                        format(exception=str(ase), image=options.machine,
+                               version= APPSCALE_VERSION)
+          else:
+            AppScaleLogger.warn("In test mode: Instance(s) not terminated!")
+            abort_msg = "{exception} Please ensure that instance {ip} of " \
+                        "{image} has AppScale {version} installed on it.".\
+                        format(exception=str(ase), ip=node.public_ip,
+                               image=options.machine, version=APPSCALE_VERSION)
+        else:
+          abort_msg = "{exception} Please ensure that {ip} has AppScale " \
+                      "{version} installed on it.".\
+                      format(exception=str(ase), ip=node.public_ip,
+                             version=APPSCALE_VERSION)
+        raise AppScaleException(abort_msg)
+
+
+  @classmethod
+  def ensure_machine_is_compatible(cls, host, keyname, is_verbose):
     """Verifies that the specified host has AppScale installed on it.
 
     This also validates that the host has the right version of AppScale
@@ -475,8 +490,6 @@ class RemoteHelper(object):
         AppScale-compatible.
       keyname: A str representing the SSH keypair name that can log into the
         named host.
-      database: A str representing the database that the user wants to run
-        with.
       is_verbose: A bool that indicates if we should print the commands we
         execute to validate the machine to stdout.
     Raises:
@@ -790,8 +803,7 @@ class RemoteHelper(object):
       options: A Namespace containing the credentials necessary to terminate
         the named instance.
     """
-    AppScaleLogger.log("About to terminate instance {0}"
-      .format(instance_id))
+    AppScaleLogger.log("About to terminate instance {0}".format(instance_id))
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
     params = agent.get_params_from_args(options)
     params['IS_VERBOSE'] = options.verbose
@@ -810,8 +822,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate instances spawned with keyname {0}"
-      .format(keyname))
+    AppScaleLogger.log("About to terminate instances spawned with keyname {0}".
+                       format(keyname))
     # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
@@ -831,8 +843,8 @@ class RemoteHelper(object):
     nodes = LocalState.get_local_nodes_info(keyname)
     for node in nodes:
       if node.get('disk'):
-        AppScaleLogger.log("Unmounting persistent disk at {0}".format(
-          node['public_ip']))
+        AppScaleLogger.log("Unmounting persistent disk at {0}".
+                           format(node['public_ip']))
         cls.unmount_persistent_disk(node['public_ip'], keyname, is_verbose)
         agent.detach_disk(params, node['disk'], node['instance_id'])
 
@@ -874,8 +886,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("Terminating instances in a virtualized cluster with " +
-      "keyname {0}".format(keyname))
+    AppScaleLogger.log("Terminating instances in a virtualized cluster with "
+                       "keyname {0}".format(keyname))
     time.sleep(2)
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
@@ -884,8 +896,8 @@ class RemoteHelper(object):
     try:
       all_ips = acc.get_all_public_ips()
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}' \
-        .format(str(exception)))
+      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}'.
+                          format(str(exception)))
       all_ips = LocalState.get_all_public_ips(keyname)
 
     threads = []
@@ -901,8 +913,8 @@ class RemoteHelper(object):
     boxes_shut_down = 0
     is_running_regex = re.compile("appscale-controller stop")
     for ip in all_ips:
-      AppScaleLogger.log("Shutting down AppScale API services at {0}".format(
-        ip))
+      AppScaleLogger.log("Shutting down AppScale API services at {0}".
+                         format(ip))
       while True:
         remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
         AppScaleLogger.verbose(remote_output, is_verbose)
@@ -912,11 +924,11 @@ class RemoteHelper(object):
       boxes_shut_down += 1
 
     if boxes_shut_down != len(all_ips):
-      raise AppScaleException("Couldn't terminate your AppScale deployment " + \
-        "on all machines - please do so manually.")
+      raise AppScaleException("Couldn't terminate your AppScale deployment on"
+                              " all machines - please do so manually.")
 
-    AppScaleLogger.log("Terminated AppScale on {0} machines."
-      .format(boxes_shut_down))
+    AppScaleLogger.log("Terminated AppScale on {0} machines.".
+                       format(boxes_shut_down))
 
 
   @classmethod
@@ -933,7 +945,7 @@ class RemoteHelper(object):
         exec to stdout.
     """
     cls.ssh(host, keyname, 'ruby /root/appscale/AppController/terminate.rb',
-      is_verbose)
+            is_verbose)
 
 
   @classmethod
@@ -957,16 +969,18 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Tarring application")
     rand = str(uuid.uuid4()).replace('-', '')[:8]
-    local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".format(tempfile.gettempdir(),
-      app_id, rand)
-    LocalState.shell("cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".format(
-      app_location, local_tarred_app), is_verbose)
+    local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".\
+      format(tempfile.gettempdir(), app_id, rand)
+    cmd = "cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".\
+      format(app_location, local_tarred_app)
+    LocalState.shell(cmd, is_verbose)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
     cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
-      remote_app_tar, is_verbose)
+            remote_app_tar, is_verbose)
 
+    AppScaleLogger.verbose("Removing local copy of tarred application")
     os.remove(local_tarred_app)
     return remote_app_tar
 
@@ -989,7 +1003,6 @@ class RemoteHelper(object):
       A str corresponding to the message that indicates why the AppController
         crashed.
     """
-    message = ""
     try:
       local_crashlog = "{0}/appcontroller-log-{1}".format(
         tempfile.gettempdir(), uuid.uuid4())
@@ -1005,8 +1018,10 @@ class RemoteHelper(object):
     return message
 
   @classmethod
-  def get_command_output_from_remote(cls, host, command, keyname, user='root', shell=False):
+  def get_command_output_from_remote(cls, host, command, keyname, user='root',
+                                     shell=False):
     """ Get the file from the location in the remote and passes the contents.
+
     Args:
       host: A str representing the machine that we should log into.
       command: A str representing the command to run on the remote machine.
@@ -1014,5 +1029,6 @@ class RemoteHelper(object):
     """
     user_login = user + '@' + host
     key_path = LocalState.get_key_path_from_name(keyname)
-    return subprocess.Popen(['ssh', '-i', key_path, user_login, command], shell, stdout=subprocess.PIPE)
+    return subprocess.Popen(['ssh', '-i', key_path, user_login, command],
+                            shell, stdout=subprocess.PIPE)
 
