@@ -20,17 +20,25 @@ import SOAPpy
 
 # AppScale import, the library that we're testing here
 from appscale.tools.agents.euca_agent import EucalyptusAgent
+from appscale.tools.agents import factory
 from appscale.tools.agents.gce_agent import CredentialTypes
 from appscale.tools.agents.gce_agent import GCEAgent
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
-from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
+from appscale.tools.node_layout import SimpleNode
 from appscale.tools.remote_helper import RemoteHelper
 
+
+class FakeAgent(object):
+  PARAM_CREDENTIALS = None
+  PARAM_SPOT_PRICE = None
+  PARAM_REGION = None
+
+  def get_params_from_args(self, options):
+    return {}
 
 class TestRemoteHelper(unittest.TestCase):
 
@@ -194,6 +202,88 @@ class TestRemoteHelper(unittest.TestCase):
     local_state.should_receive('shell')\
       .with_args(re.compile('scp .*/root/.appscale/bookey.key'),False,5)\
       .and_return()
+
+  def test_start_head_node(self):
+    self.options = flexmock(
+      infrastructure='public cloud',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+    )
+
+    self.node_layout = NodeLayout(self.options)
+
+    flexmock(LocalState).\
+      should_receive("generate_secret_key").\
+      with_args(self.options.keyname).\
+      and_return('some secret key')
+
+    flexmock(LocalState).\
+      should_receive("get_key_path_from_name").\
+      with_args(self.options.keyname).\
+      and_return('some key path')
+
+    flexmock(NodeLayout).should_receive('head_node').\
+      and_return(SimpleNode('some IP', 'cloud')).at_least().times(2)
+
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory).\
+      should_receive('create_agent').\
+      with_args('public cloud').\
+      and_return(fake_agent)
+
+    self.additional_params = {}
+    deployment_params = {}
+
+    flexmock(LocalState).\
+      should_receive('generate_deployment_params').\
+      with_args(self.options, self.node_layout, self.additional_params).\
+      and_return(deployment_params)
+
+    flexmock(AppScaleLogger).should_receive('log').and_return()
+    flexmock(AppScaleLogger).should_receive('remote_log_tools_state').\
+      and_return()
+
+    flexmock(time).should_receive('sleep').and_return()
+
+    flexmock(RemoteHelper).\
+      should_receive('copy_deployment_credentials').\
+      with_args('some IP', self.options).\
+      and_return()
+
+    flexmock(RemoteHelper).\
+      should_receive('run_user_commands').\
+      with_args('some IP', self.options.user_commands,
+                self.options.keyname, self.options.verbose).\
+      and_return()
+
+    flexmock(RemoteHelper).\
+      should_receive('start_remote_appcontroller').\
+      with_args('some IP', self.options.keyname, self.options.verbose).\
+      and_return()
+
+    layout = {}
+    flexmock(NodeLayout).should_receive('to_list').and_return(layout)
+
+    flexmock(AppControllerClient).\
+      should_receive('set_parameters').\
+      with_args(layout, deployment_params).\
+      and_return()
+
+    RemoteHelper.start_head_node(self.options, 'an ID', self.node_layout)
 
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
