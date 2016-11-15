@@ -501,10 +501,6 @@ appengine:  1.2.3.4
       and_return()
 
     self.local_state.should_receive('shell').\
-      with_args(re.compile('scp .*{0}'.format(self.keyname)), False, 5).\
-      and_return()
-
-    self.local_state.should_receive('shell').\
       with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o '
                 'NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
                 '-o UserKnownHostsFile=/dev/null root@public1 ',
