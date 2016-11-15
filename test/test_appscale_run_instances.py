@@ -747,6 +747,8 @@ appengine:  1.2.3.4
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 
     flexmock(RemoteHelper)
+    RemoteHelper.should_receive('ensure_machines_are_compatible')\
+        .and_return()
     RemoteHelper.should_receive('start_head_node')\
         .and_return(('1.2.3.4','i-ABCDEFG'))
     RemoteHelper.should_receive('sleep_until_port_is_open').and_return()
