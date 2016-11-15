@@ -480,12 +480,11 @@ class AppScaleTools(object):
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
-
-    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
-
     if options.infrastructure:
       if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
+
+    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
     AppScaleLogger.log("Starting AppScale " + reduced_version)
 
     my_id = str(uuid.uuid4())
@@ -495,38 +494,45 @@ class AppScaleTools(object):
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
       raise BadConfigurationException("There were errors with your " + \
-        "placement strategy:\n{0}".format(str(node_layout.errors())))
+                                      "placement strategy:\n{0}".format(str(node_layout.errors())))
 
+    # Start VMs in cloud via cloud agent.
     if options.infrastructure:
       instance_ids, public_ips, private_ips = RemoteHelper.start_all_nodes(
         options, len(node_layout.nodes))
       AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
-        "for use. This can take few minutes.")
+                         "for use. This can take few minutes.")
 
-      # Set node info for this deployment.
-      for i in range(len(instance_ids)):
+      # Set newly obtained node layout info for this deployment.
+      for i, _ in enumerate(instance_ids):
         node_layout.nodes[i].public_ip = public_ips[i]
         node_layout.nodes[i].private_ip = private_ips[i]
         node_layout.nodes[i].instance_id = instance_ids[i]
-
     AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
                            options.verbose)
 
-    try:
-      RemoteHelper.start_head_node(options, my_id, node_layout)
-    except AppControllerException as app_controller_exception:
-      raise app_controller_exception
+    # Ensure all nodes are compatible.
+    RemoteHelper.ensure_machines_are_compatible(options, node_layout)
 
-    # Write our metadata as soon as possible to let users SSH into those
-    # machines via 'appscale ssh'.
-    LocalState.update_local_metadata(options,
-                                     node_layout.db_master().public_ip,
-                                     node_layout.head_node().public_ip)
+    # rsync custom code in all VMs.
+    for node in node_layout.nodes:
+      if options.scp:
+        AppScaleLogger.log("Copying over local copy of AppScale from {0}".
+          format(options.scp))
+        RemoteHelper.rsync_files(node.public_ip, options.keyname, options.scp,
+          options.verbose)
 
-    acc = AppControllerClient(node_layout.head_node().public_ip,
-                              LocalState.get_secret_key(options.keyname))
+    # Start services on head node.
+    RemoteHelper.start_head_node(options, my_id, node_layout)
 
-    # Let's now wait till the server is initialized.
+    # Write deployment metadata to disk (facilitates SSH operations, etc.)
+    db_master = node_layout.db_master().private_ip
+    head_node = node_layout.head_node().public_ip
+    LocalState.update_local_metadata(options, db_master, head_node)
+
+    # Wait for services on head node to start.
+    secret_key = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(head_node, secret_key)
     try:
       while not acc.is_initialized():
         AppScaleLogger.log('Waiting for head node to initialize...')
@@ -534,17 +540,18 @@ class AppScaleTools(object):
         # we will have to initialize the database.
         time.sleep(cls.SLEEP_TIME*3)
     except socket.error as socket_error:
-      AppScaleLogger.warn(
-        'Unable to initialize AppController: {}'.format(socket_error.message))
+      AppScaleLogger.warn('Unable to initialize AppController: {}'.
+                          format(socket_error.message))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        node_layout.head_node().public_ip, options.keyname, options.verbose)
+        head_node, options.keyname, options.verbose)
       raise AppControllerException(message)
 
+    # Set up admin account.
     try:
       # We don't need to have any exception information here: we do expect
       # some anyway while the UserAppServer is coming up.
       acc.does_user_exist("non-existent-user", True)
-    except Exception as exception:
+    except Exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
 
@@ -557,20 +564,19 @@ class AppScaleTools(object):
     else:
       username, password = LocalState.get_credentials()
 
-    RemoteHelper.create_user_accounts(username, password,
-                                      node_layout.head_node().public_ip,
+    RemoteHelper.create_user_accounts(username, password, head_node,
                                       options.keyname)
     acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
 
-    RemoteHelper.wait_for_machines_to_finish_loading(
-      node_layout.head_node().public_ip, options.keyname)
-
+    # Wait for machines to finish loading and AppScale Dashboard to be deployed.
+    RemoteHelper.wait_for_machines_to_finish_loading(head_node, options.keyname)
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
+
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}:{1}/status".format(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
+                           "deployment at http://{0}:{1}".format(LocalState.get_login_host(
+                           options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
