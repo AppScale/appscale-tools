@@ -237,7 +237,7 @@ class TestRemoteHelper(unittest.TestCase):
       and_return('some key path')
 
     flexmock(NodeLayout).should_receive('head_node').\
-      and_return(SimpleNode('some IP', 'cloud')).at_least().times(2)
+      and_return(SimpleNode('some IP', 'cloud'))
 
     fake_agent = FakeAgent()
     flexmock(factory.InfrastructureAgentFactory).\
