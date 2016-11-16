@@ -184,11 +184,6 @@ class TestLocalState(unittest.TestCase):
       LocalState.get_secret_key_location('booscale'), 'r') \
       .and_return(fake_secret)
 
-    # Mock out writing the yaml file.
-    locations_yaml = LocalState.get_locations_yaml_location('booscale')
-    builtins.should_receive('open').with_args(locations_yaml, 'w').\
-      and_return(flexmock(write=lambda yaml_contents: None))
-
     # Mock out writing the json file.
     json_location = LocalState.get_locations_json_location('booscale')
     builtins.should_receive('open').with_args(json_location, 'w')\

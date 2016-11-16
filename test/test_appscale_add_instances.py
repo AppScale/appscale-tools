@@ -113,11 +113,6 @@ appengine: 1.2.3.4
     locations_yaml = yaml.dump({
       "infrastructure" : "xen"
     })
-    fake_locations_yaml_file = flexmock(name='fake_yaml')
-    fake_locations_yaml_file.should_receive('read').and_return(locations_yaml)
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_yaml_location(self.keyname), 'r') \
-      .and_return(fake_locations_yaml_file)
 
     # say that the ssh key works
     flexmock(subprocess)
