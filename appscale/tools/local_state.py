@@ -386,8 +386,6 @@ class LocalState(object):
       'role_info': role_info,
       'asf_info': appscalefile_contents
     }
-    AppScaleLogger.log("writing to json should write {0}".format(
-      locations_json))
 
     with open(cls.get_locations_json_location(options.keyname), 'w') \
         as file_handle:
@@ -410,8 +408,6 @@ class LocalState(object):
 
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
       asf_option = json.loads(file_handle.read()).get('asf_info').get(tag)
-      AppScaleLogger.log("writing to json should write {0}".format(
-        asf_option))
       if asf_option:
         return asf_option
       return []
