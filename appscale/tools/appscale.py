@@ -651,12 +651,12 @@ Available commands:
     else:
       keyname = "appscale"
 
+    nodes_json_raw = ""
     try:
       with open(self.get_locations_json_file(keyname)) as f:
-        json_local_nodes = f.read().get('role_info')
-        nodes_json_raw = []
+        json_local_nodes = json.loads(f.read()).get('role_info')
         if json_local_nodes:
-          nodes_json_raw = json_local_nodes
+          nodes_json_raw = json.dumps(json_local_nodes)
     except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")

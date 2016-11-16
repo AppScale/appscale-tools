@@ -70,7 +70,7 @@ class TestAppScale(unittest.TestCase):
     appscale = flexmock(AppScale())
     builtin = flexmock(sys.modules['__builtin__'])
     builtin.should_call('open')
-    nodes = [{'public_ip': 'blarg'}]
+    nodes = {'role_info':[{'public_ip': 'blarg'}]}
     appscale_yaml = {'keyname': 'boo'}
     appscale.should_receive('get_locations_json_file').\
       and_return('locations.json')
@@ -79,7 +79,8 @@ class TestAppScale(unittest.TestCase):
     # dictionary.
     builtin.should_receive('open').with_args('locations.json').\
       and_return(flexmock(read=lambda: json.dumps(nodes)))
-    self.assertEqual(nodes, appscale.get_nodes(appscale_yaml['keyname']))
+    self.assertEqual(nodes.get('role_info'), appscale.get_nodes(appscale_yaml[
+                                                          'keyname']))
 
     # If the locations JSON file does not exist, it should throw an
     # AppScaleException.
@@ -361,7 +362,7 @@ class TestAppScale(unittest.TestCase):
     one = {
       'public_ip' : 'blarg'
     }
-    nodes = [one]
+    nodes = {'role_info': [one]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -387,7 +388,7 @@ class TestAppScale(unittest.TestCase):
     two = {
       'public_ip' : 'blarg2'
     }
-    nodes = [one, two]
+    nodes = {'role_info': [one, two]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -584,7 +585,7 @@ class TestAppScale(unittest.TestCase):
     one = {
       'public_ip' : 'blarg'
     }
-    nodes = [one]
+    nodes = {'role_info': [one]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -609,7 +610,7 @@ class TestAppScale(unittest.TestCase):
     two = {
       'public_ip' : 'blarg2'
     }
-    nodes = [one, two]
+    nodes = {'role_info': [one, two]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
