@@ -126,16 +126,16 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
+    fake_json_file.should_receive('read').and_return(json.dumps({"role_info": [
       {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+        'public_ip': 'public1',
+        'jobs': ['shadow']
       },
       {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
+        'public_ip': 'public2',
+        'jobs': ['appengine']
       }
-    ]))
+    ]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)
@@ -208,17 +208,25 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
-      {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+    fake_json_file.should_receive('read').and_return(json.dumps({
+      "asf_option": {
+        'infrastructure': 'ec2',
+        'group': self.group,
       },
-      {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
-      }
-    ]))
+      "role_info": [
+        {
+          'public_ip': 'public1',
+          'jobs': ['shadow']
+        },
+        {
+          'public_ip': 'public2',
+          'jobs': ['appengine']
+        }
+      ]
+    }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)
@@ -316,17 +324,27 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
-      {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+    fake_json_file.should_receive('read').and_return(json.dumps({
+      "asf_info": {
+        'infrastructure': 'gce',
+        'group': self.group,
+        'project': project_id,
+        'zone': zone
       },
-      {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
-      }
-    ]))
+      "role_info": [
+        {
+          'public_ip': 'public1',
+          'jobs': ['shadow']
+        },
+        {
+          'public_ip': 'public2',
+          'jobs': ['appengine']
+        }
+      ]
+    }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)

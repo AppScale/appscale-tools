@@ -58,11 +58,12 @@ class TestAppScaleGetProperty(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_secret")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      'public_ip' : 'public1',
-      'private_ip' : 'private1',
-      'jobs' : ['login', 'shadow']
-     }]))
+    fake_nodes_json.should_receive('read').and_return(json.dumps(
+      {"role_info": [{
+        'public_ip': 'public1',
+        'private_ip': 'private1',
+        'jobs': ['login', 'shadow']
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)

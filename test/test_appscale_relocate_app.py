@@ -49,11 +49,12 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"role_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')  # set the fall-through

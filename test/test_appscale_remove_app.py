@@ -84,11 +84,12 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"role_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
@@ -142,11 +143,12 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"role_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
