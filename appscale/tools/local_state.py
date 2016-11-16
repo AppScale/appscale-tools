@@ -412,7 +412,9 @@ class LocalState(object):
       asf_option = json.loads(file_handle.read()).get('asf_info').get(tag)
       AppScaleLogger.log("writing to json should write {0}".format(
         asf_option))
-      return asf_option
+      if asf_option:
+        return asf_option
+      return []
 
   @classmethod
   def get_local_nodes_info(cls, keyname):
@@ -434,7 +436,10 @@ class LocalState(object):
         "running with keyname {0}".format(keyname))
 
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-      return json.loads(file_handle.read()).get('role_info')
+      json_local_nodes = json.loads(file_handle.read()).get('role_info')
+      if json_local_nodes:
+        return json_local_nodes
+      return []
 
 
   @classmethod
