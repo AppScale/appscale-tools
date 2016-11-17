@@ -383,8 +383,8 @@ class LocalState(object):
       appscalefile_contents['azure_group_tag'] = options.azure_group_tag
 
     locations_json = {
-      'role_info': role_info,
-      'asf_info': appscalefile_contents
+      'node_info': role_info,
+      'infrastructure_info': appscalefile_contents
     }
 
     with open(cls.get_locations_json_location(options.keyname), 'w') \
@@ -407,7 +407,7 @@ class LocalState(object):
                                       "running with keyname {0}".format(keyname))
 
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-      asf_option = json.loads(file_handle.read()).get('asf_info').get(tag)
+      asf_option = json.loads(file_handle.read()).get('infrastructure_info').get(tag)
       if asf_option:
         return asf_option
       return []
@@ -432,7 +432,7 @@ class LocalState(object):
         "running with keyname {0}".format(keyname))
 
     with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-      json_local_nodes = json.loads(file_handle.read()).get('role_info')
+      json_local_nodes = json.loads(file_handle.read()).get('node_info')
       if json_local_nodes:
         return json_local_nodes
       return []

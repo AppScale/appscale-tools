@@ -126,7 +126,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps({"role_info": [
+    fake_json_file.should_receive('read').and_return(json.dumps({"node_info": [
       {
         'public_ip': 'public1',
         'jobs': ['shadow']
@@ -216,7 +216,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
         'infrastructure': 'ec2',
         'group': self.group,
       },
-      "role_info": [
+      "node_info": [
         {
           'public_ip': 'public1',
           'jobs': ['shadow']
@@ -328,13 +328,13 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
     fake_json_file.should_receive('read').and_return(json.dumps({
-      "asf_info": {
+      "infrastructure_info": {
         'infrastructure': 'gce',
         'group': self.group,
         'project': project_id,
         'zone': zone
       },
-      "role_info": [
+      "node_info": [
         {
           'public_ip': 'public1',
           'jobs': ['shadow']

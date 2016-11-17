@@ -177,7 +177,7 @@ Available commands:
     """
     try:
       with open(self.get_locations_json_file(keyname)) as locations_file:
-        json_local_nodes = json.loads(locations_file.read()).get('role_info')
+        json_local_nodes = json.loads(locations_file.read()).get('node_info')
         if json_local_nodes:
           return json_local_nodes
         return []
@@ -654,7 +654,7 @@ Available commands:
     nodes_json_raw = ""
     try:
       with open(self.get_locations_json_file(keyname)) as f:
-        json_local_nodes = json.loads(f.read()).get('role_info')
+        json_local_nodes = json.loads(f.read()).get('node_info')
         if json_local_nodes:
           nodes_json_raw = json.dumps(json_local_nodes)
     except IOError:

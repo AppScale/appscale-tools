@@ -85,7 +85,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(
-      json.dumps({"role_info": [{
+      json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
         "jobs": ["shadow", "login"]
@@ -144,7 +144,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
     fake_nodes_json.should_receive('read').and_return(
-      json.dumps({"role_info": [{
+      json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
         "jobs": ["shadow", "login"]
