@@ -405,8 +405,7 @@ class LocalState(object):
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
         return json.loads(file_handle.read()).get('infrastructure_info',
-                                                  default={}).get(tag,
-                                                                  default=[])
+                                                  default={}).get(tag, [])
     except IOError:
       raise BadConfigurationException("Couldn't read from locations file, "
                                       "AppScale may not be running with "
@@ -429,7 +428,7 @@ class LocalState(object):
     """
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-        return json.loads(file_handle.read()).get('node_info', default=[])
+        return json.loads(file_handle.read()).get('node_info', [])
     except IOError:
       raise BadConfigurationException("Couldn't read from locations file, "
                                       "AppScale may not be running with "

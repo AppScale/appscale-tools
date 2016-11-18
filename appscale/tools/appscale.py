@@ -177,7 +177,7 @@ Available commands:
     """
     try:
       with open(self.get_locations_json_file(keyname)) as locations_file:
-        return json.loads(locations_file.read()).get('node_info', default=[])
+        return json.loads(locations_file.read()).get('node_info', [])
     except IOError:
       raise AppScaleException("AppScale does not currently appear to"
         " be running. Please start it and try again.")
@@ -650,7 +650,7 @@ Available commands:
 
     try:
       with open(self.get_locations_json_file(keyname)) as f:
-        nodes = json.loads(f.read()).get('node_info', default=[])
+        nodes = json.loads(f.read()).get('node_info', [])
     except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
