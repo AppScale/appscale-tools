@@ -177,10 +177,7 @@ Available commands:
     """
     try:
       with open(self.get_locations_json_file(keyname)) as locations_file:
-        json_local_nodes = json.loads(locations_file.read()).get('node_info')
-        if json_local_nodes:
-          return json_local_nodes
-        return []
+        return json.loads(locations_file.read()).get('node_info', default=[])
     except IOError:
       raise AppScaleException("AppScale does not currently appear to"
         " be running. Please start it and try again.")
@@ -651,18 +648,14 @@ Available commands:
     else:
       keyname = "appscale"
 
-    nodes_json_raw = ""
     try:
       with open(self.get_locations_json_file(keyname)) as f:
-        json_local_nodes = json.loads(f.read()).get('node_info')
-        if json_local_nodes:
-          nodes_json_raw = json.dumps(json_local_nodes)
+        nodes = json.loads(f.read()).get('node_info', default=[])
     except IOError:
       raise AppScaleException("AppScale does not currently appear to" +
         " be running. Please start it and try again.")
 
     # make sure there is a node at position 'index'
-    nodes = json.loads(nodes_json_raw)
     try:
       ip = nodes[index]['public_ip']
     except IndexError:

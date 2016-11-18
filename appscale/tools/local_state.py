@@ -402,15 +402,15 @@ class LocalState(object):
         uniquely identifies this AppScale deployment.
       tag: A str that indicates what we should look for in the AppScalefile.
     """
-    if not os.path.exists(cls.get_locations_json_location(keyname)):
-      raise BadConfigurationException("AppScale does not appear to be " + \
-                                      "running with keyname {0}".format(keyname))
-
-    with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-      asf_option = json.loads(file_handle.read()).get('infrastructure_info').get(tag)
-      if asf_option:
-        return asf_option
-      return []
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
+        return json.loads(file_handle.read()).get('infrastructure_info',
+                                                  default={}).get(tag,
+                                                                  default=[])
+    except IOError:
+      raise BadConfigurationException("Couldn't read from locations file, "
+                                      "AppScale may not be running with "
+                                      "keyname {0}".format(keyname))
 
   @classmethod
   def get_local_nodes_info(cls, keyname):
@@ -427,15 +427,13 @@ class LocalState(object):
       BadConfigurationException: If there is no JSON-encoded metadata file
         named after the given keyname.
     """
-    if not os.path.exists(cls.get_locations_json_location(keyname)):
-      raise BadConfigurationException("AppScale does not appear to be " + \
-        "running with keyname {0}".format(keyname))
-
-    with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-      json_local_nodes = json.loads(file_handle.read()).get('node_info')
-      if json_local_nodes:
-        return json_local_nodes
-      return []
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
+        return json.loads(file_handle.read()).get('node_info', default=[])
+    except IOError:
+      raise BadConfigurationException("Couldn't read from locations file, "
+                                      "AppScale may not be running with "
+                                      "keyname {0}".format(keyname))
 
 
   @classmethod
