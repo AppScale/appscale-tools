@@ -681,7 +681,7 @@ class NodeLayout():
     return None
 
 
-  def to_list_without_head_node(self):
+  def to_list(self):
     """ Converts all of the nodes (except the head node) to a format that can
     be easily JSON-dumped (a list of dicts).
 
@@ -690,11 +690,7 @@ class NodeLayout():
       AppScale deployment. As callers explicitly specify the head node, we
       don't include it in this list.
     """
-    return [{
-      'ip' : node.public_ip,
-      'jobs' : node.roles,
-      'disk' : node.disk
-    } for node in self.other_nodes()]
+    return [node.to_json() for node in self.nodes]
 
 
   def valid(self, message = None):
@@ -723,6 +719,7 @@ class Node():
   or AdvancedNode, depending on the deployment type.
   """
 
+  DUMMY_INSTANCE_ID = "i-APPSCALE"
 
   def __init__(self, public_ip, cloud, roles=[], disk=None):
     """Creates a new Node, representing the given id in the specified cloud.
@@ -738,6 +735,7 @@ class Node():
     """
     self.public_ip = public_ip
     self.private_ip = public_ip
+    self.instance_id = self.DUMMY_INSTANCE_ID
     self.cloud = cloud
     self.roles = roles
     self.disk = disk
@@ -831,6 +829,15 @@ class Node():
     AdvancedNodes, we do not implement it here.
     """
     raise NotImplementedError
+
+  def to_json(self):
+    return {
+      'public_ip': self.public_ip,
+      'private_ip': self.private_ip,
+      'instance_id': self.instance_id,
+      'jobs': self.roles,
+      'disk': self.disk
+    }
 
 
 class SimpleNode(Node):

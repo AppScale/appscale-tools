@@ -139,25 +139,24 @@ class AppControllerClient():
     return retval
 
 
-  def set_parameters(self, locations, credentials, app=None):
+  def set_parameters(self, locations, params):
     """Passes the given parameters to an AppController, allowing it to start
     configuring API services in this AppScale deployment.
 
     Args:
       locations: A list that contains the first node's IP address.
-      credentials: A list that contains API service-level configuration info,
+      params: A list that contains API service-level configuration info,
         as well as a mapping of IPs to the API services they should host
         (excluding the first node).
-      app: A list of the App Engine apps that should be started.
     Raises:
       AppControllerException: If the remote AppController indicates that there
         was a problem with the parameters passed to it.
     """
-    if app is None:
-      app = 'none'
 
-    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, json.dumps(locations), credentials, [app], self.secret)
+    result = self.run_with_timeout(
+      self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.set_parameters, json.dumps(locations), json.dumps(params),
+      self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
