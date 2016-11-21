@@ -259,9 +259,6 @@ class ParseArgs(object):
         help="the datastore to use")
       self.parser.add_argument('--replication', '--n', type=int,
         help="the database replication factor")
-      self.parser.add_argument('--clear_datastore', action='store_true',
-        default=False,
-        help="erases all stored user and application data")
 
       # flags relating to application servers
       self.parser.add_argument('--max_memory', type=int,
@@ -296,9 +293,6 @@ class ParseArgs(object):
         help="uses the given e-mail instead of prompting for one")
       self.parser.add_argument('--admin_pass',
         help="uses the given password instead of prompting for one")
-      self.parser.add_argument('--alter_etc_resolv', action='store_true',
-        default=False,
-        help="removes all nameservers in /etc/resolv.conf on all VMs")
       self.parser.add_argument('--user_commands',
         help="a base64-encoded YAML dictating the commands to run before " +
           "starting each AppController")

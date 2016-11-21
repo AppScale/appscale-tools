@@ -15,7 +15,6 @@ import tempfile
 import time
 import uuid
 import yaml
-import logging
 
 
 # AppScale-specific imports
@@ -161,8 +160,7 @@ class LocalState(object):
 
 
   @classmethod
-  def generate_deployment_params(cls, options, node_layout, first_host,
-    additional_creds):
+  def generate_deployment_params(cls, options, node_layout, additional_creds):
     """Constructs a dict that tells the AppController which machines are part of
     this AppScale deployment, what their roles are, and how to host API services
     within this deployment.
@@ -172,8 +170,6 @@ class LocalState(object):
         information about machine to role hosting.
       node_layout: A NodeLayout that indicates which machines host which roles
         (API services).
-      first_host: A str that indicates which machine should be contacted by
-        others to bootstrap and get initial service information.
       additional_creds: A dict that specifies arbitrary credentials that should
         also be passed in with the generated parameters.
     Returns:
@@ -181,32 +177,30 @@ class LocalState(object):
       key that indicates machine to role mapping information.
     """
     creds = {
-      "table" : options.table,
-      "hostname" : first_host,
-      "ips" : json.dumps(node_layout.to_list_without_head_node()),
-      "keyname" : options.keyname,
-      "replication" : str(node_layout.replication_factor()),
-      "appengine" : str(options.appengine),
-      "autoscale" : str(options.autoscale),
-      "alter_etc_resolv" : str(options.alter_etc_resolv),
-      "clear_datastore" : str(options.clear_datastore),
-      "user_commands" : json.dumps(options.user_commands),
-      "verbose" : str(options.verbose),
-      "flower_password" : options.flower_password,
-      "max_memory" : options.max_memory
+      "table": options.table,
+      "login": node_layout.head_node().public_ip,
+      "keyname": options.keyname,
+      "replication": str(options.replication),
+      "appengine": str(options.appengine),
+      "autoscale": str(options.autoscale),
+      "clear_datastore": str(False),
+      "user_commands": json.dumps(options.user_commands),
+      "verbose": str(options.verbose),
+      "flower_password": options.flower_password,
+      "max_memory": str(options.max_memory)
     }
     creds.update(additional_creds)
 
     if options.infrastructure:
       iaas_creds = {
-        'machine' : options.machine,
-        'infrastructure' : options.infrastructure,
-        'instance_type' : options.instance_type,
-        'group' : options.group,
-        'min_images' : node_layout.min_vms,
-        'max_images' : node_layout.max_vms,
-        'use_spot_instances' : options.use_spot_instances,
-        'zone' : json.dumps(options.zone)
+        'infrastructure': options.infrastructure,
+        'machine': options.machine,
+        'instance_type': options.instance_type,
+        'zone': options.zone,
+        'group': options.group,
+        'use_spot_instances': str(options.use_spot_instances),
+        'min_images': str(node_layout.min_vms),
+        'max_images': str(node_layout.max_vms),
       }
 
       if options.infrastructure == "gce":
@@ -342,21 +336,19 @@ class LocalState(object):
 
 
   @classmethod
-  def update_local_metadata(cls, options, node_layout, host, instance_id):
+  def update_local_metadata(cls, options, db_master, head_node):
     """Writes a locations.yaml and locations.json file to the local filesystem,
     that the tools can use to locate machines in an AppScale deployment.
 
     Args:
       options: A Namespace that indicates deployment-specific parameters not
         relating to the placement strategy in use.
-      node_layout: A NodeLayout that indicates the placement strategy in use
-        for this deployment.
-      host: A str representing the location we can reach an AppController at.
-      instance_id: The instance ID (if running in a cloud environment)
-        associated with the given host.
+      db_master: A str representing the location of the database master.
+      head_node: A str representing the location we can reach an
+        AppController at.
     """
     # find out every machine's IP address and what they're doing
-    acc = AppControllerClient(host, cls.get_secret_key(options.keyname))
+    acc = AppControllerClient(head_node, cls.get_secret_key(options.keyname))
     role_info = acc.get_role_info()
 
     infrastructure = options.infrastructure or 'xen'
@@ -387,6 +379,7 @@ class LocalState(object):
       'infrastructure_info': appscalefile_contents
     }
 
+    # and now we can write the json metadata file
     with open(cls.get_locations_json_location(options.keyname), 'w') \
         as file_handle:
       file_handle.write(json.dumps(locations_json))
@@ -541,8 +534,6 @@ class LocalState(object):
     Returns:
       A tuple containing the username and password that the user typed in.
     """
-    username, password = None, None
-
     username = cls.get_username_from_stdin(is_admin)
     password = cls.get_password_from_stdin()
     return username, password
@@ -595,24 +586,6 @@ class LocalState(object):
         return password
       else:
         AppScaleLogger.warn('Passwords entered do not match. Please try again.')
-
-
-  @classmethod
-  def map_to_array(cls, the_map):
-    """Converts a dict into list. Given a map {k1:v1, k2:v2,...kn:vn}, this will
-    return a list [k1,v1,k2,v2,...,kn,vn].
-
-    Args:
-      the_map: A dictionary of objects to convert into a list.
-
-    Returns:
-      A list containing all the keys and values in the input dictionary.
-    """
-    the_list = []
-    for key, value in the_map.items():
-      the_list.append(key)
-      the_list.append(value)
-    return the_list
 
 
   @classmethod

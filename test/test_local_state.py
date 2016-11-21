@@ -27,6 +27,7 @@ from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.custom_exceptions import ShellException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
+from appscale.tools.node_layout import SimpleNode
 from appscale.tools.parse_args import ParseArgs
 
 
@@ -92,11 +93,11 @@ class TestLocalState(unittest.TestCase):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
-      appengine='1', autoscale=False, group='bazgroup',
+      appengine='1', autoscale=False, group='bazgroup', replication=None,
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
-      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
+      use_spot_instances=True, max_spot_price=1.23, clear_datastore=False,
+      disks={'node-1' : 'vol-ABCDEFG'}, zone='my-zone-1b', verbose=True,
+      user_commands=[], flower_password="abc",
       max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
@@ -105,32 +106,33 @@ class TestLocalState(unittest.TestCase):
       'max' : 1
     })
 
+    flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
+      'public1', 'some cloud', ['some role']))
+
     expected = {
-      'alter_etc_resolv' : 'True',
-      'clear_datastore' : 'False',
       'table' : 'cassandra',
-      'hostname' : 'public1',
-      'ips' : json.dumps([]),
+      'login' : 'public1',
+      'clear_datastore': 'False',
       'keyname' : 'boo',
-      'replication' : '1',
       'appengine' : '1',
       'autoscale' : 'False',
+      'replication': 'None',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : 1,
-      'max_images' : 1,
-      'use_spot_instances' : True,
+      'min_images' : '1',
+      'max_images' : '1',
+      'use_spot_instances' : 'True',
       'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
-      'zone' : json.dumps('my-zone-1b'),
+      'zone' : 'my-zone-1b',
       'verbose' : 'True',
       'flower_password' : 'abc',
-      'max_memory' : ParseArgs.DEFAULT_MAX_MEMORY
+      'max_memory' : str(ParseArgs.DEFAULT_MAX_MEMORY)
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
-      'public1', {'max_spot_price':'1.23'})
+      {'max_spot_price':'1.23'})
     self.assertEquals(expected, actual)
 
 
@@ -197,9 +199,7 @@ class TestLocalState(unittest.TestCase):
       'infrastructure' : 'ec2',
       'table' : 'cassandra'
     })
-    host = 'public1'
-    instance_id = 'i-ABCDEFG'
-    LocalState.update_local_metadata(options, node_layout, host, instance_id)
+    LocalState.update_local_metadata(options, 'public1', 'public1')
 
 
   def test_extract_tgz_app_to_dir(self):
