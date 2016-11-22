@@ -397,8 +397,12 @@ class LocalState(object):
     """
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-        return json.loads(file_handle.read()).get('infrastructure_info',
-                                                  {}).get(tag, [])
+        file_contents = json.loads(file_handle.read())
+        if type(file_contents) is list:
+          cls.upgrade_json_file(keyname)
+          file_handle.seek(0)
+          file_contents = json.loads(file_handle.read())
+        return file_contents.get('infrastructure_info', {}).get(tag)
     except IOError:
       raise BadConfigurationException("Couldn't read from locations file, "
                                       "AppScale may not be running with "
@@ -421,12 +425,42 @@ class LocalState(object):
     """
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-        return json.loads(file_handle.read()).get('node_info', [])
+        file_contents = json.loads(file_handle.read())
+        if type(file_contents) is list:
+          cls.upgrade_json_file(keyname)
+          file_handle.seek(0)
+          file_contents = json.loads(file_handle.read())
+        return file_contents.get('node_info', [])
     except IOError:
       raise BadConfigurationException("Couldn't read from locations file, "
                                       "AppScale may not be running with "
                                       "keyname {0}".format(keyname))
 
+  @classmethod
+  def upgrade_json_file(cls, keyname):
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
+        role_info = json.loads(file_handle.read())
+      yaml_locations = cls.LOCAL_APPSCALE_PATH + "locations-" + keyname \
+                     + ".yaml"
+      with open(yaml_locations, 'r') as yaml_handle:
+        locations_yaml_contents = yaml.safe_load(yaml_handle.read())
+
+      locations_json = {
+        'node_info': role_info,
+        'infrastructure_info': locations_yaml_contents
+      }
+      # and now we can write the new json metadata file
+      with open(cls.get_locations_json_location(keyname), 'w') \
+          as file_handle:
+        file_handle.write(json.dumps(locations_json))
+
+      if os.path.exists(yaml_locations):
+        os.remove(yaml_locations)
+    except IOError:
+      raise BadConfigurationException("Couldn't upgrade locations json "
+                                      "file, AppScale may not be running with"
+                                      " keyname {0}".format(keyname))
 
   @classmethod
   def get_host_for_role(cls, keyname, role):
