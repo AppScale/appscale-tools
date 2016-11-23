@@ -456,22 +456,22 @@ class LocalState(object):
         written to.
     """
     try:
-      #Open, read, and store the JSON metadata.
+      # Open, read, and store the JSON metadata.
 
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
         role_info = json.loads(file_handle.read())
 
-      #If this method is running, there should be a YAML metadata file.
+      # If this method is running, there should be a YAML metadata file.
 
       yaml_locations = "{0}locations-{1}.yaml".format(cls.LOCAL_APPSCALE_PATH,
                                                       keyname)
 
-      #Open, read, and store the YAML metadata.
+      # Open, read, and store the YAML metadata.
 
       with open(yaml_locations, 'r') as yaml_handle:
         locations_yaml_contents = yaml.safe_load(yaml_handle.read())
 
-      #Create a dictionary with the information from both the YAML and JSON
+      # Create a dictionary with the information from both the YAML and JSON
       # metadata.
 
       locations_json = {
@@ -479,13 +479,13 @@ class LocalState(object):
         'infrastructure_info': locations_yaml_contents
       }
 
-      #Write the new format to the JSON metadata file.
+      # Write the new format to the JSON metadata file.
 
       with open(cls.get_locations_json_location(keyname), 'w') as file_handle:
         file_handle.write(json.dumps(locations_json))
 
-      #Remove the YAML file because all information from it should be in the
-      #JSON file now. At this point any failures would have raised the
+      # Remove the YAML file because all information from it should be in the
+      # JSON file now. At this point any failures would have raised the
       # Exception.
 
       if os.path.exists(yaml_locations):
