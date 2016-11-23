@@ -386,14 +386,17 @@ class LocalState(object):
 
 
   @classmethod
-  def get_from_appscalefile(cls, tag, keyname):
-    """Reads the YAML-encoded metadata on disk and returns the value associated
-    with the given tag.
+  def get_infrastructure_option(cls, tag, keyname):
+    """Reads the JSON-encoded metadata on disk and returns the value for
+    the key 'tag' from the dictionary retrieved using the key
+    'infrastructure_info'.
 
     Args:
       keyname: A str that indicates the name of the SSH keypair that
         uniquely identifies this AppScale deployment.
-      tag: A str that indicates what we should look for in the AppScalefile.
+      tag: A str that indicates what we should look for in the
+        infrastructure_info dictionary, this tag retrieves an option that was
+        passed to AppScale at runtime.
     """
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
@@ -410,8 +413,9 @@ class LocalState(object):
 
   @classmethod
   def get_local_nodes_info(cls, keyname):
-    """Reads the JSON-encoded metadata on disk and returns a list that indicates
-    which machines run each API service in this AppScale deployment.
+    """Reads the JSON-encoded metadata on disk and returns a list using the
+    key 'node_info' that indicates which machines run each API service in
+    this AppScale deployment.
 
     Args:
       keyname: A str that represents an SSH keypair name, uniquely identifying
@@ -438,23 +442,46 @@ class LocalState(object):
 
   @classmethod
   def upgrade_json_file(cls, keyname):
+    """Upgrades the JSON file from the other version where it is a list by
+    reading the JSON file, reading the YAML file, creating a dictionary in
+    the "new" format and writing that to the JSON file, and then removing the
+    YAML file.
+
+    Args:
+      keyname: A str that represents an SSH keypair name, uniquely identifying
+        this AppScale deployment.
+    Raises:
+      BadConfigurationException: If there is no JSON-encoded metadata file,
+        or there is no YAML-encoded metadata file, or the JSON file couldn't be
+        written to.
+    """
     try:
+      #Open, read, and store the JSON metadata.
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
         role_info = json.loads(file_handle.read())
+
+      #If this method is running, there should be a YAML metadata file.
       yaml_locations = cls.LOCAL_APPSCALE_PATH + "locations-" + keyname \
                      + ".yaml"
+
+      #Open, read, and store the YAML metadata.
       with open(yaml_locations, 'r') as yaml_handle:
         locations_yaml_contents = yaml.safe_load(yaml_handle.read())
 
+      #Create a dictionary with the information from both the YAML and JSON
+      # metadata.
       locations_json = {
         'node_info': role_info,
         'infrastructure_info': locations_yaml_contents
       }
-      # and now we can write the new json metadata file
-      with open(cls.get_locations_json_location(keyname), 'w') \
-          as file_handle:
+
+      #Write the new format to the JSON metadata file.
+      with open(cls.get_locations_json_location(keyname), 'w') as file_handle:
         file_handle.write(json.dumps(locations_json))
 
+      #Remove the YAML file because all information from it should be in the
+      #JSON file now. At this point any failures would have raised the
+      # Exception.
       if os.path.exists(yaml_locations):
         os.remove(yaml_locations)
     except IOError:
@@ -634,7 +661,7 @@ class LocalState(object):
       The name of the cloud infrastructure that AppScale is running over, or
       'xen' if running over a virtualized cluster.
     """
-    return cls.get_from_appscalefile(tag="infrastructure", keyname=keyname)
+    return cls.get_infrastructure_option(tag="infrastructure", keyname=keyname)
 
 
   @classmethod
@@ -648,7 +675,7 @@ class LocalState(object):
     Returns:
       The name of the security group used for this AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="group", keyname=keyname)
+    return cls.get_infrastructure_option(tag="group", keyname=keyname)
 
 
   @classmethod
@@ -662,7 +689,7 @@ class LocalState(object):
     Returns:
       A str containing the project ID used for this AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="project", keyname=keyname)
+    return cls.get_infrastructure_option(tag="project", keyname=keyname)
 
 
   @classmethod
@@ -676,7 +703,7 @@ class LocalState(object):
     Returns:
       A str containing the zone used for this AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="zone", keyname=keyname)
+    return cls.get_infrastructure_option(tag="zone", keyname=keyname)
 
   @classmethod
   def get_subscription_id(cls, keyname):
@@ -689,8 +716,8 @@ class LocalState(object):
     Returns:
       A str containing the subscription ID used for this AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_subscription_id",
-                                     keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_subscription_id",
+                                         keyname=keyname)
 
   @classmethod
   def get_app_id(cls, keyname):
@@ -703,7 +730,7 @@ class LocalState(object):
     Returns:
       A str containing the application ID used for this AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_app_id", keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_app_id", keyname=keyname)
 
   @classmethod
   def get_app_secret_key(cls, keyname):
@@ -717,8 +744,8 @@ class LocalState(object):
       A str containing the secret key for the application running for this
       AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_app_secret_key",
-                                     keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_app_secret_key",
+                                         keyname=keyname)
 
   @classmethod
   def get_tenant_id(cls, keyname):
@@ -732,7 +759,7 @@ class LocalState(object):
       A str containing the tenant ID for this account being used for this
       AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_tenant_id", keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_tenant_id", keyname=keyname)
 
   @classmethod
   def get_resource_group(cls, keyname):
@@ -746,7 +773,7 @@ class LocalState(object):
       A str containing the resource group name being used for this
       AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_resouce_group", keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_resouce_group", keyname=keyname)
 
   @classmethod
   def get_storage_account(cls, keyname):
@@ -760,8 +787,8 @@ class LocalState(object):
       A str containing the storage account name being used for this
       AppScale deployment.
     """
-    return cls.get_from_appscalefile(tag="azure_storage_account",
-                                     keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_storage_account",
+                                         keyname=keyname)
 
   @classmethod
   def get_client_secrets_location(cls, keyname):
