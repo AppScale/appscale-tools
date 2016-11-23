@@ -292,8 +292,9 @@ class EC2Agent(BaseAgent):
     return params
 
 
-  def get_params_from_yaml(self, keyname):
-    """Searches through the locations.yaml file to build a dict containing the
+  def get_cloud_params(self, keyname):
+    """Searches through the locations.json file with key
+    'infrastructure_info' to build a dict containing the
     parameters necessary to interact with Amazon EC2.
 
     Args:

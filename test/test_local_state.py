@@ -62,7 +62,7 @@ class TestLocalState(unittest.TestCase):
 
 
   def test_ensure_appscale_isnt_running_but_it_is(self):
-    # if there is a locations.yaml file and force isn't set,
+    # if there is a secret key file and force isn't set,
     # we should abort
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
@@ -73,18 +73,14 @@ class TestLocalState(unittest.TestCase):
 
 
   def test_ensure_appscale_isnt_running_but_it_is_w_force(self):
-    # if there is a locations.yaml file and force is set,
+    # if there is a secret key file and force is set,
     # we shouldn't abort
-    os.path.should_receive('exists').with_args(self.locations_yaml) \
-      .and_return(True)
 
     LocalState.ensure_appscale_isnt_running(self.keyname, True)
 
 
   def test_ensure_appscale_isnt_running_and_it_isnt(self):
-    # if there isn't a locations.yaml file, we're good to go
-    os.path.should_receive('exists').with_args(self.locations_yaml) \
-      .and_return(False)
+    # if there isn't a secret key file, we're good to go
 
     LocalState.ensure_appscale_isnt_running(self.keyname, False)
 

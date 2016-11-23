@@ -86,8 +86,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_when_not_running(self):
-    # let's say that there's no locations.yaml file, which means appscale isn't
-    # running, so we should throw up and die
+    # let's say that appscale isn't running, so we should throw up and die
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
@@ -103,15 +102,16 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_in_virtual_cluster_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is
     # running, so we should terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # a virtualized cluster
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on a virtualized cluster
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
@@ -191,15 +191,16 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_in_cloud_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
-    # running, so we should terminate the services on each box
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is running, so we should
+    # terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # a virtualized cluster
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on a virtualized cluster
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
@@ -212,7 +213,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
     fake_json_file.should_receive('read').and_return(json.dumps({
-      "asf_option": {
+      "infrastructure_info": {
         'infrastructure': 'ec2',
         'group': self.group,
       },
@@ -303,8 +304,9 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_in_gce_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
-    # running, so we should terminate the services on each box
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is running, so we should
+    # terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
@@ -312,8 +314,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # GCE
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on GCE
     project_id = "1234567890"
     zone = 'my-zone-1b'
     builtins = flexmock(sys.modules['__builtin__'])

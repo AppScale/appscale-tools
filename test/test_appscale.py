@@ -79,8 +79,8 @@ class TestAppScale(unittest.TestCase):
     # dictionary.
     builtin.should_receive('open').with_args('locations.json').\
       and_return(flexmock(read=lambda: json.dumps(nodes)))
-    self.assertEqual(nodes.get('node_info'), appscale.get_nodes(appscale_yaml[
-                                                          'keyname']))
+    self.assertEqual(nodes.get('node_info'),
+                     appscale.get_nodes(appscale_yaml['keyname']))
 
     # If the locations JSON file does not exist, it should throw an
     # AppScaleException.

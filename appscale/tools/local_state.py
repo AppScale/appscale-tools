@@ -337,7 +337,7 @@ class LocalState(object):
 
   @classmethod
   def update_local_metadata(cls, options, db_master, head_node):
-    """Writes a locations.yaml and locations.json file to the local filesystem,
+    """Writes a locations.json file to the local filesystem,
     that the tools can use to locate machines in an AppScale deployment.
 
     Args:
@@ -457,31 +457,37 @@ class LocalState(object):
     """
     try:
       #Open, read, and store the JSON metadata.
+
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
         role_info = json.loads(file_handle.read())
 
       #If this method is running, there should be a YAML metadata file.
-      yaml_locations = cls.LOCAL_APPSCALE_PATH + "locations-" + keyname \
-                     + ".yaml"
+
+      yaml_locations = "{0}locations-{1}.yaml".format(cls.LOCAL_APPSCALE_PATH,
+                                                      keyname)
 
       #Open, read, and store the YAML metadata.
+
       with open(yaml_locations, 'r') as yaml_handle:
         locations_yaml_contents = yaml.safe_load(yaml_handle.read())
 
       #Create a dictionary with the information from both the YAML and JSON
       # metadata.
+
       locations_json = {
         'node_info': role_info,
         'infrastructure_info': locations_yaml_contents
       }
 
       #Write the new format to the JSON metadata file.
+
       with open(cls.get_locations_json_location(keyname), 'w') as file_handle:
         file_handle.write(json.dumps(locations_json))
 
       #Remove the YAML file because all information from it should be in the
       #JSON file now. At this point any failures would have raised the
       # Exception.
+
       if os.path.exists(yaml_locations):
         os.remove(yaml_locations)
     except IOError:
@@ -651,7 +657,8 @@ class LocalState(object):
 
   @classmethod
   def get_infrastructure(cls, keyname):
-    """Reads the locations.yaml file to see if this AppScale deployment is
+    """Reads the locations.json file with key
+    'infrastructure_info' to see if this AppScale deployment is
     running over a cloud infrastructure or a virtualized cluster.
 
     Args:
@@ -666,8 +673,8 @@ class LocalState(object):
 
   @classmethod
   def get_group(cls, keyname):
-    """Reads the locations.yaml file to see what security group was created for
-    this AppScale deployment.
+    """Reads the locations.json file with key 'infrastructure_info' to see
+    what security group was created for this AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -680,8 +687,9 @@ class LocalState(object):
 
   @classmethod
   def get_project(cls, keyname):
-    """Reads the locations.yaml file to see what project ID is used to interact
-    with Google Compute Engine in this AppScale deployment.
+    """Reads the locations.json file with key 'infrastructure_info' to see
+    what project ID is used to interact with Google Compute Engine in this
+    AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -694,8 +702,8 @@ class LocalState(object):
 
   @classmethod
   def get_zone(cls, keyname):
-    """Reads the locations.yaml file to see what zone instances are running in
-    throughout this AppScale deployment.
+    """Reads the locations.json file with key 'infrastructure_info' to see
+    what zone instances are running in throughout this AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -707,8 +715,9 @@ class LocalState(object):
 
   @classmethod
   def get_subscription_id(cls, keyname):
-    """ Reads the locations.yaml file to see what subscription ID is used to interact
-    with Microsoft Azure in this AppScale deployment.
+    """ Reads the locations.json file with key 'infrastructure_info' to see
+    what subscription ID is used to interact with Microsoft Azure in this
+    AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -721,8 +730,9 @@ class LocalState(object):
 
   @classmethod
   def get_app_id(cls, keyname):
-    """ Reads the locations.yaml file to see what application is used to interact
-    with Microsoft Azure in this AppScale deployment.
+    """ Reads the locations.json file with key 'infrastructure_info' to see
+    what application is used to interact with Microsoft Azure in this
+    AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -734,8 +744,9 @@ class LocalState(object):
 
   @classmethod
   def get_app_secret_key(cls, keyname):
-    """ Reads the locations.yaml file to get the secret key for the application
-    that is used to interact with Microsoft Azure in this AppScale deployment.
+    """ Reads the locations.json file with key 'infrastructure_info' to get
+    the secret key for the application that is used to interact with
+    Microsoft Azure in this AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -749,8 +760,9 @@ class LocalState(object):
 
   @classmethod
   def get_tenant_id(cls, keyname):
-    """ Reads the locations.yaml file to get the tenant ID that is used to
-    interact with Microsoft Azure in this AppScale deployment.
+    """ Reads the locations.json file with key 'infrastructure_info' to get the
+     tenant ID that is used to interact with Microsoft Azure in this
+     AppScale deployment.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
@@ -763,7 +775,8 @@ class LocalState(object):
 
   @classmethod
   def get_resource_group(cls, keyname):
-    """ Reads the locations.yaml file to get the Azure resource group under
+    """ Reads the locations.json file with key
+    'infrastructure_info' to get the Azure resource group under
     which the instances are placed in this AppScale deployment.
 
     Args:
@@ -777,7 +790,8 @@ class LocalState(object):
 
   @classmethod
   def get_storage_account(cls, keyname):
-    """ Reads the locations.yaml file to get the Azure storage account
+    """ Reads the locations.json file with key
+    'infrastructure_info' to get the Azure storage account
     associated with the resource group in this AppScale deployment.
 
     Args:
