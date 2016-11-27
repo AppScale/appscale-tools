@@ -23,6 +23,7 @@ from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
+from custom_exceptions import TimeoutException
 from agents.gce_agent import CredentialTypes
 from agents.gce_agent import GCEAgent
 from local_state import APPSCALE_VERSION
@@ -61,6 +62,10 @@ class RemoteHelper(object):
   # The amount of time to wait when waiting for all API services to start on
   # a machine.
   WAIT_TIME = 10
+
+
+  # The max amount of time to wait for a port to open.
+  MAX_WAIT_TIME = 5 * 60
 
 
   # The message that is sent if we try to log into a VM as the root user but
@@ -242,13 +247,19 @@ class RemoteHelper(object):
       verbose: A bool that indicates if we should print failure messages to
         stdout (e.g., connection refused messages that can occur when we wait
         for services to come up).
+    Raises:
+      TimeoutException if the port does not open in a certain amount of time.
     """
-    sleep_time = 1
-    while not cls.is_port_open(host, port, is_verbose):
+    sleep_time = cls.MAX_WAIT_TIME
+    while sleep_time > 0:
+      if cls.is_port_open(host, port, is_verbose):
+        return
       AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open".\
-        format(host, port, sleep_time), is_verbose)
-      time.sleep(sleep_time)
-      sleep_time = min(sleep_time * 2, 20)
+        format(host, port, cls.WAIT_TIME), is_verbose)
+      time.sleep(cls.WAIT_TIME)
+      sleep_time -= cls.WAIT_TIME
+    raise TimeoutException("Port {}:{} did not open in time. "
+                           "Aborting...".format(host, port))
 
 
   @classmethod
