@@ -718,7 +718,7 @@ class RemoteHelper(object):
 
   @classmethod
   def copy_local_metadata(cls, host, keyname, is_verbose):
-    """Copies the locations.yaml and locations.json files found locally (which
+    """Copies the locations.json file found locally (which
     contain metadata about this AppScale deployment) to the specified host.
 
     Args:
@@ -841,7 +841,7 @@ class RemoteHelper(object):
     # get all the instance IDs for machines in our deployment
     agent = InfrastructureAgentFactory.create_agent(
       LocalState.get_infrastructure(keyname))
-    params = agent.get_params_from_yaml(keyname)
+    params = agent.get_cloud_params(keyname)
     params['IS_VERBOSE'] = is_verbose
 
     # We want to terminate also the pending instances.
