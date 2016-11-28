@@ -65,7 +65,7 @@ class RemoteHelper(object):
 
 
   # The max amount of time to wait for a port to open.
-  MAX_WAIT_TIME = 5 * 60
+  MAX_WAIT_TIME = 15 * 60
 
 
   # The message that is sent if we try to log into a VM as the root user but
