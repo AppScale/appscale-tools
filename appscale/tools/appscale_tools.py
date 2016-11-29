@@ -531,6 +531,10 @@ class AppScaleTools(object):
     head_node = node_layout.head_node().public_ip
     LocalState.update_local_metadata(options, db_master, head_node)
 
+    # Copy the locations.json to the head node
+    RemoteHelper.copy_local_metadata(node_layout.head_node().public_ip,
+                                     options.keyname, options.verbose)
+
     # Wait for services on head node to start.
     secret_key = LocalState.get_secret_key(options.keyname)
     acc = AppControllerClient(head_node, secret_key)
