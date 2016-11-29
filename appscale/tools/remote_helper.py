@@ -110,7 +110,7 @@ class RemoteHelper(object):
 
   @classmethod
   def enable_root_ssh(cls, options, public_ip):
-    """Enables root logins on the machine, enables SSH access,
+    """Enables root logins and SSH access on the machine
     and copies the user's SSH key to the head node. On the tools side this
     should only be used for the "head node" since the server does this for all
     other nodes.
