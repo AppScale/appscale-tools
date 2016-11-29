@@ -109,30 +109,23 @@ class RemoteHelper(object):
     return instance_ids, public_ips, private_ips
 
   @classmethod
-  def enable_head_node_root_ssh(cls, options, head_node):
-    """Enables root logins on the head node, enables SSH access,
-    and copies the user's SSH key to the head node.
+  def enable_root_ssh(cls, options, public_ip):
+    """Enables root logins on the machine, enables SSH access,
+    and copies the user's SSH key to the head node. On the tools side this
+    should only be used for the "head node" since the server does this for all
+    other nodes.
 
     Args:
       options: A Namespace that specifies the cloud infrastructure to use, as
         well as how to interact with that cloud.
-      head_node: The head_node from the NodeLayout.
+      public_ip: The IP address of the machine.
     """
-    cls.sleep_until_port_is_open(head_node.public_ip, cls.SSH_PORT,
-                                 options.verbose)
+    AppScaleLogger.log("Enabling root ssh on {0}".format(public_ip))
+    cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
 
-    # Since GCE v1beta15, SSH keys don't immediately get injected to newly
-    # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
-    # sure.
-    if options.infrastructure == 'gce':
-      AppScaleLogger.log("Waiting for SSH keys to get injected in your "
-        "machine(s).")
-      time.sleep(60)
-
-    cls.enable_root_login(head_node.public_ip, options.keyname,
-      options.infrastructure, options.verbose)
-    cls.copy_ssh_keys_to_node(head_node.public_ip, options.keyname,
-                              options.verbose)
+    cls.enable_root_login(public_ip, options.keyname, options.infrastructure,
+                          options.verbose)
+    cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
 
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):

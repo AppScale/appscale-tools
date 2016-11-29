@@ -509,8 +509,10 @@ class AppScaleTools(object):
         node_layout.nodes[i].public_ip = public_ips[i]
         node_layout.nodes[i].private_ip = private_ips[i]
         node_layout.nodes[i].instance_id = instance_ids[i]
-      #enable root ssh & login on head node
-      RemoteHelper.enable_head_node_root_ssh(options, head_node)
+
+      #Enable root ssh & login on the head node.
+
+      RemoteHelper.enable_root_ssh(options, head_node.public_ip)
     AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
                            options.verbose)
 
