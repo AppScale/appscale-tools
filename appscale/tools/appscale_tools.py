@@ -130,7 +130,8 @@ class AppScaleTools(object):
 
     # In virtualized cluster deployments, we need to make sure that the user
     # has already set up SSH keys.
-    if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
+    if LocalState.get_infrastructure_option(keyname=options.keyname,
+                                            tag='infrastructure') == "xen":
       ips_to_check = []
       for ip_group in options.ips.values():
         ips_to_check.extend(ip_group)
