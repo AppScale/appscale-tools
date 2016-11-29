@@ -28,6 +28,7 @@ from agents.gce_agent import CredentialTypes
 from agents.gce_agent import GCEAgent
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
+from utils import threaded
 
 
 class RemoteHelper(object):
@@ -218,8 +219,12 @@ class RemoteHelper(object):
       public_ips[0] = options.static_ip
       AppScaleLogger.log("Static IP associated with head node.")
 
+    handles = []
     for public_ip in public_ips:
-      cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
+      handles.append(sleep_until_port_is_open_async(
+        public_ip, cls.SSH_PORT, options.verbose))
+    for handle in handles:
+      handle.join()
 
     # Since GCE v1beta15, SSH keys don't immediately get injected to newly
     # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
@@ -229,12 +234,23 @@ class RemoteHelper(object):
         "machine(s).")
       time.sleep(60)
 
+    # Enable root login on all machines in a multi-threaded fashion.
+    handles = []
     for public_ip in public_ips:
-      cls.enable_root_login(public_ip, options.keyname,
-        options.infrastructure, options.verbose)
-      cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
-    return instance_ids, public_ips, private_ips
+      handles.append(enable_root_login_async(
+        public_ip, options.keyname, options.infrastructure, options.verbose))
+    for handle in handles:
+      handle.join()
 
+    # Copy SSH keys on all machines in a multi-threaded fashion.
+    handles = []
+    for public_ip in public_ips:
+      handles.append(copy_ssh_keys_to_node_async(
+        public_ip, options.keyname, options.verbose))
+    for handle in handles:
+      handle.join()
+
+    return instance_ids, public_ips, private_ips
 
   @classmethod
   def sleep_until_port_is_open(cls, host, port, is_verbose):
@@ -458,10 +474,11 @@ class RemoteHelper(object):
       AppScaleException: If the specified host does not have AppScale installed,
         or has the wrong version of AppScale installed.
     """
+    handles = []
     for node in node_layout.nodes:
       try:
-        RemoteHelper.ensure_machine_is_compatible(
-          node.public_ip, options.keyname, options.verbose)
+        handles.append(ensure_machine_is_compatible_async(
+          node.public_ip, options.keyname, options.verbose))
       except AppScaleException as ase:
         if options.infrastructure:
           if not options.test:
@@ -487,6 +504,9 @@ class RemoteHelper(object):
                       format(exception=str(ase), ip=node.public_ip,
                              version=APPSCALE_VERSION)
         raise AppScaleException(abort_msg)
+
+    for handle in handles:
+      handle.join()
 
 
   @classmethod
@@ -1044,3 +1064,8 @@ class RemoteHelper(object):
     return subprocess.Popen(['ssh', '-i', key_path, user_login, command],
                             shell, stdout=subprocess.PIPE)
 
+
+sleep_until_port_is_open_async = threaded(RemoteHelper.sleep_until_port_is_open)
+ensure_machine_is_compatible_async = threaded(RemoteHelper.ensure_machine_is_compatible)
+enable_root_login_async = threaded(RemoteHelper.enable_root_login)
+copy_ssh_keys_to_node_async = threaded(RemoteHelper.copy_ssh_keys_to_node)
