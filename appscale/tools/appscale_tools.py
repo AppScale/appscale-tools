@@ -511,7 +511,7 @@ class AppScaleTools(object):
         node_layout.nodes[i].private_ip = private_ips[i]
         node_layout.nodes[i].instance_id = instance_ids[i]
 
-      #Enable root ssh & login on the head node.
+      # Enables root logins and SSH access on the head node.
       RemoteHelper.enable_root_ssh(options, head_node.public_ip)
     AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
                            options.verbose)
@@ -520,7 +520,7 @@ class AppScaleTools(object):
     RemoteHelper.ensure_machine_is_compatible(
       head_node.public_ip, options.keyname, options.verbose)
 
-    #rsync custom code in all VMs.
+    # rsync custom code in all VMs.
     for node in node_layout.nodes:
       if options.scp:
         AppScaleLogger.log("Copying over local copy of AppScale from {0}".
