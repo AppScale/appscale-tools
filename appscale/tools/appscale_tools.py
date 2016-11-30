@@ -497,6 +497,7 @@ class AppScaleTools(object):
       raise BadConfigurationException("There were errors with your " + \
                                       "placement strategy:\n{0}".format(str(node_layout.errors())))
 
+    head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
     if options.infrastructure:
       instance_ids, public_ips, private_ips = RemoteHelper.start_all_nodes(
@@ -509,11 +510,15 @@ class AppScaleTools(object):
         node_layout.nodes[i].public_ip = public_ips[i]
         node_layout.nodes[i].private_ip = private_ips[i]
         node_layout.nodes[i].instance_id = instance_ids[i]
+
+      # Enables root logins and SSH access on the head node.
+      RemoteHelper.enable_root_ssh(options, head_node.public_ip)
     AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
                            options.verbose)
 
     # Ensure all nodes are compatible.
-    RemoteHelper.ensure_machines_are_compatible(options, node_layout)
+    RemoteHelper.ensure_machine_is_compatible(
+      head_node.public_ip, options.keyname, options.verbose)
 
     # rsync custom code in all VMs.
     for node in node_layout.nodes:

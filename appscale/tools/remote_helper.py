@@ -113,6 +113,24 @@ class RemoteHelper(object):
 
     return instance_ids, public_ips, private_ips
 
+  @classmethod
+  def enable_root_ssh(cls, options, public_ip):
+    """Enables root logins and SSH access on the machine
+    and copies the user's SSH key to the head node. On the tools side this
+    should only be used for the "head node" since the server does this for all
+    other nodes.
+
+    Args:
+      options: A Namespace that specifies the cloud infrastructure to use, as
+        well as how to interact with that cloud.
+      public_ip: The IP address of the machine.
+    """
+    AppScaleLogger.log("Enabling root ssh on {0}".format(public_ip))
+    cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
+
+    cls.enable_root_login(public_ip, options.keyname, options.infrastructure,
+                          options.verbose)
+    cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
 
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
@@ -196,8 +214,6 @@ class RemoteHelper(object):
     """Starts a single virtual machine in a cloud infrastructure.
 
     This method also prepares the virual machine for use by the AppScale Tools.
-    Specifically, it enables root logins on the machine, enables SSH access,
-    and copies the user's SSH key to that machine.
 
     Args:
       options: A Namespace that specifies the cloud infrastructure to use, as
@@ -217,22 +233,6 @@ class RemoteHelper(object):
       agent.associate_static_ip(params, instance_ids[0], options.static_ip)
       public_ips[0] = options.static_ip
       AppScaleLogger.log("Static IP associated with head node.")
-
-    for public_ip in public_ips:
-      cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
-
-    # Since GCE v1beta15, SSH keys don't immediately get injected to newly
-    # spawned VMs. It takes around 30 seconds, so sleep a bit longer to be
-    # sure.
-    if options.infrastructure == 'gce':
-      AppScaleLogger.log("Waiting for SSH keys to get injected in your "
-        "machine(s).")
-      time.sleep(60)
-
-    for public_ip in public_ips:
-      cls.enable_root_login(public_ip, options.keyname,
-        options.infrastructure, options.verbose)
-      cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
     return instance_ids, public_ips, private_ips
 
 
@@ -443,51 +443,6 @@ class RemoteHelper(object):
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_rsa', is_verbose)
     cls.scp(host, keyname, ssh_key, '/root/.appscale/{0}.key'.format(keyname),
       is_verbose)
-
-
-  @classmethod
-  def ensure_machines_are_compatible(cls, options, node_layout):
-    """Verifies that all nodes have AppScale installed on it.
-
-    Args:
-      options: A Namespace that has fields for each parameter that can be
-        passed in via the command-line interface.
-      node_layout: A NodeLayout that describes the placement strategy that
-        should be used for this AppScale deployment.
-    Raises:
-      AppScaleException: If the specified host does not have AppScale installed,
-        or has the wrong version of AppScale installed.
-    """
-    for node in node_layout.nodes:
-      try:
-        RemoteHelper.ensure_machine_is_compatible(
-          node.public_ip, options.keyname, options.verbose)
-      except AppScaleException as ase:
-        if options.infrastructure:
-          if not options.test:
-            try:
-              RemoteHelper.terminate_cloud_instance(node.instance_id, options)
-            except Exception as tcie:
-              AppScaleLogger.log("Error terminating instance {ip}: "
-                                 "{exception}".format(ip=node.public_ip,
-                                                      exception=str(tcie)))
-            abort_msg = "{exception} Please ensure that image {image} has " \
-                        "AppScale {version} installed on it.".\
-                        format(exception=str(ase), image=options.machine,
-                               version= APPSCALE_VERSION)
-          else:
-            AppScaleLogger.warn("In test mode: Instance(s) not terminated!")
-            abort_msg = "{exception} Please ensure that instance {ip} of " \
-                        "{image} has AppScale {version} installed on it.".\
-                        format(exception=str(ase), ip=node.public_ip,
-                               image=options.machine, version=APPSCALE_VERSION)
-        else:
-          abort_msg = "{exception} Please ensure that {ip} has AppScale " \
-                      "{version} installed on it.".\
-                      format(exception=str(ase), ip=node.public_ip,
-                             version=APPSCALE_VERSION)
-        raise AppScaleException(abort_msg)
-
 
   @classmethod
   def ensure_machine_is_compatible(cls, host, keyname, is_verbose):
