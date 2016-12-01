@@ -13,6 +13,7 @@ import time
 # Azure specific imports
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
@@ -22,11 +23,22 @@ from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
 from azure.mgmt.compute.models import OSDisk
 from azure.mgmt.compute.models import OSProfile
+from azure.mgmt.compute.models import Sku
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import UpgradePolicy
+from azure.mgmt.compute.models import UpgradeMode
 from azure.mgmt.compute.models import VirtualHardDisk
 from azure.mgmt.compute.models import VirtualMachine
+from azure.mgmt.compute.models import VirtualMachineScaleSet
+from azure.mgmt.compute.models import VirtualMachineScaleSetIPConfiguration
+from azure.mgmt.compute.models import VirtualMachineScaleSetNetworkConfiguration
+from azure.mgmt.compute.models import VirtualMachineScaleSetNetworkProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetOSDisk
+from azure.mgmt.compute.models import VirtualMachineScaleSetOSProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetStorageProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetVMProfile
 from azure.mgmt.compute.models import VirtualMachineSizeTypes
 
 from azure.mgmt.network import NetworkManagementClient
@@ -267,17 +279,55 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
     virtual_network = parameters[self.PARAM_GROUP]
+    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
-    for _ in range(count):
-      vm_network_name = Haikunator().haikunate()
-      self.create_network_interface(network_client, vm_network_name,
-        vm_network_name, subnet, parameters)
-      network_interface = network_client.network_interfaces.get(
-        resource_group, vm_network_name)
-      self.create_virtual_machine(credentials, network_client,
-        network_interface.id, parameters, vm_network_name)
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    scale_set_name = 'scale-set-6vms'
+    resource_name = Haikunator().haikunate()
+    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
 
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key_path = private_key_path + ".pub"
+
+    with open(public_key_path, 'r') as pub_ssh_key_fd:
+      pub_ssh_key = pub_ssh_key_fd.read()
+
+    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
+    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
+    ssh_config = SshConfiguration(public_keys=public_keys)
+    linux_configuration = LinuxConfiguration(disable_password_authentication=True,
+                                             ssh=ssh_config)
+    os_profile = VirtualMachineScaleSetOSProfile(linux_configuration=linux_configuration)
+    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
+    virtual_hd = VirtualHardDisk(
+      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
+        format(storage_account, resource_name))
+    os_disk = VirtualMachineScaleSetOSDisk(name=resource_name,
+                                           caching=CachingTypes.read_write,
+                                           create_option=DiskCreateOptionTypes.from_image,
+                                           os_type=OperatingSystemTypes.linux,
+                                           image=image_hd,
+                                           vhd_containers=[virtual_hd.uri])
+    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
+    subnet_reference = ApiEntityReference(id=subnet.id)
+    ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
+                                                      subnet=subnet_reference)
+    network_interface_config = VirtualMachineScaleSetNetworkConfiguration(name=resource_name,
+                                                                          primary=True,
+                                                                          ip_configurations=ip_config)
+    network_profile = VirtualMachineScaleSetNetworkProfile(network_interface_configurations=network_interface_config)
+    virtual_machine_profile = VirtualMachineScaleSetVMProfile(os_profile=os_profile,
+                                                              storage_profile=storage_profile,
+                                                              network_profile=network_profile)
+
+    #sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
+    sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE])
+    vm_scale_set = VirtualMachineScaleSet(sku=sku, virtual_machine_profile=virtual_machine_profile)
+
+    compute_client.virtual_machine_scale_sets.create_or_update(
+      resource_group, scale_set_name, vm_scale_set)
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     return instance_ids, public_ips, private_ips
 
@@ -555,15 +605,9 @@ class AzureAgent(BaseAgent):
       raise AgentConfigurationException("Unable to authenticate using the "
                                         "credentials provided.")
 
-    # Check if the resource group passed in exists already, if it does, then
-    # pass an existing group flag so that it is not created again.
     # In case no resource group is passed, pass a default group.
-    params[self.PARAM_EXISTING_RG] = False
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
-
-    if args[self.PARAM_RESOURCE_GROUP] in rg_names:
-      params[self.PARAM_EXISTING_RG] = True
 
     if not args[self.PARAM_STORAGE_ACCOUNT]:
       params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
@@ -737,7 +781,7 @@ class AzureAgent(BaseAgent):
     """
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_client = ResourceManagementClient(credentials, subscription_id)
-    rg_name = parameters[self.PARAM_RESOURCE_GROUP]
+    resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
 
     tag_name = 'default-tag'
     if parameters[self.PARAM_TAG]:
@@ -748,18 +792,18 @@ class AzureAgent(BaseAgent):
     try:
       # If the resource group does not already exist, create a new one with the
       # specified storage account.
-      if not parameters[self.PARAM_EXISTING_RG]:
+      if not self.does_resource_group_exist(resource_group_name, resource_client):
         AppScaleLogger.log("Creating a new resource group '{0}' with the tag "
-          "'{1}'.".format(rg_name, tag_name))
+                           "'{1}'.".format(resource_group_name, tag_name))
         resource_client.resource_groups.create_or_update(
-          rg_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
+          resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
                                  tags={'tag': tag_name}))
         self.create_storage_account(parameters, storage_client)
       else:
         # If it already exists, check if the specified storage account exists
         # under it and if not, create a new account.
         storage_accounts = storage_client.storage_accounts.\
-          list_by_resource_group(rg_name)
+          list_by_resource_group(resource_group_name)
         acct_names = []
         for account in storage_accounts:
           acct_names.append(account.name)
@@ -767,7 +811,7 @@ class AzureAgent(BaseAgent):
         if parameters[self.PARAM_STORAGE_ACCOUNT] in acct_names:
             AppScaleLogger.log("Storage account '{0}' under '{1}' resource group "
               "already exists. So not creating it again.".format(
-              parameters[self.PARAM_STORAGE_ACCOUNT], rg_name))
+              parameters[self.PARAM_STORAGE_ACCOUNT], resource_group_name))
         else:
           self.create_storage_account(parameters, storage_client)
     except CloudError as error:
@@ -803,3 +847,21 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a storage account "
         "using the credentials provided: {}".format(error.message))
+
+  def does_resource_group_exist(self, resource_group_name, resource_client):
+    """ Checks if the given resource group already exists.
+    Args:
+      resource_group_name: The name of the resource group to check.
+      resource_client: An instance of the ResourceManagementClient.
+    Returns:
+      True, if resource group already exists.
+      False, otherwise.
+    """
+    resource_groups = resource_client.resource_groups.list()
+    resource_group_names = []
+    for rg in resource_groups:
+      resource_group_names.append(rg.name)
+
+    if resource_group_name in resource_group_names:
+      return True
+    return False
