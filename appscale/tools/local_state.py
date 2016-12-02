@@ -786,7 +786,8 @@ class LocalState(object):
       A str containing the resource group name being used for this
       AppScale deployment.
     """
-    return cls.get_infrastructure_option(tag="azure_resouce_group", keyname=keyname)
+    return cls.get_infrastructure_option(tag="azure_resource_group",
+                                         keyname=keyname)
 
   @classmethod
   def get_storage_account(cls, keyname):
