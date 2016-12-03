@@ -205,7 +205,7 @@ class LocalState(object):
 
       if options.infrastructure == "gce":
         iaas_creds['project'] = options.project
-        iaas_creds['gce_user'] = getpass.getuser()
+        iaas_creds['gce_user'] = "appscale"
       elif options.infrastructure == 'azure':
         iaas_creds['azure_subscription_id'] = options.azure_subscription_id
         iaas_creds['azure_app_id'] = options.azure_app_id

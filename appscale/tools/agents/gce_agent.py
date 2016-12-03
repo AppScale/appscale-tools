@@ -252,7 +252,7 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      system_user = "appscale"
       our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     gce_service, credentials = self.open_connection(parameters)
@@ -349,7 +349,7 @@ class GCEAgent(BaseAgent):
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
-      system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
+      system_user = "appscale"
       our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
 
     if all_ssh_keys:

@@ -341,7 +341,7 @@ class RemoteHelper(object):
       # Google Compute Engine creates a user with the same name as the currently
       # logged-in user, so log in as that user to enable root login.
       if infrastructure == "gce":
-        cls.merge_authorized_keys(host, keyname, getpass.getuser(),
+        cls.merge_authorized_keys(host, keyname, "appscale",
           is_verbose)
         return
       else:
