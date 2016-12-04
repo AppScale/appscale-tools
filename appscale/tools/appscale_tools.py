@@ -520,13 +520,12 @@ class AppScaleTools(object):
     RemoteHelper.ensure_machine_is_compatible(
       head_node.public_ip, options.keyname, options.verbose)
 
-    # rsync custom code in all VMs.
-    for node in node_layout.nodes:
-      if options.scp:
-        AppScaleLogger.log("Copying over local copy of AppScale from {0}".
-          format(options.scp))
-        RemoteHelper.rsync_files(node.public_ip, options.keyname, options.scp,
-          options.verbose)
+    # Use rsync to move custom code into the deployment.
+    if options.scp:
+      AppScaleLogger.log("Copying over local copy of AppScale from {0}".
+        format(options.scp))
+      RemoteHelper.rsync_files(head_node.public_ip, options.keyname, options.scp,
+        options.verbose)
 
     # Start services on head node.
     RemoteHelper.start_head_node(options, my_id, node_layout)
