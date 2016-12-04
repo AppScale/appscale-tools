@@ -57,6 +57,8 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
 
 from msrestazure.azure_exceptions import CloudError
+#from msrestazure.azure_operation import OperationFinished
+#from msrestazure.azure_operation import OperationFailed
 
 from haikunator import Haikunator
 
@@ -141,6 +143,9 @@ class AzureAgent(BaseAgent):
   # The maximum number of seconds to wait for an Azure VM to be created.
   # (Takes longer than the creation time for other resources.)
   MAX_VM_CREATION_TIME = 240
+
+  # The maximum number of seconds to wait for an Azure Scale VMs to be created.
+  MAX_VMSS_WAIT_TIME = 300
 
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
@@ -275,134 +280,84 @@ class AzureAgent(BaseAgent):
       private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
     virtual_network = parameters[self.PARAM_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
-    compute_client = ComputeManagementClient(credentials, subscription_id)
-    scale_set_name = 'scale-set-6vms'
-    resource_name = Haikunator().haikunate()
-    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
+    self.create_vm_scale_sets(count, parameters, subnet)
+    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
+    return instance_ids, public_ips, private_ips
 
+  def create_vm_scale_sets(self, count, parameters, subnet):
+    """ Creates a Virtual Machine Scale Set containing the given number of
+    virtual machines with the virtual network provided.
+    Args:
+        count: The number of virtual machines to be created in the scale set.
+        parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+        subnet:
+    Raises:
+        AgentConfigurationException: If the operation to create a virtual
+        machine scale set did not succeed.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    resource_name = Haikunator().haikunate()
+    scale_set_name = resource_name + "-scaleset-{}vms".format(count)
+    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     keyname = parameters[self.PARAM_KEYNAME]
+    zone = parameters[self.PARAM_ZONE]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
     public_key_path = private_key_path + ".pub"
-
     with open(public_key_path, 'r') as pub_ssh_key_fd:
       pub_ssh_key = pub_ssh_key_fd.read()
-
     key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
     public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
     ssh_config = SshConfiguration(public_keys=public_keys)
     linux_configuration = LinuxConfiguration(disable_password_authentication=True,
                                              ssh=ssh_config)
-    os_profile = VirtualMachineScaleSetOSProfile(linux_configuration=linux_configuration)
+    os_profile = VirtualMachineScaleSetOSProfile(
+      computer_name_prefix=resource_name, admin_username=self.ADMIN_USERNAME,
+      linux_configuration=linux_configuration)
     image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
-    virtual_hd = VirtualHardDisk(
-      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
-        format(storage_account, resource_name))
-    os_disk = VirtualMachineScaleSetOSDisk(name=resource_name,
-                                           caching=CachingTypes.read_write,
-                                           create_option=DiskCreateOptionTypes.from_image,
-                                           os_type=OperatingSystemTypes.linux,
-                                           image=image_hd,
-                                           vhd_containers=[virtual_hd.uri])
+    os_disk = VirtualMachineScaleSetOSDisk(
+      name=resource_name, caching=CachingTypes.read_write,
+      create_option=DiskCreateOptionTypes.from_image,
+      os_type=OperatingSystemTypes.linux, image=image_hd)
     storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
     subnet_reference = ApiEntityReference(id=subnet.id)
     ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
                                                       subnet=subnet_reference)
-    network_interface_config = VirtualMachineScaleSetNetworkConfiguration(name=resource_name,
-                                                                          primary=True,
-                                                                          ip_configurations=ip_config)
-    network_profile = VirtualMachineScaleSetNetworkProfile(network_interface_configurations=network_interface_config)
-    virtual_machine_profile = VirtualMachineScaleSetVMProfile(os_profile=os_profile,
-                                                              storage_profile=storage_profile,
-                                                              network_profile=network_profile)
-
-    #sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
-    sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE])
-    vm_scale_set = VirtualMachineScaleSet(sku=sku, virtual_machine_profile=virtual_machine_profile)
-
-    compute_client.virtual_machine_scale_sets.create_or_update(
+    network_interface_config = VirtualMachineScaleSetNetworkConfiguration(
+      name=resource_name, primary=True, ip_configurations=[ip_config])
+    network_profile = VirtualMachineScaleSetNetworkProfile(
+      network_interface_configurations=[network_interface_config])
+    virtual_machine_profile = VirtualMachineScaleSetVMProfile(
+      os_profile=os_profile, storage_profile=storage_profile,
+      network_profile=network_profile)
+    sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
+    vm_scale_set = VirtualMachineScaleSet(
+      sku=sku, upgrade_policy=upgrade_policy, location=zone,
+      virtual_machine_profile=virtual_machine_profile, over_provision=False)
+    create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
       resource_group, scale_set_name, vm_scale_set)
-    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
-    return instance_ids, public_ips, private_ips
+    try:
+      create_update_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
+      result = create_update_response.result()
+      if result.provisioning_state == 'Succeeded':
+        AppScaleLogger.log("Scale Set '{0}' with {1} VMs has been successfully "
+                           "configured!".format(scale_set_name, count))
+      else:
+        AppScaleLogger.log("Unable to create a Scale Set of {0} "
+                           "VMs.Provisioning Status: {1}"
+                           .format(count, result.provisioning_state))
 
-  def create_virtual_machine(self, credentials, network_client, network_id,
-                             parameters, vm_network_name):
-    """ Creates an Azure virtual machine using the network interface created.
-    Args:
-      credentials: A ServicePrincipalCredentials instance, that can be used to
-        access or create any resources.
-      network_client: A NetworkManagementClient instance.
-      network_id: The network id of the network interface created.
-      parameters: A dict, containing all the parameters necessary to
-        authenticate this user with Azure.
-      vm_network_name: The name of the virtual machine to use.
-    """
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
-    zone = parameters[self.PARAM_ZONE]
-    verbose = parameters[self.PARAM_VERBOSE]
-    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
-                           format(vm_network_name), verbose)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
-    azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
-    compute_client = ComputeManagementClient(credentials, subscription_id)
-
-    keyname = parameters[self.PARAM_KEYNAME]
-    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
-    public_key_path = private_key_path + ".pub"
-
-    with open(public_key_path, 'r') as pub_ssh_key_fd:
-      pub_ssh_key = pub_ssh_key_fd.read()
-
-    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
-    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
-    ssh_config = SshConfiguration(public_keys=public_keys)
-    linux_config = LinuxConfiguration(disable_password_authentication=True,
-                                      ssh=ssh_config)
-    os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
-                           computer_name=vm_network_name,
-                           linux_configuration=linux_config)
-
-    hardware_profile = HardwareProfile(vm_size=azure_instance_type)
-
-    network_profile = NetworkProfile(
-      network_interfaces=[NetworkInterfaceReference(id=network_id)])
-
-    virtual_hd = VirtualHardDisk(
-      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
-        format(storage_account, vm_network_name))
-
-    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
-    os_type = OperatingSystemTypes.linux
-    os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
-                     create_option=DiskCreateOptionTypes.from_image,
-                     name=vm_network_name, vhd=virtual_hd, image=image_hd)
-
-    compute_client.virtual_machines.create_or_update(
-      resource_group, vm_network_name, VirtualMachine(location=zone,
-                                                      os_profile=os_profile,
-                                                      hardware_profile=hardware_profile,
-                                                      network_profile=network_profile,
-                                                      storage_profile=StorageProfile(
-                                                        os_disk=os_disk)))
-
-    # Sleep until an IP address gets associated with the VM.
-    while True:
-      public_ip_address = network_client.public_ip_addresses.get(resource_group,
-                                                                 vm_network_name)
-      if public_ip_address.ip_address:
-        AppScaleLogger.log('Azure VM is available at {}'.
-                           format(public_ip_address.ip_address))
-        break
-      AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
-        "available".format(self.SLEEP_TIME), verbose)
-      time.sleep(self.SLEEP_TIME)
+    except CloudError as error:
+      raise AgentConfigurationException("Unable to create a Scale Set of {0} "
+                                        " VMs: {1}".format(count, error.message))
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
