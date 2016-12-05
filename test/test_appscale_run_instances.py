@@ -31,6 +31,7 @@ from appscale.tools.local_state import APPSCALE_VERSION
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
+from appscale.tools.custom_exceptions import BadConfigurationException
 
 
 class TestAppScaleRunInstances(unittest.TestCase):
@@ -175,8 +176,8 @@ group: {1}
       instances=[pending_instance])
 
     running_instance = flexmock(name='running_instance', state='running',
-      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
-      private_dns_name='private1')
+      key_name=self.keyname, id='i-ABCDEFG', ip_address='public1',
+      private_ip_address='private1')
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
@@ -208,14 +209,15 @@ group: {1}
   def setup_appcontroller_mocks(self, public_ip, private_ip):
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('set_parameters').with_args(str, list,
-      ['none'], 'the secret').and_return('OK')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps([public_ip]))
+    fake_appcontroller.should_receive('set_parameters').\
+      with_args(str, str, 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('get_all_public_ips').\
+      with_args('the secret').and_return(json.dumps([public_ip]))
     role_info = [{
       'public_ip' : public_ip,
       'private_ip' : private_ip,
-      'jobs' : ['shadow', 'login']
+      'jobs' : ['shadow', 'login'],
+      'instance_id': 'i-APPSCALE'
     }]
     fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
       .and_return(json.dumps(role_info))
@@ -262,11 +264,27 @@ group: {1}
 
 
   def test_appscale_in_one_node_virt_deployment(self):
-    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ", False, 5, stdin="cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/")
+    self.local_state.should_receive('shell').\
+      with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
+                "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
+                "-o UserKnownHostsFile=/dev/null root@public1 ",
+                False, 5,
+                stdin="cp /root/appscale/AppController/scripts/appcontroller "
+                      "/etc/init.d/")
 
-    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@1.2.3.4 ", False, 5, stdin="chmod +x /etc/init.d/appcontroller")
+    self.local_state.should_receive('shell').\
+      with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
+                "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
+                "-o UserKnownHostsFile=/dev/null root@1.2.3.4 ",
+                False, 5, stdin="chmod +x /etc/init.d/appcontroller")
     
-    self.local_state.should_receive('shell').with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ", False, 5, stdin="cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/")
+    self.local_state.should_receive('shell').\
+      with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
+                "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
+                "-o UserKnownHostsFile=/dev/null root@public1 ",
+                False, 5,
+                stdin="cp /root/appscale/AppController/scripts/appcontroller "
+                      "/etc/init.d/")
 
     # let's say that appscale isn't already running
     self.local_state.should_receive('ensure_appscale_isnt_running').and_return()
@@ -277,12 +295,12 @@ group: {1}
 
     # mock out talking to logs.appscale.com
     fake_connection = flexmock(name='fake_connection')
-    fake_connection.should_receive('request').with_args('POST', '/upload', str,
-      AppScaleLogger.HEADERS).and_return()
+    fake_connection.should_receive('request').\
+      with_args('POST', '/upload', str, AppScaleLogger.HEADERS).and_return()
 
     flexmock(httplib)
-    httplib.should_receive('HTTPConnection').with_args('logs.appscale.com') \
-      .and_return(fake_connection)
+    httplib.should_receive('HTTPConnection').\
+      with_args('logs.appscale.com').and_return(fake_connection)
 
     # mock out generating the secret key
     flexmock(uuid)
@@ -294,10 +312,10 @@ group: {1}
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
-    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
-      .and_return(fake_secret)
-    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
-      .and_return(fake_secret)
+    self.builtins.should_receive('open').\
+      with_args(secret_key_location, 'r').and_return(fake_secret)
+    self.builtins.should_receive('open').\
+      with_args(secret_key_location, 'w').and_return(fake_secret)
 
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
@@ -328,7 +346,12 @@ group: {1}
       .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
       .and_return()
 
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@1.2.3.4 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return() 
+    self.local_state.should_receive('shell').\
+      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
+                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
+                '-o UserKnownHostsFile=/dev/null root@1.2.3.4 ',
+                False, 5,
+                stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
 
     self.setup_socket_mocks('1.2.3.4')
     self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
@@ -336,9 +359,9 @@ group: {1}
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "1.2.3.4",
-        "private_ip" : "1.2.3.4",
-        "jobs" : ["shadow", "login"]
+        "public_ip": "1.2.3.4",
+        "private_ip": "1.2.3.4",
+        "jobs": ["shadow", "login"]
       }])))
 
     # Assume the locations files were copied successfully.
@@ -472,19 +495,36 @@ appengine:  1.2.3.4
     ).and_return()
 
     # and assume that we can copy over our ssh keys fine
-    self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
-      False, 5).and_return()
-    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
-      .format(self.keyname)), False, 5).and_return()
+    self.local_state.should_receive('shell').\
+      with_args(re.compile('scp .*[r|d]sa'), False, 5).and_return()
+    self.local_state.should_receive('shell').\
+      with_args(re.compile('scp .*{0}'.format(self.keyname)), False, 5).\
+      and_return()
 
-    self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
-      .format(self.keyname)), False, 5).and_return()
+    self.local_state.should_receive('shell').\
+      with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o '
+                'NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
+                '-o UserKnownHostsFile=/dev/null root@public1 ',
+                False, 5,
+                stdin='cp /root/appscale/AppController/scripts/appcontroller '
+                      '/etc/init.d/').\
+      and_return()
 
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+    self.local_state.should_receive('shell').\
+      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
+                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
+                '-o UserKnownHostsFile=/dev/null root@elastic-ip ',
+                False, 5,
+                stdin='cp /root/appscale/AppController/scripts/appcontroller '
+                      '/etc/init.d/').\
+      and_return()
 
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
+    self.local_state.should_receive('shell').\
+      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
+                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
+                '-o UserKnownHostsFile=/dev/null root@elastic-ip ',
+                False, 5, stdin='chmod +x /etc/init.d/appcontroller').\
+      and_return()
 
     self.setup_appscale_compatibility_mocks()
 
@@ -508,7 +548,7 @@ appengine:  1.2.3.4
       json.dumps([{
         "public_ip" : "elastic-ip",
         "private_ip" : "private1",
-        "jobs" : ["shadow", "login"]
+        "jobs": ["shadow", "login"]
       }])))
 
     # copying over the locations yaml and json files should be fine
@@ -532,8 +572,8 @@ appengine:  1.2.3.4
 
     no_instances = flexmock(name='no_instances', instances=[])
     running_instance = flexmock(name='running_instance', state='running',
-      key_name=self.keyname, id='i-ABCDEFG', public_dns_name='public1',
-      private_dns_name='private1')
+      key_name=self.keyname, id='i-ABCDEFG', ip_address='public1',
+      private_ip_address='private1')
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
@@ -669,7 +709,7 @@ appengine:  1.2.3.4
         "jobs" : ["shadow", "login"]
       }])))
 
-    # copying over the locations yaml and json files should be fine
+    # copying over the locations json file should be fine
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
@@ -723,6 +763,9 @@ appengine:  1.2.3.4
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 
     flexmock(RemoteHelper)
+    RemoteHelper.should_receive('enable_root_ssh').and_return()
+    RemoteHelper.should_receive('ensure_machine_is_compatible')\
+        .and_return()
     RemoteHelper.should_receive('start_head_node')\
         .and_return(('1.2.3.4','i-ABCDEFG'))
     RemoteHelper.should_receive('sleep_until_port_is_open').and_return()
@@ -755,4 +798,3 @@ appengine:  1.2.3.4
 
     options = ParseArgs(argv, self.function).args
     AppScaleTools.run_instances(options)
-

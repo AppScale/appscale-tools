@@ -30,7 +30,7 @@ from appscale.tools.agents.gce_agent import CredentialTypes
 from appscale.tools.agents.gce_agent import GCEAgent
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
@@ -85,8 +85,7 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_when_not_running(self):
-    # let's say that there's no locations.yaml file, which means appscale isn't
-    # running, so we should throw up and die
+    # let's say that appscale isn't running, so we should throw up and die
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
@@ -97,20 +96,22 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       "--test"
     ]
     options = ParseArgs(argv, self.function).args
-    self.assertRaises(AppScaleException, AppScaleTools.terminate_instances,
+    self.assertRaises(BadConfigurationException,
+                      AppScaleTools.terminate_instances,
       options)
 
 
   def test_terminate_in_virtual_cluster_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is
     # running, so we should terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # a virtualized cluster
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on a virtualized cluster
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
@@ -118,9 +119,6 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     fake_yaml_file.should_receive('read').and_return(yaml.dump({
       'infrastructure' : 'xen'
     }))
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_yaml_location(self.keyname), 'r') \
-      .and_return(fake_yaml_file)
 
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
@@ -128,16 +126,16 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
+    fake_json_file.should_receive('read').and_return(json.dumps({"node_info": [
       {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+        'public_ip': 'public1',
+        'jobs': ['shadow']
       },
       {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
+        'public_ip': 'public2',
+        'jobs': ['appengine']
       }
-    ]))
+    ]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)
@@ -177,8 +175,6 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # this machine
     flexmock(os)
     os.should_receive('remove').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return()
-    os.should_receive('remove').with_args(
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
@@ -195,46 +191,43 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_in_cloud_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
-    # running, so we should terminate the services on each box
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is running, so we should
+    # terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
-    os.path.should_receive('exists').with_args(
-      LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
-
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # a virtualized cluster
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on a virtualized cluster
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
 
     # Assume persistent disks are used.
     flexmock(LocalState).should_receive('are_disks_used').and_return(True)
 
-    fake_yaml_file = flexmock(name='fake_file')
-    fake_yaml_file.should_receive('read').and_return(yaml.dump({
-      'infrastructure' : 'ec2',
-      'group' : self.group,
-    }))
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_yaml_location(self.keyname), 'r') \
-      .and_return(fake_yaml_file)
-
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
-      {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+    fake_json_file.should_receive('read').and_return(json.dumps({
+      "infrastructure_info": {
+        'infrastructure': 'ec2',
+        'group': self.group,
       },
-      {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
-      }
-    ]))
+      "node_info": [
+        {
+          'public_ip': 'public1',
+          'jobs': ['shadow']
+        },
+        {
+          'public_ip': 'public2',
+          'jobs': ['appengine']
+        }
+      ]
+    }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)
@@ -252,22 +245,22 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # let's say that three instances are running, and that two of them are in
     # our deployment
     fake_one_running = flexmock(name='fake_one', key_name=self.keyname, state='running',
-      id='i-ONE', public_dns_name='public1', private_dns_name='private1')
+      id='i-ONE', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_two_running = flexmock(name='fake_two', key_name=self.keyname, state='running',
-      id='i-TWO', public_dns_name='public2', private_dns_name='private2')
+      id='i-TWO', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_three_running = flexmock(name='fake_three', key_name='abcdefg',
-      state='running', id='i-THREE', public_dns_name='public3',
-      private_dns_name='private3')
+      state='running', id='i-THREE', ip_address='1.2.3.4',
+      private_ip_address='1.2.3.4')
     fake_reservation_running = flexmock(name='fake_reservation', instances=[fake_one_running,
       fake_two_running, fake_three_running])
 
     fake_one_terminated = flexmock(name='fake_one', key_name=self.keyname, state='terminated',
-      id='i-ONE', public_dns_name='public1', private_dns_name='private1')
+      id='i-ONE', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_two_terminated = flexmock(name='fake_two', key_name=self.keyname, state='terminated',
-      id='i-TWO', public_dns_name='public2', private_dns_name='private2')
+      id='i-TWO', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_three_terminated = flexmock(name='fake_three', key_name='abcdefg',
-      state='terminated', id='i-THREE', public_dns_name='public3',
-      private_dns_name='private3')
+      state='terminated', id='i-THREE', ip_address='1.2.3.4',
+      private_ip_address='1.2.3.4')
     fake_reservation_terminated = flexmock(name='fake_reservation', instances=[fake_one_terminated,
       fake_two_terminated, fake_three_terminated])
 
@@ -293,8 +286,6 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # this machine
     flexmock(os)
     os.should_receive('remove').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return()
-    os.should_receive('remove').with_args(
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return()
@@ -313,21 +304,18 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
 
 
   def test_terminate_in_gce_and_succeeds(self):
-    # let's say that there is a locations.yaml file, which means appscale is
-    # running, so we should terminate the services on each box
+    # let's say that there is a locations.json file with key
+    # 'infrastructure_info', which means appscale is running, so we should
+    # terminate the services on each box
     flexmock(os.path)
     os.path.should_call('exists')  # set up the fall-through
-    os.path.should_receive('exists').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return(True)
     os.path.should_receive('exists').with_args(
       LocalState.get_client_secrets_location(self.keyname)).and_return(True)
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
-    os.path.should_receive('exists').with_args(
-      LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
-    # mock out reading the locations.yaml file, and pretend that we're on
-    # GCE
+    # mock out reading the locations.json file with key
+    # 'infrastructure_info', and pretend that we're on GCE
     project_id = "1234567890"
     zone = 'my-zone-1b'
     builtins = flexmock(sys.modules['__builtin__'])
@@ -336,30 +324,29 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # Assume persistent disks are used.
     flexmock(LocalState).should_receive('are_disks_used').and_return(True)
 
-    fake_yaml_file = flexmock(name='fake_file')
-    fake_yaml_file.should_receive('read').and_return(yaml.dump({
-      'infrastructure' : 'gce',
-      'group' : self.group,
-      'project' : project_id,
-      'zone' : zone
-    }))
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_yaml_location(self.keyname), 'r') \
-      .and_return(fake_yaml_file)
-
     # mock out reading the json file, and pretend that we're running in a
     # two node deployment
+    os.path.should_receive('exists').with_args(
+      LocalState.get_locations_json_location(self.keyname)).and_return(True)
     fake_json_file = flexmock(name='fake_file')
-    fake_json_file.should_receive('read').and_return(json.dumps([
-      {
-        'public_ip' : 'public1',
-        'jobs' : ['shadow']
+    fake_json_file.should_receive('read').and_return(json.dumps({
+      "infrastructure_info": {
+        'infrastructure': 'gce',
+        'group': self.group,
+        'project': project_id,
+        'zone': zone
       },
-      {
-        'public_ip' : 'public2',
-        'jobs' : ['appengine']
-      }
-    ]))
+      "node_info": [
+        {
+          'public_ip': 'public1',
+          'jobs': ['shadow']
+        },
+        {
+          'public_ip': 'public2',
+          'jobs': ['appengine']
+        }
+      ]
+    }))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_json_file)
@@ -638,8 +625,6 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
     # finally, mock out removing the yaml file, json file, and secret key from
     # this machine
     flexmock(os)
-    os.should_receive('remove').with_args(
-      LocalState.get_locations_yaml_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(
       LocalState.get_locations_json_location(self.keyname)).and_return()
     os.should_receive('remove').with_args(

@@ -1,22 +1,20 @@
-#!/usr/bin/env python
-
-
 # General-purpose Python library imports
 import sys
 import traceback
 
 
 # AppScale library imports
-from appscale.tools import version_helper
-from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.local_state import LocalState
-from appscale.tools.parse_args import ParseArgs
+from .. import version_helper
+from ..appscale_tools import AppScaleTools
+from ..local_state import LocalState
+from ..parse_args import ParseArgs
 
 
 version_helper.ensure_valid_python_is_used()
 
 
-if __name__ == "__main__":
+def main():
+  """ Execute appscale-terminate instances script. """
   options = ParseArgs(sys.argv[1:], "appscale-terminate-instances").args
   try:
     AppScaleTools.terminate_instances(options)

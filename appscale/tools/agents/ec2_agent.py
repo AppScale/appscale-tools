@@ -292,8 +292,9 @@ class EC2Agent(BaseAgent):
     return params
 
 
-  def get_params_from_yaml(self, keyname):
-    """Searches through the locations.yaml file to build a dict containing the
+  def get_cloud_params(self, keyname):
+    """Searches through the locations.json file with key
+    'infrastructure_info' to build a dict containing the
     parameters necessary to interact with Amazon EC2.
 
     Args:
@@ -370,8 +371,8 @@ class EC2Agent(BaseAgent):
       if (i.state == 'running' or (pending and i.state == 'pending'))\
            and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
@@ -831,6 +832,6 @@ class EC2Agent(BaseAgent):
     for i in instances:
       if i.state == status and i.key_name == keyname:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids

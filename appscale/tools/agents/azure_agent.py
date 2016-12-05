@@ -266,8 +266,9 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
+    virtual_network = parameters[self.PARAM_GROUP]
     subnet = self.create_virtual_network(network_client, parameters,
-                                         self.VIRTUAL_NETWORK, self.VIRTUAL_NETWORK)
+                                         virtual_network, virtual_network)
     for _ in range(count):
       vm_network_name = Haikunator().haikunate()
       self.create_network_interface(network_client, vm_network_name,
@@ -538,6 +539,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_APP_SECRET: args[self.PARAM_APP_SECRET],
       self.PARAM_IMAGE_ID: args['machine'],
       self.PARAM_INSTANCE_TYPE: args[self.PARAM_INSTANCE_TYPE],
+      self.PARAM_GROUP: args[self.PARAM_GROUP],
       self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
       self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
       self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
@@ -567,8 +569,9 @@ class AzureAgent(BaseAgent):
       params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
     return params
 
-  def get_params_from_yaml(self, keyname):
-    """ Searches through the locations.yaml file to build a dict containing the
+  def get_cloud_params(self, keyname):
+    """ Searches through the locations.json file with key
+    'infrastructure_info' to build a dict containing the
     parameters necessary to interact with Microsoft Azure.
     Args:
       keyname: A str that uniquely identifies this AppScale deployment.
