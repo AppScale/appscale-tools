@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch, Brian Drawert
 
 
 # First-party Python imports
@@ -20,6 +19,7 @@ import yaml
 # AppScale-specific imports
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
+from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
 from custom_exceptions import AppScalefileException
 from custom_exceptions import BadConfigurationException
@@ -93,9 +93,23 @@ class LocalState(object):
       return
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
-      raise BadConfigurationException("AppScale is already running. Terminate" +
-        " it, set 'force: True' in your AppScalefile, or use the --force flag" +
-        " to run anyways.")
+      try:
+        login_host = cls.get_login_host(keyname)
+        secret_key = cls.get_secret_key(keyname)
+      except (IOError, AppScaleException, BadConfigurationException):
+        # If we don't have the locations files, we are not running.
+        return
+
+      acc = AppControllerClient(login_host, secret_key)
+      try:
+        acc.get_status()
+      except AppControllerException:
+        # AC is not running, so we assume appscale is not up and running.
+        AppScaleLogger.log("AppController not running on login node.")
+      else:
+        raise BadConfigurationException("AppScale is already running. Terminate" +
+          " it, set 'force: True' in your AppScalefile, or use the --force flag" +
+          " to run anyways.")
 
 
   @classmethod
@@ -139,9 +153,15 @@ class LocalState(object):
         deployment.
     Returns:
       A str containing the secret key.
+    Raises:
+      BadConfigurationException: if the secret key file is not found.
     """
-    with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
-      return file_handle.read()
+    try:
+      with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
+        return file_handle.read()
+    except IOError:
+     raise BadConfigurationException(
+       "Couldn't find secret key for keyname {}.".format(keyname))
 
 
   @classmethod
@@ -834,15 +854,16 @@ class LocalState(object):
 
 
   @classmethod
-  def cleanup_appscale_files(cls, keyname):
+  def cleanup_appscale_files(cls, keyname, remove_location=True):
     """Removes all AppScale metadata files from this machine.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
     """
-    files_to_remove = [LocalState.get_locations_json_location(keyname),
-      LocalState.get_secret_key_location(keyname)]
+    files_to_remove = [LocalState.get_secret_key_location(keyname)]
+    if remove_location:
+      files_to_remove += [LocalState.get_locations_json_location(keyname)]
 
     for file_to_remove in files_to_remove:
       if os.path.exists(file_to_remove):
@@ -1090,18 +1111,6 @@ class LocalState(object):
     AppScaleLogger.log("\nA log with more information is available " \
       "at\n{0}.".format(crash_log_filename))
     return crash_log_filename
-
-
-  @classmethod
-  def ensure_user_wants_to_terminate(cls):
-    """ Asks the user for confirmation before we terminate their AppScale
-    deployment.
-
-    Raises:
-      AppScaleException: If the user does not want to terminate their
-        AppScale deployment.
-    """
-    cls.confirm_or_abort("Terminating AppScale will delete all stored data.")
 
 
   @classmethod
