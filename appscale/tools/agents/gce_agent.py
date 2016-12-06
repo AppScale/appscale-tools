@@ -350,10 +350,12 @@ class GCEAgent(BaseAgent):
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
       system_user = os.getenv('LOGNAME', default=pwd.getpwuid(os.getuid())[0])
-      our_public_ssh_key = system_user + ":" + file_handle.read().rstrip()
+      public_ssh_key = file_handle.read().rstrip()
+      our_public_ssh_keys = "{system_user}:{key}\nroot:{key}".format(
+                            system_user=system_user, key=public_ssh_key)
 
     if all_ssh_keys:
-      new_all_ssh_keys = our_public_ssh_key + "\n" + all_ssh_keys
+      new_all_ssh_keys = our_public_ssh_keys + "\n" + all_ssh_keys
     else:
       new_all_ssh_keys = our_public_ssh_key
 
