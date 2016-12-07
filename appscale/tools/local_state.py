@@ -854,15 +854,17 @@ class LocalState(object):
 
 
   @classmethod
-  def cleanup_appscale_files(cls, keyname, remove_location=True):
+  def cleanup_appscale_files(cls, keyname, remove_locations=True):
     """Removes all AppScale metadata files from this machine.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
+      remove_locations: A boolean that will remove the locations JSON if set
+        to true
     """
     files_to_remove = [LocalState.get_secret_key_location(keyname)]
-    if remove_location:
+    if remove_locations:
       files_to_remove += [LocalState.get_locations_json_location(keyname)]
 
     for file_to_remove in files_to_remove:

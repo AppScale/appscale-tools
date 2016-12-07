@@ -227,7 +227,7 @@ class RemoteHelper(object):
     params = agent.get_params_from_args(options)
 
     # If we have running instances under the current keyname, we try to
-    # re-attach to them. If we have issue finding the location file or the
+    # re-attach to them. If we have issue finding the locations file or the
     # IP of the head node, we throw an exception.
     login_ip = None
     public_ips, private_ips, instance_ids = agent.describe_instances(params)
@@ -810,8 +810,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("About to terminate deployment and instances with keyname {0}."
-      .format(keyname) + " Press Ctrl-C to stop.")
+    AppScaleLogger.log("About to terminate deployment and instances with "
+                       "keyname {0}. Press Ctrl-C to stop.".format(keyname))
     # This sleep is here to allow a moment for user to Ctrl-C
     time.sleep(2)
 
@@ -837,7 +837,7 @@ class RemoteHelper(object):
 
     # terminate all the machines
     AppScaleLogger.log("Terminating instances spawned with keyname {0}"
-      .format(keyname))
+                       .format(keyname))
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
@@ -875,8 +875,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
     """
-    AppScaleLogger.log("Terminating appscale deployment with keyname" +
-      " {0}".format(keyname))
+    AppScaleLogger.log("Terminating appscale deployment with keyname {0}"
+                       .format(keyname))
     time.sleep(2)
 
     shadow_host = LocalState.get_host_with_role(keyname, 'shadow')
