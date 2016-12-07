@@ -23,7 +23,7 @@ from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
 from azure.mgmt.compute.models import OSDisk
 from azure.mgmt.compute.models import OSProfile
-from azure.mgmt.compute.models import Sku
+from azure.mgmt.compute.models import Sku as ComputeSku
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
@@ -54,7 +54,8 @@ from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.resource.resources.models import ResourceGroup
 
 from azure.mgmt.storage import StorageManagementClient
-from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
+from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
+from azure.mgmt.storage.models import Sku as StorageSku
 
 from msrestazure.azure_exceptions import CloudError
 #from msrestazure.azure_operation import OperationFinished
@@ -243,6 +244,7 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    virtual_network = parameters[self.PARAM_GROUP]
     network_client = NetworkManagementClient(credentials, subscription_id)
     compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
@@ -261,6 +263,11 @@ class AzureAgent(BaseAgent):
     virtual_machines = compute_client.virtual_machines.list(resource_group)
     for vm in virtual_machines:
       instance_ids.append(vm.name)
+
+    vnet = network_client.virtual_networks.get(resource_group, virtual_network)
+    for subnet in vnet.subnets:
+      for ip_config in subnet.ip_configurations:
+        AppScaleLogger.warn("Private IP {}".format(ip_config.private_ip_address))
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
@@ -280,14 +287,99 @@ class AzureAgent(BaseAgent):
       private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     network_client = NetworkManagementClient(credentials, subscription_id)
     virtual_network = parameters[self.PARAM_GROUP]
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
-    self.create_vm_scale_sets(count, parameters, subnet)
+    vm_network_name = Haikunator().haikunate()
+    self.create_network_interface(network_client, vm_network_name, vm_network_name,
+                                  subnet, parameters)
+    network_interface = network_client.network_interfaces.get(
+      resource_group, vm_network_name)
+    self.create_virtual_machine(credentials, network_client,
+      network_interface.id, parameters, vm_network_name)
+
+    self.create_vm_scale_sets(count-1, parameters, subnet)
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
+    AppScaleLogger.warn('Public IPs {}:'.format(public_ips))
+    AppScaleLogger.warn('Private IPs {}:'.format(private_ips))
+    AppScaleLogger.warn('Instance IDs {}:'.format(instance_ids))
     return instance_ids, public_ips, private_ips
+
+  def create_virtual_machine(self, credentials, network_client, network_id,
+                             parameters, vm_network_name):
+    """ Creates an Azure virtual machine using the network interface created.
+    Args:
+      credentials: A ServicePrincipalCredentials instance, that can be used to
+        access or create any resources.
+      network_client: A NetworkManagementClient instance.
+      network_id: The network id of the network interface created.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+      vm_network_name: The name of the virtual machine to use.
+    """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+    zone = parameters[self.PARAM_ZONE]
+    verbose = parameters[self.PARAM_VERBOSE]
+    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
+                           format(vm_network_name), verbose)
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key_path = private_key_path + ".pub"
+
+    with open(public_key_path, 'r') as pub_ssh_key_fd:
+      pub_ssh_key = pub_ssh_key_fd.read()
+
+    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
+    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
+    ssh_config = SshConfiguration(public_keys=public_keys)
+    linux_config = LinuxConfiguration(disable_password_authentication=True,
+                                      ssh=ssh_config)
+    os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
+                           computer_name=vm_network_name,
+                           linux_configuration=linux_config)
+
+    hardware_profile = HardwareProfile(vm_size=azure_instance_type)
+
+    network_profile = NetworkProfile(
+      network_interfaces=[NetworkInterfaceReference(id=network_id)])
+
+    virtual_hd = VirtualHardDisk(
+      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
+        format(storage_account, vm_network_name))
+
+    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
+    os_type = OperatingSystemTypes.linux
+    os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
+                     create_option=DiskCreateOptionTypes.from_image,
+                     name=vm_network_name, vhd=virtual_hd, image=image_hd)
+
+    compute_client.virtual_machines.create_or_update(
+      resource_group, vm_network_name, VirtualMachine(location=zone,
+                                                      os_profile=os_profile,
+                                                      hardware_profile=hardware_profile,
+                                                      network_profile=network_profile,
+                                                      storage_profile=StorageProfile(
+                                                        os_disk=os_disk)))
+
+    # Sleep until an IP address gets associated with the VM.
+    while True:
+      public_ip_address = network_client.public_ip_addresses.get(resource_group,
+                                                                 vm_network_name)
+      if public_ip_address.ip_address:
+        AppScaleLogger.log('Azure VM is available at {}'.
+                           format(public_ip_address.ip_address))
+        break
+      AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
+                             "available".format(self.SLEEP_TIME), verbose)
+      time.sleep(self.SLEEP_TIME)
 
   def create_vm_scale_sets(self, count, parameters, subnet):
     """ Creates a Virtual Machine Scale Set containing the given number of
@@ -338,7 +430,7 @@ class AzureAgent(BaseAgent):
     virtual_machine_profile = VirtualMachineScaleSetVMProfile(
       os_profile=os_profile, storage_profile=storage_profile,
       network_profile=network_profile)
-    sku = Sku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
+    sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
       virtual_machine_profile=virtual_machine_profile, over_provision=False)
@@ -794,7 +886,7 @@ class AzureAgent(BaseAgent):
         "resource group '{1}'.".format(storage_account, rg_name))
       result = storage_client.storage_accounts.create(
         rg_name, storage_account,StorageAccountCreateParameters(
-          sku=Sku(SkuName.standard_lrs), kind=Kind.storage,
+          sku=StorageSku(SkuName.standard_lrs), kind=Kind.storage,
           location=parameters[self.PARAM_ZONE]))
       # Result is a msrestazure.azure_operation.AzureOperationPoller instance.
       # wait() insures polling the underlying async operation until it's done.
