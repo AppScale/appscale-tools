@@ -625,6 +625,10 @@ class AppScaleTools(object):
       raise AppScaleException("Cannot find AppScale's configuration for keyname {0}".
         format(options.keyname))
 
+    if infrastructure == "xen" and options.terminate:
+      raise AppScaleException("Terminate option is invalid for cluster mode. "
+                              .format(options.keyname))
+
     if infrastructure == "xen" or not options.terminate:
       # We are in cluster mode: let's check if AppScale is running.
       if not os.path.exists(LocalState.get_secret_key_location(options.keyname)):
