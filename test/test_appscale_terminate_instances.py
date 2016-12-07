@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -31,7 +30,7 @@ from appscale.tools.agents.gce_agent import CredentialTypes
 from appscale.tools.agents.gce_agent import GCEAgent
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.custom_exceptions import AppScaleException
+from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
@@ -97,7 +96,8 @@ class TestAppScaleTerminateInstances(unittest.TestCase):
       "--test"
     ]
     options = ParseArgs(argv, self.function).args
-    self.assertRaises(AppScaleException, AppScaleTools.terminate_instances,
+    self.assertRaises(BadConfigurationException,
+                      AppScaleTools.terminate_instances,
       options)
 
 

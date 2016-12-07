@@ -259,6 +259,9 @@ class ParseArgs(object):
         help="the datastore to use")
       self.parser.add_argument('--replication', '--n', type=int,
         help="the database replication factor")
+      self.parser.add_argument('--clear_datastore', action='store_true',
+        default=False,
+        help="erases all stored user and application data")
 
       # flags relating to application servers
       self.parser.add_argument('--max_memory', type=int,
@@ -353,6 +356,9 @@ class ParseArgs(object):
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--terminate', action="store_true",
+        default=False,
+        help="terminate running instances (if in cloud environment)")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
