@@ -626,8 +626,7 @@ class AppScaleTools(object):
         format(options.keyname))
 
     if infrastructure == "xen" and options.terminate:
-      raise AppScaleException("Terminate option is invalid for cluster mode. "
-                              .format(options.keyname))
+      raise AppScaleException("Terminate option is invalid for cluster mode.")
 
     if infrastructure == "xen" or not options.terminate:
       # We are in cluster mode: let's check if AppScale is running.
