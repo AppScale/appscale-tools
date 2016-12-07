@@ -245,7 +245,7 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     virtual_network = parameters[self.PARAM_GROUP]
-    network_client = NetworkManagementClient(credentials, subscription_id)
+    network_client = NetworkManagementClient(credentials, subscription_id, api_version='2016-09-01')
     compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
     private_ips = []
@@ -264,10 +264,18 @@ class AzureAgent(BaseAgent):
     for vm in virtual_machines:
       instance_ids.append(vm.name)
 
-    vnet = network_client.virtual_networks.get(resource_group, virtual_network)
-    for subnet in vnet.subnets:
-      for ip_config in subnet.ip_configurations:
-        AppScaleLogger.warn("Private IP {}".format(ip_config.private_ip_address))
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    for vmss in vmss_list:
+      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group, vmss.name)
+      for vm in vm_list:
+        instance_ids.append(vm.name)
+      network_interface_list = network_client.network_interfaces.\
+        list_virtual_machine_scale_set_network_interfaces(resource_group,
+                                                          vmss.name)
+      for network_interface in network_interface_list:
+        for ip_config in network_interface.ip_configurations:
+          public_ips.append(ip_config.private_ip_address)
+          private_ips.append(ip_config.private_ip_address)
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
