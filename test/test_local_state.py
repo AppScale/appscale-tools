@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -22,7 +21,9 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
+from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.custom_exceptions import ShellException
 from appscale.tools.local_state import LocalState
@@ -62,10 +63,13 @@ class TestLocalState(unittest.TestCase):
 
 
   def test_ensure_appscale_isnt_running_but_it_is(self):
-    # if there is a secret key file and force isn't set,
-    # we should abort
+    # if there is a secret file and force isn't set, we should abort
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
+
+    flexmock(LocalState).should_receive('get_login_host').and_return('login_ip')
+    flexmock(LocalState).should_receive('get_secret_key').and_return('super-secret')
+    flexmock(AppControllerClient).should_receive('get_status').and_return("OK")
 
     self.assertRaises(BadConfigurationException,
       LocalState.ensure_appscale_isnt_running, self.keyname,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # First party Python libraries
@@ -74,15 +73,15 @@ class AppScale():
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  clean                             Forcefully terminates the AppScale
-                                    deployment and delete all data. ALL
-                                    DATA WILL BE DELETED.
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  destroy                           Gracefully terminates the currently
-                                    running AppScale deployment.
-  down                              An alias for 'destroy'.
+  down [--clean][--terminate]       Gracefully terminates the currently
+                                    running AppScale deployments. If
+                                    instances were created, they will NOT
+                                    be terminated, unless --terminate is
+                                    specified. If --clean option is
+                                    specified, ALL DATA WILL BE DELETED.
   get <regex>                       Gets all AppController properties matching
                                     the provided regex: for developers only.
   help                              Displays this message.
@@ -122,7 +121,7 @@ Available commands:
   def get_appscalefile_location(self):
     """ Constructs a string that corresponds to the location of the
     AppScalefile for this deployment.
-    
+
     Returns:
       The location where the user's AppScalefile can be found.
     """
@@ -336,7 +335,7 @@ Available commands:
     if not os.path.exists(ssh_key_location):
       return False
 
-    all_ips = self.get_all_ips(config["ips_layout"])
+    all_ips = LocalState.get_all_public_ips(keyname)
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
@@ -365,29 +364,6 @@ Available commands:
 
     return True
 
-
-  def get_all_ips(self, ips_layout):
-    """ Searches through the given IPs layout and finds all the unique IP
-    addresses.
-
-    Args:
-      ips_layout: A dict that maps AppScale roles to either an IP address or a
-        list of IP addresses that host that role.
-    Returns:
-      A list containing all of the IP addresses in the IPs layout, without
-        duplicates.
-    """
-    all_ips = []
-    for _, ip_or_ips in ips_layout.items():
-      if isinstance(ip_or_ips, str):
-        if not ip_or_ips in all_ips:
-          all_ips.append(ip_or_ips)
-      elif isinstance(ip_or_ips, list):
-        for ip in ip_or_ips:
-          if not ip in all_ips:
-            all_ips.append(ip)
-
-    return all_ips
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
@@ -739,10 +715,16 @@ Available commands:
     AppScaleTools.relocate_app(options)
 
 
-  def destroy(self):
-    """ 'destroy' provides a nicer experience for users than the
+  def down(self, clean=False, terminate=False):
+    """ 'down' provides a nicer experience for users than the
     appscale-terminate-instances command, by using the configuration options
     present in the AppScalefile found in the current working directory.
+
+    Args:
+      clean: A boolean to indicate if the deployment data and metadata
+        needs to be clean. This will clear the datastore.
+      terminate: A boolean to indicate if instances needs to be terminated
+        (valid only if we spawn instances at start).
 
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
@@ -754,6 +736,19 @@ Available commands:
     command = []
     contents_as_yaml = yaml.safe_load(contents)
 
+    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
+      is_verbose = contents_as_yaml['verbose']
+      command.append("--verbose")
+    else:
+      is_verbose = False
+
+    if 'keyname' in contents_as_yaml:
+      keyname = contents_as_yaml['keyname']
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+    else:
+      keyname = 'appscale'
+
     if "EC2_ACCESS_KEY" in contents_as_yaml:
       os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
 
@@ -763,12 +758,20 @@ Available commands:
     if "EC2_URL" in contents_as_yaml:
       os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
 
-    if 'keyname' in contents_as_yaml:
-      command.append("--keyname")
-      command.append(contents_as_yaml['keyname'])
+    if clean:
+      if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
+        LocalState.confirm_or_abort("Clean will delete every data in the deployment.")
+      all_ips = LocalState.get_all_public_ips(keyname)
+      for ip in all_ips:
+        RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
+      AppScaleLogger.success("Successfully cleaned your AppScale deployment.")
 
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      command.append("--verbose")
+    if terminate:
+      infrastructure = LocalState.get_infrastructure(keyname)
+      if infrastructure != "xen" and not LocalState.are_disks_used(
+        keyname) and 'test' not in contents_as_yaml:
+        LocalState.confirm_or_abort("Terminate will delete instances and the data on them.")
+      command.append("--terminate")
 
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append("--test")
@@ -778,48 +781,8 @@ Available commands:
     options = ParseArgs(command, "appscale-terminate-instances").args
     AppScaleTools.terminate_instances(options)
 
-
-  def clean(self):
-    """ 'clean' provides a mechanism that will forcefully shut down all AppScale-
-    related services on virtual machines in a cluster deployment.
-
-    Returns:
-      A list of the IP addresses where AppScale was shut down.
-
-    Raises:
-      AppScalefileException: If there is no AppScalefile in the current working
-        directory.
-      BadConfigurationException: If this method is invoked and the AppScalefile
-        indicates that a cloud deployment is being used.
-    """
-    contents = self.read_appscalefile()
-
-    contents_as_yaml = yaml.safe_load(contents)
-    if 'ips_layout' not in contents_as_yaml:
-      raise BadConfigurationException("Cannot use 'appscale clean' in a " \
-        "cloud deployment.")
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      is_verbose = contents_as_yaml['verbose']
-    else:
-      is_verbose = False
-
-    if 'keyname' in contents_as_yaml:
-      keyname = contents_as_yaml['keyname']
-    else:
-      keyname = 'appscale'
-
-    all_ips = self.get_all_ips(contents_as_yaml["ips_layout"])
-
-    if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
-      LocalState.ensure_user_wants_to_terminate()
-
-    for ip in all_ips:
-      RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
-
-    LocalState.cleanup_appscale_files(keyname)
+    LocalState.cleanup_appscale_files(keyname, terminate)
     AppScaleLogger.success("Successfully shut down your AppScale deployment.")
-    return all_ips
 
 
   def register(self, deployment_id):

@@ -26,7 +26,7 @@ def main():
     if len(sys.argv) < 3:
       cprint("Usage: appscale init <cloud or cluster>", 'red')
       print("Specify 'cloud' for EC2, Eucalyptus, and Google Compute Engine " +
-        "deployments, and 'cluster' if running over a virtualized cluster.")
+            "deployments, and 'cluster' if running over a virtualized cluster.")
       sys.exit(1)
 
     try:
@@ -36,7 +36,7 @@ def main():
       sys.exit(1)
 
     cprint("AppScalefile successfully created! Be sure to " +
-      "customize it for your particular cloud or cluster.", 'green')
+           "customize it for your particular cloud or cluster.", 'green')
     sys.exit(0)
   elif command == "up":
     try:
@@ -140,15 +140,29 @@ def main():
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
-  elif command == "destroy" or command == "down":
-    try:
-      appscale.destroy()
-    except Exception as exception:
-      LocalState.generate_crash_log(exception, traceback.format_exc())
-      sys.exit(1)
+  elif command == "destroy":
+    cprint("Warning: destroy has been deprecated. Please use 'down'.", 'red')
+    sys.exit(1)
   elif command == "clean":
+    cprint("Warning: clean has been deprecated. Please use 'down --clean'.", 'red')
+    sys.exit(1)
+  elif command == "down":
+    if len(sys.argv) > 4:
+      cprint("Usage: appscale down [--clean][--terminate]", 'red')
+      sys.exit(1)
+    to_clean = False
+    to_terminate = False
+    for index in range(2, len(sys.argv)):
+      if sys.argv[index] == "--terminate":
+        to_terminate = True
+      elif sys.argv[index] == "--clean":
+        to_clean = True
+      else:
+        cprint("Usage: appscale down [--clean][--terminate]", 'red')
+        sys.exit(1)
+
     try:
-      appscale.clean()
+      appscale.down(clean=to_clean, terminate=to_terminate)
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)

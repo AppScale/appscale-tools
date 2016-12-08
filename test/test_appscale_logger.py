@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -98,6 +97,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "azure_resource_group" : None,
       "azure_group_tag" : None,
       "azure_storage_account" : None,
+      "clear_datastore" : False,
     }
 
     # finally, construct a http payload for mocking that the below
