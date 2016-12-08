@@ -145,8 +145,11 @@ class AzureAgent(BaseAgent):
   # (Takes longer than the creation time for other resources.)
   MAX_VM_CREATION_TIME = 240
 
-  # The maximum number of seconds to wait for an Azure Scale VMs to be created.
+  # The maximum number of seconds to wait for an Azure Scale Set to be created.
   MAX_VMSS_WAIT_TIME = 300
+
+  # The maximum limit of allowable VMs within a scale set.
+  MAX_VMSS_CAPACITY = 40
 
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
@@ -244,8 +247,9 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    virtual_network = parameters[self.PARAM_GROUP]
-    network_client = NetworkManagementClient(credentials, subscription_id, api_version='2016-09-01')
+
+    network_client = NetworkManagementClient(credentials, subscription_id,
+                                             api_version='2016-09-01')
     compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
     private_ips = []
@@ -266,7 +270,8 @@ class AzureAgent(BaseAgent):
 
     vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
     for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group, vmss.name)
+      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group,
+                                                                  vmss.name)
       for vm in vm_list:
         instance_ids.append(vm.name)
       network_interface_list = network_client.network_interfaces.\
@@ -295,10 +300,11 @@ class AzureAgent(BaseAgent):
       private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
-    network_client = NetworkManagementClient(credentials, subscription_id)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     virtual_network = parameters[self.PARAM_GROUP]
+
+    network_client = NetworkManagementClient(credentials, subscription_id)
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
     vm_network_name = Haikunator().haikunate()
@@ -309,7 +315,7 @@ class AzureAgent(BaseAgent):
     self.create_virtual_machine(credentials, network_client,
       network_interface.id, parameters, vm_network_name)
 
-    self.create_vm_scale_sets(count-1, parameters, subnet)
+    self.create_or_update_vm_scale_sets(count-1, parameters, subnet)
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     AppScaleLogger.warn('Public IPs {}:'.format(public_ips))
     AppScaleLogger.warn('Private IPs {}:'.format(private_ips))
@@ -332,24 +338,14 @@ class AzureAgent(BaseAgent):
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
-    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
-                           format(vm_network_name), verbose)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
+    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
+                           format(vm_network_name), verbose)
+
     compute_client = ComputeManagementClient(credentials, subscription_id)
+    linux_config = self.create_linux_configuration(parameters)
 
-    keyname = parameters[self.PARAM_KEYNAME]
-    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
-    public_key_path = private_key_path + ".pub"
-
-    with open(public_key_path, 'r') as pub_ssh_key_fd:
-      pub_ssh_key = pub_ssh_key_fd.read()
-
-    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
-    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
-    ssh_config = SshConfiguration(public_keys=public_keys)
-    linux_config = LinuxConfiguration(disable_password_authentication=True,
-                                      ssh=ssh_config)
     os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
                            computer_name=vm_network_name,
                            linux_configuration=linux_config)
@@ -389,27 +385,16 @@ class AzureAgent(BaseAgent):
                              "available".format(self.SLEEP_TIME), verbose)
       time.sleep(self.SLEEP_TIME)
 
-  def create_vm_scale_sets(self, count, parameters, subnet):
-    """ Creates a Virtual Machine Scale Set containing the given number of
-    virtual machines with the virtual network provided.
+  def create_linux_configuration(self, parameters):
+    """ Creates a Linux Configuration to pass in to the virtual machine
+    instance to be created.
     Args:
-        count: The number of virtual machines to be created in the scale set.
         parameters: A dict, containing all the parameters necessary to
-        authenticate this user with Azure.
-        subnet:
-    Raises:
-        AgentConfigurationException: If the operation to create a virtual
-        machine scale set did not succeed.
+          authenticate this user with Azure.
+    Returns:
+        An instance of LinuxConfiguration
     """
-    credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
-    compute_client = ComputeManagementClient(credentials, subscription_id)
-    resource_name = Haikunator().haikunate()
-    scale_set_name = resource_name + "-scaleset-{}vms".format(count)
-    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     keyname = parameters[self.PARAM_KEYNAME]
-    zone = parameters[self.PARAM_ZONE]
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
     public_key_path = private_key_path + ".pub"
     with open(public_key_path, 'r') as pub_ssh_key_fd:
@@ -417,31 +402,105 @@ class AzureAgent(BaseAgent):
     key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
     public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
     ssh_config = SshConfiguration(public_keys=public_keys)
-    linux_configuration = LinuxConfiguration(disable_password_authentication=True,
-                                             ssh=ssh_config)
+    linux_config = LinuxConfiguration(disable_password_authentication=True,
+                                      ssh=ssh_config)
+    return linux_config
+
+  def create_or_update_vm_scale_sets(self, count, parameters, subnet):
+    """ Creates/Updates  a Virtual Machine Scale Set containing the given number
+    of virtual machines with the virtual network provided.
+    Args:
+        count: The number of virtual machines to be created in the scale set.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        subnet:
+    Raises:
+        AgentConfigurationException: If the operation to create a virtual
+        machine scale set did not succeed.
+    """
+    verbose = parameters[self.PARAM_VERBOSE]
+    random_resource_name = Haikunator().haikunate()
+
+    # Create multiple scale sets with the allowable maximum capacity of VMs.
+    if count > self.MAX_VMSS_CAPACITY:
+      # Count of the number of scale sets needed depending on the max capacity.
+      scale_set_count = (int(count) + self.MAX_VMSS_CAPACITY // 2) // self.MAX_VMSS_CAPACITY
+      remaining_vms_count = count
+      for ss_count in range(scale_set_count):
+        resource_name = random_resource_name + "-resource-{}".format(ss_count)
+        scale_set_name = random_resource_name + "-scaleset-{}".format(ss_count)
+        capacity = self.MAX_VMSS_CAPACITY
+        if remaining_vms_count < self.MAX_VMSS_CAPACITY:
+          capacity = remaining_vms_count
+        AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+                               format(scale_set_name, capacity), verbose)
+        self.create_scale_set(capacity, parameters,
+                              resource_name, scale_set_name, subnet)
+        remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
+    # Create a scale set using the count of VMs provided.
+    else:
+      scale_set_name = random_resource_name + "-scaleset-{}vms".format(count)
+      AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+                             format(scale_set_name, count), verbose)
+      self.create_scale_set(count, parameters, random_resource_name,
+                            scale_set_name, subnet)
+
+  def create_scale_set(self, count, parameters, resource_name,
+                       scale_set_name, subnet,):
+    """ Creates a scale set of 'count' number of virtual machines in the given
+    Subnet and Virtual Network.
+    Args:
+        count: The VM capacity of the scale set to be created.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        resource_name: The names of the sub resources needed to create
+          a virtual machine in a scale set.
+        scale_set_name: The name of the scale set to be created.
+        subnet: A reference to the Subnet ID of the Virtual Network created.
+
+    Raises:
+        AgentConfigurationException: If the operation to create a virtual
+         machine scale set did not succeed.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    zone = parameters[self.PARAM_ZONE]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
+    linux_configuration = self.create_linux_configuration(parameters)
+
     os_profile = VirtualMachineScaleSetOSProfile(
       computer_name_prefix=resource_name, admin_username=self.ADMIN_USERNAME,
       linux_configuration=linux_configuration)
+
     image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
     os_disk = VirtualMachineScaleSetOSDisk(
       name=resource_name, caching=CachingTypes.read_write,
       create_option=DiskCreateOptionTypes.from_image,
       os_type=OperatingSystemTypes.linux, image=image_hd)
-    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
+
     subnet_reference = ApiEntityReference(id=subnet.id)
     ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
                                                       subnet=subnet_reference)
+
     network_interface_config = VirtualMachineScaleSetNetworkConfiguration(
       name=resource_name, primary=True, ip_configurations=[ip_config])
+
     network_profile = VirtualMachineScaleSetNetworkProfile(
       network_interface_configurations=[network_interface_config])
+
+    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
     virtual_machine_profile = VirtualMachineScaleSetVMProfile(
       os_profile=os_profile, storage_profile=storage_profile,
       network_profile=network_profile)
+
     sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
+    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
       virtual_machine_profile=virtual_machine_profile, over_provision=False)
+
     create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
       resource_group, scale_set_name, vm_scale_set)
     try:
@@ -483,15 +542,56 @@ class AzureAgent(BaseAgent):
                            format(instance_ids), verbose)
     compute_client = ComputeManagementClient(credentials, subscription_id)
     threads = []
+    # Delete the virtual machines created outside of the scale set.
     for vm_name in instance_ids:
-      thread = threading.Thread(target=self.delete_virtual_machine,
-                                args=(compute_client, resource_group, verbose,
-                                      vm_name))
+      thread = threading.Thread(
+        target=self.delete_virtual_machine, args=(
+          compute_client, resource_group, verbose, vm_name))
       thread.start()
       threads.append(thread)
-
     for x in threads:
       x.join()
+
+    # Delete the Virtual Machine Scale Sets created.
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    vmss_delete_threads = []
+    for vmss in vmss_list:
+      thread = threading.Thread(
+        target=self.delete_virtual_machine_scale_set, args=(
+          compute_client, resource_group, verbose, vmss.name))
+      thread.start()
+      thread.append(thread)
+    for x in vmss_delete_threads:
+      x.join()
+
+  def delete_virtual_machine_scale_set(self, compute_client, resource_group,
+                                        verbose, scale_set_name):
+    """ Deletes the virtual machine scale set created from the specified
+    resource group.
+    Args:
+        compute_client: An instance of the Compute Management client.
+      resource_group: The resource group name to use for this deployment.
+      verbose: A boolean indicating whether or not the verbose mode is on.
+      scale_set_name: The name of the virtual machine scale set to be deleted.
+    """
+    AppScaleLogger.verbose("Deleting Scale Set {}".format(scale_set_name), verbose)
+    delete_response = compute_client.virtual_machine_scale_sets.delete(
+      resource_group,scale_set_name)
+    try:
+      delete_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
+      result = delete_response.result()
+      if result.provisioning_state == 'Succeeded':
+        AppScaleLogger.log("Scale Set '{0}' has been successfully "
+                           "deleted!".format(scale_set_name))
+      else:
+        AppScaleLogger.log("Unable to delete the Scale Set {0}. "
+                           "Provisioning Status: {1}"
+                           .format(scale_set_name, result.provisioning_state))
+
+    except CloudError as error:
+      raise AgentConfigurationException("There was a problem while deleting the "
+                                        "Scale Set {0} due to the error: {1}"
+                                        .format(scale_set_name, error.message))
 
   def delete_virtual_machine(self, compute_client, resource_group, verbose,
                              vm_name):
