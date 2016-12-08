@@ -58,9 +58,6 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, K
 from azure.mgmt.storage.models import Sku as StorageSku
 
 from msrestazure.azure_exceptions import CloudError
-#from msrestazure.azure_operation import OperationFinished
-#from msrestazure.azure_operation import OperationFailed
-
 from haikunator import Haikunator
 
 # AppScale-specific imports
@@ -317,9 +314,6 @@ class AzureAgent(BaseAgent):
 
     self.create_or_update_vm_scale_sets(count-1, parameters, subnet)
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
-    AppScaleLogger.warn('Public IPs {}:'.format(public_ips))
-    AppScaleLogger.warn('Private IPs {}:'.format(private_ips))
-    AppScaleLogger.warn('Instance IDs {}:'.format(instance_ids))
     return instance_ids, public_ips, private_ips
 
   def create_virtual_machine(self, credentials, network_client, network_id,
@@ -1020,3 +1014,4 @@ class AzureAgent(BaseAgent):
     if resource_group_name in resource_group_names:
       return True
     return False
+  
