@@ -407,7 +407,7 @@ class AzureAgent(BaseAgent):
         count: The number of virtual machines to be created in the scale set.
         parameters: A dict, containing all the parameters necessary to
           authenticate this user with Azure.
-        subnet:
+        subnet:A reference to the subnet ID of the virtual network created.
     Raises:
         AgentConfigurationException: If the operation to create a virtual
         machine scale set did not succeed.
@@ -442,7 +442,7 @@ class AzureAgent(BaseAgent):
   def create_scale_set(self, count, parameters, resource_name,
                        scale_set_name, subnet,):
     """ Creates a scale set of 'count' number of virtual machines in the given
-    Subnet and Virtual Network.
+    subnet and virtual Network.
     Args:
         count: The VM capacity of the scale set to be created.
         parameters: A dict, containing all the parameters necessary to
@@ -450,7 +450,7 @@ class AzureAgent(BaseAgent):
         resource_name: The names of the sub resources needed to create
           a virtual machine in a scale set.
         scale_set_name: The name of the scale set to be created.
-        subnet: A reference to the Subnet ID of the Virtual Network created.
+        subnet: A reference to the subnet ID of the virtual network created.
 
     Raises:
         AgentConfigurationException: If the operation to create a virtual
@@ -1014,4 +1014,3 @@ class AzureAgent(BaseAgent):
     if resource_group_name in resource_group_names:
       return True
     return False
-  
