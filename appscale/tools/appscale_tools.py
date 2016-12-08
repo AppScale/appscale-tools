@@ -505,8 +505,14 @@ class AppScaleTools(object):
       AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                          "for use. This can take few minutes.")
 
+      head_node.public_ip = public_ips[0]
+      head_node.private_ip = private_ips[0]
+      head_node.instance_id = instance_ids[0]
+
       # Set newly obtained node layout info for this deployment.
       for i, _ in enumerate(instance_ids):
+        if "shadow" in node_layout.nodes[i].roles:
+          continue
         node_layout.nodes[i].public_ip = public_ips[i]
         node_layout.nodes[i].private_ip = private_ips[i]
         node_layout.nodes[i].instance_id = instance_ids[i]
