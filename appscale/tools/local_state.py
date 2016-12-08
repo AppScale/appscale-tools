@@ -420,11 +420,11 @@ class LocalState(object):
     """
     try:
       with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
-        file_contents = json.loads(file_handle.read())
+        file_contents = yaml.safe_load(file_handle.read())
         if isinstance(file_contents, list):
           cls.upgrade_json_file(keyname)
           file_handle.seek(0)
-          file_contents = json.loads(file_handle.read())
+          file_contents = yaml.safe_load(file_handle.read())
         return file_contents.get('infrastructure_info', {}).get(tag)
     except IOError:
       raise BadConfigurationException("Couldn't read from locations file, "
