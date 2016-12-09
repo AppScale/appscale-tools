@@ -96,7 +96,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def start_all_nodes(cls, options, count):
+  def start_all_nodes(cls, options, node_layout):
     """ Starts all nodes in the designated public cloud.
 
     Args:
@@ -108,10 +108,62 @@ class RemoteHelper(object):
       The public IPs and instance IDs (dummy values in non-cloud deployments)
       corresponding to the nodes that were started.
     """
-    instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
-      options, count=count)
+    agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
+    params = agent.get_params_from_args(options)
 
-    return instance_ids, public_ips, private_ips
+    # If we have running instances under the current keyname, we try to
+    # re-attach to them. If we have issue finding the locations file or the
+    # IP of the head node, we throw an exception.
+    login_ip = None
+    public_ips, private_ips, instance_ids = agent.describe_instances(params)
+    if public_ips:
+      try:
+        login_ip = LocalState.get_login_host(options.keyname)
+      except (IOError, BadConfigurationException):
+        raise AppScaleException(
+          "Couldn't get login ip for running deployment with keyname"
+          " {}.".format(options.keyname))
+      if login_ip not in public_ips:
+        raise AppScaleException(
+          "Couldn't recognize running instances for deployment with"
+          " keyname {}.".format(options.keyname))
+
+    if login_ip in public_ips:
+      AppScaleLogger.log("Reusing already running instances.")
+      # Set newly obtained node layout info for this deployment.
+      for i, _ in enumerate(instance_ids):
+        node_layout.nodes[i].public_ip = public_ips[i]
+        node_layout.nodes[i].private_ip = private_ips[i]
+        node_layout.nodes[i].instance_id = instance_ids[i]
+
+      return node_layout
+
+    agent.configure_instance_security(params)
+
+    instance_ids, public_ips, private_ips = \
+      cls.spawn_load_balancers_in_cloud(options, agent, params,
+                                        len(node_layout.get_nodes(
+                                            'load_balancer', True)))
+    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
+                       "for use. This can take few minutes.")
+
+    o_instance_ids, o_public_ips, o_private_ips = \
+      cls.spawn_other_nodes_in_cloud(options, agent, params,
+                                              len(node_layout.get_nodes(
+                                                'load_balancer', False)))
+    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
+                       "for use. This can take few minutes.")
+
+    instance_ids.extend(o_instance_ids)
+    public_ips.extend(o_public_ips)
+    private_ips.extend(o_private_ips)
+    # Set newly obtained node layout info for this deployment.
+    for i, _ in enumerate(instance_ids):
+      node_layout.nodes[i].public_ip = public_ips[i]
+      node_layout.nodes[i].private_ip = private_ips[i]
+      node_layout.nodes[i].instance_id = instance_ids[i]
+
+    return node_layout
 
   @classmethod
   def enable_root_ssh(cls, options, public_ip):
@@ -210,7 +262,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def spawn_nodes_in_cloud(cls, options, count=1):
+  def spawn_load_balancers_in_cloud(cls, options, agent, params, count=1):
     """Starts a single virtual machine in a cloud infrastructure.
 
     This method also prepares the virual machine for use by the AppScale Tools.
@@ -223,31 +275,6 @@ class RemoteHelper(object):
       The instance ID, public IP address, and private IP address of the machine
         that was started.
     """
-    agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
-    params = agent.get_params_from_args(options)
-
-    # If we have running instances under the current keyname, we try to
-    # re-attach to them. If we have issue finding the locations file or the
-    # IP of the head node, we throw an exception.
-    login_ip = None
-    public_ips, private_ips, instance_ids = agent.describe_instances(params)
-    if public_ips:
-      try:
-        login_ip = LocalState.get_login_host(options.keyname)
-      except (IOError, BadConfigurationException):
-        raise AppScaleException(
-          "Couldn't get login ip for running deployment with keyname"
-          " {}.".format(options.keyname))
-      if login_ip not in public_ips:
-        raise AppScaleException(
-          "Couldn't recognize running instances for deployment with"
-          " keyname {}.".format(options.keyname))
-
-    if login_ip in public_ips:
-      AppScaleLogger.log("Reusing already running instances.")
-      return instance_ids, public_ips, private_ips
-
-    agent.configure_instance_security(params)
     instance_ids, public_ips, private_ips = agent.run_instances(count=count,
       parameters=params, security_configured=True)
 
@@ -257,6 +284,25 @@ class RemoteHelper(object):
       AppScaleLogger.log("Static IP associated with head node.")
     return instance_ids, public_ips, private_ips
 
+
+  @classmethod
+  def spawn_other_nodes_in_cloud(cls, options, agent, params, count=1):
+    """Starts a single virtual machine in a cloud infrastructure.
+
+    This method also prepares the virual machine for use by the AppScale Tools.
+
+    Args:
+      options: A Namespace that specifies the cloud infrastructure to use, as
+        well as how to interact with that cloud.
+      count: A int, the number of instances to start.
+    Returns:
+      The instance ID, public IP address, and private IP address of the machine
+        that was started.
+    """
+    instance_ids, public_ips, private_ips = agent.run_instances(count=count,
+                                                    parameters=params,
+                                                    security_configured=True)
+    return instance_ids, public_ips, private_ips
 
   @classmethod
   def sleep_until_port_is_open(cls, host, port, is_verbose):
