@@ -29,7 +29,7 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'taskqueue', 'search']
+    'zookeeper', 'memcache', 'taskqueue', 'search', 'loadbalancer']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
