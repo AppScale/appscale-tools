@@ -666,9 +666,16 @@ class NodeLayout():
     """ Searches through the nodes in this NodeLayout for all nodes with or
     without the role based on boolean value of is_role.
 
+    Args:
+      role: A string describing a role that the nodes list is being searched
+        for.
+      is_role: A boolean to determine whether the return value is the nodes
+        that are the role or the nodes that are not the role.
+
     Returns:
-      A list of nodes not running the 'shadow' role, or the empty list if the
-      NodeLayout isn't acceptable for use with AppScale.
+      A list of nodes either running or not running (based on is_role) the
+      argument role role, or the empty list if the NodeLayout isn't
+      acceptable for use with AppScale.
     """
     if not self.is_valid() or role not in self.VALID_ROLES:
       return []
