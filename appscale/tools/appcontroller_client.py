@@ -227,6 +227,44 @@ class AppControllerClient():
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
+  def is_appscale_terminated(self):
+    """Dynamically adds the given machines to an AppScale deployment, with the
+    specified roles.
+
+    Returns:
+      A boolean indicating whether appscale has finished running terminate
+        on all nodes.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.is_appscale_terminated, self.secret)
+
+  def run_terminate(self, clean):
+    """Dynamically adds the given machines to an AppScale deployment, with the
+    specified roles.
+
+    Args:
+      clean: A boolean indicating whether the clean parameter should be
+        passed to terminate.rb.
+    Returns:
+      The result of executing the SOAP call on the remote AppController.
+    """
+    return self.server.run_terminate(clean, self.secret)
+
+
+  def receive_server_message(self, message_sender):
+    """Dynamically adds the given machines to an AppScale deployment, with the
+    specified roles.
+
+    Args:
+      clean: A boolean indicating whether the clean parameter should be
+        passed to terminate.rb.
+    Returns:
+      The result of executing the SOAP call on the remote AppController.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT * 2, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.receive_server_message, message_sender, self.secret)
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.

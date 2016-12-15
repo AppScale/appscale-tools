@@ -359,6 +359,9 @@ class ParseArgs(object):
       self.parser.add_argument('--terminate', action="store_true",
         default=False,
         help="terminate running instances (if in cloud environment)")
+      self.parser.add_argument('--clean', action="store_true",
+        default=False,
+        help="clean running instances")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")

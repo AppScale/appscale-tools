@@ -628,7 +628,8 @@ class AppScaleTools(object):
     # Stop gracefully the AppScale deployment.
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
-        options.verbose)
+                                                 options.clean,
+                                                 options.verbose)
     except (IOError, AppScaleException):
       # Don't fail if we cannot find the configuration.
       pass
