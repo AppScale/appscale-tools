@@ -455,7 +455,7 @@ Available commands:
     AppScaleTools.describe_instances(options)
 
 
-  def deploy(self, app):
+  def deploy(self, app, email=None):
     """ 'deploy' is a more accessible way to tell an AppScale deployment to run a
     Google App Engine application than 'appscale-upload-app'. It calls that
     command with the configuration options found in the AppScalefile in the
@@ -464,6 +464,7 @@ Available commands:
     Args:
       app: The path (absolute or relative) to the Google App Engine application
         that should be uploaded.
+      email: The email of user
     Returns:
       A tuple containing the host and port where the application is serving
         traffic from.
@@ -485,6 +486,10 @@ Available commands:
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
+
+    if email is not None:
+      command.append("--email")
+      command.append(email)
 
     command.append("--file")
     command.append(app)
