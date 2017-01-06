@@ -519,13 +519,6 @@ class NodeLayout():
       master_node.add_role('taskqueue')
       master_node.add_role('taskqueue_master')
 
-    # Any node that runs appengine needs taskqueue to dispatch task requests to
-    # It's safe to add the slave role since we ensure above that somebody
-    # already has the master role
-    for node in nodes:
-      if node.is_role('appengine') and not node.is_role('taskqueue'):
-        node.add_role('taskqueue_slave')
-
     if self.disks:
       valid, reason = self.is_disks_valid(nodes)
       if not valid:
