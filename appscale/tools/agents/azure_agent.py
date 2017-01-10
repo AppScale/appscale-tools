@@ -142,7 +142,7 @@ class AzureAgent(BaseAgent):
   # (Takes longer than the creation time for other resources.)
   MAX_VM_CREATION_TIME = 240
 
-  # The maximum number of seconds to wait for an Azure Scale Set to be created.
+  # The maximum number of seconds to wait for an Azure scale set to be created.
   MAX_VMSS_WAIT_TIME = 300
 
   # The maximum limit of allowable VMs within a scale set.
@@ -160,6 +160,9 @@ class AzureAgent(BaseAgent):
 
   # The Storage Azure Resource provider namespace.
   MICROSOFT_STORAGE_RESOURCE = 'Microsoft.Storage'
+
+  # The compatible Network Management API version to use with scale sets.
+  NETWORK_MGMT_API_VERSION = '2016-09-01'
 
   def assert_credentials_are_valid(self, parameters):
     """ Contacts Azure with the given credentials to ensure that they are
@@ -246,7 +249,7 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id,
-                                             api_version='2016-09-01')
+                                             api_version=self.NETWORK_MGMT_API_VERSION)
     compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
     private_ips = []
@@ -401,7 +404,7 @@ class AzureAgent(BaseAgent):
     return linux_config
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
-    """ Creates/Updates  a Virtual Machine Scale Set containing the given number
+    """ Creates/Updates  a virtual machine scale set containing the given number
     of virtual machines with the virtual network provided.
     Args:
         count: The number of virtual machines to be created in the scale set.
@@ -440,7 +443,7 @@ class AzureAgent(BaseAgent):
                             scale_set_name, subnet)
 
   def create_scale_set(self, count, parameters, resource_name,
-                       scale_set_name, subnet,):
+                       scale_set_name, subnet):
     """ Creates a scale set of 'count' number of virtual machines in the given
     subnet and virtual Network.
     Args:
@@ -546,7 +549,7 @@ class AzureAgent(BaseAgent):
     for x in threads:
       x.join()
 
-    # Delete the Virtual Machine Scale Sets created.
+    # Delete the virtual machine scale sets created.
     vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
     vmss_delete_threads = []
     for vmss in vmss_list:
@@ -564,9 +567,9 @@ class AzureAgent(BaseAgent):
     resource group.
     Args:
         compute_client: An instance of the Compute Management client.
-      resource_group: The resource group name to use for this deployment.
-      verbose: A boolean indicating whether or not the verbose mode is on.
-      scale_set_name: The name of the virtual machine scale set to be deleted.
+        resource_group: The resource group name to use for this deployment.
+        verbose: A boolean indicating whether or not the verbose mode is on.
+        scale_set_name: The name of the virtual machine scale set to be deleted.
     """
     AppScaleLogger.verbose("Deleting Scale Set {}".format(scale_set_name), verbose)
     delete_response = compute_client.virtual_machine_scale_sets.delete(

@@ -769,9 +769,8 @@ class RemoteHelper(object):
         deployment.
       keyname: The name of the SSH keypair used for this AppScale deployment.
     """
+    acc = AppControllerClient(host, LocalState.get_secret_key(keyname))
     while True:
-      acc = AppControllerClient(host, LocalState.get_secret_key(keyname))
-
       if acc.is_initialized():
         break
       else:
