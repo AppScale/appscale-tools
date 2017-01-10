@@ -262,7 +262,7 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT * 2, "Error",
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT * 5, "Error",
                                  self.DEFAULT_NUM_RETRIES,
                                  self.server.receive_server_message, message_sender, self.secret)
 

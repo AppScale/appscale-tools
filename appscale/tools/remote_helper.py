@@ -950,9 +950,8 @@ class RemoteHelper(object):
         #  is a list of dicts with keys: ip, status, output
         output_list = yaml.safe_load(acc.receive_server_message("terminate"))
         if output_list == "Error":
-          terminated_successfully &= False
-          AppScaleLogger.warn("Timed out while talking to AppController")
-          break
+          time.sleep(0.3)
+          continue
         for node in output_list:
           if node.get("status"):
             AppScaleLogger.success("Node at {node_ip}: {status}".format(
