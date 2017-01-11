@@ -519,8 +519,10 @@ class ParseArgs(object):
 
   def validate_ips_flags(self):
     """Sets up the ips flag if the ips_layout flag is given."""
-    if self.args.ips_layout:
-      self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
+    if not self.args.ips_layout:
+      raise BadConfigurationException("Cannot start a deployment "
+                                      "without ips_layout.")
+    self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
 
 
   def validate_environment_flags(self):

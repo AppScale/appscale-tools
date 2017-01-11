@@ -41,6 +41,13 @@ class AppScale():
 
 
   # The location of the template AppScalefile that should be used when
+  # users execute 'appscale init'.
+  TEMPLATE_APPSCALEFILE = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/AppScalefile')
+
+
+  # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cloud'.
   TEMPLATE_CLOUD_APPSCALEFILE = os.path.join(
     os.path.dirname(sys.modules['appscale.tools'].__file__),
@@ -85,7 +92,7 @@ Available commands:
   get <regex>                       Gets all AppController properties matching
                                     the provided regex: for developers only.
   help                              Displays this message.
-  init <cloud|cluster>              Writes a new configuration file for
+  init [cloud|cluster]              Writes a new configuration file for
                                     AppScale: it will use the <cloud> or
                                     <cluster> template. Won't override
                                     an existing configuration.
@@ -219,11 +226,11 @@ Available commands:
 
     Args:
       environment: A str that indicates whether the AppScalefile to write should
-      be tailed to a 'cloud' environment or a 'cluster' environment.
+        be tailored to a 'cloud' environment or a 'cluster' environment or both.
 
     Raises:
       AppScalefileException: If there already is an AppScalefile in the local
-      directory.
+        directory.
     """
     # first, make sure there isn't already an AppScalefile in this
     # directory
@@ -240,9 +247,7 @@ Available commands:
     elif environment == 'cluster':
       template_file = self.TEMPLATE_CLUSTER_APPSCALEFILE
     else:
-      raise BadConfigurationException("The environment you specified " +
-        "was invalid. Valid environments are 'cloud' and " +
-        "'cluster'.")
+      template_file = self.TEMPLATE_APPSCALEFILE
 
     # finally, copy the template AppScalefile there
     shutil.copy(template_file, appscalefile_location)
