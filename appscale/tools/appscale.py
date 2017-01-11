@@ -103,7 +103,7 @@ Available commands:
                                     AppScale Portal.
   relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
-  remove                            An alias for 'undeploy'.
+  remove <appid>                    An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current AppScale
