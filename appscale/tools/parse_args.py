@@ -193,6 +193,13 @@ class ParseArgs(object):
         help="the static IP address that should be used for the login node " +
           "in cloud deployments")
 
+      self.parser.add_argument('--replication', '--n', type=int,
+        help="the database replication factor")
+      self.parser.add_argument('--max_memory', type=int,
+        default=self.DEFAULT_MAX_MEMORY,
+        help="the maximum amount of memory to use for App Engine apps " \
+        "(in megabytes)")
+
       # flags relating to EC2-like cloud infrastructures
       # Don't use dashes in the random suffix, since network names on Google
       # Compute Engine aren't allowed to have dashes in them.
@@ -251,23 +258,6 @@ class ParseArgs(object):
         help="the Azure subscription ID for the account")
       self.parser.add_argument('--azure_tenant_id',
         help="the tenant ID of the Azure endpoints")
-
-      # flags relating to the datastore used
-      self.parser.add_argument('--table',
-        default=self.DEFAULT_DATASTORE,
-        choices=self.ALLOWED_DATASTORES,
-        help="the datastore to use")
-      self.parser.add_argument('--replication', '--n', type=int,
-        help="the database replication factor")
-      self.parser.add_argument('--clear_datastore', action='store_true',
-        default=False,
-        help="erases all stored user and application data")
-
-      # flags relating to application servers
-      self.parser.add_argument('--max_memory', type=int,
-        default=self.DEFAULT_MAX_MEMORY,
-        help="the maximum amount of memory to use for App Engine apps " \
-        "(in megabytes)")
 
       group = self.parser.add_mutually_exclusive_group()
       group.add_argument('--appengine', type=int,
