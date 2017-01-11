@@ -505,26 +505,19 @@ class AppScaleTools(object):
       AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                          "for use. This can take few minutes.")
 
-      head_node.public_ip = public_ips[0]
-      head_node.private_ip = private_ips[0]
-      head_node.instance_id = instance_ids[0]
-
-      # Remove head node from node_layout nodes while updating nodes.
       # TODO: Change the logic here to do two calls, one for head node(s)
       # and another for scale set(s).
       node_layout.nodes.remove(head_node)
+      node_layout.nodes.insert(0, head_node)
 
       # Set newly obtained node layout info for this deployment.
-      for i, _ in enumerate(instance_ids[1:]):
-        if "shadow" in node_layout.nodes[i].roles:
-          continue
-        node_layout.nodes[i].public_ip = public_ips[i+1]
-        node_layout.nodes[i].private_ip = private_ips[i+1]
-        node_layout.nodes[i].instance_id = instance_ids[i+1]
+      for i, _ in enumerate(instance_ids):
+        node_layout.nodes[i].public_ip = public_ips[i]
+        node_layout.nodes[i].private_ip = private_ips[i]
+        node_layout.nodes[i].instance_id = instance_ids[i]
 
       # Enables root logins and SSH access on the head node.
       RemoteHelper.enable_root_ssh(options, head_node.public_ip)
-    node_layout.nodes.insert(0, head_node)
     AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
                            options.verbose)
 
