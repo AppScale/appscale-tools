@@ -140,7 +140,9 @@ login : [vm1_public_IP | Domain Name]
 # By default, we limit each AppServer instance to 400MB.
 # max_memory: 400
 
-# The password that will be used for the Flower web interface.
+# The password that will be used for the Flower web interface to monitor task
+# queues.
+# By default, this value is set to 'appscale'.
 # flower_password: 'appscale'
 
 
