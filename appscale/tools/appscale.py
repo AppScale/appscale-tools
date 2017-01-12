@@ -220,7 +220,7 @@ Available commands:
     return key_file
 
 
-  def init(self, environment):
+  def init(self, environment=None):
     """ Writes an AppScalefile in the local directory, that contains common
     configuration parameters.
 
