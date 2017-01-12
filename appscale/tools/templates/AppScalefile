@@ -27,7 +27,7 @@
 #   - [vm7_private_IP | node-7]
 #   - [vm8_private_IP | node-8]
 #   - [vm9_private_IP | node-9]
-#login : <vm1_public_IP>
+# login : [vm1_public_IP | Domain Name]
 
 
 
