@@ -583,14 +583,6 @@ class NodeLayout():
     if not database_node_count:
       return self.invalid("At least one database node must be provided.")
 
-    if not self.replication:
-      if database_node_count > 3:
-        # If there are a lot of database nodes, we default to 3x replication
-        self.replication = 3
-      else:
-        # If there are only a few nodes, replicate to each one of the nodes
-        self.replication = database_node_count
-
     if self.replication > database_node_count:
       return self.invalid("Replication factor cannot exceed # of databases")
 

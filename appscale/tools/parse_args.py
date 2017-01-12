@@ -193,7 +193,8 @@ class ParseArgs(object):
         help="the static IP address that should be used for the login node " +
           "in cloud deployments")
 
-      self.parser.add_argument('--replication', '--n', type=int,
+      self.parser.add_argument('--replication', '--n',
+        type=int, default=1,
         help="the database replication factor")
       self.parser.add_argument('--max_memory', type=int,
         default=self.DEFAULT_MAX_MEMORY,

@@ -13,21 +13,21 @@
 # Use the IPs of existing machines,
 # or node-X notation if you want AppScale to start new machines on the
 # Infrastructure of choice.
-# The following layout provides Fault Tolerance and High Availability:
-# ips_layout:
-#  master : [vm1_private_IP | node-1]
-#  appengine:
-#   - [vm2_private_IP | node-2]
-#   - [vm3_private_IP | node-3]
-#  database:   # Cassandra needs a quorum to answer queries (hence 3)
-#   - [vm4_private_IP | node-4]
-#   - [vm5_private_IP | node-5]
-#   - [vm6_private_IP | node-6]
-#  zookeeper:  # Zookeeper needs a majority of peers online (hence 3)
-#   - [vm7_private_IP | node-7]
-#   - [vm8_private_IP | node-8]
-#   - [vm9_private_IP | node-9]
-# login : [vm1_public_IP | Domain Name]
+
+ips_layout:
+  master : [vm1_private_IP | node-1]
+  appengine:
+   - [vm2_private_IP | node-2]
+   - [vm3_private_IP | node-3]
+  database:   # Cassandra needs a quorum to answer queries (hence 3)
+   - [vm4_private_IP | node-4]
+   - [vm5_private_IP | node-5]
+   - [vm6_private_IP | node-6]
+  zookeeper:  # Zookeeper needs a majority of peers online (hence 3)
+   - [vm7_private_IP | node-7]
+   - [vm8_private_IP | node-8]
+   - [vm9_private_IP | node-9]
+login : [vm1_public_IP | Domain Name]
 
 
 
@@ -122,10 +122,10 @@
 ############ Optional Parameters ############
 #############################################
 
-# The number of data replicas for this deployment.
-# By default, this value is set to the minimum of 3 and the number of
-# database VMs in the deployment.
-# replication : 1
+# The number of data replicas for this deployment. A value of 3 or 5 is
+# recommended for production settings.
+# By default, this value is set to 1.
+# replication : 3
 
 # The max number of machines that can be used for your AppScale deployment.
 # By default, it is the sum of nodes specified in the ips_layout section.
