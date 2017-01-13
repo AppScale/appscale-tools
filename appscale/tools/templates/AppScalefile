@@ -27,6 +27,10 @@ ips_layout:
    - [vm7_private_IP | node-7]
    - [vm8_private_IP | node-8]
    - [vm9_private_IP | node-9]
+
+# Login is used to instruct AppScale which one is the visible public IP used
+# by clients to connect. It could be the public IP of the master/load-balancer
+# instance, or it could be the list of IPs used for external load-balancers.
 login : [vm1_public_IP | Domain Name]
 
 
@@ -109,12 +113,15 @@ login : [vm1_public_IP | Domain Name]
 # The availability zone that should be used for all virtual machines in your
 # AppScale deployment. If using persistent disks in your AppScale deployment,
 # they should be in the same zone that you specify here.
-# zone : ‘West-US’
+# zone : ‘West US’
 
 # The unique resource group that Azure resources will be created under for this
-# deployment.
-# By default, the group is auto-generated.
-# group : 'appscalegroup'
+# deployment. This group is auto-generated if not specified.
+# azure_resource_group : 'appscale-resource-group'
+
+# The unique Azure storage account to be used for this deployment.
+# This storage account is auto-generated if not specified.
+# azure_resource_group : 'appscalerestorageaccount'
 
 
 
