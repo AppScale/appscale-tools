@@ -121,7 +121,7 @@ login : [vm1_public_IP | Domain Name]
 
 # The unique Azure storage account to be used for this deployment.
 # This storage account is auto-generated if not specified.
-# azure_resource_group : 'appscalerestorageaccount'
+# azure_storage_group : 'appscalerestorageaccount'
 
 
 
