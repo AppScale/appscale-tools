@@ -103,9 +103,9 @@ class RemoteHelper(object):
       options: A Namespace that includes parameters passed in by the user that
         define non-placement-strategy-related deployment options (e.g., keypair
         names, security group names).
-      count: A int, the number of nodes to spawn.
+      node_layout: The node layout of the system including roles.
     Returns:
-      The public IPs and instance IDs (dummy values in non-cloud deployments)
+      The node layout (dummy values in non-cloud deployments)
       corresponding to the nodes that were started.
     """
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
@@ -147,16 +147,14 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    o_instance_ids, o_public_ips, o_private_ips = \
-      cls.spawn_other_nodes_in_cloud(options, agent, params,
-                                              len(node_layout.get_nodes(
-                                                'load_balancer', False)))
+    if len(node_layout.get_nodes('load_balancer', False)) > 0:
+      instance_ids, public_ips, private_ips = \
+        cls.spawn_other_nodes_in_cloud(options, agent, params,
+                                      len(node_layout.get_nodes(
+                                          'load_balancer', False)))
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    instance_ids.extend(o_instance_ids)
-    public_ips.extend(o_public_ips)
-    private_ips.extend(o_private_ips)
     # Set newly obtained node layout info for this deployment.
     for i, _ in enumerate(instance_ids):
       node_layout.nodes[i].public_ip = public_ips[i]
