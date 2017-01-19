@@ -505,6 +505,11 @@ class AppScaleTools(object):
       AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                          "for use. This can take few minutes.")
 
+      # TODO: Change the logic here to do two calls, one for head node(s)
+      # and another for scale set(s).
+      node_layout.nodes.remove(head_node)
+      node_layout.nodes.insert(0, head_node)
+
       # Set newly obtained node layout info for this deployment.
       for i, _ in enumerate(instance_ids):
         node_layout.nodes[i].public_ip = public_ips[i]
