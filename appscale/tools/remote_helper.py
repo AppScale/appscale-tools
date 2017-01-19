@@ -103,9 +103,9 @@ class RemoteHelper(object):
       options: A Namespace that includes parameters passed in by the user that
         define non-placement-strategy-related deployment options (e.g., keypair
         names, security group names).
-      count: A int, the number of nodes to spawn.
+      node_layout: The node layout of the system including roles.
     Returns:
-      The public IPs and instance IDs (dummy values in non-cloud deployments)
+      The node layout (dummy values in non-cloud deployments)
       corresponding to the nodes that were started.
     """
     agent = InfrastructureAgentFactory.create_agent(options.infrastructure)
@@ -140,23 +140,22 @@ class RemoteHelper(object):
 
     agent.configure_instance_security(params)
 
-    instance_ids, public_ips, private_ips = \
-      cls.spawn_load_balancers_in_cloud(options, agent, params,
-                                        len(node_layout.get_nodes(
-                                            'load_balancer', True)))
+    instance_ids, public_ips, private_ips = cls.spawn_load_balancers_in_cloud(
+      options, agent, params,
+      len(node_layout.get_nodes('load_balancer', True)))
+
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    o_instance_ids, o_public_ips, o_private_ips = \
-      cls.spawn_other_nodes_in_cloud(options, agent, params,
-                                              len(node_layout.get_nodes(
-                                                'load_balancer', False)))
-    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
-                       "for use. This can take few minutes.")
+    _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
+      agent, params,
+      len(node_layout.get_nodes('load_balancer', False)))
 
-    instance_ids.extend(o_instance_ids)
-    public_ips.extend(o_public_ips)
-    private_ips.extend(o_private_ips)
+    # Account for possibility of duplicates
+    instance_ids = instance_ids + list(set(_instance_ids) - set(instance_ids))
+    public_ips = public_ips + list(set(_public_ips) - set(public_ips))
+    private_ips = private_ips + list(set(_private_ips) - set(private_ips))
+
     # Set newly obtained node layout info for this deployment.
     for i, _ in enumerate(instance_ids):
       node_layout.nodes[i].public_ip = public_ips[i]
@@ -263,20 +262,24 @@ class RemoteHelper(object):
 
   @classmethod
   def spawn_load_balancers_in_cloud(cls, options, agent, params, count=1):
-    """Starts a single virtual machine in a cloud infrastructure.
+    """Starts count number of virtual machines in a cloud infrastructure with
+    public ips.
 
-    This method also prepares the virual machine for use by the AppScale Tools.
+    This method also prepares the virtual machine for use by the AppScale Tools.
 
     Args:
       options: A Namespace that specifies the cloud infrastructure to use, as
         well as how to interact with that cloud.
+      agent: The agent to start VMs with, must be passed as an argument
+        because agents cannot be made twice.
+      params: The parameters to be sent to the agent.
       count: A int, the number of instances to start.
     Returns:
       The instance ID, public IP address, and private IP address of the machine
         that was started.
     """
-    instance_ids, public_ips, private_ips = agent.run_instances(count=count,
-      parameters=params, security_configured=True)
+    instance_ids, public_ips, private_ips = agent.run_instances(
+      count=count, parameters=params, security_configured=True)
 
     if options.static_ip:
       agent.associate_static_ip(params, instance_ids[0], options.static_ip)
@@ -286,22 +289,22 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def spawn_other_nodes_in_cloud(cls, options, agent, params, count=1):
-    """Starts a single virtual machine in a cloud infrastructure.
+  def spawn_other_nodes_in_cloud(cls, agent, params, count=1):
+    """Starts count number of virtual machines in a cloud infrastructure.
 
-    This method also prepares the virual machine for use by the AppScale Tools.
+    This method also prepares the virtual machine for use by the AppScale Tools.
 
     Args:
-      options: A Namespace that specifies the cloud infrastructure to use, as
-        well as how to interact with that cloud.
+      agent: The agent to start VMs with, must be passed as an argument
+        because agents cannot be made twice.
+      params: The parameters to be sent to the agent.
       count: A int, the number of instances to start.
     Returns:
       The instance ID, public IP address, and private IP address of the machine
         that was started.
     """
-    instance_ids, public_ips, private_ips = agent.run_instances(count=count,
-                                                    parameters=params,
-                                                    security_configured=True)
+    instance_ids, public_ips, private_ips = agent.run_instances(
+      count=count, parameters=params, security_configured=True)
     return instance_ids, public_ips, private_ips
 
   @classmethod
