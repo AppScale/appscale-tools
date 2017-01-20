@@ -147,14 +147,15 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
-      agent, params,
-      len(node_layout.get_nodes('load_balancer', False)))
+    if len(node_layout.get_nodes('load_balancer', False)) > 0:
+      _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
+        agent, params,
+        len(node_layout.get_nodes('load_balancer', False)))
 
-    # Account for possibility of duplicates
-    instance_ids = instance_ids + list(set(_instance_ids) - set(instance_ids))
-    public_ips = public_ips + list(set(_public_ips) - set(public_ips))
-    private_ips = private_ips + list(set(_private_ips) - set(private_ips))
+      # Account for possibility of duplicates
+      instance_ids = instance_ids + list(set(_instance_ids) - set(instance_ids))
+      public_ips = public_ips + list(set(_public_ips) - set(public_ips))
+      private_ips = private_ips + list(set(_private_ips) - set(private_ips))
 
     # Set newly obtained node layout info for this deployment.
     for i, _ in enumerate(instance_ids):
