@@ -152,10 +152,9 @@ class RemoteHelper(object):
         agent, params,
         len(node_layout.get_nodes('load_balancer', False)))
 
-      # Account for possibility of duplicates
-      instance_ids = instance_ids + list(set(_instance_ids) - set(instance_ids))
-      public_ips = public_ips + list(set(_public_ips) - set(public_ips))
-      private_ips = private_ips + list(set(_private_ips) - set(private_ips))
+      instance_ids.extend(_instance_ids)
+      public_ips.extend(_public_ips)
+      private_ips.extend(_private_ips)
 
     # Set newly obtained node layout info for this deployment.
     for i, _ in enumerate(instance_ids):
