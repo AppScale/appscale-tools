@@ -2,6 +2,7 @@
 
 
 # First-party Python imports
+import fnmatch
 import getpass
 import hashlib
 import json
@@ -1190,3 +1191,83 @@ class LocalState(object):
       file_handle.write(file_contents)
 
     return False
+
+  @classmethod
+  def get_extra_go_dependencies(cls, app_base):
+    """ Collects a list of additional source files to include in the Go app.
+
+    Args:
+      app_base: A string specifying the application directory.
+    Returns:
+      A dictionary mapping file names to their location on the file system.
+    """
+    # If the user specified a tarball, don't look for extra files.
+    if not os.path.isdir(app_base):
+      return {}
+
+    goroot = os.getenv('GOROOT', None)
+    if goroot is None:
+      confirm = raw_input(
+        'The GOROOT environment variable is not defined. Some of your '
+        'dependencies may be excluded.\n'
+        'Continue anyway? (Y/n) ')
+      if confirm.lower() in ['n', 'no']:
+        raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    gab = os.path.join(goroot, 'bin', 'go-app-builder')
+    if not os.path.isfile(gab):
+      confirm = raw_input(
+        'Unable to find bin/go-app-builder in GOROOT ({}). Some of your '
+        'dependencies may be excluded. The goroot included with the App '
+        'Engine Go SDK should have this. \n'
+        'Continue anyway? (Y/n) '.format(goroot))
+      if confirm.lower() in ['n', 'no']:
+        raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    gopath = os.getenv('GOPATH', None)
+    if gopath is None:
+      confirm = raw_input(
+        'The GOPATH environment variable is not defined. Some of your '
+        'dependencies may be excluded.\n'
+        'Continue anyway? (Y/n) ')
+      if confirm.lower() in ['n', 'no']:
+        raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    go_files = []
+    for root, dirnames, filenames in os.walk(app_base):
+      relative_dir = os.path.relpath(root, app_base)
+      for filename in fnmatch.filter(filenames, '*.go'):
+        relative_path = os.path.join(relative_dir, filename)
+        go_files.append(relative_path)
+
+    gab_args = [gab,
+                '-app_base', app_base,
+                '-arch', '6',
+                '-goroot', goroot,
+                '-gopath', gopath,
+                '-print_extras']
+    gab_args.extend(go_files)
+
+    try:
+      gab_output = subprocess.check_output(gab_args)
+    except subprocess.CalledProcessError:
+      confirm = raw_input(
+        'The go-app-builder command failed. Some of your dependencies may be '
+        'excluded.\n'
+        'The command run was "{}"\n'
+        'Continue anyway? (Y/n) '.format(' '.join(gab_args)))
+      if confirm.lower() in ['n', 'no']:
+        raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    extras = {}
+    for line in gab_output.splitlines():
+      relative_path, absolute_path = line.split('|')
+      # The extra files must be separated from the app files on the server.
+      relative_path = os.path.join('gopath', 'src', relative_path)
+      extras[relative_path] = absolute_path
+
+    return extras
