@@ -1247,7 +1247,7 @@ class LocalState(object):
       return {}
 
     go_files = []
-    for root, dirnames, filenames in os.walk(app_base):
+    for root, _, filenames in os.walk(app_base):
       relative_dir = os.path.relpath(root, app_base)
       for filename in fnmatch.filter(filenames, '*.go'):
         relative_path = os.path.join(relative_dir, filename)

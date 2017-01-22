@@ -967,7 +967,7 @@ class RemoteHelper(object):
 
     # Collect list of files that should be included in the tarball.
     app_files = {}
-    for root, dirnames, filenames in os.walk(app_location):
+    for root, _, filenames in os.walk(app_location):
       relative_dir = os.path.relpath(root, app_location)
       for filename in filenames:
         # Ignore compiled Python files.
