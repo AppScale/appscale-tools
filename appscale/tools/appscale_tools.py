@@ -700,7 +700,7 @@ class AppScaleTools(object):
 
     extras = {}
     if app_language == 'go':
-      extras = LocalState.get_extra_go_dependencies(options.file)
+      extras = LocalState.get_extra_go_dependencies(options.file, options.test)
 
     if app_language == 'java':
       if AppEngineHelper.is_sdk_mismatch(file_location):
