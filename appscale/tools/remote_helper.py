@@ -941,7 +941,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_app_to_host(cls, app_location, keyname, is_verbose):
+  def copy_app_to_host(cls, app_location, keyname, is_verbose, extras=None):
     """Copies the given application to a machine running the Login service
     within an AppScale deployment.
 
@@ -952,6 +952,7 @@ class RemoteHelper(object):
         AppScale deployment.
       is_verbose: A bool that indicates if we should print the commands we exec
         to copy the app to the remote host to stdout.
+      extras: A dictionary containing a list of files to include in the upload.
 
     Returns:
       A str corresponding to the location on the remote filesystem where the
@@ -974,6 +975,9 @@ class RemoteHelper(object):
           continue
         relative_path = os.path.join(relative_dir, filename)
         app_files[relative_path] = os.path.join(root, filename)
+
+    if extras is not None:
+      app_files.update(extras)
 
     with tarfile.open(local_tarred_app, 'w:gz') as app_tar:
       for tarball_path in app_files:
