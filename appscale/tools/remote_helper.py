@@ -8,6 +8,7 @@ import re
 import socket
 import subprocess
 import sys
+import tarfile
 import threading
 import tempfile
 import time
@@ -962,9 +963,22 @@ class RemoteHelper(object):
     rand = str(uuid.uuid4()).replace('-', '')[:8]
     local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".\
       format(tempfile.gettempdir(), app_id, rand)
-    cmd = "cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".\
-      format(app_location, local_tarred_app)
-    LocalState.shell(cmd, is_verbose)
+
+    # Collect list of files that should be included in the tarball.
+    app_files = {}
+    for root, dirnames, filenames in os.walk(app_location):
+      relative_dir = os.path.relpath(root, app_location)
+      for filename in filenames:
+        # Ignore compiled Python files.
+        if filename.endswith('.pyc'):
+          continue
+        relative_path = os.path.join(relative_dir, filename)
+        app_files[relative_path] = os.path.join(root, filename)
+
+    with tarfile.open(local_tarred_app, 'w:gz') as app_tar:
+      for tarball_path in app_files:
+        local_path = app_files[tarball_path]
+        app_tar.add(local_path, tarball_path)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
