@@ -55,6 +55,7 @@ setup(
     'oauth2client==4.0.0',
     'PyYAML',
     'requests>=2.7.0',
+    'setuptools<34',
     'SOAPpy',
     'termcolor',
     'wstools==0.4.3'
