@@ -13,6 +13,7 @@ import time
 # Azure specific imports
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
@@ -22,11 +23,22 @@ from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
 from azure.mgmt.compute.models import OSDisk
 from azure.mgmt.compute.models import OSProfile
+from azure.mgmt.compute.models import Sku as ComputeSku
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import UpgradePolicy
+from azure.mgmt.compute.models import UpgradeMode
 from azure.mgmt.compute.models import VirtualHardDisk
 from azure.mgmt.compute.models import VirtualMachine
+from azure.mgmt.compute.models import VirtualMachineScaleSet
+from azure.mgmt.compute.models import VirtualMachineScaleSetIPConfiguration
+from azure.mgmt.compute.models import VirtualMachineScaleSetNetworkConfiguration
+from azure.mgmt.compute.models import VirtualMachineScaleSetNetworkProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetOSDisk
+from azure.mgmt.compute.models import VirtualMachineScaleSetOSProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetStorageProfile
+from azure.mgmt.compute.models import VirtualMachineScaleSetVMProfile
 from azure.mgmt.compute.models import VirtualMachineSizeTypes
 
 from azure.mgmt.network import NetworkManagementClient
@@ -42,10 +54,10 @@ from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.resource.resources.models import ResourceGroup
 
 from azure.mgmt.storage import StorageManagementClient
-from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
+from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
+from azure.mgmt.storage.models import Sku as StorageSku
 
 from msrestazure.azure_exceptions import CloudError
-
 from haikunator import Haikunator
 
 # AppScale-specific imports
@@ -130,6 +142,12 @@ class AzureAgent(BaseAgent):
   # (Takes longer than the creation time for other resources.)
   MAX_VM_CREATION_TIME = 240
 
+  # The maximum number of seconds to wait for an Azure scale set to be created.
+  MAX_VMSS_WAIT_TIME = 300
+
+  # The maximum limit of allowable VMs within a scale set.
+  MAX_VMSS_CAPACITY = 40
+
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
   VIRTUAL_NETWORK = 'appscaleazure'
@@ -142,6 +160,9 @@ class AzureAgent(BaseAgent):
 
   # The Storage Azure Resource provider namespace.
   MICROSOFT_STORAGE_RESOURCE = 'Microsoft.Storage'
+
+  # The compatible Network Management API version to use with scale sets.
+  NETWORK_MGMT_API_VERSION = '2016-09-01'
 
   def assert_credentials_are_valid(self, parameters):
     """ Contacts Azure with the given credentials to ensure that they are
@@ -226,7 +247,9 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    network_client = NetworkManagementClient(credentials, subscription_id)
+
+    network_client = NetworkManagementClient(credentials, subscription_id,
+                                             api_version=self.NETWORK_MGMT_API_VERSION)
     compute_client = ComputeManagementClient(credentials, subscription_id)
     public_ips = []
     private_ips = []
@@ -244,6 +267,20 @@ class AzureAgent(BaseAgent):
     virtual_machines = compute_client.virtual_machines.list(resource_group)
     for vm in virtual_machines:
       instance_ids.append(vm.name)
+
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    for vmss in vmss_list:
+      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group,
+                                                                  vmss.name)
+      for vm in vm_list:
+        instance_ids.append(vm.name)
+      network_interface_list = network_client.network_interfaces.\
+        list_virtual_machine_scale_set_network_interfaces(resource_group,
+                                                          vmss.name)
+      for network_interface in network_interface_list:
+        for ip_config in network_interface.ip_configurations:
+          public_ips.append(ip_config.private_ip_address)
+          private_ips.append(ip_config.private_ip_address)
     return public_ips, private_ips, instance_ids
 
   def run_instances(self, count, parameters, security_configured):
@@ -263,21 +300,22 @@ class AzureAgent(BaseAgent):
       private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
-    network_client = NetworkManagementClient(credentials, subscription_id)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     virtual_network = parameters[self.PARAM_GROUP]
+
+    network_client = NetworkManagementClient(credentials, subscription_id)
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
-    for _ in range(count):
-      vm_network_name = Haikunator().haikunate()
-      self.create_network_interface(network_client, vm_network_name,
-        vm_network_name, subnet, parameters)
-      network_interface = network_client.network_interfaces.get(
-        resource_group, vm_network_name)
-      self.create_virtual_machine(credentials, network_client,
-        network_interface.id, parameters, vm_network_name)
+    vm_network_name = Haikunator().haikunate()
+    self.create_network_interface(network_client, vm_network_name, vm_network_name,
+                                  subnet, parameters)
+    network_interface = network_client.network_interfaces.get(
+      resource_group, vm_network_name)
+    self.create_virtual_machine(credentials, network_client,
+      network_interface.id, parameters, vm_network_name)
 
+    self.create_or_update_vm_scale_sets(count-1, parameters, subnet)
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     return instance_ids, public_ips, private_ips
 
@@ -297,24 +335,14 @@ class AzureAgent(BaseAgent):
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
-    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
-                           format(vm_network_name), verbose)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
+    AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
+                           format(vm_network_name), verbose)
+
     compute_client = ComputeManagementClient(credentials, subscription_id)
+    linux_config = self.create_linux_configuration(parameters)
 
-    keyname = parameters[self.PARAM_KEYNAME]
-    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
-    public_key_path = private_key_path + ".pub"
-
-    with open(public_key_path, 'r') as pub_ssh_key_fd:
-      pub_ssh_key = pub_ssh_key_fd.read()
-
-    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
-    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
-    ssh_config = SshConfiguration(public_keys=public_keys)
-    linux_config = LinuxConfiguration(disable_password_authentication=True,
-                                      ssh=ssh_config)
     os_profile = OSProfile(admin_username=self.ADMIN_USERNAME,
                            computer_name=vm_network_name,
                            linux_configuration=linux_config)
@@ -351,8 +379,141 @@ class AzureAgent(BaseAgent):
                            format(public_ip_address.ip_address))
         break
       AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
-        "available".format(self.SLEEP_TIME), verbose)
+                             "available".format(self.SLEEP_TIME), verbose)
       time.sleep(self.SLEEP_TIME)
+
+  def create_linux_configuration(self, parameters):
+    """ Creates a Linux Configuration to pass in to the virtual machine
+    instance to be created.
+    Args:
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+    Returns:
+        An instance of LinuxConfiguration
+    """
+    keyname = parameters[self.PARAM_KEYNAME]
+    private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
+    public_key_path = private_key_path + ".pub"
+    with open(public_key_path, 'r') as pub_ssh_key_fd:
+      pub_ssh_key = pub_ssh_key_fd.read()
+    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
+    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
+    ssh_config = SshConfiguration(public_keys=public_keys)
+    linux_config = LinuxConfiguration(disable_password_authentication=True,
+                                      ssh=ssh_config)
+    return linux_config
+
+  def create_or_update_vm_scale_sets(self, count, parameters, subnet):
+    """ Creates/Updates  a virtual machine scale set containing the given number
+    of virtual machines with the virtual network provided.
+    Args:
+        count: The number of virtual machines to be created in the scale set.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        subnet:A reference to the subnet ID of the virtual network created.
+    Raises:
+        AgentConfigurationException: If the operation to create a virtual
+        machine scale set did not succeed.
+    """
+    verbose = parameters[self.PARAM_VERBOSE]
+    random_resource_name = Haikunator().haikunate()
+
+    # Create multiple scale sets with the allowable maximum capacity of VMs.
+    if count > self.MAX_VMSS_CAPACITY:
+      # Count of the number of scale sets needed depending on the max capacity.
+      scale_set_count = (int(count) + self.MAX_VMSS_CAPACITY // 2) // self.MAX_VMSS_CAPACITY
+      remaining_vms_count = count
+      for ss_count in range(scale_set_count):
+        resource_name = random_resource_name + "-resource-{}".format(ss_count)
+        scale_set_name = random_resource_name + "-scaleset-{}".format(ss_count)
+        capacity = self.MAX_VMSS_CAPACITY
+        if remaining_vms_count < self.MAX_VMSS_CAPACITY:
+          capacity = remaining_vms_count
+        AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+                               format(scale_set_name, capacity), verbose)
+        self.create_scale_set(capacity, parameters,
+                              resource_name, scale_set_name, subnet)
+        remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
+    # Create a scale set using the count of VMs provided.
+    else:
+      scale_set_name = random_resource_name + "-scaleset-{}vms".format(count)
+      AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+                             format(scale_set_name, count), verbose)
+      self.create_scale_set(count, parameters, random_resource_name,
+                            scale_set_name, subnet)
+
+  def create_scale_set(self, count, parameters, resource_name,
+                       scale_set_name, subnet):
+    """ Creates a scale set of 'count' number of virtual machines in the given
+    subnet and virtual Network.
+    Args:
+        count: The VM capacity of the scale set to be created.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        resource_name: The names of the sub resources needed to create
+          a virtual machine in a scale set.
+        scale_set_name: The name of the scale set to be created.
+        subnet: A reference to the subnet ID of the virtual network created.
+
+    Raises:
+        AgentConfigurationException: If the operation to create a virtual
+         machine scale set did not succeed.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    zone = parameters[self.PARAM_ZONE]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
+    linux_configuration = self.create_linux_configuration(parameters)
+
+    os_profile = VirtualMachineScaleSetOSProfile(
+      computer_name_prefix=resource_name, admin_username=self.ADMIN_USERNAME,
+      linux_configuration=linux_configuration)
+
+    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
+    os_disk = VirtualMachineScaleSetOSDisk(
+      name=resource_name, caching=CachingTypes.read_write,
+      create_option=DiskCreateOptionTypes.from_image,
+      os_type=OperatingSystemTypes.linux, image=image_hd)
+
+    subnet_reference = ApiEntityReference(id=subnet.id)
+    ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
+                                                      subnet=subnet_reference)
+
+    network_interface_config = VirtualMachineScaleSetNetworkConfiguration(
+      name=resource_name, primary=True, ip_configurations=[ip_config])
+
+    network_profile = VirtualMachineScaleSetNetworkProfile(
+      network_interface_configurations=[network_interface_config])
+
+    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
+    virtual_machine_profile = VirtualMachineScaleSetVMProfile(
+      os_profile=os_profile, storage_profile=storage_profile,
+      network_profile=network_profile)
+
+    sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
+    upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
+    vm_scale_set = VirtualMachineScaleSet(
+      sku=sku, upgrade_policy=upgrade_policy, location=zone,
+      virtual_machine_profile=virtual_machine_profile, over_provision=False)
+
+    create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
+      resource_group, scale_set_name, vm_scale_set)
+    try:
+      create_update_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
+      result = create_update_response.result()
+      if result.provisioning_state == 'Succeeded':
+        AppScaleLogger.log("Scale Set '{0}' with {1} VMs has been successfully "
+                           "configured!".format(scale_set_name, count))
+      else:
+        AppScaleLogger.log("Unable to create a Scale Set of {0} "
+                           "VMs.Provisioning Status: {1}"
+                           .format(count, result.provisioning_state))
+
+    except CloudError as error:
+      raise AgentConfigurationException("Unable to create a Scale Set of {0} "
+                                        " VMs: {1}".format(count, error.message))
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
@@ -378,15 +539,56 @@ class AzureAgent(BaseAgent):
                            format(instance_ids), verbose)
     compute_client = ComputeManagementClient(credentials, subscription_id)
     threads = []
+    # Delete the virtual machines created outside of the scale set.
     for vm_name in instance_ids:
-      thread = threading.Thread(target=self.delete_virtual_machine,
-                                args=(compute_client, resource_group, verbose,
-                                      vm_name))
+      thread = threading.Thread(
+        target=self.delete_virtual_machine, args=(
+          compute_client, resource_group, verbose, vm_name))
       thread.start()
       threads.append(thread)
-
     for x in threads:
       x.join()
+
+    # Delete the virtual machine scale sets created.
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    vmss_delete_threads = []
+    for vmss in vmss_list:
+      thread = threading.Thread(
+        target=self.delete_virtual_machine_scale_set, args=(
+          compute_client, resource_group, verbose, vmss.name))
+      thread.start()
+      thread.append(thread)
+    for x in vmss_delete_threads:
+      x.join()
+
+  def delete_virtual_machine_scale_set(self, compute_client, resource_group,
+                                        verbose, scale_set_name):
+    """ Deletes the virtual machine scale set created from the specified
+    resource group.
+    Args:
+        compute_client: An instance of the Compute Management client.
+        resource_group: The resource group name to use for this deployment.
+        verbose: A boolean indicating whether or not the verbose mode is on.
+        scale_set_name: The name of the virtual machine scale set to be deleted.
+    """
+    AppScaleLogger.verbose("Deleting Scale Set {}".format(scale_set_name), verbose)
+    delete_response = compute_client.virtual_machine_scale_sets.delete(
+      resource_group,scale_set_name)
+    try:
+      delete_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
+      result = delete_response.result()
+      if result.provisioning_state == 'Succeeded':
+        AppScaleLogger.log("Scale Set '{0}' has been successfully "
+                           "deleted!".format(scale_set_name))
+      else:
+        AppScaleLogger.log("Unable to delete the Scale Set {0}. "
+                           "Provisioning Status: {1}"
+                           .format(scale_set_name, result.provisioning_state))
+
+    except CloudError as error:
+      raise AgentConfigurationException("There was a problem while deleting the "
+                                        "Scale Set {0} due to the error: {1}"
+                                        .format(scale_set_name, error.message))
 
   def delete_virtual_machine(self, compute_client, resource_group, verbose,
                              vm_name):
@@ -555,15 +757,9 @@ class AzureAgent(BaseAgent):
       raise AgentConfigurationException("Unable to authenticate using the "
                                         "credentials provided.")
 
-    # Check if the resource group passed in exists already, if it does, then
-    # pass an existing group flag so that it is not created again.
     # In case no resource group is passed, pass a default group.
-    params[self.PARAM_EXISTING_RG] = False
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
-
-    if args[self.PARAM_RESOURCE_GROUP] in rg_names:
-      params[self.PARAM_EXISTING_RG] = True
 
     if not args[self.PARAM_STORAGE_ACCOUNT]:
       params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
@@ -737,7 +933,7 @@ class AzureAgent(BaseAgent):
     """
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     resource_client = ResourceManagementClient(credentials, subscription_id)
-    rg_name = parameters[self.PARAM_RESOURCE_GROUP]
+    resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
 
     tag_name = 'default-tag'
     if parameters[self.PARAM_TAG]:
@@ -748,18 +944,18 @@ class AzureAgent(BaseAgent):
     try:
       # If the resource group does not already exist, create a new one with the
       # specified storage account.
-      if not parameters[self.PARAM_EXISTING_RG]:
+      if not self.does_resource_group_exist(resource_group_name, resource_client):
         AppScaleLogger.log("Creating a new resource group '{0}' with the tag "
-          "'{1}'.".format(rg_name, tag_name))
+                           "'{1}'.".format(resource_group_name, tag_name))
         resource_client.resource_groups.create_or_update(
-          rg_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
+          resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
                                  tags={'tag': tag_name}))
         self.create_storage_account(parameters, storage_client)
       else:
         # If it already exists, check if the specified storage account exists
         # under it and if not, create a new account.
         storage_accounts = storage_client.storage_accounts.\
-          list_by_resource_group(rg_name)
+          list_by_resource_group(resource_group_name)
         acct_names = []
         for account in storage_accounts:
           acct_names.append(account.name)
@@ -767,7 +963,7 @@ class AzureAgent(BaseAgent):
         if parameters[self.PARAM_STORAGE_ACCOUNT] in acct_names:
             AppScaleLogger.log("Storage account '{0}' under '{1}' resource group "
               "already exists. So not creating it again.".format(
-              parameters[self.PARAM_STORAGE_ACCOUNT], rg_name))
+              parameters[self.PARAM_STORAGE_ACCOUNT], resource_group_name))
         else:
           self.create_storage_account(parameters, storage_client)
     except CloudError as error:
@@ -795,7 +991,7 @@ class AzureAgent(BaseAgent):
         "resource group '{1}'.".format(storage_account, rg_name))
       result = storage_client.storage_accounts.create(
         rg_name, storage_account,StorageAccountCreateParameters(
-          sku=Sku(SkuName.standard_lrs), kind=Kind.storage,
+          sku=StorageSku(SkuName.standard_lrs), kind=Kind.storage,
           location=parameters[self.PARAM_ZONE]))
       # Result is a msrestazure.azure_operation.AzureOperationPoller instance.
       # wait() insures polling the underlying async operation until it's done.
@@ -803,3 +999,21 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a storage account "
         "using the credentials provided: {}".format(error.message))
+
+  def does_resource_group_exist(self, resource_group_name, resource_client):
+    """ Checks if the given resource group already exists.
+    Args:
+      resource_group_name: The name of the resource group to check.
+      resource_client: An instance of the ResourceManagementClient.
+    Returns:
+      True, if resource group already exists.
+      False, otherwise.
+    """
+    resource_groups = resource_client.resource_groups.list()
+    resource_group_names = []
+    for rg in resource_groups:
+      resource_group_names.append(rg.name)
+
+    if resource_group_name in resource_group_names:
+      return True
+    return False
