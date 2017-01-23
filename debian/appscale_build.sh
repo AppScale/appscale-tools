@@ -17,7 +17,8 @@ if [ -f ./debian/control.${DIST} ]; then
     fi
 fi
 
-# If setuptools 34 has already been installed, subsequent commands
+# The namespace import that appscale packages use is not compatible with
+# setuptools 34.
 pip install "setuptools<34"
 
 # These system packages are too old for google-api-python-client>=1.5.0.
