@@ -140,27 +140,31 @@ class RemoteHelper(object):
 
     agent.configure_instance_security(params)
 
+    load_balancer_nodes = node_layout.get_nodes('load_balancer', True)
     instance_ids, public_ips, private_ips = cls.spawn_load_balancers_in_cloud(
       options, agent, params,
-      len(node_layout.get_nodes('load_balancer', True)))
+      len(load_balancer_nodes))
+
+    for i, node in enumerate(load_balancer_nodes):
+      index = node_layout.nodes.index(node)
+      node_layout.nodes[index].public_ip = public_ips[i]
+      node_layout.nodes[index].private_ip = private_ips[i]
+      node_layout.nodes[index].instance_id = instance_ids[i]
 
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    if len(node_layout.get_nodes('load_balancer', False)) > 0:
+    other_nodes = node_layout.get_nodes('load_balancer', False)
+    if len(other_nodes) > 0:
       _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
         agent, params,
-        len(node_layout.get_nodes('load_balancer', False)))
+        len(other_nodes))
 
-      instance_ids.extend(_instance_ids)
-      public_ips.extend(_public_ips)
-      private_ips.extend(_private_ips)
-
-    # Set newly obtained node layout info for this deployment.
-    for i, _ in enumerate(instance_ids):
-      node_layout.nodes[i].public_ip = public_ips[i]
-      node_layout.nodes[i].private_ip = private_ips[i]
-      node_layout.nodes[i].instance_id = instance_ids[i]
+      for i, node in enumerate(other_nodes):
+        index = node_layout.nodes.index(node)
+        node_layout.nodes[index].public_ip = _public_ips[i]
+        node_layout.nodes[index].private_ip = _private_ips[i]
+        node_layout.nodes[index].instance_id = _instance_ids[i]
 
     return node_layout
 
