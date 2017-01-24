@@ -17,12 +17,15 @@ if [ -f ./debian/control.${DIST} ]; then
     fi
 fi
 
+# The namespace import that appscale packages use is not compatible with
+# setuptools 34.
+pip install "setuptools<34"
+
 # These system packages are too old for google-api-python-client>=1.5.0.
 # The latest azure package needs to be installed with a --pre flag.
 case ${DIST} in
     precise|trusty)
         pip install --upgrade httplib2 six
-        pip install --pre azure
         ;;
 esac
 
