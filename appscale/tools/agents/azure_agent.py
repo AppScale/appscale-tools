@@ -146,7 +146,7 @@ class AzureAgent(BaseAgent):
   MAX_VMSS_WAIT_TIME = 300
 
   # The maximum limit of allowable VMs within a scale set.
-  MAX_VMSS_CAPACITY = 40
+  MAX_VMSS_CAPACITY = 20
 
   # The Virtual Network and Subnet name to use while creating an Azure
   # Virtual machine.
