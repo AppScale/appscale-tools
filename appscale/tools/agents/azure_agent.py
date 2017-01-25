@@ -435,6 +435,8 @@ class AzureAgent(BaseAgent):
       # Count of the number of scale sets needed depending on the max capacity.
       scale_set_count = (int(count) + self.MAX_VMSS_CAPACITY // 2) // self.MAX_VMSS_CAPACITY
       remaining_vms_count = count
+
+      scalesets_threads = []
       for ss_count in range(scale_set_count):
         resource_name = random_resource_name + "-resource-{}".format(ss_count)
         scale_set_name = random_resource_name + "-scaleset-{}".format(ss_count)
@@ -443,9 +445,17 @@ class AzureAgent(BaseAgent):
           capacity = remaining_vms_count
         AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
                                format(scale_set_name, capacity), verbose)
-        self.create_scale_set(capacity, parameters,
-                              resource_name, scale_set_name, subnet)
+
+        thread = threading.Thread(target=self.create_scale_set,
+                                  args=(capacity, parameters, resource_name,
+                                        scale_set_name, subnet))
+        thread.start()
+        scalesets_threads.append(thread)
         remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
+
+      for ss_thread in scalesets_threads:
+        ss_thread.join()
+
     # Create a scale set using the count of VMs provided.
     else:
       scale_set_name = random_resource_name + "-scaleset-{}vms".format(count)
