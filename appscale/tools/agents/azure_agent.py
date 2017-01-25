@@ -140,7 +140,7 @@ class AzureAgent(BaseAgent):
 
   # The maximum number of seconds to wait for an Azure VM to be created.
   # (Takes longer than the creation time for other resources.)
-  MAX_VM_CREATION_TIME = 240
+  MAX_VM_UPDATE_TIME = 240
 
   # The maximum number of seconds to wait for an Azure scale set to be created.
   MAX_VMSS_WAIT_TIME = 300
@@ -550,31 +550,40 @@ class AzureAgent(BaseAgent):
     AppScaleLogger.verbose("Terminating the vm instance/s '{}'".
                            format(instance_ids), verbose)
     compute_client = ComputeManagementClient(credentials, subscription_id)
-    threads = []
+
+    # Delete the virtual machine scale sets created.
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    vmss_delete_threads = []
+    deleted_instance_ids = []
+    for vmss in vmss_list:
+      deleted_instance_ids.extend(
+        compute_client.virtual_machine_scale_set_vms.list(resource_group,
+                                                          vmss.name))
+      thread = threading.Thread(
+        target=self.delete_virtual_machine_scale_set, args=(
+          compute_client, resource_group, verbose, vmss.name))
+      thread.start()
+      vmss_delete_threads.append(thread)
+
+    for delete_thread in vmss_delete_threads:
+      delete_thread.join()
+
     # Delete the virtual machines created outside of the scale set.
-    for vm_name in instance_ids:
+    instance_ids_to_delete = self.diff(instance_ids, deleted_instance_ids)
+    threads = []
+    for vm_name in instance_ids_to_delete:
       thread = threading.Thread(
         target=self.delete_virtual_machine, args=(
           compute_client, resource_group, verbose, vm_name))
       thread.start()
       threads.append(thread)
+
     for x in threads:
       x.join()
 
-    # Delete the virtual machine scale sets created.
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
-    vmss_delete_threads = []
-    for vmss in vmss_list:
-      thread = threading.Thread(
-        target=self.delete_virtual_machine_scale_set, args=(
-          compute_client, resource_group, verbose, vmss.name))
-      thread.start()
-      thread.append(thread)
-    for x in vmss_delete_threads:
-      x.join()
 
   def delete_virtual_machine_scale_set(self, compute_client, resource_group,
-                                        verbose, scale_set_name):
+                                       verbose, scale_set_name):
     """ Deletes the virtual machine scale set created from the specified
     resource group.
     Args:
@@ -584,19 +593,12 @@ class AzureAgent(BaseAgent):
         scale_set_name: The name of the virtual machine scale set to be deleted.
     """
     AppScaleLogger.verbose("Deleting Scale Set {}".format(scale_set_name), verbose)
-    delete_response = compute_client.virtual_machine_scale_sets.delete(
-      resource_group,scale_set_name)
     try:
-      delete_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
-      result = delete_response.result()
-      if result.provisioning_state == 'Succeeded':
-        AppScaleLogger.log("Scale Set '{0}' has been successfully "
-                           "deleted!".format(scale_set_name))
-      else:
-        AppScaleLogger.log("Unable to delete the Scale Set {0}. "
-                           "Provisioning Status: {1}"
-                           .format(scale_set_name, result.provisioning_state))
-
+      delete_response = compute_client.virtual_machine_scale_sets.delete(
+        resource_group,scale_set_name)
+      resource_name = 'Virtual Machine Scale Set' + ":" + scale_set_name
+      self.sleep_until_delete_operation_done(delete_response, resource_name,
+                                             self.MAX_VM_UPDATE_TIME, verbose)
     except CloudError as error:
       raise AgentConfigurationException("There was a problem while deleting the "
                                         "Scale Set {0} due to the error: {1}"
@@ -611,10 +613,11 @@ class AzureAgent(BaseAgent):
       verbose: A boolean indicating whether or not the verbose mode is on.
       vm_name: The name of the virtual machine to be deleted.
     """
+    AppScaleLogger.verbose("Deleting Virtual Machine {}".format(vm_name), verbose)
     result = compute_client.virtual_machines.delete(resource_group, vm_name)
     resource_name = 'Virtual Machine' + ':' + vm_name
     self.sleep_until_delete_operation_done(result, resource_name,
-                                           self.MAX_VM_CREATION_TIME, verbose)
+                                           self.MAX_VM_UPDATE_TIME, verbose)
 
   def sleep_until_delete_operation_done(self, result, resource_name,
                                         max_sleep, verbose):
