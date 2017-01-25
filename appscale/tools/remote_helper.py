@@ -283,7 +283,8 @@ class RemoteHelper(object):
         that was started.
     """
     instance_ids, public_ips, private_ips = agent.run_instances(
-      count=count, parameters=params, security_configured=True)
+      count=count, parameters=params, security_configured=True,
+      public_ip_needed=True)
 
     if options.static_ip:
       agent.associate_static_ip(params, instance_ids[0], options.static_ip)
@@ -308,7 +309,8 @@ class RemoteHelper(object):
         that was started.
     """
     instance_ids, public_ips, private_ips = agent.run_instances(
-      count=count, parameters=params, security_configured=True)
+      count=count, parameters=params, security_configured=True,
+      public_ip_needed=False)
     return instance_ids, public_ips, private_ips
 
   @classmethod

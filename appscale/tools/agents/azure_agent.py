@@ -281,9 +281,10 @@ class AzureAgent(BaseAgent):
         for ip_config in network_interface.ip_configurations:
           public_ips.append(ip_config.private_ip_address)
           private_ips.append(ip_config.private_ip_address)
+
     return public_ips, private_ips, instance_ids
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """ Starts 'count' instances in Microsoft Azure, and returns once they
     have been started. Callers should create a network and attach a firewall
     to it before using this method, or the newly created instances will not
@@ -307,15 +308,19 @@ class AzureAgent(BaseAgent):
     network_client = NetworkManagementClient(credentials, subscription_id)
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
-    vm_network_name = Haikunator().haikunate()
-    self.create_network_interface(network_client, vm_network_name, vm_network_name,
-                                  subnet, parameters)
-    network_interface = network_client.network_interfaces.get(
-      resource_group, vm_network_name)
-    self.create_virtual_machine(credentials, network_client,
-      network_interface.id, parameters, vm_network_name)
 
-    self.create_or_update_vm_scale_sets(count-1, parameters, subnet)
+    if public_ip_needed:
+      for _ in range(count):
+        vm_network_name = Haikunator().haikunate()
+        self.create_network_interface(network_client, vm_network_name, vm_network_name,
+                                      subnet, parameters)
+        network_interface = network_client.network_interfaces.get(
+          resource_group, vm_network_name)
+        self.create_virtual_machine(credentials, network_client,
+          network_interface.id, parameters, vm_network_name)
+    else:
+      self.create_or_update_vm_scale_sets(count, parameters, subnet)
+
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     return instance_ids, public_ips, private_ips
 
