@@ -309,6 +309,9 @@ class AzureAgent(BaseAgent):
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
 
+    active_public_ips, active_private_ips, active_instances = \
+      self.describe_instances(parameters)
+
     if public_ip_needed:
       for _ in range(count):
         vm_network_name = Haikunator().haikunate()
@@ -322,6 +325,10 @@ class AzureAgent(BaseAgent):
       self.create_or_update_vm_scale_sets(count, parameters, subnet)
 
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
+    public_ips = self.diff(public_ips, active_public_ips)
+    private_ips = self.diff(private_ips, active_private_ips)
+    instance_ids = self.diff(instance_ids, active_instances)
+
     return instance_ids, public_ips, private_ips
 
   def create_virtual_machine(self, credentials, network_client, network_id,
