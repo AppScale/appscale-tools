@@ -6,6 +6,7 @@ interact with Microsoft Azure.
 
 # General-purpose Python library imports
 import adal
+import math
 import os.path
 import threading
 import time
@@ -421,7 +422,7 @@ class AzureAgent(BaseAgent):
     # Create multiple scale sets with the allowable maximum capacity of VMs.
     if count > self.MAX_VMSS_CAPACITY:
       # Count of the number of scale sets needed depending on the max capacity.
-      scale_set_count = (int(count) + self.MAX_VMSS_CAPACITY // 2) // self.MAX_VMSS_CAPACITY
+      scale_set_count = int(math.ceil(count / float(self.MAX_VMSS_CAPACITY)))
       remaining_vms_count = count
       for ss_count in range(scale_set_count):
         resource_name = random_resource_name + "-resource-{}".format(ss_count)
