@@ -405,7 +405,7 @@ class AzureAgent(BaseAgent):
     return linux_config
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
-    """ Creates/Updates  a virtual machine scale set containing the given number
+    """ Creates/Updates a virtual machine scale set containing the given number
     of virtual machines with the virtual network provided.
     Args:
         count: The number of virtual machines to be created in the scale set.
