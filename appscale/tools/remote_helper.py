@@ -948,7 +948,7 @@ class RemoteHelper(object):
       while not acc.is_appscale_terminated():
         # for terminate receive_server_message will return a JSON string that
         #  is a list of dicts with keys: ip, status, output
-        output_list = yaml.safe_load(acc.receive_server_message("terminate"))
+        output_list = yaml.safe_load(acc.receive_server_message())
         if output_list == "Error":
           time.sleep(0.3)
           continue

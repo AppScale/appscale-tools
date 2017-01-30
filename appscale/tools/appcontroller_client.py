@@ -252,7 +252,7 @@ class AppControllerClient():
     return self.server.run_terminate(clean, self.secret)
 
 
-  def receive_server_message(self, message_sender):
+  def receive_server_message(self):
     """Dynamically adds the given machines to an AppScale deployment, with the
     specified roles.
 
@@ -264,7 +264,9 @@ class AppControllerClient():
     """
     return self.run_with_timeout(self.DEFAULT_TIMEOUT * 5, "Error",
                                  self.DEFAULT_NUM_RETRIES,
-                                 self.server.receive_server_message, message_sender, self.secret)
+                                 self.server.receive_server_message,
+                                 self.DEFAULT_TIMEOUT * 4,
+                                 self.secret)
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
