@@ -228,7 +228,7 @@ class AppControllerClient():
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
   def is_appscale_terminated(self):
-    """Queries the AppController to see if the system has been terminated
+    """Queries the AppController to see if the system has been terminated.
 
     Returns:
       A boolean indicating whether appscale has finished running terminate
@@ -239,7 +239,7 @@ class AppControllerClient():
                                  self.server.is_appscale_terminated, self.secret)
 
   def run_terminate(self, clean):
-    """Tells the AppController to terminate AppScale on the deployment
+    """Tells the AppController to terminate AppScale on the deployment.
 
     Args:
       clean: A boolean indicating whether the clean parameter should be
