@@ -131,10 +131,12 @@ class RemoteHelper(object):
     if login_ip in public_ips:
       AppScaleLogger.log("Reusing already running instances.")
       # Set newly obtained node layout info for this deployment.
-      for i, _ in enumerate(instance_ids):
-        node_layout.nodes[i].public_ip = public_ips[i]
-        node_layout.nodes[i].private_ip = private_ips[i]
-        node_layout.nodes[i].instance_id = instance_ids[i]
+
+      for i, sorted_instance_id in enumerate(sorted(instance_ids)):
+        index = instance_ids.index(sorted_instance_id)
+        node_layout.nodes[i].public_ip = public_ips[index]
+        node_layout.nodes[i].private_ip = private_ips[index]
+        node_layout.nodes[i].instance_id = instance_ids[index]
 
       return node_layout
 
@@ -145,12 +147,6 @@ class RemoteHelper(object):
       options, agent, params,
       len(load_balancer_nodes))
 
-    for i, node in enumerate(load_balancer_nodes):
-      index = node_layout.nodes.index(node)
-      node_layout.nodes[index].public_ip = public_ips[i]
-      node_layout.nodes[index].private_ip = private_ips[i]
-      node_layout.nodes[index].instance_id = instance_ids[i]
-
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
@@ -159,12 +155,15 @@ class RemoteHelper(object):
       _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
         agent, params,
         len(other_nodes))
+      instance_ids.extend(_instance_ids)
+      public_ips.extend(_public_ips)
+      private_ips.extend(_private_ips)
 
-      for i, node in enumerate(other_nodes):
-        index = node_layout.nodes.index(node)
-        node_layout.nodes[index].public_ip = _public_ips[i]
-        node_layout.nodes[index].private_ip = _private_ips[i]
-        node_layout.nodes[index].instance_id = _instance_ids[i]
+    for i, sorted_instance_id in enumerate(sorted(instance_ids)):
+      index = instance_ids.index(sorted_instance_id)
+      node_layout.nodes[i].public_ip = public_ips[index]
+      node_layout.nodes[i].private_ip = private_ips[index]
+      node_layout.nodes[i].instance_id = instance_ids[index]
 
     return node_layout
 
