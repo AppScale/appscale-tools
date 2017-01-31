@@ -8,6 +8,7 @@ import re
 import socket
 import subprocess
 import sys
+import tarfile
 import threading
 import tempfile
 import time
@@ -132,10 +133,12 @@ class RemoteHelper(object):
     if login_ip in public_ips:
       AppScaleLogger.log("Reusing already running instances.")
       # Set newly obtained node layout info for this deployment.
-      for i, _ in enumerate(instance_ids):
-        node_layout.nodes[i].public_ip = public_ips[i]
-        node_layout.nodes[i].private_ip = private_ips[i]
-        node_layout.nodes[i].instance_id = instance_ids[i]
+
+      for i, sorted_instance_id in enumerate(sorted(instance_ids)):
+        index = instance_ids.index(sorted_instance_id)
+        node_layout.nodes[i].public_ip = public_ips[index]
+        node_layout.nodes[i].private_ip = private_ips[index]
+        node_layout.nodes[i].instance_id = instance_ids[index]
 
       return node_layout
 
@@ -146,12 +149,6 @@ class RemoteHelper(object):
       options, agent, params,
       len(load_balancer_nodes))
 
-    for i, node in enumerate(load_balancer_nodes):
-      index = node_layout.nodes.index(node)
-      node_layout.nodes[index].public_ip = public_ips[i]
-      node_layout.nodes[index].private_ip = private_ips[i]
-      node_layout.nodes[index].instance_id = instance_ids[i]
-
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
@@ -160,12 +157,15 @@ class RemoteHelper(object):
       _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
         agent, params,
         len(other_nodes))
+      instance_ids.extend(_instance_ids)
+      public_ips.extend(_public_ips)
+      private_ips.extend(_private_ips)
 
-      for i, node in enumerate(other_nodes):
-        index = node_layout.nodes.index(node)
-        node_layout.nodes[index].public_ip = _public_ips[i]
-        node_layout.nodes[index].private_ip = _private_ips[i]
-        node_layout.nodes[index].instance_id = _instance_ids[i]
+    for i, sorted_instance_id in enumerate(sorted(instance_ids)):
+      index = instance_ids.index(sorted_instance_id)
+      node_layout.nodes[i].public_ip = public_ips[index]
+      node_layout.nodes[i].private_ip = private_ips[index]
+      node_layout.nodes[i].instance_id = instance_ids[index]
 
     return node_layout
 
@@ -284,7 +284,8 @@ class RemoteHelper(object):
         that was started.
     """
     instance_ids, public_ips, private_ips = agent.run_instances(
-      count=count, parameters=params, security_configured=True)
+      count=count, parameters=params, security_configured=True,
+      public_ip_needed=True)
 
     if options.static_ip:
       agent.associate_static_ip(params, instance_ids[0], options.static_ip)
@@ -309,7 +310,8 @@ class RemoteHelper(object):
         that was started.
     """
     instance_ids, public_ips, private_ips = agent.run_instances(
-      count=count, parameters=params, security_configured=True)
+      count=count, parameters=params, security_configured=True,
+      public_ip_needed=False)
     return instance_ids, public_ips, private_ips
 
   @classmethod
@@ -998,7 +1000,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_app_to_host(cls, app_location, keyname, is_verbose):
+  def copy_app_to_host(cls, app_location, keyname, is_verbose, extras=None):
     """Copies the given application to a machine running the Login service
     within an AppScale deployment.
 
@@ -1009,6 +1011,7 @@ class RemoteHelper(object):
         AppScale deployment.
       is_verbose: A bool that indicates if we should print the commands we exec
         to copy the app to the remote host to stdout.
+      extras: A dictionary containing a list of files to include in the upload.
 
     Returns:
       A str corresponding to the location on the remote filesystem where the
@@ -1020,9 +1023,25 @@ class RemoteHelper(object):
     rand = str(uuid.uuid4()).replace('-', '')[:8]
     local_tarred_app = "{0}/appscale-app-{1}-{2}.tar.gz".\
       format(tempfile.gettempdir(), app_id, rand)
-    cmd = "cd '{0}' && COPYFILE_DISABLE=1 tar -czhf {1} --exclude='*.pyc' *".\
-      format(app_location, local_tarred_app)
-    LocalState.shell(cmd, is_verbose)
+
+    # Collect list of files that should be included in the tarball.
+    app_files = {}
+    for root, _, filenames in os.walk(app_location):
+      relative_dir = os.path.relpath(root, app_location)
+      for filename in filenames:
+        # Ignore compiled Python files.
+        if filename.endswith('.pyc'):
+          continue
+        relative_path = os.path.join(relative_dir, filename)
+        app_files[relative_path] = os.path.join(root, filename)
+
+    if extras is not None:
+      app_files.update(extras)
+
+    with tarfile.open(local_tarred_app, 'w:gz') as app_tar:
+      for tarball_path in app_files:
+        local_path = app_files[tarball_path]
+        app_tar.add(local_path, tarball_path)
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
