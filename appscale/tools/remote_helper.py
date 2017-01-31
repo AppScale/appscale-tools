@@ -950,7 +950,6 @@ class RemoteHelper(object):
         #  is a list of dicts with keys: ip, status, output
         output_list = yaml.safe_load(acc.receive_server_message())
         if output_list == "Error":
-          time.sleep(0.3)
           continue
         for node in output_list:
           if node.get("status"):
