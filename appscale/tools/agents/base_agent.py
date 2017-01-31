@@ -66,7 +66,7 @@ class BaseAgent:
     raise NotImplementedError
 
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """Start a set of virtual machines using the parameters provided.
 
     Args:
