@@ -228,8 +228,7 @@ class AppControllerClient():
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
   def is_appscale_terminated(self):
-    """Dynamically adds the given machines to an AppScale deployment, with the
-    specified roles.
+    """Queries the AppController to see if the system has been terminated
 
     Returns:
       A boolean indicating whether appscale has finished running terminate
@@ -240,8 +239,7 @@ class AppControllerClient():
                                  self.server.is_appscale_terminated, self.secret)
 
   def run_terminate(self, clean):
-    """Dynamically adds the given machines to an AppScale deployment, with the
-    specified roles.
+    """Tells the AppController to terminate AppScale on the deployment
 
     Args:
       clean: A boolean indicating whether the clean parameter should be
@@ -251,16 +249,13 @@ class AppControllerClient():
     """
     return self.server.run_terminate(clean, self.secret)
 
-
   def receive_server_message(self):
-    """Dynamically adds the given machines to an AppScale deployment, with the
-    specified roles.
+    """Queries the AppController for a message that the server wants to send
+    to the tools.
 
-    Args:
-      clean: A boolean indicating whether the clean parameter should be
-        passed to terminate.rb.
     Returns:
-      The result of executing the SOAP call on the remote AppController.
+      The message from the AppController in JSON with format :
+      {'ip':ip, 'status': status, 'output':output}
     """
     return self.run_with_timeout(self.DEFAULT_TIMEOUT * 5, "Error",
                                  self.DEFAULT_NUM_RETRIES,
