@@ -951,7 +951,9 @@ class RemoteHelper(object):
         # for terminate receive_server_message will return a JSON string that
         #  is a list of dicts with keys: ip, status, output
         output_list = yaml.safe_load(acc.receive_server_message())
-        if output_list == "Error":
+        if hasattr(output_list, "startswith") and \
+            output_list.startswith("Error"):
+          log_dump += output_list
           continue
         for node in output_list:
           if node.get("status"):

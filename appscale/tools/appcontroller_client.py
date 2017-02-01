@@ -234,7 +234,8 @@ class AppControllerClient():
       A boolean indicating whether appscale has finished running terminate
         on all nodes.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
+                                 "Error: Client Timed Out",
                                  self.DEFAULT_NUM_RETRIES,
                                  self.server.is_appscale_terminated, self.secret)
 
