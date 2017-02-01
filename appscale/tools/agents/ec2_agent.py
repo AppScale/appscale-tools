@@ -375,7 +375,7 @@ class EC2Agent(BaseAgent):
         private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """
     Spawns the specified number of EC2 instances using the parameters
     provided. This method is blocking in that it waits until the
