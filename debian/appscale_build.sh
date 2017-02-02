@@ -17,6 +17,14 @@ if [ -f ./debian/control.${DIST} ]; then
     fi
 fi
 
+# Some dependencies require a newer Pip than the repositories provide.
+case ${DIST} in
+    precise|trusty)
+        pip install -U pip
+        hash -r
+        ;;
+esac
+
 # The namespace import that appscale packages use is not compatible with
 # setuptools 34.
 pip install "setuptools<34"

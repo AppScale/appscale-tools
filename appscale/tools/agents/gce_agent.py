@@ -725,7 +725,7 @@ class GCEAgent(BaseAgent):
       project_url, parameters[self.PARAM_ZONE], disk_name)
     return disk_url
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """ Starts 'count' instances in Google Compute Engine, and returns once they
     have been started.
 
