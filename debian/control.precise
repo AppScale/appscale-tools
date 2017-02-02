@@ -9,7 +9,8 @@ Homepage: http://www.appscale.com/
 Package: appscale-tools
 Architecture: any
 Depends: curl, make, openssh-client, python-argparse, python-boto, python-pip,\
- python-setuptools, python-soappy, python-yaml, libffi-dev
+ python-setuptools, python-soappy, python-yaml, libffi-dev, python-dev,\
+ libssl-dev
 Description: An open-source framework for execution of GAE applications
  An open-source research framework for execution of
  Google AppEngine applications and investigation of
