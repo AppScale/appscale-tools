@@ -6,6 +6,7 @@ interact with Microsoft Azure.
 
 # General-purpose Python library imports
 import adal
+import math
 import os.path
 import threading
 import time
@@ -416,7 +417,7 @@ class AzureAgent(BaseAgent):
     return linux_config
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
-    """ Creates/Updates  a virtual machine scale set containing the given number
+    """ Creates/Updates a virtual machine scale set containing the given number
     of virtual machines with the virtual network provided.
     Args:
         count: The number of virtual machines to be created in the scale set.
@@ -433,7 +434,7 @@ class AzureAgent(BaseAgent):
     # Create multiple scale sets with the allowable maximum capacity of VMs.
     if count > self.MAX_VMSS_CAPACITY:
       # Count of the number of scale sets needed depending on the max capacity.
-      scale_set_count = (int(count) + self.MAX_VMSS_CAPACITY // 2) // self.MAX_VMSS_CAPACITY
+      scale_set_count = int(math.ceil(count / float(self.MAX_VMSS_CAPACITY)))
       remaining_vms_count = count
 
       scalesets_threads = []
