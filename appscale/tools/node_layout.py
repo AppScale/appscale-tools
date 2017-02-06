@@ -709,9 +709,10 @@ class NodeLayout():
     return [node.to_json() for node in self.nodes]
 
 
-  """Returns a list of nodes if the previous locations JSON matches with the
-  current NodeLayout from the AppScalefile. Otherwise returns None."""
   def from_locations_json_list(self, locations_nodes_list):
+    """Returns a list of nodes if the previous locations JSON matches with the
+    current NodeLayout from the AppScalefile. Otherwise returns None."""
+
     # If the length does not match up the user has added a node in the
     # AppScalefile.
     if len(locations_nodes_list) != len(self.nodes):

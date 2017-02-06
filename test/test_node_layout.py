@@ -374,7 +374,7 @@ class TestNodeLayout(unittest.TestCase):
       max_memory='X',
       ips={
         'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'appengine': 'node-4', 'database': 'node-3'}
+        'appengine': 'node-3', 'database': 'node-3'}
     )
 
     node_layout = NodeLayout(options)
