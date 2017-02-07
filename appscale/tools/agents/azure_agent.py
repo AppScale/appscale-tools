@@ -303,7 +303,6 @@ class AzureAgent(BaseAgent):
     """
     credentials = self.open_connection(parameters)
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     virtual_network = parameters[self.PARAM_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id)
@@ -314,14 +313,16 @@ class AzureAgent(BaseAgent):
       self.describe_instances(parameters)
 
     if public_ip_needed:
+      lb_vms_threads = []
       for _ in range(count):
-        vm_network_name = Haikunator().haikunate()
-        self.create_network_interface(network_client, vm_network_name, vm_network_name,
-                                      subnet, parameters)
-        network_interface = network_client.network_interfaces.get(
-          resource_group, vm_network_name)
-        self.create_virtual_machine(credentials, network_client,
-          network_interface.id, parameters, vm_network_name)
+        thread = threading.Thread(target=self.setup_virtual_machine_creation,
+                                  args=(credentials, network_client,
+                                        parameters, subnet))
+        thread.start()
+        lb_vms_threads.append(thread)
+
+      for vm_thread in lb_vms_threads:
+        vm_thread.join()
     else:
       self.create_or_update_vm_scale_sets(count, parameters, subnet)
 
@@ -331,6 +332,28 @@ class AzureAgent(BaseAgent):
     instance_ids = self.diff(instance_ids, active_instances)
 
     return instance_ids, public_ips, private_ips
+
+  def setup_virtual_machine_creation(self, credentials, network_client,
+                                     parameters, subnet):
+    """ Sets up the network interface and creates the virtual machines needed
+    with the load balancer roles.
+    Args:
+        credentials: A ServicePrincipalCredentials instance, that can be used to
+          access or create any resources.
+        network_client: A NetworkManagementClient instance.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        subnet: A Subnet instance from the Virtual Network created.
+    """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    vm_network_name = Haikunator().haikunate()
+    self.create_network_interface(network_client, vm_network_name,
+                                  vm_network_name, subnet, parameters)
+    network_interface = network_client.network_interfaces.get(
+      resource_group, vm_network_name)
+    self.create_virtual_machine(credentials, network_client,
+                                network_interface.id,
+                                parameters, vm_network_name)
 
   def create_virtual_machine(self, credentials, network_client, network_id,
                              parameters, vm_network_name):
