@@ -567,9 +567,10 @@ class AzureAgent(BaseAgent):
     vmss_delete_threads = []
     deleted_instance_ids = []
     for vmss in vmss_list:
-      deleted_instance_ids.extend(
-        compute_client.virtual_machine_scale_set_vms.list(resource_group,
-                                                          vmss.name))
+      vm_list = compute_client.virtual_machine_scale_set_vms.list(
+        resource_group, vmss.name)
+      for vm in vm_list:
+        deleted_instance_ids.append(vm.name)
       thread = threading.Thread(
         target=self.delete_virtual_machine_scale_set, args=(
           compute_client, resource_group, verbose, vmss.name))
