@@ -388,7 +388,7 @@ class AzureAgent(BaseAgent):
       public_ip_address = network_client.public_ip_addresses.get(resource_group,
                                                                  vm_network_name)
       if public_ip_address.ip_address:
-        AppScaleLogger.log('Azure VM is available at {}'.
+        AppScaleLogger.log('Azure load balancer VM is available at {}'.
                            format(public_ip_address.ip_address))
         break
       AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
@@ -444,7 +444,7 @@ class AzureAgent(BaseAgent):
         capacity = self.MAX_VMSS_CAPACITY
         if remaining_vms_count < self.MAX_VMSS_CAPACITY:
           capacity = remaining_vms_count
-        AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+        AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VM(s)'.
                                format(scale_set_name, capacity), verbose)
 
         thread = threading.Thread(target=self.create_scale_set,
@@ -460,7 +460,7 @@ class AzureAgent(BaseAgent):
     # Create a scale set using the count of VMs provided.
     else:
       scale_set_name = random_resource_name + "-scaleset-{}vms".format(count)
-      AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VMs'.
+      AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VM(s)'.
                              format(scale_set_name, count), verbose)
       self.create_scale_set(count, parameters, random_resource_name,
                             scale_set_name, subnet)
@@ -527,16 +527,16 @@ class AzureAgent(BaseAgent):
       create_update_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
       result = create_update_response.result()
       if result.provisioning_state == 'Succeeded':
-        AppScaleLogger.log("Scale Set '{0}' with {1} VMs has been successfully "
+        AppScaleLogger.log("Scale Set '{0}' with {1} VM(s) has been successfully "
                            "configured!".format(scale_set_name, count))
       else:
         AppScaleLogger.log("Unable to create a Scale Set of {0} "
-                           "VMs.Provisioning Status: {1}"
+                           "VM(s).Provisioning Status: {1}"
                            .format(count, result.provisioning_state))
 
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a Scale Set of {0} "
-                                        " VMs: {1}".format(count, error.message))
+                                        "VM(s): {1}".format(count, error.message))
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
@@ -558,7 +558,7 @@ class AzureAgent(BaseAgent):
     subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
     verbose = parameters[self.PARAM_VERBOSE]
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
-    AppScaleLogger.verbose("Terminating the vm instance/s '{}'".
+    AppScaleLogger.verbose("Terminating the vm instance(s) '{}'".
                            format(instance_ids), verbose)
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
@@ -603,13 +603,15 @@ class AzureAgent(BaseAgent):
         verbose: A boolean indicating whether or not the verbose mode is on.
         scale_set_name: The name of the virtual machine scale set to be deleted.
     """
-    AppScaleLogger.verbose("Deleting Scale Set {}".format(scale_set_name), verbose)
+    AppScaleLogger.verbose("Deleting Scale Set {} ...".format(scale_set_name), verbose)
     try:
       delete_response = compute_client.virtual_machine_scale_sets.delete(
         resource_group,scale_set_name)
       resource_name = 'Virtual Machine Scale Set' + ":" + scale_set_name
       self.sleep_until_delete_operation_done(delete_response, resource_name,
                                              self.MAX_VM_UPDATE_TIME, verbose)
+      AppScaleLogger.verbose("Virtual Machine Scale Set {} has been successfully "
+                             "deleted.".format(scale_set_name), verbose)
     except CloudError as error:
       raise AgentConfigurationException("There was a problem while deleting the "
                                         "Scale Set {0} due to the error: {1}"
@@ -624,11 +626,13 @@ class AzureAgent(BaseAgent):
       verbose: A boolean indicating whether or not the verbose mode is on.
       vm_name: The name of the virtual machine to be deleted.
     """
-    AppScaleLogger.verbose("Deleting Virtual Machine {}".format(vm_name), verbose)
+    AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
     result = compute_client.virtual_machines.delete(resource_group, vm_name)
     resource_name = 'Virtual Machine' + ':' + vm_name
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
+    AppScaleLogger.verbose("Virtual Machine {} has been successfully deleted.".
+                           format(vm_name), verbose)
 
   def sleep_until_delete_operation_done(self, result, resource_name,
                                         max_sleep, verbose):
