@@ -942,27 +942,29 @@ class RemoteHelper(object):
 
     acc = AppControllerClient(shadow_host, secret)
     try:
-      terminate_thread = threading.Thread(target=acc.run_terminate,
-                                          args=(clean,))
-      terminate_thread.start()
+      machines = len(acc.get_all_public_ips()) - 1
+      acc.run_terminate(clean)
       terminated_successfully = True
       log_dump = ""
-      while not acc.is_appscale_terminated():
-        # for terminate receive_server_message will return a JSON string that
-        #  is a list of dicts with keys: ip, status, output
-        output_list = yaml.safe_load(acc.receive_server_message())
-        if hasattr(output_list, "startswith") and \
-            output_list.startswith("Error"):
-          log_dump += output_list
+      is_appscale_terminated = acc.is_appscale_terminated()
+      while not is_appscale_terminated and is_appscale_terminated != "Error":
+        # For terminate receive_server_message will return a JSON string that
+        # is a list of dicts with keys: ip, status, output
+        is_appscale_terminated = acc.is_appscale_terminated()
+        try:
+          output_list = yaml.safe_load(acc.receive_server_message())
+        except Exception as e:
+          log_dump += e.message
           continue
         for node in output_list:
+          machines -= 1
           if node.get("status"):
             AppScaleLogger.success("Node at {node_ip}: {status}".format(
               node_ip=node.get("ip"), status="Terminated Successfully"))
           else:
             AppScaleLogger.warn("Node at {node_ip}: {status}".format(
               node_ip=node.get("ip"), status="Did not terminate successfully"))
-            terminated_successfully &= False
+            terminated_successfully = False
             log_dump += "Node at {node_ip}: {status}\nNode Output:"\
                         "{output}".format(node_ip=node.get("ip"),
                                           status="Terminate failed",
@@ -971,16 +973,15 @@ class RemoteHelper(object):
                                  "{output}".format(node_ip=node.get("ip"),
                                                    output=node.get("output")),
                                  is_verbose)
-      terminate_thread.join()
-      if not terminated_successfully:
-        AppScaleLogger.warn("Some nodes failed terminating")
+      if not terminated_successfully or machines > 0:
         LocalState.generate_crash_log(AppControllerException, log_dump)
+        raise AppScaleException("Some nodes failed terminating")
       cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose)
     except socket.error as socket_error:
       AppScaleLogger.warn('Unable to talk to AppController: {}'.
                           format(socket_error.message))
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}'.
+      AppScaleLogger.warn('Saw Exception while terminating {0}'.
                           format(str(exception)))
 
 

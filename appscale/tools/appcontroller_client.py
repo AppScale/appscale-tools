@@ -248,7 +248,9 @@ class AppControllerClient():
     Returns:
       The result of executing the SOAP call on the remote AppController.
     """
-    return self.server.run_terminate(clean, self.secret)
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.run_terminate, clean, self.secret)
 
   def receive_server_message(self):
     """Queries the AppController for a message that the server wants to send
