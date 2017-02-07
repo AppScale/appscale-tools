@@ -355,6 +355,18 @@ class LocalState(object):
     """
     return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".json"
 
+  @classmethod
+  def cleanup_keyname(cls, keyname):
+    """Cleans up all the files starting with the keyname upon termination
+    of cloud instances.
+
+    Args:
+        keyname: A str that indicates the name of the SSH keypair that
+          uniquely identifies this AppScale deployment.
+    """
+    file_path = cls.LOCAL_APPSCALE_PATH + keyname + "*"
+    for keyname_file in glob.glob(file_path):
+      os.remove(keyname_file)
 
   @classmethod
   def update_local_metadata(cls, options, db_master, head_node):
