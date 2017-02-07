@@ -113,7 +113,7 @@ class AzureAgent(BaseAgent):
   PARAM_TENANT_ID = 'azure_tenant_id'
   PARAM_TEST = 'test'
   PARAM_TAG = 'azure_group_tag'
-  PARAM_VERBOSE = 'is_verbose'
+  PARAM_VERBOSE = 'IS_VERBOSE'
   PARAM_ZONE = 'zone'
 
   # A set that contains all of the items necessary to run AppScale in Azure.
