@@ -745,6 +745,7 @@ class AzureAgent(BaseAgent):
       resource_name = 'Virtual Network' + ':' + network.name
       self.sleep_until_delete_operation_done(result, resource_name,
                                              self.MAX_SLEEP_TIME, verbose)
+    LocalState.cleanup_keyname(parameters[self.PARAM_KEYNAME])
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
