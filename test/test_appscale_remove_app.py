@@ -70,8 +70,6 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
-    fake_appcontroller.should_receive('is_app_running').with_args('blargapp',
-      'the secret').and_return(False)
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -125,8 +123,6 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('stop_app').with_args('blargapp',
       'the secret').and_return('OK')
-    fake_appcontroller.should_receive('is_app_running').with_args('blargapp',
-      'the secret').and_return(True).and_return(True).and_return(False)
     fake_appcontroller.should_receive('does_app_exist').with_args('blargapp',
       'the secret').and_return(True)
     fake_appcontroller.should_receive('get_all_stats').with_args(
