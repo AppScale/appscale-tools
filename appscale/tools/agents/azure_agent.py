@@ -757,7 +757,6 @@ class AzureAgent(BaseAgent):
                              format(network.name), verbose)
 
     AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
-    LocalState.cleanup_keyname(parameters[self.PARAM_KEYNAME])
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with

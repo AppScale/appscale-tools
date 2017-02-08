@@ -892,8 +892,13 @@ class RemoteHelper(object):
     params[agent.PARAM_INSTANCE_IDS] = instance_ids
     agent.terminate_instances(params)
 
-    # delete the keyname and group
+    # Delete the network configuration created for the cloud.
     agent.cleanup_state(params)
+
+    # Cleanup the keyname files created on the local filesystem.
+    # For GCE and Azure, the keypairs are created on the filesystem,
+    # rather than the cloud. So we have to clean up afterwards.
+    LocalState.cleanup_keyname(keyname)
 
 
   @classmethod
