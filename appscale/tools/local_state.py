@@ -4,6 +4,7 @@
 # First-party Python imports
 import fnmatch
 import getpass
+import glob
 import hashlib
 import json
 import os
