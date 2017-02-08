@@ -634,8 +634,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
@@ -771,8 +769,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       remote_tarball, 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
@@ -909,8 +905,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       remote_tarball, 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
