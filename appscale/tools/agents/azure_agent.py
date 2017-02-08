@@ -577,22 +577,27 @@ class AzureAgent(BaseAgent):
       thread.start()
       vmss_delete_threads.append(thread)
 
-    for delete_thread in vmss_delete_threads:
-      delete_thread.join()
-
     # Delete the virtual machines created outside of the scale set.
     instance_ids_to_delete = self.diff(instance_ids, deleted_instance_ids)
-    threads = []
+    load_balancer_threads = []
     for vm_name in instance_ids_to_delete:
       thread = threading.Thread(
         target=self.delete_virtual_machine, args=(
           compute_client, resource_group, verbose, vm_name))
       thread.start()
-      threads.append(thread)
+      load_balancer_threads.append(thread)
 
-    for x in threads:
-      x.join()
+    for delete_thread in vmss_delete_threads:
+      delete_thread.join()
 
+    AppScaleLogger.log("Virtual machine scale set(s) have been successfully "
+                       "deleted.")
+
+    for load_balancer in load_balancer_threads:
+      load_balancer.join()
+
+    AppScaleLogger.log("Load balancer virtual machine(s) have been successfully "
+                       "deleted")
 
   def delete_virtual_machine_scale_set(self, compute_client, resource_group,
                                        verbose, scale_set_name):
