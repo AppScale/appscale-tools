@@ -136,7 +136,7 @@ class RemoteHelper(object):
 
       previous_node_list = node_layout.from_locations_json_list(node_info)
       # If this is None, the AppScalefile has been changed or the nodes could
-      #  not be matched up by roles/jobs.
+      # not be matched up by roles/jobs.
       if previous_node_list is None:
         raise BadConfigurationException("AppScale does not currently support "
                                         "changes to AppScalefile or locations "
@@ -145,16 +145,16 @@ class RemoteHelper(object):
                                         "change the node layout use "
                                         "down --terminate before an up.")
       node_layout.nodes = previous_node_list
-      for i, node in enumerate(node_layout.nodes):
+      for node_index, node in enumerate(node_layout.nodes):
         try:
           index = instance_ids.index(node.instance_id)
         except ValueError:
           raise BadConfigurationException("Previous instance_id {} does not "
                                           "currently exist."
                                           .format(node.instance_id))
-        node_layout.nodes[i].public_ip = public_ips[index]
-        node_layout.nodes[i].private_ip = private_ips[index]
-        node_layout.nodes[i].instance_id = instance_ids[index]
+        node_layout.nodes[node_index].public_ip = public_ips[index]
+        node_layout.nodes[node_index].private_ip = private_ips[index]
+        node_layout.nodes[node_index].instance_id = instance_ids[index]
       return node_layout
 
     agent.configure_instance_security(params)
@@ -164,11 +164,11 @@ class RemoteHelper(object):
       options, agent, params,
       len(load_balancer_nodes))
 
-    for i, node in enumerate(load_balancer_nodes):
+    for node_index, node in enumerate(load_balancer_nodes):
       index = node_layout.nodes.index(node)
-      node_layout.nodes[index].public_ip = public_ips[i]
-      node_layout.nodes[index].private_ip = private_ips[i]
-      node_layout.nodes[index].instance_id = instance_ids[i]
+      node_layout.nodes[index].public_ip = public_ips[node_index]
+      node_layout.nodes[index].private_ip = private_ips[node_index]
+      node_layout.nodes[index].instance_id = instance_ids[node_index]
 
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
@@ -179,11 +179,11 @@ class RemoteHelper(object):
         agent, params,
         len(other_nodes))
 
-      for i, node in enumerate(other_nodes):
+      for node_index, node in enumerate(other_nodes):
         index = node_layout.nodes.index(node)
-        node_layout.nodes[index].public_ip = _public_ips[i]
-        node_layout.nodes[index].private_ip = _private_ips[i]
-        node_layout.nodes[index].instance_id = _instance_ids[i]
+        node_layout.nodes[index].public_ip = _public_ips[node_index]
+        node_layout.nodes[index].private_ip = _private_ips[node_index]
+        node_layout.nodes[index].instance_id = _instance_ids[node_index]
 
     return node_layout
 

@@ -740,7 +740,8 @@ appengine:  1.2.3.4
 
     no_instances = flexmock(name='no_instances', instances=[])
     running_instance = flexmock(name='running_instance', state='running',
-                                key_name=self.keyname, id='i-ABCDEFG', ip_address='public1',
+                                key_name=self.keyname, id='i-ABCDEFG',
+                                ip_address='public1',
                                 private_ip_address='private1')
     running_reservation = flexmock(name='running_reservation',
                                    instances=[running_instance])

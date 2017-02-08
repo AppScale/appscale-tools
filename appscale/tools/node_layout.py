@@ -713,8 +713,8 @@ class NodeLayout():
     """Returns a list of nodes if the previous locations JSON matches with the
     current NodeLayout from the AppScalefile. Otherwise returns None."""
 
-    # If the length does not match up the user has added a node in the
-    # AppScalefile.
+    # If the length does not match up the user has added or removed a node in
+    # the AppScalefile.
     if len(locations_nodes_list) != len(self.nodes):
       return None
 
@@ -893,20 +893,24 @@ class Node():
 
 
   def from_json(self, node_dict):
-    # node_dict format:
-    # {
-    #   'public_ip': self.public_ip,
-    #   'private_ip': self.private_ip,
-    #   'instance_id': self.instance_id,
-    #   'jobs': self.roles,
-    #   'disk': self.disk
-    # }
+    """Modifies the node it is called on to have the attributes of the passed
+    dictionary.
+
+    Args:
+      node_dict: A dictionary from JSON of the format:
+        {
+          'public_ip': self.public_ip,
+          'private_ip': self.private_ip,
+          'instance_id': self.instance_id,
+          'jobs': self.roles,
+          'disk': self.disk
+        }
+    """
     self.public_ip = node_dict.get('public_ip')
     self.private_ip = node_dict.get('private_ip')
     self.instance_id = node_dict.get('instance_id')
     self.roles = node_dict.get('jobs')
     self.disk = node_dict.get('disk')
-    return self
 
 
 class SimpleNode(Node):
