@@ -625,9 +625,10 @@ class AppScaleTools(object):
     # Stop gracefully the AppScale deployment.
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
-        options.verbose)
-    except (IOError, AppScaleException):
-      # Don't fail if we cannot find the configuration.
+                                                 options.verbose)
+    except (IOError, AppScaleException, ShellException):
+      # Don't fail if we cannot find the configuration or if terminate.rb
+      # cannot be ran.
       pass
 
     # And if we are on a cloud infrastructure, terminate instances if
@@ -635,7 +636,7 @@ class AppScaleTools(object):
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-        options.verbose)
+                                                  options.verbose)
 
 
   @classmethod
