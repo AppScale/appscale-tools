@@ -230,3 +230,155 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals(True, layout.is_valid())
     self.assertEquals('disk_number_one', layout.head_node().disk)
     self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
+
+
+  reattach_options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'master': 'node-1', 'zookeeper': 'node-2',
+        'appengine': 'node-3', 'database': 'node-4'}
+    )
+
+  reattach_node_info = [{ "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE1",
+                          "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                                   'taskqueue_master'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE2",
+                          "jobs": ['memcache', 'appengine'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE3",
+                          "jobs": ['zookeeper'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE4",
+                          "jobs": ['db_master'] }
+                        ]
+
+
+  def test_from_locations_json_list_valid(self):
+    node_layout = NodeLayout(self.reattach_options)
+    self.assertTrue(node_layout.is_valid())
+    new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
+    self.assertNotEqual(new_layout, None)
+    nodes_copy = new_layout[:]
+    for old_node in node_layout.nodes:
+      for _, node in enumerate(nodes_copy):
+        # Match nodes based on jobs/roles.
+        if set(old_node.roles) == set(node.roles):
+          nodes_copy.remove(node)
+    self.assertEqual(nodes_copy, [])
+
+
+  def test_from_locations_json_list_able_to_match(self):
+    options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'master': 'node-1', 'zookeeper': 'node-2',
+        'appengine': 'node-4', 'database': 'node-3'}
+    )
+
+    node_layout = NodeLayout(options)
+    self.assertTrue(node_layout.is_valid())
+
+    new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
+    self.assertNotEqual(new_layout, None)
+    nodes_copy = new_layout[:]
+    for old_node in node_layout.nodes:
+      for _, node in enumerate(nodes_copy):
+        # Match nodes based on jobs/roles.
+        if set(old_node.roles) == set(node.roles):
+          nodes_copy.remove(node)
+    self.assertEqual(nodes_copy, [])
+
+  def test_from_locations_json_list_invalid_locations(self):
+    node_layout = NodeLayout(self.reattach_options)
+    self.assertTrue(node_layout.is_valid())
+
+    node_info = [{ "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE1",
+                   "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                            'taskqueue_master'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE2",
+                   "jobs": ['memcache', 'appengine'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE3",
+                   "jobs": ['zookeeper'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE4",
+                   "jobs": ['db_master', 'zookeeper'] }
+                 ]
+
+    new_layout = node_layout.from_locations_json_list(node_info)
+    self.assertEqual(new_layout, None)
+
+
+  def test_from_locations_json_list_invalid_asf(self):
+    options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'master': 'node-1', 'zookeeper': 'node-2',
+        'appengine': 'node-3', 'database': 'node-3'}
+    )
+
+    node_layout = NodeLayout(options)
+    self.assertTrue(node_layout.is_valid())
+
+    new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
+    self.assertEqual(new_layout, None)
