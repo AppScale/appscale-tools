@@ -338,12 +338,12 @@ class AzureAgent(BaseAgent):
     """ Sets up the network interface and creates the virtual machines needed
     with the load balancer roles.
     Args:
-        credentials: A ServicePrincipalCredentials instance, that can be used to
-          access or create any resources.
-        network_client: A NetworkManagementClient instance.
-        parameters: A dict, containing all the parameters necessary to
-          authenticate this user with Azure.
-        subnet: A Subnet instance from the Virtual Network created.
+      credentials: A ServicePrincipalCredentials instance, that can be used to
+        access or create any resources.
+      network_client: A NetworkManagementClient instance.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+      subnet: A Subnet instance from the Virtual Network created.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     vm_network_name = Haikunator().haikunate()
