@@ -946,19 +946,17 @@ class RemoteHelper(object):
       acc.run_terminate(clean)
       terminated_successfully = True
       log_dump = ""
-      is_appscale_terminated = acc.is_appscale_terminated()
-      while not is_appscale_terminated and is_appscale_terminated != "Error":
+      while not acc.is_appscale_terminated():
         # For terminate receive_server_message will return a JSON string that
         # is a list of dicts with keys: ip, status, output
-        is_appscale_terminated = acc.is_appscale_terminated()
         try:
           output_list = yaml.safe_load(acc.receive_server_message())
         except Exception as e:
           log_dump += e.message
           continue
         for node in output_list:
-          machines -= 1
           if node.get("status"):
+            machines -= 1
             AppScaleLogger.success("Node at {node_ip}: {status}".format(
               node_ip=node.get("ip"), status="Terminated Successfully"))
           else:
@@ -969,13 +967,15 @@ class RemoteHelper(object):
                         "{output}".format(node_ip=node.get("ip"),
                                           status="Terminate failed",
                                           output=node.get("output"))
-          AppScaleLogger.verbose("Output of node at {node_ip}:\n"\
+          AppScaleLogger.verbose("Output of node at {node_ip}:\n"
                                  "{output}".format(node_ip=node.get("ip"),
                                                    output=node.get("output")),
                                  is_verbose)
       if not terminated_successfully or machines > 0:
         LocalState.generate_crash_log(AppControllerException, log_dump)
-        raise AppScaleException("Some nodes failed terminating")
+        raise AppScaleException("{0} node(s) failed terminating, head node "
+                                "is still running AppScale services."
+                                .format(machines))
       cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose)
     except socket.error as socket_error:
       AppScaleLogger.warn('Unable to talk to AppController: {}'.

@@ -234,10 +234,10 @@ class AppControllerClient():
       A boolean indicating whether appscale has finished running terminate
         on all nodes.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
-                                 "Error: Client Timed Out",
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
                                  self.DEFAULT_NUM_RETRIES,
-                                 self.server.is_appscale_terminated, self.secret)
+                                 self.server.is_appscale_terminated,
+                                 self.secret)
 
   def run_terminate(self, clean):
     """Tells the AppController to terminate AppScale on the deployment.
@@ -260,11 +260,16 @@ class AppControllerClient():
       The message from the AppController in JSON with format :
       {'ip':ip, 'status': status, 'output':output}
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT * 5, "Error",
-                                 self.DEFAULT_NUM_RETRIES,
-                                 self.server.receive_server_message,
-                                 self.DEFAULT_TIMEOUT * 4,
-                                 self.secret)
+    server_message = self.run_with_timeout(self.DEFAULT_TIMEOUT * 5,
+                                           "Error: Client Timed Out",
+                                           self.DEFAULT_NUM_RETRIES,
+                                           self.server.receive_server_message,
+                                           self.DEFAULT_TIMEOUT * 4,
+                                           self.secret)
+    if server_message.startswith("Error"):
+      raise AppControllerException(server_message)
+    else:
+      return server_message
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
