@@ -742,10 +742,7 @@ Available commands:
     contents_as_yaml = yaml.safe_load(contents)
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      is_verbose = contents_as_yaml['verbose']
       command.append("--verbose")
-    else:
-      is_verbose = False
 
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
@@ -766,10 +763,7 @@ Available commands:
     if clean:
       if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
         LocalState.confirm_or_abort("Clean will delete every data in the deployment.")
-      all_ips = LocalState.get_all_public_ips(keyname)
-      for ip in all_ips:
-        RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
-      AppScaleLogger.success("Successfully cleaned your AppScale deployment.")
+      command.append("--clean")
 
     if terminate:
       infrastructure = LocalState.get_infrastructure(keyname)

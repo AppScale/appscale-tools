@@ -13,6 +13,7 @@ import threading
 import tempfile
 import time
 import uuid
+import yaml
 
 
 # AppScale-specific imports
@@ -936,7 +937,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def terminate_virtualized_cluster(cls, keyname, is_verbose):
+  def terminate_virtualized_cluster(cls, keyname, clean, is_verbose):
     """Stops all API services running on all nodes in the currently running
     AppScale deployment.
 
@@ -944,6 +945,7 @@ class RemoteHelper(object):
       keyname: The name of the SSH keypair used for this AppScale deployment.
       is_verbose: A bool that indicates if we should print the commands executed
         to stdout.
+      clean: A bool representing whether clean should be ran on the nodes.
     """
     AppScaleLogger.log("Terminating appscale deployment with keyname {0}"
                        .format(keyname))
@@ -959,41 +961,47 @@ class RemoteHelper(object):
 
     acc = AppControllerClient(shadow_host, secret)
     try:
-      all_ips = acc.get_all_public_ips()
+      machines = len(acc.get_all_public_ips()) - 1
+      acc.run_terminate(clean)
+      terminated_successfully = True
+      log_dump = ""
+      while not acc.is_appscale_terminated():
+        # For terminate receive_server_message will return a JSON string that
+        # is a list of dicts with keys: ip, status, output
+        try:
+          output_list = yaml.safe_load(acc.receive_server_message())
+        except Exception as e:
+          log_dump += e.message
+          continue
+        for node in output_list:
+          if node.get("status"):
+            machines -= 1
+            AppScaleLogger.success("Node at {node_ip}: {status}".format(
+              node_ip=node.get("ip"), status="Terminated Successfully"))
+          else:
+            AppScaleLogger.warn("Node at {node_ip}: {status}".format(
+              node_ip=node.get("ip"), status="Did not terminate successfully"))
+            terminated_successfully = False
+            log_dump += "Node at {node_ip}: {status}\nNode Output:"\
+                        "{output}".format(node_ip=node.get("ip"),
+                                          status="Terminate failed",
+                                          output=node.get("output"))
+          AppScaleLogger.verbose("Output of node at {node_ip}:\n"
+                                 "{output}".format(node_ip=node.get("ip"),
+                                                   output=node.get("output")),
+                                 is_verbose)
+      if not terminated_successfully or machines > 0:
+        LocalState.generate_crash_log(AppControllerException, log_dump)
+        raise AppScaleException("{0} node(s) failed terminating, head node "
+                                "is still running AppScale services."
+                                .format(machines))
+      cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose)
+    except socket.error as socket_error:
+      AppScaleLogger.warn('Unable to talk to AppController: {}'.
+                          format(socket_error.message))
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while getting deployments IPs {0}'.
+      AppScaleLogger.warn('Saw Exception while terminating {0}'.
                           format(str(exception)))
-      all_ips = LocalState.get_all_public_ips(keyname)
-
-    threads = []
-    for ip in all_ips:
-      thread = threading.Thread(target=cls.stop_remote_appcontroller, args=(ip,
-        keyname, is_verbose))
-      thread.start()
-      threads.append(thread)
-
-    for thread in threads:
-      thread.join()
-
-    boxes_shut_down = 0
-    is_running_regex = re.compile("appscale-controller stop")
-    for ip in all_ips:
-      AppScaleLogger.log("Shutting down AppScale API services at {0}".
-                         format(ip))
-      while True:
-        remote_output = cls.ssh(ip, keyname, 'ps x', is_verbose)
-        AppScaleLogger.verbose(remote_output, is_verbose)
-        if not is_running_regex.match(remote_output):
-          break
-        time.sleep(0.3)
-      boxes_shut_down += 1
-
-    if boxes_shut_down != len(all_ips):
-      raise AppScaleException("Couldn't terminate your AppScale deployment on"
-                              " all machines - please do so manually.")
-
-    AppScaleLogger.log("Terminated AppScale on {0} machines.".
-                       format(boxes_shut_down))
 
 
   @classmethod
