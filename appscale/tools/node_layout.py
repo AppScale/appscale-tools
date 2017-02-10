@@ -709,6 +709,42 @@ class NodeLayout():
     return [node.to_json() for node in self.nodes]
 
 
+  def from_locations_json_list(self, locations_nodes_list):
+    """Returns a list of nodes if the previous locations JSON matches with the
+    current NodeLayout from the AppScalefile. Otherwise returns None."""
+
+    # If the length does not match up the user has added or removed a node in
+    # the AppScalefile.
+    if len(locations_nodes_list) != len(self.nodes):
+      return None
+
+    nodes = []
+
+    # Use a copy so we do not overwrite self.nodes when we call
+    # Node.from_json since that method modifies the node it is called on.
+    nodes_copy = self.nodes[:]
+
+    for old_node in locations_nodes_list:
+      old_node_roles = old_node.get('jobs')
+      for _, node in enumerate(nodes_copy):
+        # Match nodes based on jobs/roles.
+        if set(old_node_roles) == set(node.roles):
+          nodes_copy.remove(node)
+          node.from_json(old_node)
+          if node.is_valid():
+            nodes.append(node)
+          else:
+            # Locations JSON is incorrect if we get here.
+            return None
+          break
+
+    # If these lengths are equal all nodes were matched.
+    if len(nodes) == len(self.nodes):
+      return nodes
+    else:
+      return None
+
+
   def valid(self, message = None):
     """Generates a dict that indicates that this NodeLayout is valid, optionally
     including the reason why it is valid.
@@ -854,6 +890,27 @@ class Node():
       'jobs': self.roles,
       'disk': self.disk
     }
+
+
+  def from_json(self, node_dict):
+    """Modifies the node it is called on to have the attributes of the passed
+    dictionary.
+
+    Args:
+      node_dict: A dictionary from JSON of the format:
+        {
+          'public_ip': self.public_ip,
+          'private_ip': self.private_ip,
+          'instance_id': self.instance_id,
+          'jobs': self.roles,
+          'disk': self.disk
+        }
+    """
+    self.public_ip = node_dict.get('public_ip')
+    self.private_ip = node_dict.get('private_ip')
+    self.instance_id = node_dict.get('instance_id')
+    self.roles = node_dict.get('jobs')
+    self.disk = node_dict.get('disk')
 
 
 class SimpleNode(Node):
