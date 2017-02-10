@@ -227,6 +227,49 @@ class AppControllerClient():
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
+  def is_appscale_terminated(self):
+    """Queries the AppController to see if the system has been terminated.
+
+    Returns:
+      A boolean indicating whether appscale has finished running terminate
+        on all nodes.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.is_appscale_terminated,
+                                 self.secret)
+
+  def run_terminate(self, clean):
+    """Tells the AppController to terminate AppScale on the deployment.
+
+    Args:
+      clean: A boolean indicating whether the clean parameter should be
+        passed to terminate.rb.
+    Returns:
+      The result of executing the SOAP call on the remote AppController.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.run_terminate, clean, self.secret)
+
+  def receive_server_message(self):
+    """Queries the AppController for a message that the server wants to send
+    to the tools.
+
+    Returns:
+      The message from the AppController in JSON with format :
+      {'ip':ip, 'status': status, 'output':output}
+    """
+    server_message = self.run_with_timeout(self.DEFAULT_TIMEOUT * 5,
+                                           "Error: Client Timed Out",
+                                           self.DEFAULT_NUM_RETRIES,
+                                           self.server.receive_server_message,
+                                           self.DEFAULT_TIMEOUT * 4,
+                                           self.secret)
+    if server_message.startswith("Error"):
+      raise AppControllerException(server_message)
+    else:
+      return server_message
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
