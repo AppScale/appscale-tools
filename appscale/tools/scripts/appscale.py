@@ -94,7 +94,7 @@ def main():
         sys.exit(1)
 
       properties = appscale.get(sys.argv[2])
-      for property_name, property_value in properties.iteritems():
+      for property_name, property_value in sorted(properties.iteritems()):
         print "{0} -> {1}".format(property_name, property_value)
       sys.exit(0)
     except Exception as exception:
