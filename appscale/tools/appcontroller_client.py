@@ -246,11 +246,18 @@ class AppControllerClient():
       clean: A boolean indicating whether the clean parameter should be
         passed to terminate.rb.
     Returns:
-      The result of executing the SOAP call on the remote AppController.
+      The request id assigned from executing the SOAP call on the remote
+        AppController.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
-                                 self.DEFAULT_NUM_RETRIES,
-                                 self.server.run_terminate, clean, self.secret)
+    request_id = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                       self.DEFAULT_NUM_RETRIES,
+                                       self.server.run_terminate, clean,
+                                       self.secret)
+    if request_id == "Error":
+      raise AppControllerException("Unable to send request to terminate "
+                                   "deployment to AppController")
+    else:
+      return request_id
 
   def receive_server_message(self):
     """Queries the AppController for a message that the server wants to send
