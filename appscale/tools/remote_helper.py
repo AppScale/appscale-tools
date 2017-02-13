@@ -538,7 +538,7 @@ class RemoteHelper(object):
     ssh_key = LocalState.get_key_path_from_name(keyname)
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_dsa', is_verbose)
     cls.scp(host, keyname, ssh_key, '/root/.ssh/id_rsa', is_verbose)
-    cls.scp(host, keyname, ssh_key, '/root/.appscale/{0}.key'.format(keyname),
+    cls.scp(host, keyname, ssh_key, '{}/{}.key'.format(cls.CONFIG_DIR, keyname),
       is_verbose)
 
   @classmethod
@@ -782,11 +782,11 @@ class RemoteHelper(object):
     """
     # and copy the json file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_locations_json_location(keyname),
-      '/root/.appscale/locations-{0}.json'.format(keyname), is_verbose)
+      '{}/locations-{}.json'.format(cls.CONFIG_DIR, keyname), is_verbose)
 
     # and copy the secret file if the tools on that box wants to use it
     cls.scp(host, keyname, LocalState.get_secret_key_location(keyname),
-      '/root/.appscale/', is_verbose)
+      cls.CONFIG_DIR, is_verbose)
 
 
   @classmethod
