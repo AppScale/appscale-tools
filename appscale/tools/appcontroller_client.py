@@ -255,7 +255,7 @@ class AppControllerClient():
                                        self.secret)
     if request_id == "Error":
       raise AppControllerException("Unable to send request to terminate "
-                                   "deployment to AppController")
+                                   "deployment to AppController.")
     else:
       return request_id
 
