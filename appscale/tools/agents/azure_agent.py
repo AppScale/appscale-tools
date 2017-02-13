@@ -756,14 +756,18 @@ class AzureAgent(BaseAgent):
     network_client = NetworkManagementClient(credentials, subscription_id)
     verbose = parameters[self.PARAM_VERBOSE]
 
-    AppScaleLogger.log("Deleting the Virtual Network, Public IP Address "
-      "and Network Interface created for this deployment.")
+    AppScaleLogger.log("Cleaning up the network configuration created for this "
+                       "deployment ...")
     network_interfaces = network_client.network_interfaces.list(resource_group)
     for interface in network_interfaces:
       result = network_client.network_interfaces.delete(resource_group, interface.name)
       resource_name = 'Network Interface' + ':' + interface.name
       self.sleep_until_delete_operation_done(result, resource_name,
                                              self.MAX_SLEEP_TIME, verbose)
+      AppScaleLogger.verbose("Network Interface {} has been successfully deleted.".
+                             format(interface.name), verbose)
+
+    AppScaleLogger.log("Network Interface(s) have been successfully deleted.")
 
     public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
     for public_ip in public_ip_addresses:
@@ -771,6 +775,10 @@ class AzureAgent(BaseAgent):
       resource_name = 'Public IP Address' + ':' + public_ip.name
       self.sleep_until_delete_operation_done(result, resource_name,
                                              self.MAX_SLEEP_TIME, verbose)
+      AppScaleLogger.verbose("Public IP Address {} has been successfully deleted.".
+                             format(public_ip.name), verbose)
+
+    AppScaleLogger.log("Public IP Address(s) have been successfully deleted.")
 
     virtual_networks = network_client.virtual_networks.list(resource_group)
     for network in virtual_networks:
@@ -778,6 +786,10 @@ class AzureAgent(BaseAgent):
       resource_name = 'Virtual Network' + ':' + network.name
       self.sleep_until_delete_operation_done(result, resource_name,
                                              self.MAX_SLEEP_TIME, verbose)
+      AppScaleLogger.verbose("Virtual Network {} has been successfully deleted.".
+                             format(network.name), verbose)
+
+    AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
 
   def get_params_from_args(self, args):
     """ Constructs a dict with only the parameters necessary to interact with
