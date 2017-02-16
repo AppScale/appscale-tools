@@ -422,7 +422,7 @@ Available commands:
                               " in the currently running AppScale deployment.")
     except ValueError:
       try:
-        ip = LocalState.get_host_with_role(keyname, node)
+        ip = LocalState.get_host_with_role(keyname, node.lower())
       except AppScaleException:
         raise AppScaleException("No role exists by that name. "
                                 "Valid roles are {}"
