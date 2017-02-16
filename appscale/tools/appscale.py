@@ -403,25 +403,30 @@ Available commands:
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
-    # make sure the user gave us an int for node
-    try:
-      index = int(node)
-    except ValueError:
-      raise TypeError("Usage: appscale ssh <node id to ssh to>")
-
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
     else:
       keyname = "appscale"
 
-    nodes = self.get_nodes(keyname)
-    # make sure there is a node at position 'index'
+    if node is None:
+      node = "shadow"
+
     try:
+      index = int(node)
+      nodes = self.get_nodes(keyname)
+      # make sure there is a node at position 'index'
       ip = nodes[index]['public_ip']
     except IndexError:
       raise AppScaleException("Cannot ssh to node at index " +
-        str(index) + ", as there are only " + str(len(nodes)) +
-        " in the currently running AppScale deployment.")
+                              ", as there are only " + str(len(nodes)) +
+                              " in the currently running AppScale deployment.")
+    except ValueError:
+      try:
+        ip = LocalState.get_host_with_role(keyname, node)
+      except AppScaleException:
+        raise AppScaleException("No role exists by that name. "
+                                "Valid roles are {}"
+                                .format(NodeLayout.ADVANCED_FORMAT_KEYS))
 
     # construct the ssh command to exec with that IP address
     command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
