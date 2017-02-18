@@ -473,9 +473,8 @@ class AppControllerClient():
         else:
           raise Exception(user_exists)
       except BadSecretException as exception:
-        AppScaleLogger.warn("Exception when checking if a user exists: {0}".
-                            format(exception))
-        break
+        raise AppControllerException(
+          "Exception when checking if a user exists: {0}".format(exception))
       except Exception as acc_error:
         if not silent:
           AppScaleLogger.log("Exception when checking if a user exists: {0}".
