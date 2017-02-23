@@ -225,9 +225,8 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     login_acc = AppControllerClient(login_host,
       LocalState.get_secret_key(options.keyname))
-    import pprint
     stats = login_acc.get_cluster_stats()
-    AppScaleLogger.log(pprint.pprint(stats))
+    AppScaleLogger.log(str(stats))
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}:{1}/status".format(login_host,
       RemoteHelper.APP_DASHBOARD_PORT))
@@ -394,18 +393,17 @@ class AppScaleTools(object):
     # through them for the http port the app can be reached on.
     http_port = None
     for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_all_stats()
+      result = acc.get_app_info_map()
       try:
-        json_result = json.loads(result)
-        apps_result = json_result['apps']
-        current_app = apps_result[options.appname]
-        http_port = current_app['http']
+        current_app = result[options.appname]
+        http_port = current_app['nginx']
         if http_port:
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.",
-            options.verbose)
+        AppScaleLogger.verbose(
+          "Got json error from get_app_info_map result:\n{}".format(result),
+          options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(
@@ -735,18 +733,17 @@ class AppScaleTools(object):
     # through them for the http port the app can be reached on.
     http_port = None
     for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_all_stats()
+      result = acc.get_app_info_map()
       try:
-        json_result = json.loads(result)
-        apps_result = json_result['apps']
-        current_app = apps_result[app_id]
-        http_port = current_app['http']
+        current_app = result[app_id]
+        http_port = current_app['nginx']
         if http_port:
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.",
-            options.verbose)
+        AppScaleLogger.verbose(
+          "Got json error from get_app_info_map result:\n{}".format(result),
+          options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(
