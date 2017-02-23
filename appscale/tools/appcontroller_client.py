@@ -193,14 +193,15 @@ class AppControllerClient():
       return json.loads(role_info)
 
 
-  def get_status(self):
+  def get_cluster_stats(self):
     """Queries the AppController to see what its internal state is.
 
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
-      self.server.status, self.secret)
+    stats = self.run_with_timeout(self.DEFAULT_TIMEOUT, "{}", self.DEFAULT_NUM_RETRIES,
+      self.server.get_cluster_stats_json, self.secret)
+    return json.loads(stats)
 
 
   def is_initialized(self):
