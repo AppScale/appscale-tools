@@ -16,8 +16,9 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
-from custom_exceptions import TimeoutException
 from custom_exceptions import AppScaleException
+from custom_exceptions import BadSecretException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -133,7 +134,7 @@ class AppControllerClient():
       signal.alarm(0)  # turn off the alarm
 
     if retval == self.BAD_SECRET_MESSAGE:
-      raise AppControllerException("Could not authenticate successfully" + \
+      raise BadSecretException("Could not authenticate successfully" + \
         " to the AppController. You may need to change the keyname in use.")
 
     return retval
@@ -472,6 +473,9 @@ class AppControllerClient():
           return False
         else:
           raise Exception(user_exists)
+      except BadSecretException as exception:
+        raise AppControllerException(
+          "Exception when checking if a user exists: {0}".format(exception))
       except Exception as acc_error:
         if not silent:
           AppScaleLogger.log("Exception when checking if a user exists: {0}".
