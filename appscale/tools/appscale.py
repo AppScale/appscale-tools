@@ -99,8 +99,10 @@ Available commands:
   remove                            An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
-  ssh [#]                           Logs into the #th node of the current AppScale
-                                    deployment. Default is headnode (0).
+  ssh [#]                           Logs into the #th node of the current
+                                    AppScale deployment or a valid role.
+                                    Default is headnode. Machines
+                                    must have public ips to use this command.
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
@@ -433,7 +435,14 @@ Available commands:
       self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
-    subprocess.call(command)
+    try:
+      subprocess.check_call(command)
+    except subprocess.CalledProcessError:
+      raise AppScaleException("AppScale was unable to ssh to the machine at "
+                              "{} please make sure this machine is reachable, "
+                              "has a public ip, or that the role is in use by "
+                              "the deployment.".format(ip))
+
 
 
   def status(self):
