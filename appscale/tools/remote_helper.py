@@ -891,6 +891,7 @@ class RemoteHelper(object):
       LocalState.get_infrastructure(keyname))
     params = agent.get_cloud_params(keyname)
     params['IS_VERBOSE'] = is_verbose
+    params['autoscale_agent'] = False
 
     # We want to terminate also the pending instances.
     pending = True
