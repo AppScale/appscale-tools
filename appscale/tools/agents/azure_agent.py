@@ -180,7 +180,7 @@ class AzureAgent(BaseAgent):
         authentication.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     try:
       resource_client = ResourceManagementClient(credentials, subscription_id)
       resource_groups = resource_client.resource_groups.list()
@@ -206,11 +206,18 @@ class AzureAgent(BaseAgent):
       AgentRuntimeException: If security features could not be successfully
         configured in the underlying cloud.
     """
+    is_autoscale = parameters['autoscale_agent']
+
+    # While creating instances during autoscaling, we do not need to create a
+    # new keypair or a resource group. We just make use of the existing one.
+    if is_autoscale in ['True', True]:
+      return
+
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
 
     AppScaleLogger.log("Verifying that SSH key exists locally.")
     keyname = parameters[self.PARAM_KEYNAME]
@@ -246,7 +253,7 @@ class AzureAgent(BaseAgent):
       instance_ids: A list of unique Azure VM names.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id,
@@ -302,7 +309,7 @@ class AzureAgent(BaseAgent):
       private_ips: A list of private IP addresses.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     virtual_network = parameters[self.PARAM_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id)
@@ -371,7 +378,7 @@ class AzureAgent(BaseAgent):
     storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     azure_instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     AppScaleLogger.verbose("Creating a Virtual Machine '{}'".
                            format(vm_network_name), verbose)
@@ -427,17 +434,88 @@ class AzureAgent(BaseAgent):
     Returns:
         An instance of LinuxConfiguration
     """
+    is_autoscale = parameters['autoscale_agent']
     keyname = parameters[self.PARAM_KEYNAME]
     private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
     public_key_path = private_key_path + ".pub"
+    auth_keys_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
+
+    if is_autoscale in ['True', True]:
+      public_key_path = auth_keys_path
+
     with open(public_key_path, 'r') as pub_ssh_key_fd:
       pub_ssh_key = pub_ssh_key_fd.read()
-    key_path = "/home/{}/.ssh/authorized_keys".format(self.ADMIN_USERNAME)
-    public_keys = [SshPublicKey(path=key_path, key_data=pub_ssh_key)]
+
+    public_keys = [SshPublicKey(path=auth_keys_path, key_data=pub_ssh_key)]
     ssh_config = SshConfiguration(public_keys=public_keys)
     linux_config = LinuxConfiguration(disable_password_authentication=True,
                                       ssh=ssh_config)
     return linux_config
+
+  def add_instances_to_existing_ss(self, count, parameters):
+    """ Looks through existing scale sets in a particular resource group and
+    adds instances (created as a part of autoscaling) to the ones which have
+    additional capacity.
+    Args:
+        count: The number of virtual machines to be created in the scale set.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+    Returns:
+        The number of instances created and added to the existing scale sets.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
+    num_instances_added = 0
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    for vmss in vmss_list:
+      vm_list = compute_client.virtual_machine_scale_set_vms.list(
+        resource_group, vmss.name)
+      ss_instances = []
+      for vm in vm_list:
+        ss_instances.append(vm.name)
+      ss_instance_count = len(ss_instances)
+      capacity = self.MAX_VMSS_CAPACITY - ss_instance_count
+
+      scaleset = compute_client.virtual_machine_scale_sets.get(
+        resource_group, vmss.name)
+      ss_upgrade_policy = scaleset.upgrade_policy
+      ss_location = scaleset.location
+      ss_profile = scaleset.virtual_machine_profile
+      ss_overprovision = scaleset.over_provision
+
+      if capacity:
+        if count > capacity:
+          sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
+                           capacity=long(self.MAX_VMSS_CAPACITY))
+          scaleset = VirtualMachineScaleSet(sku=sku,
+                                            upgrade_policy=ss_upgrade_policy,
+                                            location=ss_location,
+                                            virtual_machine_profile=ss_profile,
+                                            over_provision=ss_overprovision)
+          create_update_response = compute_client.virtual_machine_scale_sets.\
+            create_or_update(resource_group, vmss.name, scaleset)
+          self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
+          num_instances_added = num_instances_added + capacity
+          count = count - capacity
+        else:
+          ss_vm_count = len(ss_instances) + count
+          sku = (ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(ss_vm_count)))
+          scaleset = VirtualMachineScaleSet(sku=sku,
+                                            upgrade_policy=ss_upgrade_policy,
+                                            location=ss_location,
+                                            virtual_machine_profile=ss_profile,
+                                            over_provision=ss_overprovision)
+          create_update_response = compute_client.virtual_machine_scale_sets. \
+            create_or_update(resource_group, vmss.name, scaleset)
+          self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
+          num_instances_added = num_instances_added + count
+          break
+      else:
+        pass
+    return num_instances_added
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
     """ Creates/Updates a virtual machine scale set containing the given number
@@ -453,6 +531,19 @@ class AzureAgent(BaseAgent):
     """
     verbose = parameters[self.PARAM_VERBOSE]
     random_resource_name = Haikunator().haikunate()
+
+    # While autoscaling, look through existing scale sets to check if they have
+    # capacity to hold more vms. If they do, update the scale sets with additional
+    # vms. If not, then create a new scale set for them.
+    is_autoscale = parameters['autoscale_agent']
+    num_instances_to_add = count
+    if is_autoscale in ['True', True]:
+      instances_added = self.add_instances_to_existing_ss(
+        num_instances_to_add, parameters)
+      if num_instances_to_add > instances_added:
+        count = count - instances_added
+      else:
+        return
 
     # Create multiple scale sets with the allowable maximum capacity of VMs.
     if count > self.MAX_VMSS_CAPACITY:
@@ -506,7 +597,7 @@ class AzureAgent(BaseAgent):
          machine scale set did not succeed.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     zone = parameters[self.PARAM_ZONE]
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     compute_client = ComputeManagementClient(credentials, subscription_id)
@@ -546,6 +637,22 @@ class AzureAgent(BaseAgent):
 
     create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
       resource_group, scale_set_name, vm_scale_set)
+    self.wait_for_ss_update(count, create_update_response, scale_set_name)
+
+  def wait_for_ss_update(self, count, create_update_response, scale_set_name):
+    """ Waits until the scale set has been successfully updated and all the
+    instances have been created and are running.
+
+    Args:
+        count: The VM capacity of the scale set to be created.
+        create_update_response: An instance, of the AzureOperationPoller to
+          poll for the status of the operation being performed.
+        scale_set_name: The name of the scale set being updated.
+
+    Raises:
+        AgentConfigurationException: If it encounters a problem updating
+          the virtual machine scale set.
+    """
     try:
       create_update_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
       result = create_update_response.result()
@@ -578,7 +685,7 @@ class AzureAgent(BaseAgent):
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     verbose = parameters[self.PARAM_VERBOSE]
     public_ips, private_ips, instance_ids = self.describe_instances(parameters)
     AppScaleLogger.verbose("Terminating the vm instance(s) '{}'".
@@ -733,7 +840,7 @@ class AzureAgent(BaseAgent):
       True if the zone exists, and False otherwise.
     """
     credentials = self.open_connection(parameters)
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     zone = parameters[self.PARAM_ZONE]
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_providers = resource_client.providers.list()
@@ -750,7 +857,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict that includes keys indicating the remote state
         that should be deleted.
     """
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     credentials = self.open_connection(parameters)
     network_client = NetworkManagementClient(credentials, subscription_id)
@@ -821,7 +928,8 @@ class AzureAgent(BaseAgent):
       self.PARAM_TENANT_ID: args[self.PARAM_TENANT_ID],
       self.PARAM_TEST: args[self.PARAM_TEST],
       self.PARAM_VERBOSE : args.get('verbose', False),
-      self.PARAM_ZONE : args[self.PARAM_ZONE]
+      self.PARAM_ZONE : args[self.PARAM_ZONE],
+      'autoscale_agent': False
     }
     is_valid, rg_names = self.assert_credentials_are_valid(params)
     if not is_valid:
@@ -1002,7 +1110,7 @@ class AzureAgent(BaseAgent):
       AgentConfigurationException: If there was a problem creating or accessing
         a resource group with the given subscription.
     """
-    subscription_id = parameters[self.PARAM_SUBSCRIBER_ID]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
 
