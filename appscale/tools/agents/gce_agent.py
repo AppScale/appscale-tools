@@ -112,7 +112,7 @@ class GCEAgent(BaseAgent):
   PARAM_TEST = 'test'
 
 
-  PARAM_VERBOSE = 'is_verbose'
+  PARAM_VERBOSE = 'IS_VERBOSE'
 
 
   PARAM_ZONE = 'zone'
@@ -163,6 +163,9 @@ class GCEAgent(BaseAgent):
   DISALLOWED_INSTANCE_TYPES = ["n1-highcpu-2", "n1-highcpu-2-d", "f1-micro",
     "g1-small"]
 
+  # The oauth2 storage location on the machine.
+  OAUTH2_STORAGE_LOCATION = '/etc/appscale/oauth2.dat'
+
 
   def assert_credentials_are_valid(self, parameters):
     """Contacts GCE to see if the given credentials are valid.
@@ -208,6 +211,13 @@ class GCEAgent(BaseAgent):
       AgentRuntimeException: If the named network or firewall already exist in
       GCE.
     """
+    is_autoscale = parameters['autoscale_agent']
+
+    # While creating instances during autoscaling, we do not need to create a
+    # new keypair or a network. We just make use of the existing one.
+    if is_autoscale in ['True', True]:
+      return
+
     AppScaleLogger.log("Verifying that SSH key exists locally")
     keyname = parameters[self.PARAM_KEYNAME]
     private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
@@ -544,6 +554,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args['zone'],
       self.PARAM_TEST: args['test'],
+      self.PARAM_VERBOSE: args.get('verbose', False),
+      'autoscale_agent': False
     }
 
     # A zone in GCE looks like 'us-central2-a', which is in the region
@@ -609,11 +621,21 @@ class GCEAgent(BaseAgent):
         present, or if the client_secrets parameter refers to a file that is not
         present on the local filesystem.
     """
+    is_autoscale = parameters['autoscale_agent']
+
     # Make sure the user has set each parameter.
     for param in self.REQUIRED_CREDENTIALS:
       if not self.has_parameter(param, parameters):
         raise AgentConfigurationException('The required parameter, {0}, was' \
           ' not specified.'.format(param))
+
+    # For validating instances being created during autoscaling, check that the
+    # oauth2 storage location is valid.
+    if is_autoscale in ['True', True]:
+      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
+        raise AgentConfigurationException('Could not find your signed OAuth2' \
+          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
+      return
 
     # Next, make sure that either the client_secrets file or the oauth2
     # credentials file exists.
@@ -1126,6 +1148,8 @@ class GCEAgent(BaseAgent):
     Raises:
       AppScaleException if the user wants to abort.
     """
+    is_autoscale = parameters['autoscale_agent']
+
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
@@ -1140,8 +1164,15 @@ class GCEAgent(BaseAgent):
         flow = oauth2client.client.flow_from_clientsecrets(secrets_location,
           scope=self.GCE_SCOPE)
 
-    storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
-      parameters[self.PARAM_KEYNAME]))
+    if is_autoscale in ['True', True]:
+      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
+        raise AgentConfigurationException('Could not find your signed OAuth2' \
+          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
+      else:
+        storage = oauth2client.file.Storage(self.OAUTH2_STORAGE_LOCATION)
+    else:
+     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
+       parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()
 
     if credentials is None or credentials.invalid:
