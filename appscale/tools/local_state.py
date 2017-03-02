@@ -420,6 +420,29 @@ class LocalState(object):
 
 
   @classmethod
+  def clean_local_metadata(cls, keyname):
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r') as file_handle:
+        file_contents = yaml.safe_load(file_handle.read())
+        if isinstance(file_contents, list):
+          cls.upgrade_json_file(keyname)
+          file_handle.seek(0)
+          file_contents = json.loads(file_handle.read())
+        cleaned_nodes = []
+        for node in file_contents.get('node_info'):
+          if 'load_balancer' not in node.get('jobs'):
+            node['jobs'] = ['open']
+          cleaned_nodes.append(node)
+        file_contents['node_info'] = cleaned_nodes
+        # and now we can write the json metadata file
+      with open(cls.get_locations_json_location(keyname), 'w') as file_handle:
+        file_handle.write(json.dumps(file_contents))
+    except IOError:
+      raise BadConfigurationException("Couldn't read from locations file, "
+                                      "AppScale may not be running with "
+                                      "keyname {0}".format(keyname))
+
+  @classmethod
   def get_infrastructure_option(cls, tag, keyname):
     """Reads the JSON-encoded metadata on disk and returns the value for
     the key 'tag' from the dictionary retrieved using the key
