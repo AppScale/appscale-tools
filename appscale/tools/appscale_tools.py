@@ -18,6 +18,9 @@ import traceback
 import urllib2
 import uuid
 
+from collections import Counter
+from itertools import chain
+
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -215,8 +218,8 @@ class AppScaleTools(object):
 
   @classmethod
   def describe_instances(cls, options):
-    """Queries each node in the currently running AppScale deployment and
-    reports on their status.
+    """
+    Gets cluster stats and prints it nicely.
 
     Args:
       options: A Namespace that has fields for each parameter that can be
@@ -225,8 +228,66 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     login_acc = AppControllerClient(login_host,
       LocalState.get_secret_key(options.keyname))
-    stats = login_acc.get_cluster_stats()
-    AppScaleLogger.log(str(stats))
+    cluster_stats = login_acc.get_cluster_stats()
+
+    # Report number of nodes and roles running in the cluster
+    machines = len(cluster_stats)
+    roles_counter = Counter(chain(*[node['roles'] for node in cluster_stats]))
+    counted_roles = (
+      "{count} {role}".format(count=count, role=role)
+      for role, count in roles_counter.iteritems()
+    )
+    AppScaleLogger.log(
+      "-----------------------------------------------------\n"
+      "There are {nodes} visible machines for the head node.\n"
+      "Following roles are assigned to these nodes:\n    {roles}"
+      .format(nodes=machines, roles="\n    ".join(counted_roles))
+    )
+
+    # Print App details
+    apps = next(node["apps"] for node in cluster_stats if node["apps"])
+    def render_app(app_name, app_info):
+      return (
+        "{app_name} - running on {app_servers} AppServers, "
+        "listening to {http} and {https} ports, {req} requests are in queue"
+        .format(app_name=app_name,
+                app_servers=app_info["appservers"],
+                http=app_info["http"], https=app_info["https"],
+                req=app_info["reqs_enqueued"])
+      )
+    AppScaleLogger.log(
+      "Loaded apps:\n    " +
+      "\n    ".join(render_app(name, app_info)
+                    for name, app_info in apps.iteritems())
+    )
+
+    # Detect problems and print alerts
+    alerts = []
+    # Check disk space
+    for node in cluster_stats:
+      for partition_dict in node["disk"]:
+        for mount_point, partition in partition_dict.iteritems():
+          free_percent = 100 * partition["free"] / partition["total"]
+          if "db_master" in node["roles"] and free_percent < 40:
+            msg = ("only {free}% of '{part}' partition at db_master is free"
+                   .format(ip=node["public_ip"], priv_ip=node["private_ip"],
+                           free=free_percent, part=mount_point))
+            alerts.append((node, msg))
+          elif free_percent < 10:
+            msg = ("only {free}% of '{part}' partition is free"
+                   .format(ip=node["public_ip"], priv_ip=node["private_ip"],
+                           free=free_percent, part=mount_point))
+            alerts.append((node, msg))
+    # Check latest average load
+    # TODO
+
+    if alerts:
+      AppScaleLogger.warn("There are {count} alerts:".format(count=len(alerts)))
+    for node, alert_msg in alerts:
+      AppScaleLogger.warn(
+        "  {ip} ({priv_ip}): {msg}".format(
+          ip=node["public_ip"], priv_ip=node["private_ip"], msg=alert_msg))
+
     AppScaleLogger.success("View status information about your AppScale " + \
       "deployment at http://{0}:{1}/status".format(login_host,
       RemoteHelper.APP_DASHBOARD_PORT))
