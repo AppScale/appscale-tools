@@ -443,7 +443,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     # Construct a describe-instances command from the file's contents
-    command = []
+    command = sys.argv[2:]
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")

@@ -22,10 +22,13 @@ from collections import Counter
 from itertools import chain
 
 # AppScale-specific imports
+from tabulate import tabulate
+
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from cluster_stats import NodeStats, AppInfo
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -52,6 +55,12 @@ def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
     RemoteHelper.ssh(ip, keyname, script, verbose)
   except ShellException as ssh_error:
     error_bucket.put(ssh_error)
+
+
+MIN_FREE_DISK_DB = 40.0
+MIN_FREE_DISK = 10.0
+MIN_AVAILABLE_MEMORY = 7.0
+MAX_LOADAVG = 3.0
 
 
 class AppScaleTools(object):
@@ -228,69 +237,170 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     login_acc = AppControllerClient(login_host,
       LocalState.get_secret_key(options.keyname))
+    all_public_ips = login_acc.get_all_public_ips()
     cluster_stats = login_acc.get_cluster_stats()
 
-    # Report number of nodes and roles running in the cluster
-    machines = len(cluster_stats)
-    roles_counter = Counter(chain(*[node['roles'] for node in cluster_stats]))
-    counted_roles = (
-      "{count} {role}".format(count=count, role=role)
-      for role, count in roles_counter.iteritems()
-    )
-    AppScaleLogger.log(
-      "-----------------------------------------------------\n"
-      "There are {nodes} visible machines for the head node.\n"
-      "Following roles are assigned to these nodes:\n    {roles}"
-      .format(nodes=machines, roles="\n    ".join(counted_roles))
-    )
+    # Convert cluster stats to useful structures
+    node_stats = {
+      ip: next(node for node in cluster_stats if node["public_ip"] == ip)
+      for ip in all_public_ips
+    }
+    apps_dict = next(node["apps"] for node in cluster_stats if node["apps"])
+    apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
+    nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
+    invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
-    # Print App details
-    apps = next(node["apps"] for node in cluster_stats if node["apps"])
-    def render_app(app_name, app_info):
-      return (
-        "{app_name} - running on {app_servers} AppServers, "
-        "listening to {http} and {https} ports, {req} requests are in queue"
-        .format(app_name=app_name,
-                app_servers=app_info["appservers"],
-                http=app_info["http"], https=app_info["https"],
-                req=app_info["reqs_enqueued"])
+    if options.verbose:
+      cls._print_nodes_info(nodes, invisible_nodes)
+
+    cls._print_cluster_summary(nodes, apps)
+    cls._print_apps(apps)
+    cls._print_status_alerts(nodes, invisible_nodes)
+
+    dashboard = next(app for app in apps
+                     if app.http == RemoteHelper.APP_DASHBOARD_PORT)
+    if dashboard.appservers > 1:
+      AppScaleLogger.success(
+        "View more about your AppScale deployment at http://{}:{}/status"
+        .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
       )
-    AppScaleLogger.log(
-      "Loaded apps:\n    " +
-      "\n    ".join(render_app(name, app_info)
-                    for name, app_info in apps.iteritems())
+    else:
+      AppScaleLogger.log(
+        "As soon as AppScale Dashboard is started you can visit it at "
+        "http://{0}:{1}/status and see more about your deployment"
+        .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
+      )
+
+  @classmethod
+  def _print_cluster_summary(cls, nodes, apps):
+    """ Detects if there are hardware issues in the cluster and prints
+        all detected problems
+    Args:
+      nodes: a list of NodeStats
+      apps: a list of AppInfo
+    """
+    loaded = sum(1 for node in nodes if node.is_loaded)
+    initialized = sum(1 for node in nodes if node.is_initialized)
+    started_apps = sum(1 for app in apps if app.appservers > 0)
+    total = len(nodes)
+    if loaded < total or initialized < total or started_apps < len(apps):
+      AppScaleLogger.log(
+        "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
+        "of {n} nodes are loaded, {started} of {apps} apps are started"
+        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
+                apps=len(apps))
+      )
+    else:
+      AppScaleLogger.success(
+        "AppScale is up. All {n} nodes are loaded".format(n=total)
+      )
+
+    # Report number of nodes and roles running in the cluster
+    roles_counter = Counter(chain(*[node.roles for node in nodes]))
+    header = ("ROLE", "COUNT")
+    table = roles_counter.iteritems()
+    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
+
+  @classmethod
+  def _print_nodes_info(cls, nodes, invisible_nodes):
+    """ Prints table with details about cluster nodes
+    Args:
+      nodes: a list of NodeStats
+      invisible_nodes: a list of IPs of nodes which didn't report its stats
+    """
+    header = (
+      "IP", "I/L*", "CPU%xCORES", "MEMORY%", "DISK%", "LOADAVG", "ROLES"
     )
+    table = [
+      (n.public_ip, "{}/{}".format("+" if n.is_initialized else "-",
+                                   "+" if n.is_loaded else "-"),
+       "{:.1f}x{}".format(n.cpu.load, n.cpu.count), n.memory.used_percent,
+       " ".join("{:.1f}".format(p.used_percent) for p in n.disk.partitions),
+       "{:.1f} {:.1f} {:.1f}".format(
+         n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
+       " ".join(n.roles))
+      for n in nodes
+      ]
+    table += [(ip, "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
+    AppScaleLogger.log("Nodes in AppScale deployment:")
+    table_str = tabulate(table, header, tablefmt="plain", floatfmt=".1f")
+    AppScaleLogger.log(table_str)
+    AppScaleLogger.log("* I/L means 'Is node Initialized'/'Is node Loaded'")
 
-    # Detect problems and print alerts
-    alerts = []
-    # Check disk space
-    for node in cluster_stats:
-      for partition_dict in node["disk"]:
-        for mount_point, partition in partition_dict.iteritems():
-          free_percent = 100 * partition["free"] / partition["total"]
-          if "db_master" in node["roles"] and free_percent < 40:
-            msg = ("only {free}% of '{part}' partition at db_master is free"
-                   .format(ip=node["public_ip"], priv_ip=node["private_ip"],
-                           free=free_percent, part=mount_point))
-            alerts.append((node, msg))
-          elif free_percent < 10:
-            msg = ("only {free}% of '{part}' partition is free"
-                   .format(ip=node["public_ip"], priv_ip=node["private_ip"],
-                           free=free_percent, part=mount_point))
-            alerts.append((node, msg))
-    # Check latest average load
-    # TODO
+  @classmethod
+  def _print_apps(cls, apps):
+    """ Prints main information about deployed apps
+    Args:
+      apps: a list AppInfo
+    """
+    header = (
+      "APP NAME", "HTTP/HTTPS", "APPSERVERS/PENDING",
+      "REQS. ENQUEUED/TOTAL", "STATE"
+    )
+    table = (
+      (app.name, "{}/{}".format(app.http, app.https),
+       "{}/{}".format(app.appservers, app.pending_appservers),
+       "{}/{}".format(app.reqs_enqueued, app.total_reqs),
+       "Ready" if app.appservers > 0 else "Starting")
+      for app in apps
+    )
+    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
-    if alerts:
-      AppScaleLogger.warn("There are {count} alerts:".format(count=len(alerts)))
-    for node, alert_msg in alerts:
+  @classmethod
+  def _print_status_alerts(cls, nodes, invisible_nodes):
+    """ Detects if there are hardware issues in the cluster and prints
+        all detected problems
+    Args:
+      nodes: a list of NodeStats
+      invisible_nodes: a list of IPs of nodes which didn't report its stats
+    """
+    hardware_alerts = []
+    for node in nodes:
+      # Check disk space
+      db_roles = ["db_master", "db_slave", "database"]
+      is_db_node = any(role in node.roles for role in db_roles)
+      partition = node.disk.most_loaded
+      if is_db_node and partition.free_percent < MIN_FREE_DISK_DB:
+        msg = ("Only {free:.1f}% of '{part}' partition at db node is free"
+               .format(free=partition.free_percent, part=partition.mountpoint))
+        hardware_alerts.append((node, msg))
+      elif partition.free_percent < MIN_FREE_DISK:
+        msg = ("Only {free:.1f}% of '{part}' partition is free"
+               .format(free=partition.free_percent, part=partition.mountpoint))
+        hardware_alerts.append((node, msg))
+
+      # Check memory
+      if node.memory.available_percent < MIN_AVAILABLE_MEMORY:
+        msg = ("Only {available:.1f}% of memory is available"
+               .format(available=node.memory.available_percent))
+        hardware_alerts.append((node, msg))
+
+      # Check average load
+      is_overloaded = any((
+        node.loadavg.last_1_min / node.cpu.count > MAX_LOADAVG,
+        node.loadavg.last_5_min / node.cpu.count > MAX_LOADAVG,
+        node.loadavg.last_15_min / node.cpu.count > MAX_LOADAVG,
+      ))
+      if is_overloaded:
+        msg = ("Average load is too high for {} CPUs: {:.1f} {:.1f} {:.1f}"
+               .format(node.cpu.count, node.loadavg.last_1_min,
+                       node.loadavg.last_5_min,
+                       node.loadavg.last_15_min))
+        hardware_alerts.append((node, msg))
+
+
+    if invisible_nodes:
+      # Warn if stats of some nodes is missed
       AppScaleLogger.warn(
-        "  {ip} ({priv_ip}): {msg}".format(
-          ip=node["public_ip"], priv_ip=node["private_ip"], msg=alert_msg))
+        "\nThere are {nodes} nodes that didn't report it's state, so presented "
+        "status can be inaccurate!".format(nodes=len(invisible_nodes))
+      )
 
-    AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}:{1}/status".format(login_host,
-      RemoteHelper.APP_DASHBOARD_PORT))
+    if hardware_alerts:
+      AppScaleLogger.warn("\nSome nodes are in alarm state:".format(len(hardware_alerts)))
+      header = ("PUBLIC IP", "ALERT MESSAGE")
+      table = ((node.public_ip, msg) for node, msg in hardware_alerts)
+      AppScaleLogger.warn(tabulate(table, headers=header, tablefmt="plain"))
 
 
   @classmethod
