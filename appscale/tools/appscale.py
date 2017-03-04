@@ -99,8 +99,10 @@ Available commands:
   remove                            An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
-  ssh [#]                           Logs into the #th node of the current AppScale
-                                    deployment. Default is headnode (0).
+  ssh [#]                           Logs into the #th node of the current
+                                    AppScale deployment or a valid role.
+                                    Default is headnode. Machines
+                                    must have public ips to use this command.
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
@@ -403,32 +405,44 @@ Available commands:
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
-    # make sure the user gave us an int for node
-    try:
-      index = int(node)
-    except ValueError:
-      raise TypeError("Usage: appscale ssh <node id to ssh to>")
-
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
     else:
       keyname = "appscale"
 
-    nodes = self.get_nodes(keyname)
-    # make sure there is a node at position 'index'
+    if node is None:
+      node = "shadow"
+
     try:
+      index = int(node)
+      nodes = self.get_nodes(keyname)
+      # make sure there is a node at position 'index'
       ip = nodes[index]['public_ip']
     except IndexError:
       raise AppScaleException("Cannot ssh to node at index " +
-        str(index) + ", as there are only " + str(len(nodes)) +
-        " in the currently running AppScale deployment.")
+                              ", as there are only " + str(len(nodes)) +
+                              " in the currently running AppScale deployment.")
+    except ValueError:
+      try:
+        ip = LocalState.get_host_with_role(keyname, node.lower())
+      except AppScaleException:
+        raise AppScaleException("No role exists by that name. "
+                                "Valid roles are {}"
+                                .format(NodeLayout.ADVANCED_FORMAT_KEYS))
 
     # construct the ssh command to exec with that IP address
     command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
       self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
-    subprocess.call(command)
+    try:
+      subprocess.check_call(command)
+    except subprocess.CalledProcessError:
+      raise AppScaleException("Unable to ssh to the machine at "
+                              "{}. Please make sure this machine is reachable, "
+                              "has a public ip, or that the role is in use by "
+                              "the deployment.".format(ip))
+
 
 
   def status(self):
