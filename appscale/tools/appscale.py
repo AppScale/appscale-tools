@@ -438,7 +438,7 @@ Available commands:
     try:
       subprocess.check_call(command)
     except subprocess.CalledProcessError:
-      raise AppScaleException("AppScale was unable to ssh to the machine at "
+      raise AppScaleException("Unable to ssh to the machine at "
                               "{}. Please make sure this machine is reachable, "
                               "has a public ip, or that the role is in use by "
                               "the deployment.".format(ip))
