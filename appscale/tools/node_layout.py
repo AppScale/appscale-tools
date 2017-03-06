@@ -740,20 +740,21 @@ class NodeLayout():
             # Locations JSON is incorrect if we get here.
             return None
           break
-    try:
-      for open_node in open_nodes:
+    for open_node in open_nodes:
+      try:
         node = nodes_copy.pop()
-        # Match nodes based on jobs/roles.
-        roles = node.roles
-        node.from_json(open_node)
-        node.roles = roles
-        if node.is_valid():
-          nodes.append(node)
-        else:
-          # Locations JSON is incorrect if we get here.
-          return None
-    except IndexError:
-      return None
+      except IndexError:
+        return None
+      # Match nodes based on jobs/roles.
+      roles = node.roles
+      node.from_json(open_node)
+      node.roles = roles
+      if node.is_valid():
+        nodes.append(node)
+      else:
+        # Locations JSON is incorrect if we get here.
+        return None
+
     # If these lengths are equal all nodes were matched.
     if len(nodes) == len(self.nodes):
       return nodes
