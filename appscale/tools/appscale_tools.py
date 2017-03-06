@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 # General-purpose Python library imports
 import datetime
 import errno
@@ -23,6 +22,7 @@ from itertools import chain
 
 # AppScale-specific imports
 from tabulate import tabulate
+from SOAPpy import faultType
 
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -234,72 +234,51 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    login_host = LocalState.get_login_host(options.keyname)
-    login_acc = AppControllerClient(login_host,
-      LocalState.get_secret_key(options.keyname))
-    all_public_ips = login_acc.get_all_public_ips()
-    cluster_stats = login_acc.get_cluster_stats()
+    try:
+      login_host = LocalState.get_login_host(options.keyname)
+      login_acc = AppControllerClient(login_host,
+        LocalState.get_secret_key(options.keyname))
+      all_public_ips = login_acc.get_all_public_ips()
+      cluster_stats = login_acc.get_cluster_stats()
+    except (faultType, AppControllerException, BadConfigurationException):
+      AppScaleLogger.warn("AppScale deployment is probably down")
+      raise
 
     # Convert cluster stats to useful structures
     node_stats = {
-      ip: next(node for node in cluster_stats if node["public_ip"] == ip)
+      ip: next((n for n in cluster_stats if n["public_ip"] == ip), None)
       for ip in all_public_ips
     }
-    apps_dict = next(node["apps"] for node in cluster_stats if node["apps"])
+    apps_dict = next((n["apps"] for n in cluster_stats if n["apps"]), {})
     apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
     nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
     invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
     if options.verbose:
+      AppScaleLogger.log("-"*76)
       cls._print_nodes_info(nodes, invisible_nodes)
+      cls._print_roles_info(nodes)
+    else:
+      AppScaleLogger.log("-"*76)
 
     cls._print_cluster_summary(nodes, apps)
     cls._print_apps(apps)
     cls._print_status_alerts(nodes, invisible_nodes)
 
-    dashboard = next(app for app in apps
-                     if app.http == RemoteHelper.APP_DASHBOARD_PORT)
-    if dashboard.appservers > 1:
+    dashboard = next(
+      (app for app in apps if app.http == RemoteHelper.APP_DASHBOARD_PORT), None
+    )
+    if dashboard and dashboard.appservers > 1:
       AppScaleLogger.success(
-        "View more about your AppScale deployment at http://{}:{}/status"
+        "\nView more about your AppScale deployment at http://{}:{}/status"
         .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
       )
     else:
       AppScaleLogger.log(
-        "As soon as AppScale Dashboard is started you can visit it at "
+        "\nAs soon as AppScale Dashboard is started you can visit it at "
         "http://{0}:{1}/status and see more about your deployment"
         .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
       )
-
-  @classmethod
-  def _print_cluster_summary(cls, nodes, apps):
-    """ Detects if there are hardware issues in the cluster and prints
-        all detected problems
-    Args:
-      nodes: a list of NodeStats
-      apps: a list of AppInfo
-    """
-    loaded = sum(1 for node in nodes if node.is_loaded)
-    initialized = sum(1 for node in nodes if node.is_initialized)
-    started_apps = sum(1 for app in apps if app.appservers > 0)
-    total = len(nodes)
-    if loaded < total or initialized < total or started_apps < len(apps):
-      AppScaleLogger.log(
-        "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
-        "of {n} nodes are loaded, {started} of {apps} apps are started"
-        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
-                apps=len(apps))
-      )
-    else:
-      AppScaleLogger.success(
-        "AppScale is up. All {n} nodes are loaded".format(n=total)
-      )
-
-    # Report number of nodes and roles running in the cluster
-    roles_counter = Counter(chain(*[node.roles for node in nodes]))
-    header = ("ROLE", "COUNT")
-    table = roles_counter.iteritems()
-    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
   @classmethod
   def _print_nodes_info(cls, nodes, invisible_nodes):
@@ -320,12 +299,46 @@ class AppScaleTools(object):
          n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
        " ".join(n.roles))
       for n in nodes
-      ]
+    ]
     table += [(ip, "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
-    AppScaleLogger.log("Nodes in AppScale deployment:")
     table_str = tabulate(table, header, tablefmt="plain", floatfmt=".1f")
     AppScaleLogger.log(table_str)
     AppScaleLogger.log("* I/L means 'Is node Initialized'/'Is node Loaded'")
+
+  @classmethod
+  def _print_roles_info(cls, nodes):
+    """ Prints table with roles and number of nodes serving each specific role
+    Args:
+      nodes: a list of NodeStats
+    """
+    # Report number of nodes and roles running in the cluster
+    roles_counter = Counter(chain(*[node.roles for node in nodes]))
+    header = ("ROLE", "COUNT")
+    table = roles_counter.iteritems()
+    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
+
+  @classmethod
+  def _print_cluster_summary(cls, nodes, apps):
+    """ Prints summary about deployment state
+    Args:
+      nodes: a list of NodeStats
+      apps: a list of AppInfo
+    """
+    loaded = sum(1 for node in nodes if node.is_loaded)
+    initialized = sum(1 for node in nodes if node.is_initialized)
+    started_apps = sum(1 for app in apps if app.appservers > 0)
+    total = len(nodes)
+    if loaded < total or initialized < total or started_apps < len(apps):
+      AppScaleLogger.log(
+        "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
+        "of {n} nodes are loaded, {started} of {apps} apps are started"
+        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
+                apps=len(apps))
+      )
+    else:
+      AppScaleLogger.success(
+        "\nAppScale is up. All {n} nodes are loaded".format(n=total)
+      )
 
   @classmethod
   def _print_apps(cls, apps):
