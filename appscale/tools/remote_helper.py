@@ -254,7 +254,7 @@ class RemoteHelper(object):
       if agent.PARAM_REGION in params:
         additional_params[agent.PARAM_REGION] = params[agent.PARAM_REGION]
 
-    time.sleep(10)  # gives machines in cloud extra time to boot up
+      time.sleep(10)  # gives machines in cloud extra time to boot up
 
     cls.copy_deployment_credentials(head_node, options)
 
