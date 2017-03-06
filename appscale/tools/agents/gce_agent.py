@@ -1175,12 +1175,62 @@ class GCEAgent(BaseAgent):
        parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()
 
-    if credentials is None or credentials.invalid:
+    if credentials is None or (credentials.invalid in ['True', True]):
       flags = oauth2client.tools.argparser.parse_args(args=[])
       credentials = oauth2client.tools.run_flow(flow, storage, flags)
 
     # Build the service
     return discovery.build('compute', self.API_VERSION), credentials
+
+  def attach_disk(self, parameters, disk_name, instance_id):
+    """ Attaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk_name: A str naming the persistent disk to attach to this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to. In practice, callers add disks to their own instance.
+    Returns:
+      A str indicating where the persistent disk has been attached to.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    project = parameters[self.PARAM_PROJECT]
+    zone = parameters[self.PARAM_ZONE]
+
+    # If the disk is already attached, return the mount point.
+    request = gce_service.instances().get(project=project, zone=zone,
+                                          instance=instance_id)
+    disks = request.execute(auth_http)['disks']
+    for disk in disks:
+      path = disk['source'].split('/')
+      if project == path[-5] and zone == path[-3] and disk_name == path[-1]:
+        device_name = '/dev/{}'.format(disk['deviceName'])
+        AppScaleLogger.log('Disk is already attached at {}'.format(device_name))
+        return device_name
+
+    request = gce_service.instances().attachDisk(
+      project=project,
+      zone=zone,
+      instance=instance_id,
+      body={
+        'kind': 'compute#attachedDisk',
+        'type': 'PERSISTENT',
+        'mode': 'READ_WRITE',
+        'source': "https://www.googleapis.com/compute/{0}/projects/{1}" \
+                  "/zones/{2}/disks/{3}".format(self.API_VERSION, project,
+                                                zone, disk_name),
+        'deviceName': 'sdb'
+      }
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+                                   parameters[self.PARAM_PROJECT])
+
+    return '/dev/sdb'
 
 
   def ensure_operation_succeeds(self, gce_service, auth_http, response,
