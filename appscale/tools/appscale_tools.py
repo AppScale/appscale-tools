@@ -261,9 +261,9 @@ class AppScaleTools(object):
     else:
       AppScaleLogger.log("-"*76)
 
-    cls._print_cluster_summary(nodes, apps)
+    cls._print_cluster_summary(nodes, invisible_nodes, apps)
     cls._print_apps(apps)
-    cls._print_status_alerts(nodes, invisible_nodes)
+    cls._print_status_alerts(nodes)
 
     dashboard = next(
       (app for app in apps if app.http == RemoteHelper.APP_DASHBOARD_PORT), None
@@ -318,16 +318,35 @@ class AppScaleTools(object):
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
   @classmethod
-  def _print_cluster_summary(cls, nodes, apps):
+  def _print_cluster_summary(cls, nodes, invisible_nodes, apps):
     """ Prints summary about deployment state
     Args:
       nodes: a list of NodeStats
+      invisible_nodes: IPs of nodes which didn't report its status yet
       apps: a list of AppInfo
     """
     loaded = sum(1 for node in nodes if node.is_loaded)
     initialized = sum(1 for node in nodes if node.is_initialized)
     started_apps = sum(1 for app in apps if app.appservers > 0)
     total = len(nodes)
+
+    if invisible_nodes:
+      # We don't have full information about cluster
+      AppScaleLogger.warn(
+        "\nThere are {nodes} nodes that didn't report it's state"
+        .format(nodes=len(invisible_nodes))
+      )
+      if nodes:
+        AppScaleLogger.log(
+          "Available stats for {n} nodes: {init} are initialized, {loaded} "
+          "are loaded, {started} of {apps} apps are started".format(
+            init=initialized, loaded=loaded, n=total, started=started_apps,
+            apps=len(apps))
+        )
+      else:
+        AppScaleLogger.log("No stats is available yet.")
+      return
+
     if loaded < total or initialized < total or started_apps < len(apps):
       AppScaleLogger.log(
         "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
@@ -360,12 +379,11 @@ class AppScaleTools(object):
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
   @classmethod
-  def _print_status_alerts(cls, nodes, invisible_nodes):
+  def _print_status_alerts(cls, nodes):
     """ Detects if there are hardware issues in the cluster and prints
         all detected problems
     Args:
       nodes: a list of NodeStats
-      invisible_nodes: a list of IPs of nodes which didn't report its stats
     """
     hardware_alerts = []
     for node in nodes:
@@ -401,16 +419,8 @@ class AppScaleTools(object):
                        node.loadavg.last_15_min))
         hardware_alerts.append((node, msg))
 
-
-    if invisible_nodes:
-      # Warn if stats of some nodes is missed
-      AppScaleLogger.warn(
-        "\nThere are {nodes} nodes that didn't report it's state, so presented "
-        "status can be inaccurate!".format(nodes=len(invisible_nodes))
-      )
-
     if hardware_alerts:
-      AppScaleLogger.warn("\nSome nodes are in alarm state:".format(len(hardware_alerts)))
+      AppScaleLogger.warn("\nSome nodes are in alarm state:")
       header = ("PUBLIC IP", "ALERT MESSAGE")
       table = ((node.public_ip, msg) for node, msg in hardware_alerts)
       AppScaleLogger.warn(tabulate(table, headers=header, tablefmt="plain"))
