@@ -1005,9 +1005,11 @@ class RemoteHelper(object):
     except socket.error as socket_error:
       AppScaleLogger.warn('Unable to talk to AppController: {}'.
                           format(socket_error.message))
+      raise
     except Exception as exception:
       AppScaleLogger.warn('Saw Exception while terminating {0}'.
                           format(str(exception)))
+      raise
 
 
   @classmethod
