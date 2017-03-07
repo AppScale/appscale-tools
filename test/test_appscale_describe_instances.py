@@ -109,4 +109,4 @@ class TestAppScaleDescribeInstances(unittest.TestCase):
       "--keyname", self.keyname
     ]
     options = ParseArgs(argv, self.function).args
-    AppScaleTools.describe_instances(options)
+    AppScaleTools.print_cluster_status(options)

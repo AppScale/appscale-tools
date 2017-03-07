@@ -226,7 +226,7 @@ class AppScaleTools(object):
 
 
   @classmethod
-  def describe_instances(cls, options):
+  def print_cluster_status(cls, options):
     """
     Gets cluster stats and prints it nicely.
 

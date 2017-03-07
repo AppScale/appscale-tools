@@ -117,7 +117,7 @@ class RemoteHelper(object):
     # re-attach to them. If we have issue finding the locations file or the
     # IP of the head node, we throw an exception.
     login_ip = None
-    public_ips, private_ips, instance_ids = agent.describe_instances(params)
+    public_ips, private_ips, instance_ids = agent.print_cluster_status(params)
     if public_ips:
       try:
         login_ip = LocalState.get_login_host(options.keyname)
@@ -894,7 +894,7 @@ class RemoteHelper(object):
 
     # We want to terminate also the pending instances.
     pending = True
-    _, _, instance_ids = agent.describe_instances(params, pending=pending)
+    _, _, instance_ids = agent.print_cluster_status(params, pending=pending)
 
     # If using persistent disks, unmount them and detach them before we blow
     # away the instances.

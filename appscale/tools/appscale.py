@@ -466,7 +466,7 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-describe-instances will do that for us.
     options = ParseArgs(command, "appscale-describe-instances").args
-    AppScaleTools.describe_instances(options)
+    AppScaleTools.print_cluster_status(options)
 
 
   def deploy(self, app, email=None):
