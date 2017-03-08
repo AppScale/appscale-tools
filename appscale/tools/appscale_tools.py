@@ -818,6 +818,15 @@ class AppScaleTools(object):
     except (IOError, AppScaleException):
       # Don't fail if we cannot find the configuration.
       pass
+    except AppControllerException as e:
+      # If we are terminating a cloud infrastructure, we should log and
+      # continue.
+      if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
+            options.terminate):
+        AppScaleLogger.warn(e)
+      # Otherwise this is considered fatal and we raise the exception.
+      else:
+        raise
 
     # And if we are on a cloud infrastructure, terminate instances if
     # asked.
