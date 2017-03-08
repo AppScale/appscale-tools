@@ -637,6 +637,8 @@ class AppScaleTools(object):
           options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
+    if options.clean:
+      LocalState.clean_local_metadata(keyname=options.keyname)
 
 
   @classmethod

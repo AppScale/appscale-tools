@@ -723,9 +723,12 @@ class NodeLayout():
     # Use a copy so we do not overwrite self.nodes when we call
     # Node.from_json since that method modifies the node it is called on.
     nodes_copy = self.nodes[:]
-
+    open_nodes = []
     for old_node in locations_nodes_list:
       old_node_roles = old_node.get('jobs')
+      if old_node_roles == ["open"]:
+        open_nodes.append(old_node)
+        continue
       for _, node in enumerate(nodes_copy):
         # Match nodes based on jobs/roles.
         if set(old_node_roles) == set(node.roles):
@@ -737,6 +740,20 @@ class NodeLayout():
             # Locations JSON is incorrect if we get here.
             return None
           break
+    for open_node in open_nodes:
+      try:
+        node = nodes_copy.pop()
+      except IndexError:
+        return None
+      # Match nodes based on jobs/roles.
+      roles = node.roles
+      node.from_json(open_node)
+      node.roles = roles
+      if node.is_valid():
+        nodes.append(node)
+      else:
+        # Locations JSON is incorrect if we get here.
+        return None
 
     # If these lengths are equal all nodes were matched.
     if len(nodes) == len(self.nodes):
