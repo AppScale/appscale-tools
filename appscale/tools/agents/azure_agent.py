@@ -457,7 +457,7 @@ class AzureAgent(BaseAgent):
     adds instances (created as a part of autoscaling) to the ones which have
     additional capacity.
     Args:
-        count: The number of virtual machines to be created in the scale set.
+        count: The number of instances to be created for autoscaling.
         parameters: A dict, containing all the parameters necessary to
           authenticate this user with Azure.
     Returns:
@@ -476,8 +476,6 @@ class AzureAgent(BaseAgent):
       ss_instances = []
       for vm in vm_list:
         ss_instances.append(vm.name)
-      ss_instance_count = len(ss_instances)
-      capacity = self.MAX_VMSS_CAPACITY - ss_instance_count
 
       if len(ss_instances) >= self.MAX_VMSS_CAPACITY:
         continue
@@ -489,32 +487,27 @@ class AzureAgent(BaseAgent):
       ss_profile = scaleset.virtual_machine_profile
       ss_overprovision = scaleset.over_provision
 
-      if count > capacity:
-        sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
-                         capacity=long(self.MAX_VMSS_CAPACITY))
-        scaleset = VirtualMachineScaleSet(sku=sku,
-                                          upgrade_policy=ss_upgrade_policy,
-                                          location=ss_location,
-                                          virtual_machine_profile=ss_profile,
-                                          over_provision=ss_overprovision)
-        create_update_response = compute_client.virtual_machine_scale_sets.\
-          create_or_update(resource_group, vmss.name, scaleset)
-        self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
-        num_instances_added = num_instances_added + capacity
-        count = count - capacity
-      else:
-        ss_vm_count = len(ss_instances) + count
-        sku = (ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(ss_vm_count)))
-        scaleset = VirtualMachineScaleSet(sku=sku,
-                                          upgrade_policy=ss_upgrade_policy,
-                                          location=ss_location,
-                                          virtual_machine_profile=ss_profile,
-                                          over_provision=ss_overprovision)
-        create_update_response = compute_client.virtual_machine_scale_sets. \
-          create_or_update(resource_group, vmss.name, scaleset)
-        self.wait_for_ss_update(ss_vm_count, create_update_response, vmss.name)
-        num_instances_added = num_instances_added + count
+      new_capacity = min(len(ss_instances) + count, self.MAX_VMSS_CAPACITY)
+      sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
+                       capacity=new_capacity)
+      scaleset = VirtualMachineScaleSet(sku=sku,
+                                        upgrade_policy=ss_upgrade_policy,
+                                        location=ss_location,
+                                        virtual_machine_profile=ss_profile,
+                                        over_provision=ss_overprovision)
+      create_update_response = compute_client.virtual_machine_scale_sets.\
+        create_or_update(resource_group, vmss.name, scaleset)
+      self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
+
+      newly_added = new_capacity - len(ss_instances)
+      num_instances_added += newly_added
+      count -= newly_added
+
+      # If all the additional instances to be created fit within the
+      # capacity of existing scale sets.
+      if count == 0:
         break
+
     return num_instances_added
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
@@ -541,9 +534,11 @@ class AzureAgent(BaseAgent):
     if is_autoscale in ['True', True]:
       instances_added = self.add_instances_to_existing_ss(
         num_instances_to_add, parameters)
+      # Exceeded capacity of existing scale sets, so create a new scale set.
       if num_instances_to_add > instances_added:
         num_instances_to_add = num_instances_to_add - instances_added
       else:
+        # The required number of instances fit within existing scale sets.
         return
 
     # Create multiple scale sets with the allowable maximum capacity of VMs.
