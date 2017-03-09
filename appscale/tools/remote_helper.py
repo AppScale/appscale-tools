@@ -117,7 +117,7 @@ class RemoteHelper(object):
     # re-attach to them. If we have issue finding the locations file or the
     # IP of the head node, we throw an exception.
     login_ip = None
-    public_ips, private_ips, instance_ids = agent.print_cluster_status(params)
+    public_ips, private_ips, instance_ids = agent.describe_instances(params)
     if public_ips:
       try:
         login_ip = LocalState.get_login_host(options.keyname)

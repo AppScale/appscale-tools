@@ -69,7 +69,8 @@ class TestLocalState(unittest.TestCase):
 
     flexmock(LocalState).should_receive('get_login_host').and_return('login_ip')
     flexmock(LocalState).should_receive('get_secret_key').and_return('super-secret')
-    flexmock(AppControllerClient).should_receive('get_status').and_return("OK")
+    (flexmock(AppControllerClient)
+       .should_receive('get_all_public_ips').and_return("OK"))
 
     self.assertRaises(BadConfigurationException,
       LocalState.ensure_appscale_isnt_running, self.keyname,
