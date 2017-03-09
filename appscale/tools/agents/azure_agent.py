@@ -479,6 +479,9 @@ class AzureAgent(BaseAgent):
       ss_instance_count = len(ss_instances)
       capacity = self.MAX_VMSS_CAPACITY - ss_instance_count
 
+      if len(ss_instances) >= self.MAX_VMSS_CAPACITY:
+        continue
+
       scaleset = compute_client.virtual_machine_scale_sets.get(
         resource_group, vmss.name)
       ss_upgrade_policy = scaleset.upgrade_policy
@@ -486,35 +489,32 @@ class AzureAgent(BaseAgent):
       ss_profile = scaleset.virtual_machine_profile
       ss_overprovision = scaleset.over_provision
 
-      if capacity:
-        if count > capacity:
-          sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
-                           capacity=long(self.MAX_VMSS_CAPACITY))
-          scaleset = VirtualMachineScaleSet(sku=sku,
-                                            upgrade_policy=ss_upgrade_policy,
-                                            location=ss_location,
-                                            virtual_machine_profile=ss_profile,
-                                            over_provision=ss_overprovision)
-          create_update_response = compute_client.virtual_machine_scale_sets.\
-            create_or_update(resource_group, vmss.name, scaleset)
-          self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
-          num_instances_added = num_instances_added + capacity
-          count = count - capacity
-        else:
-          ss_vm_count = len(ss_instances) + count
-          sku = (ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(ss_vm_count)))
-          scaleset = VirtualMachineScaleSet(sku=sku,
-                                            upgrade_policy=ss_upgrade_policy,
-                                            location=ss_location,
-                                            virtual_machine_profile=ss_profile,
-                                            over_provision=ss_overprovision)
-          create_update_response = compute_client.virtual_machine_scale_sets. \
-            create_or_update(resource_group, vmss.name, scaleset)
-          self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
-          num_instances_added = num_instances_added + count
-          break
+      if count > capacity:
+        sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
+                         capacity=long(self.MAX_VMSS_CAPACITY))
+        scaleset = VirtualMachineScaleSet(sku=sku,
+                                          upgrade_policy=ss_upgrade_policy,
+                                          location=ss_location,
+                                          virtual_machine_profile=ss_profile,
+                                          over_provision=ss_overprovision)
+        create_update_response = compute_client.virtual_machine_scale_sets.\
+          create_or_update(resource_group, vmss.name, scaleset)
+        self.wait_for_ss_update(self.MAX_VMSS_CAPACITY, create_update_response, vmss.name)
+        num_instances_added = num_instances_added + capacity
+        count = count - capacity
       else:
-        pass
+        ss_vm_count = len(ss_instances) + count
+        sku = (ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(ss_vm_count)))
+        scaleset = VirtualMachineScaleSet(sku=sku,
+                                          upgrade_policy=ss_upgrade_policy,
+                                          location=ss_location,
+                                          virtual_machine_profile=ss_profile,
+                                          over_provision=ss_overprovision)
+        create_update_response = compute_client.virtual_machine_scale_sets. \
+          create_or_update(resource_group, vmss.name, scaleset)
+        self.wait_for_ss_update(ss_vm_count, create_update_response, vmss.name)
+        num_instances_added = num_instances_added + count
+        break
     return num_instances_added
 
   def create_or_update_vm_scale_sets(self, count, parameters, subnet):
@@ -532,24 +532,26 @@ class AzureAgent(BaseAgent):
     verbose = parameters[self.PARAM_VERBOSE]
     random_resource_name = Haikunator().haikunate()
 
+    num_instances_to_add = count
+
     # While autoscaling, look through existing scale sets to check if they have
     # capacity to hold more vms. If they do, update the scale sets with additional
     # vms. If not, then create a new scale set for them.
     is_autoscale = parameters['autoscale_agent']
-    num_instances_to_add = count
     if is_autoscale in ['True', True]:
       instances_added = self.add_instances_to_existing_ss(
         num_instances_to_add, parameters)
       if num_instances_to_add > instances_added:
-        count = count - instances_added
+        num_instances_to_add = num_instances_to_add - instances_added
       else:
         return
 
     # Create multiple scale sets with the allowable maximum capacity of VMs.
-    if count > self.MAX_VMSS_CAPACITY:
+    if num_instances_to_add > self.MAX_VMSS_CAPACITY:
       # Count of the number of scale sets needed depending on the max capacity.
-      scale_set_count = int(math.ceil(count / float(self.MAX_VMSS_CAPACITY)))
-      remaining_vms_count = count
+      scale_set_count = int(math.ceil(num_instances_to_add / float(
+        self.MAX_VMSS_CAPACITY)))
+      remaining_vms_count = num_instances_to_add
 
       scalesets_threads = []
       for ss_count in range(scale_set_count):
@@ -573,10 +575,10 @@ class AzureAgent(BaseAgent):
 
     # Create a scale set using the count of VMs provided.
     else:
-      scale_set_name = random_resource_name + "-scaleset-{}vms".format(count)
+      scale_set_name = random_resource_name + "-scaleset-{}vms".format(num_instances_to_add)
       AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VM(s)'.
-                             format(scale_set_name, count), verbose)
-      self.create_scale_set(count, parameters, random_resource_name,
+                             format(scale_set_name, num_instances_to_add), verbose)
+      self.create_scale_set(num_instances_to_add, parameters, random_resource_name,
                             scale_set_name, subnet)
 
   def create_scale_set(self, count, parameters, resource_name,
