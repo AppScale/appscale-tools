@@ -445,7 +445,7 @@ Available commands:
 
 
 
-  def status(self):
+  def status(self, extra_options_list=None):
     """ 'status' is a more accessible way to query the state of the AppScale
     deployment than 'appscale-describe-instances', and calls it with the
     parameters in the user's AppScalefile.
@@ -457,7 +457,7 @@ Available commands:
     contents = self.read_appscalefile()
 
     # Construct a describe-instances command from the file's contents
-    command = sys.argv[2:]
+    command = extra_options_list or []
     contents_as_yaml = yaml.safe_load(contents)
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")

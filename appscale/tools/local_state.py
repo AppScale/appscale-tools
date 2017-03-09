@@ -420,6 +420,39 @@ class LocalState(object):
 
 
   @classmethod
+  def clean_local_metadata(cls, keyname):
+    """Takes the existing JSON-encoded metadata on disk and assigns all nodes
+    besides load_balancers (because of public ips) to "open".
+
+    Args:
+      keyname: A str that represents an SSH keypair name, uniquely identifying
+        this AppScale deployment.
+    Raises:
+      BadConfigurationException: If there is no JSON-encoded metadata file
+        named after the given keyname.
+    """
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r+') as file_handle:
+        file_contents = yaml.safe_load(file_handle.read())
+        # Compatibility support for previous versions of locations file.
+        if isinstance(file_contents, list):
+          cls.upgrade_json_file(keyname)
+          file_handle.seek(0)
+          file_contents = json.loads(file_handle.read())
+        cleaned_nodes = []
+        for node in file_contents.get('node_info'):
+          if 'load_balancer' not in node.get('jobs'):
+            node['jobs'] = ['open']
+          cleaned_nodes.append(node)
+        file_contents['node_info'] = cleaned_nodes
+        # Now we write the JSON file after our changes.
+        file_handle.seek(0)
+        file_handle.truncate()
+        file_handle.write(json.dumps(file_contents))
+    except IOError:
+      raise BadConfigurationException("Couldn't read from locations file.")
+
+  @classmethod
   def get_infrastructure_option(cls, tag, keyname):
     """Reads the JSON-encoded metadata on disk and returns the value for
     the key 'tag' from the dictionary retrieved using the key
