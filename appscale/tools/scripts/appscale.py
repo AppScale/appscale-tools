@@ -60,7 +60,7 @@ def main():
       pass
   elif command == "status":
     try:
-      appscale.status(sys.argv[:2])
+      appscale.status(sys.argv[2:])
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
