@@ -474,7 +474,7 @@ class AzureAgent(BaseAgent):
       vm_list = compute_client.virtual_machine_scale_set_vms.list(
         resource_group, vmss.name)
       ss_instance_count = 0
-      for vm in vm_list:
+      for _ in vm_list:
         ss_instance_count += 1
 
       if ss_instance_count >= self.MAX_VMSS_CAPACITY:
