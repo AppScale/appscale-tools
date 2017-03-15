@@ -288,19 +288,22 @@ class AppScaleTools(object):
       invisible_nodes: a list of IPs of nodes which didn't report its stats
     """
     header = (
-      "IP", "I/L*", "CPU%xCORES", "MEMORY%", "DISK%", "LOADAVG", "ROLES"
+      "PUBLIC IP", "PRIVATE IP", "I/L*", "CPU%xCORES", "MEMORY%", "DISK%",
+      "LOADAVG", "ROLES"
     )
     table = [
-      (n.public_ip, "{}/{}".format("+" if n.is_initialized else "-",
-                                   "+" if n.is_loaded else "-"),
-       "{:.1f}x{}".format(n.cpu.load, n.cpu.count), n.memory.used_percent,
+      (n.public_ip, n.private_ip,
+       "{}/{}".format("+" if n.is_initialized else "-",
+                      "+" if n.is_loaded else "-"),
+       "{:.1f}x{}".format(n.cpu.load, n.cpu.count),
+       100.0 - n.memory.available_percent,
        " ".join("{:.1f}".format(p.used_percent) for p in n.disk.partitions),
        "{:.1f} {:.1f} {:.1f}".format(
          n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
        " ".join(n.roles))
       for n in nodes
     ]
-    table += [(ip, "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
+    table += [(ip, "?", "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
     table_str = tabulate(table, header, tablefmt="plain", floatfmt=".1f")
     AppScaleLogger.log(table_str)
     AppScaleLogger.log("* I/L means 'Is node Initialized'/'Is node Loaded'")
@@ -421,8 +424,8 @@ class AppScaleTools(object):
 
     if hardware_alerts:
       AppScaleLogger.warn("\nSome nodes are in alarm state:")
-      header = ("PUBLIC IP", "ALERT MESSAGE")
-      table = ((node.public_ip, msg) for node, msg in hardware_alerts)
+      header = ("PUBLIC IP", "PRIVATE IP", "ALERT MESSAGE")
+      table = ((n.public_ip, n.private_ip, msg) for n, msg in hardware_alerts)
       AppScaleLogger.warn(tabulate(table, headers=header, tablefmt="plain"))
 
 

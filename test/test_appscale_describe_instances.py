@@ -57,13 +57,10 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'disk': [{'/': {'total': 9687113728, 'free': 4895760384, 'used': 4364763136}}],
         'cpu': {'count': 2, 'idle': 66.7, 'system': 9.5, 'user': 19.0},
         'loadavg': {'last_1_min': 0.64, 'last_5_min': 1.04, 'last_15_min': 0.95,
-                    'newest_pid': 26262, 'scheduling_entities': 381,
-                    'runnable_entities': 3},
+                    'scheduling_entities': 381, 'runnable_entities': 3},
         # Irrelevant for status bellow
         'private_ip': '10.10.4.220',
         'state': 'Done starting up AppScale, now in heartbeat mode',
-        'cloud': 'cloud1',
-        'db_location': '1.1.1.1',
         'swap': {'used': 0, 'free': 0},
         'services': {},
       },
@@ -76,8 +73,7 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'is_loaded': True,
         'apps': {},
         'loadavg': {'last_1_min': 1.05, 'last_5_min': 0.92, 'last_15_min': 0.95,
-                    'newest_pid': 6542, 'scheduling_entities': 312,
-                    'runnable_entities': 2},
+                    'scheduling_entities': 312, 'runnable_entities': 2},
         'memory': {'available': 2891546624, 'total': 3839168512, 'used': 1951600640},
         'disk': [{'/': {'total': 9687113728, 'free': 5160316928, 'used': 4100206592}}],
         'cpu': {'count': 2, 'idle': 100.0, 'system': 0.0, 'user': 0.0},
@@ -85,8 +81,6 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         # Irrelevant for status bellow
         'private_ip': '10.10.7.12',
         'state': 'Done starting up AppScale, now in heartbeat mode',
-        'cloud': 'cloud1',
-        'db_location': '1.1.1.1',
         'swap': {'used': 0, 'free': 0},
         'services': {},
       }

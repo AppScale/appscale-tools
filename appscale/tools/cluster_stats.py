@@ -51,7 +51,6 @@ class NodeStats(object):
       self.last_15_min = loadavg_dict["last_15_min"]
       self.runnable_entities = loadavg_dict["runnable_entities"]
       self.scheduling_entities = loadavg_dict["scheduling_entities"]
-      self.newest_pid = loadavg_dict["newest_pid"]
 
   class Disk(object):
     def __init__(self, partitions):
@@ -60,9 +59,7 @@ class NodeStats(object):
 
   def __init__(self, public_ip, node_stats_dict):
     self.public_ip = public_ip
-    self.cloud = node_stats_dict["cloud"]
     self.state = node_stats_dict["state"]
-    self.db_location = node_stats_dict["db_location"]
     self.is_initialized = node_stats_dict["is_initialized"]
     self.is_loaded = node_stats_dict["is_loaded"]
     self.private_ip = node_stats_dict["private_ip"]
