@@ -135,12 +135,14 @@ login : [vm1_public_IP | Domain Name]
 # replication : 3
 
 # The max number of machines that can be used for your AppScale deployment.
-# By default, it is the sum of nodes specified in the ips_layout section.
+# Supported only in the Public Clouds above.
+# By default, it is the number of distinct nodes specified in the ips_layout
+# section.
 # max : 1
 
 # The number of AppServer instances that serve application requests.
-# By default, we start with one AppServer instance and dynamically scale up
-# or down based on the number of application requests.
+# By default, we start with two AppServer instances for high availability
+# and dynamically scale up/down based on the number of application requests.
 # appengine : 3
 
 # The maximum amount of memory (in MB) an AppServer instance can use. 
