@@ -57,12 +57,12 @@ class NodeStats(object):
       self.partitions = partitions
       self.most_loaded = max(partitions, key=lambda partition: partition.used)
 
-  def __init__(self, public_ip, node_stats_dict):
-    self.public_ip = public_ip
+  def __init__(self, private_ip, node_stats_dict):
+    self.private_ip = private_ip
+    self.public_ip = node_stats_dict["public_ip"]
     self.state = node_stats_dict["state"]
     self.is_initialized = node_stats_dict["is_initialized"]
     self.is_loaded = node_stats_dict["is_loaded"]
-    self.private_ip = node_stats_dict["private_ip"]
     self.roles = node_stats_dict["roles"]
     self.cpu = NodeStats.CPU(node_stats_dict["cpu"])
     self.memory = NodeStats.Memory(node_stats_dict["memory"])

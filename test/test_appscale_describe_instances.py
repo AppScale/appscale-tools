@@ -38,12 +38,13 @@ class TestPrintAppscaleStatus(unittest.TestCase):
     (flexmock(appscale_tools)
        .should_receive("AppControllerClient")
        .and_return(fake_ac_client))
-    (fake_ac_client.should_receive("get_all_public_ips")
-       .and_return(["1.1.1.1", "2.2.2.2"]))
+    (fake_ac_client.should_receive("get_all_private_ips")
+       .and_return(["10.10.4.220", "10.10.7.12"]))
     # This huge list is the most valuable input for the function
     cluster_stats = [
       # HEAD node
       {
+        'private_ip': '10.10.4.220',
         'public_ip': '1.1.1.1',
         'roles': ['load_balancer', 'taskqueue_master', 'zookeeper',
                   'db_master','taskqueue', 'shadow', 'login'],
@@ -59,7 +60,6 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'loadavg': {'last_1_min': 0.64, 'last_5_min': 1.04, 'last_15_min': 0.95,
                     'scheduling_entities': 381, 'runnable_entities': 3},
         # Irrelevant for status bellow
-        'private_ip': '10.10.4.220',
         'state': 'Done starting up AppScale, now in heartbeat mode',
         'swap': {'used': 0, 'free': 0},
         'services': {},
@@ -67,6 +67,7 @@ class TestPrintAppscaleStatus(unittest.TestCase):
 
       # AppEngine node
       {
+        'private_ip': '10.10.7.12',
         'public_ip': '2.2.2.2',
         'roles': ['memcache', 'appengine'],
         'is_initialized': True,
@@ -79,7 +80,6 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'cpu': {'count': 2, 'idle': 100.0, 'system': 0.0, 'user': 0.0},
 
         # Irrelevant for status bellow
-        'private_ip': '10.10.7.12',
         'state': 'Done starting up AppScale, now in heartbeat mode',
         'swap': {'used': 0, 'free': 0},
         'services': {},

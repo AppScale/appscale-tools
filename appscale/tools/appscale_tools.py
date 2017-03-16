@@ -238,7 +238,7 @@ class AppScaleTools(object):
       login_host = LocalState.get_login_host(options.keyname)
       login_acc = AppControllerClient(login_host,
         LocalState.get_secret_key(options.keyname))
-      all_public_ips = login_acc.get_all_public_ips()
+      all_private_ips = login_acc.get_all_private_ips()
       cluster_stats = login_acc.get_cluster_stats()
     except (faultType, AppControllerException, BadConfigurationException):
       AppScaleLogger.warn("AppScale deployment is probably down")
@@ -246,8 +246,8 @@ class AppScaleTools(object):
 
     # Convert cluster stats to useful structures
     node_stats = {
-      ip: next((n for n in cluster_stats if n["public_ip"] == ip), None)
-      for ip in all_public_ips
+      ip: next((n for n in cluster_stats if n["private_ip"] == ip), None)
+      for ip in all_private_ips
     }
     apps_dict = next((n["apps"] for n in cluster_stats if n["apps"]), {})
     apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
@@ -303,7 +303,7 @@ class AppScaleTools(object):
        " ".join(n.roles))
       for n in nodes
     ]
-    table += [(ip, "?", "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
+    table += [("?", ip, "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
     table_str = tabulate(table, header, tablefmt="plain", floatfmt=".1f")
     AppScaleLogger.log(table_str)
     AppScaleLogger.log("* I/L means 'Is node Initialized'/'Is node Loaded'")
