@@ -130,10 +130,17 @@ class EC2Agent(BaseAgent):
     """
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
+    is_autoscale = parameters['autoscale_agent']
 
     AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
       " is not already registered.")
     conn = self.open_connection(parameters)
+
+    # While creating instances during autoscaling, we do not need to create a
+    # new keypair or a security group. We just make use of the existing one.
+    if is_autoscale in ['True', True]:
+      return
+
     if conn.get_key_pair(keyname):
       self.handle_failure("SSH keyname {0} is already registered. Please " \
         "change the 'keyname' specified in your AppScalefile to a different " \
@@ -259,7 +266,8 @@ class EC2Agent(BaseAgent):
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
-      'IS_VERBOSE' : args.get('verbose', False)
+      'IS_VERBOSE' : args.get('verbose', False),
+      'autoscale_agent' : False
     }
 
     if params[self.PARAM_ZONE]:
@@ -375,7 +383,7 @@ class EC2Agent(BaseAgent):
         private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """
     Spawns the specified number of EC2 instances using the parameters
     provided. This method is blocking in that it waits until the
@@ -403,7 +411,11 @@ class EC2Agent(BaseAgent):
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
       "instance type {2}, keyname {3}, in security group {4}, in availability" \
       " zone {5}".format(count, image_id, instance_type, keyname, group, zone))
-    if spot:
+
+    # In case of autoscaling, the server side passes these parameters as a
+    # string, so this check makes sure that spot instances are only created
+    # when the flag is True.
+    if spot in ['True', True]:
       AppScaleLogger.log("Using spot instances")
     else:
       AppScaleLogger.log("Using on-demand instances")

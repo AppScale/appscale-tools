@@ -40,6 +40,13 @@ class FakeAgent(object):
   def get_params_from_args(self, options):
     return {}
 
+  @classmethod
+  def describe_instances(self, params):
+    return (
+     ['0.0.0.1', '0.0.0.2', '0.0.0.3', '0.0.0.4'],
+     ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4'],
+     ['i-APPSCALE1', 'i-APPSCALE2', 'i-APPSCALE3', 'i-APPSCALE4'])
+
 class TestRemoteHelper(unittest.TestCase):
 
 
@@ -499,3 +506,138 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.wait_for_machines_to_finish_loading('public1', 'bookey')
+
+
+  reattach_options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'master': 'node-1', 'zookeeper': 'node-2',
+        'appengine': 'node-3', 'database': 'node-4'}
+    )
+
+  reattach_node_info = [{ "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE1",
+                          "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                                   'taskqueue_master'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE2",
+                          "jobs": ['memcache', 'appengine'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE3",
+                          "jobs": ['zookeeper'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE4",
+                          "jobs": ['db_master'] }
+                        ]
+
+  def test_start_all_nodes_reattach(self):
+    self.node_layout = NodeLayout(self.reattach_options)
+    self.node_layout.is_valid()
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('euca'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    LocalState.should_receive('get_local_nodes_info') \
+      .and_return(self.reattach_node_info)
+
+    RemoteHelper.start_all_nodes(self.reattach_options,
+                                 self.node_layout)
+
+
+
+  def test_start_all_nodes_reattach_changed_asf(self):
+    self.options = flexmock(
+      infrastructure='public cloud',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'zookeeper': 'node-2', 'master': 'node-1',
+        'appengine': 'node-3', 'database': 'node-3'}
+    )
+
+    self.node_layout = NodeLayout(self.options)
+
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('public cloud'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    LocalState.should_receive('get_local_nodes_info')\
+      .and_return(self.reattach_node_info)
+
+    self.assertRaises(BadConfigurationException)
+
+  def test_start_all_nodes_reattach_changed_locations(self):
+    self.node_layout = NodeLayout(self.reattach_options)
+
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('public cloud'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    node_info = [{ "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE1",
+                   "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                            'taskqueue_master'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE2",
+                   "jobs": ['memcache', 'appengine'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE3",
+                   "jobs": ['zookeeper', "appengine"] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE4",
+                   "jobs": ['db_master'] }
+                 ]
+
+    LocalState.should_receive('get_local_nodes_info').and_return(node_info)
+
+    self.assertRaises(BadConfigurationException)

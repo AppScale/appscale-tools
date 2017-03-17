@@ -16,8 +16,9 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
-from custom_exceptions import TimeoutException
 from custom_exceptions import AppScaleException
+from custom_exceptions import BadSecretException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -133,7 +134,7 @@ class AppControllerClient():
       signal.alarm(0)  # turn off the alarm
 
     if retval == self.BAD_SECRET_MESSAGE:
-      raise AppControllerException("Could not authenticate successfully" + \
+      raise BadSecretException("Could not authenticate successfully" + \
         " to the AppController. You may need to change the keyname in use.")
 
     return retval
@@ -227,6 +228,56 @@ class AppControllerClient():
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
+  def is_appscale_terminated(self):
+    """Queries the AppController to see if the system has been terminated.
+
+    Returns:
+      A boolean indicating whether appscale has finished running terminate
+        on all nodes.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.is_appscale_terminated,
+                                 self.secret)
+
+  def run_terminate(self, clean):
+    """Tells the AppController to terminate AppScale on the deployment.
+
+    Args:
+      clean: A boolean indicating whether the clean parameter should be
+        passed to terminate.rb.
+    Returns:
+      The request id assigned from executing the SOAP call on the remote
+        AppController.
+    """
+    request_id = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                       self.DEFAULT_NUM_RETRIES,
+                                       self.server.run_terminate, clean,
+                                       self.secret)
+    if request_id == "Error":
+      raise AppControllerException("Unable to send request to terminate "
+                                   "deployment to AppController.")
+    else:
+      return request_id
+
+  def receive_server_message(self):
+    """Queries the AppController for a message that the server wants to send
+    to the tools.
+
+    Returns:
+      The message from the AppController in JSON with format :
+      {'ip':ip, 'status': status, 'output':output}
+    """
+    server_message = self.run_with_timeout(self.DEFAULT_TIMEOUT * 5,
+                                           "Error: Client Timed Out",
+                                           self.DEFAULT_NUM_RETRIES,
+                                           self.server.receive_server_message,
+                                           self.DEFAULT_TIMEOUT * 4,
+                                           self.secret)
+    if server_message.startswith("Error"):
+      raise AppControllerException(server_message)
+    else:
+      return server_message
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
@@ -238,19 +289,6 @@ class AppControllerClient():
     """
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.stop_app, app_id, self.secret)
-
-
-  def is_app_running(self, app_id):
-    """Queries the AppController to see if the named application is running.
-
-    Args:
-      app_id: A str that indicates which application we should be checking
-        for.
-    Returns:
-      True if the application is running, False otherwise.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.is_app_running, app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -434,6 +472,9 @@ class AppControllerClient():
           return False
         else:
           raise Exception(user_exists)
+      except BadSecretException as exception:
+        raise AppControllerException(
+          "Exception when checking if a user exists: {0}".format(exception))
       except Exception as acc_error:
         if not silent:
           AppScaleLogger.log("Exception when checking if a user exists: {0}".

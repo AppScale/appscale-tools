@@ -397,9 +397,6 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     acc = AppControllerClient(login_host, secret)
 
-    if not acc.is_app_running(options.appname):
-      raise AppScaleException("The given application is not currently running.")
-
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
     http_port = None
@@ -500,16 +497,7 @@ class AppScaleTools(object):
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
     if options.infrastructure:
-      instance_ids, public_ips, private_ips = RemoteHelper.start_all_nodes(
-        options, len(node_layout.nodes))
-      AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
-                         "for use. This can take few minutes.")
-
-      # Set newly obtained node layout info for this deployment.
-      for i, _ in enumerate(instance_ids):
-        node_layout.nodes[i].public_ip = public_ips[i]
-        node_layout.nodes[i].private_ip = private_ips[i]
-        node_layout.nodes[i].instance_id = instance_ids[i]
+      node_layout = RemoteHelper.start_all_nodes(options, node_layout)
 
       # Enables root logins and SSH access on the head node.
       RemoteHelper.enable_root_ssh(options, head_node.public_ip)
@@ -637,7 +625,8 @@ class AppScaleTools(object):
     # Stop gracefully the AppScale deployment.
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
-        options.verbose)
+                                                 options.clean,
+                                                 options.verbose)
     except (IOError, AppScaleException):
       # Don't fail if we cannot find the configuration.
       pass
@@ -648,6 +637,8 @@ class AppScaleTools(object):
           options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
+    if options.clean:
+      LocalState.clean_local_metadata(keyname=options.keyname)
 
 
   @classmethod
@@ -693,6 +684,10 @@ class AppScaleTools(object):
       file_location)
     AppEngineHelper.validate_app_id(app_id)
 
+    extras = {}
+    if app_language == 'go':
+      extras = LocalState.get_extra_go_dependencies(options.file, options.test)
+
     if app_language == 'java':
       if AppEngineHelper.is_sdk_mismatch(file_location):
         AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
@@ -733,7 +728,7 @@ class AppScaleTools(object):
       AppScaleLogger.log("Ignoring .pyc files")
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      options.keyname, options.verbose)
+      options.keyname, options.verbose, extras)
 
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])

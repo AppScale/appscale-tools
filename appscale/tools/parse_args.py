@@ -95,9 +95,10 @@ class ParseArgs(object):
     "Standard_DS4", "Standard_DS11", "Standard_DS12", "Standard_DS13",
     "Standard_DS14", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
     "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
-    "Standard_DS14_v2", "Standard_DS15_v2", "Standard_G1", "Standard_G2",
-    "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
-    "Standard_GS3", "Standard_GS4", "Standard_GS5"]
+    "Standard_DS14_v2", "Standard_DS15_v2", "Standard_F4", "Standard_F8",
+    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s"
+    "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
+    "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"]
 
   # A combined list of instance types for the different cloud infrastructures.
   ALLOWED_INSTANCE_TYPES = ALLOWED_EC2_INSTANCE_TYPES + ALLOWED_GCE_INSTANCE_TYPES + \
@@ -350,6 +351,9 @@ class ParseArgs(object):
       self.parser.add_argument('--terminate', action="store_true",
         default=False,
         help="terminate running instances (if in cloud environment)")
+      self.parser.add_argument('--clean', action="store_true",
+        default=False,
+        help="clean running instances")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")

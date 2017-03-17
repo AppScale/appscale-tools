@@ -9,6 +9,14 @@ class AppControllerException(Exception):
   pass
 
 
+class BadSecretException(AppControllerException):
+  """A special AppControllerException class that should be thrown if the user
+  tries to interact with an AppController, but receives the bad secret
+  message from that AppController.
+  """
+  pass
+
+
 class AppEngineConfigException(Exception):
   """A special Exception class that should be thrown if there is a problem
   with the user's App Engine application (e.g., it has no app.yaml or web.xml,

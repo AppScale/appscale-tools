@@ -112,7 +112,7 @@ class GCEAgent(BaseAgent):
   PARAM_TEST = 'test'
 
 
-  PARAM_VERBOSE = 'is_verbose'
+  PARAM_VERBOSE = 'IS_VERBOSE'
 
 
   PARAM_ZONE = 'zone'
@@ -163,6 +163,9 @@ class GCEAgent(BaseAgent):
   DISALLOWED_INSTANCE_TYPES = ["n1-highcpu-2", "n1-highcpu-2-d", "f1-micro",
     "g1-small"]
 
+  # The oauth2 storage location on the machine.
+  OAUTH2_STORAGE_LOCATION = '/etc/appscale/oauth2.dat'
+
 
   def assert_credentials_are_valid(self, parameters):
     """Contacts GCE to see if the given credentials are valid.
@@ -208,6 +211,13 @@ class GCEAgent(BaseAgent):
       AgentRuntimeException: If the named network or firewall already exist in
       GCE.
     """
+    is_autoscale = parameters['autoscale_agent']
+
+    # While creating instances during autoscaling, we do not need to create a
+    # new keypair or a network. We just make use of the existing one.
+    if is_autoscale in ['True', True]:
+      return
+
     AppScaleLogger.log("Verifying that SSH key exists locally")
     keyname = parameters[self.PARAM_KEYNAME]
     private_key = LocalState.LOCAL_APPSCALE_PATH + keyname
@@ -544,6 +554,8 @@ class GCEAgent(BaseAgent):
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args['zone'],
       self.PARAM_TEST: args['test'],
+      self.PARAM_VERBOSE: args.get('verbose', False),
+      'autoscale_agent': False
     }
 
     # A zone in GCE looks like 'us-central2-a', which is in the region
@@ -609,11 +621,21 @@ class GCEAgent(BaseAgent):
         present, or if the client_secrets parameter refers to a file that is not
         present on the local filesystem.
     """
+    is_autoscale = parameters['autoscale_agent']
+
     # Make sure the user has set each parameter.
     for param in self.REQUIRED_CREDENTIALS:
       if not self.has_parameter(param, parameters):
         raise AgentConfigurationException('The required parameter, {0}, was' \
           ' not specified.'.format(param))
+
+    # For validating instances being created during autoscaling, check that the
+    # oauth2 storage location is valid.
+    if is_autoscale in ['True', True]:
+      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
+        raise AgentConfigurationException('Could not find your signed OAuth2' \
+          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
+      return
 
     # Next, make sure that either the client_secrets file or the oauth2
     # credentials file exists.
@@ -725,7 +747,7 @@ class GCEAgent(BaseAgent):
       project_url, parameters[self.PARAM_ZONE], disk_name)
     return disk_url
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """ Starts 'count' instances in Google Compute Engine, and returns once they
     have been started.
 
@@ -1126,6 +1148,8 @@ class GCEAgent(BaseAgent):
     Raises:
       AppScaleException if the user wants to abort.
     """
+    is_autoscale = parameters['autoscale_agent']
+
     # Perform OAuth 2.0 authorization.
     flow = None
     if self.PARAM_SECRETS in parameters:
@@ -1140,16 +1164,73 @@ class GCEAgent(BaseAgent):
         flow = oauth2client.client.flow_from_clientsecrets(secrets_location,
           scope=self.GCE_SCOPE)
 
-    storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
-      parameters[self.PARAM_KEYNAME]))
+    if is_autoscale in ['True', True]:
+      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
+        raise AgentConfigurationException('Could not find your signed OAuth2' \
+          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
+      else:
+        storage = oauth2client.file.Storage(self.OAUTH2_STORAGE_LOCATION)
+    else:
+     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
+       parameters[self.PARAM_KEYNAME]))
     credentials = storage.get()
 
-    if credentials is None or credentials.invalid:
+    if credentials is None or (credentials.invalid in ['True', True]):
       flags = oauth2client.tools.argparser.parse_args(args=[])
       credentials = oauth2client.tools.run_flow(flow, storage, flags)
 
     # Build the service
     return discovery.build('compute', self.API_VERSION), credentials
+
+  def attach_disk(self, parameters, disk_name, instance_id):
+    """ Attaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to
+        Google Compute Engine.
+      disk_name: A str naming the persistent disk to attach to this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to. In practice, callers add disks to their own instance.
+    Returns:
+      A str indicating where the persistent disk has been attached to.
+    """
+    gce_service, credentials = self.open_connection(parameters)
+    http = httplib2.Http()
+    auth_http = credentials.authorize(http)
+    project = parameters[self.PARAM_PROJECT]
+    zone = parameters[self.PARAM_ZONE]
+
+    # If the disk is already attached, return the mount point.
+    request = gce_service.instances().get(project=project, zone=zone,
+                                          instance=instance_id)
+    disks = request.execute(auth_http)['disks']
+    for disk in disks:
+      path = disk['source'].split('/')
+      if project == path[-5] and zone == path[-3] and disk_name == path[-1]:
+        device_name = '/dev/{}'.format(disk['deviceName'])
+        AppScaleLogger.log('Disk is already attached at {}'.format(device_name))
+        return device_name
+
+    request = gce_service.instances().attachDisk(
+      project=project,
+      zone=zone,
+      instance=instance_id,
+      body={
+        'kind': 'compute#attachedDisk',
+        'type': 'PERSISTENT',
+        'mode': 'READ_WRITE',
+        'source': "https://www.googleapis.com/compute/{0}/projects/{1}" \
+                  "/zones/{2}/disks/{3}".format(self.API_VERSION, project,
+                                                zone, disk_name),
+        'deviceName': 'sdb'
+      }
+    )
+    response = request.execute(auth_http)
+    AppScaleLogger.log(str(response))
+    self.ensure_operation_succeeds(gce_service, auth_http, response,
+                                   parameters[self.PARAM_PROJECT])
+
+    return '/dev/sdb'
 
 
   def ensure_operation_succeeds(self, gce_service, auth_http, response,

@@ -106,8 +106,10 @@ Available commands:
   remove <appid>                    An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
-  ssh [#]                           Logs into the #th node of the current AppScale
-                                    deployment. Default is headnode (0).
+  ssh [#]                           Logs into the #th node of the current
+                                    AppScale deployment or a valid role.
+                                    Default is headnode. Machines
+                                    must have public ips to use this command.
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
@@ -408,32 +410,44 @@ Available commands:
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
-    # make sure the user gave us an int for node
-    try:
-      index = int(node)
-    except ValueError:
-      raise TypeError("Usage: appscale ssh <node id to ssh to>")
-
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
     else:
       keyname = "appscale"
 
-    nodes = self.get_nodes(keyname)
-    # make sure there is a node at position 'index'
+    if node is None:
+      node = "shadow"
+
     try:
+      index = int(node)
+      nodes = self.get_nodes(keyname)
+      # make sure there is a node at position 'index'
       ip = nodes[index]['public_ip']
     except IndexError:
       raise AppScaleException("Cannot ssh to node at index " +
-        str(index) + ", as there are only " + str(len(nodes)) +
-        " in the currently running AppScale deployment.")
+                              ", as there are only " + str(len(nodes)) +
+                              " in the currently running AppScale deployment.")
+    except ValueError:
+      try:
+        ip = LocalState.get_host_with_role(keyname, node.lower())
+      except AppScaleException:
+        raise AppScaleException("No role exists by that name. "
+                                "Valid roles are {}"
+                                .format(NodeLayout.ADVANCED_FORMAT_KEYS))
 
     # construct the ssh command to exec with that IP address
     command = ["ssh", "-o", "StrictHostkeyChecking=no", "-i",
       self.get_key_location(keyname), "root@" + ip]
 
     # exec the ssh command
-    subprocess.call(command)
+    try:
+      subprocess.check_call(command)
+    except subprocess.CalledProcessError:
+      raise AppScaleException("Unable to ssh to the machine at "
+                              "{}. Please make sure this machine is reachable, "
+                              "has a public ip, or that the role is in use by "
+                              "the deployment.".format(ip))
+
 
 
   def status(self):
@@ -460,7 +474,7 @@ Available commands:
     AppScaleTools.describe_instances(options)
 
 
-  def deploy(self, app):
+  def deploy(self, app, email=None):
     """ 'deploy' is a more accessible way to tell an AppScale deployment to run a
     Google App Engine application than 'appscale-upload-app'. It calls that
     command with the configuration options found in the AppScalefile in the
@@ -469,6 +483,7 @@ Available commands:
     Args:
       app: The path (absolute or relative) to the Google App Engine application
         that should be uploaded.
+      email: The email of user
     Returns:
       A tuple containing the host and port where the application is serving
         traffic from.
@@ -490,6 +505,10 @@ Available commands:
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
+
+    if email is not None:
+      command.append("--email")
+      command.append(email)
 
     command.append("--file")
     command.append(app)
@@ -742,10 +761,7 @@ Available commands:
     contents_as_yaml = yaml.safe_load(contents)
 
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      is_verbose = contents_as_yaml['verbose']
       command.append("--verbose")
-    else:
-      is_verbose = False
 
     if 'keyname' in contents_as_yaml:
       keyname = contents_as_yaml['keyname']
@@ -766,10 +782,7 @@ Available commands:
     if clean:
       if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
         LocalState.confirm_or_abort("Clean will delete every data in the deployment.")
-      all_ips = LocalState.get_all_public_ips(keyname)
-      for ip in all_ips:
-        RemoteHelper.ssh(ip, keyname, self.TERMINATE, is_verbose)
-      AppScaleLogger.success("Successfully cleaned your AppScale deployment.")
+      command.append("--clean")
 
     if terminate:
       infrastructure = LocalState.get_infrastructure(keyname)

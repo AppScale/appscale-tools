@@ -2,7 +2,9 @@
 
 
 # First-party Python imports
+import fnmatch
 import getpass
+import glob
 import hashlib
 import json
 import os
@@ -354,6 +356,18 @@ class LocalState(object):
     """
     return cls.LOCAL_APPSCALE_PATH + "locations-" + keyname + ".json"
 
+  @classmethod
+  def cleanup_keyname(cls, keyname):
+    """Cleans up all the files starting with the keyname upon termination
+    of cloud instances.
+
+    Args:
+        keyname: A str that indicates the name of the SSH keypair that
+          uniquely identifies this AppScale deployment.
+    """
+    file_path = cls.LOCAL_APPSCALE_PATH + keyname + "*"
+    for keyname_file in glob.glob(file_path):
+      os.remove(keyname_file)
 
   @classmethod
   def update_local_metadata(cls, options, db_master, head_node):
@@ -404,6 +418,39 @@ class LocalState(object):
         as file_handle:
       file_handle.write(json.dumps(locations_json))
 
+
+  @classmethod
+  def clean_local_metadata(cls, keyname):
+    """Takes the existing JSON-encoded metadata on disk and assigns all nodes
+    besides load_balancers (because of public ips) to "open".
+
+    Args:
+      keyname: A str that represents an SSH keypair name, uniquely identifying
+        this AppScale deployment.
+    Raises:
+      BadConfigurationException: If there is no JSON-encoded metadata file
+        named after the given keyname.
+    """
+    try:
+      with open(cls.get_locations_json_location(keyname), 'r+') as file_handle:
+        file_contents = yaml.safe_load(file_handle.read())
+        # Compatibility support for previous versions of locations file.
+        if isinstance(file_contents, list):
+          cls.upgrade_json_file(keyname)
+          file_handle.seek(0)
+          file_contents = json.loads(file_handle.read())
+        cleaned_nodes = []
+        for node in file_contents.get('node_info'):
+          if 'load_balancer' not in node.get('jobs'):
+            node['jobs'] = ['open']
+          cleaned_nodes.append(node)
+        file_contents['node_info'] = cleaned_nodes
+        # Now we write the JSON file after our changes.
+        file_handle.seek(0)
+        file_handle.truncate()
+        file_handle.write(json.dumps(file_contents))
+    except IOError:
+      raise BadConfigurationException("Couldn't read from locations file.")
 
   @classmethod
   def get_infrastructure_option(cls, tag, keyname):
@@ -1190,3 +1237,96 @@ class LocalState(object):
       file_handle.write(file_contents)
 
     return False
+
+  @classmethod
+  def get_extra_go_dependencies(cls, app_base, test=False):
+    """ Collects a list of additional source files to include in the Go app.
+
+    Args:
+      app_base: A string specifying the application directory.
+      test: A boolean indicating that the user does not want to be prompted.
+    Returns:
+      A dictionary mapping file names to their location on the file system.
+    """
+    # If the user specified a tarball, don't look for extra files.
+    if not os.path.isdir(app_base):
+      return {}
+
+    goroot = os.getenv('GOROOT', None)
+    if goroot is None:
+      message = ('The GOROOT environment variable is not defined. Some of '
+        'your dependencies may be excluded.')
+
+      if test:
+        AppScaleLogger.log(message)
+      else:
+        confirm = raw_input('{}\nContinue anyway? (Y/n) '.format(message))
+        if confirm.lower() in ['n', 'no']:
+          raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    gab = os.path.join(goroot, 'bin', 'go-app-builder')
+    if not os.path.isfile(gab):
+      message = ('Unable to find bin/go-app-builder in GOROOT ({}). Some of '
+        'your dependencies may be excluded. The goroot included with the App '
+        'Engine Go SDK should have this.'.format(goroot))
+
+      if test:
+        AppScaleLogger.log(message)
+      else:
+        confirm = raw_input('{}\nContinue anyway? (Y/n) '.format(message))
+        if confirm.lower() in ['n', 'no']:
+          raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    gopath = os.getenv('GOPATH', None)
+    if gopath is None:
+      message = ('The GOPATH environment variable is not defined. Some of '
+        'your dependencies may be excluded.')
+
+      if test:
+        AppScaleLogger.log(message)
+      else:
+        confirm = raw_input('{}\nContinue anyway? (Y/n) '.format(message))
+        if confirm.lower() in ['n', 'no']:
+          raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    go_files = []
+    for root, _, filenames in os.walk(app_base):
+      relative_dir = os.path.relpath(root, app_base)
+      for filename in fnmatch.filter(filenames, '*.go'):
+        relative_path = os.path.join(relative_dir, filename)
+        go_files.append(relative_path)
+
+    gab_args = [gab,
+                '-app_base', app_base,
+                '-arch', '6',
+                '-goroot', goroot,
+                '-gopath', gopath,
+                '-print_extras']
+    gab_args.extend(go_files)
+
+    try:
+      gab_output = subprocess.check_output(gab_args)
+    except subprocess.CalledProcessError:
+      message = ('The go-app-builder command failed. Some of your '
+        'dependencies may be excluded.\n'
+        'The command run was "{}".'.format(' '.join(gab_args)))
+
+      if test:
+        AppScaleLogger.log(message)
+      else:
+        confirm = raw_input('{}\nContinue anyway? (Y/n) '.format(message))
+        if confirm.lower() in ['n', 'no']:
+          raise AppScaleException('Your application was not deployed.')
+      return {}
+
+    extras = {}
+    for line in gab_output.splitlines():
+      relative_path, absolute_path = line.split('|')
+      # The extra files must be separated from the app files on the server.
+      relative_path = os.path.join('gopath', 'src', relative_path)
+      extras[relative_path] = absolute_path
+
+    return extras
