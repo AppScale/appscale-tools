@@ -104,7 +104,7 @@ class LocalState(object):
 
       acc = AppControllerClient(login_host, secret_key)
       try:
-        acc.get_status()
+        acc.get_all_public_ips()
       except AppControllerException:
         # AC is not running, so we assume appscale is not up and running.
         AppScaleLogger.log("AppController not running on login node.")
