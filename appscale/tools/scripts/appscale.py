@@ -46,7 +46,7 @@ def main():
       sys.exit(1)
   elif command == "ssh":
     if len(sys.argv) < 3:
-      index = 0
+      index = None
     else:
       index = sys.argv[2]
 
