@@ -17,7 +17,7 @@ def main():
   """ Execute appscale-describe-instances script. """
   options = ParseArgs(sys.argv[1:], "appscale-describe-instances").args
   try:
-    AppScaleTools.describe_instances(options)
+    AppScaleTools.print_cluster_status(options)
     sys.exit(0)
   except Exception, e:
     LocalState.generate_crash_log(e, traceback.format_exc())

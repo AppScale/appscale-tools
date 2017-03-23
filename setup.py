@@ -58,7 +58,8 @@ setup(
     'setuptools>=11.3,<34',
     'SOAPpy',
     'termcolor',
-    'wstools==0.4.3'
+    'wstools==0.4.3',
+    'tabulate==0.7.7'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',

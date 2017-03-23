@@ -1,112 +1,125 @@
 #!/usr/bin/env python
 
-
 # General-purpose Python library imports
-import json
-import os
-import sys
-import tempfile
-import time
 import unittest
 
-
-# Third party libraries
+from SOAPpy import faultType
 from flexmock import flexmock
-import SOAPpy
 
-
-# AppScale import, the library that we're testing here
-from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools import appscale_tools
 from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.custom_exceptions import AppControllerException
+from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
-from appscale.tools.parse_args import ParseArgs
 
 
-class TestAppScaleDescribeInstances(unittest.TestCase):
+class LogsCollector(object):
+  def __init__(self):
+    self.info_buf = ""
+    self.warn_buf = ""
+    self.success_buf = ""
+
+  def log(self, msg):
+    self.info_buf += msg + "\n"
+
+  def warn(self, msg):
+    self.warn_buf += msg + "\n"
+
+  def success(self, msg):
+    self.success_buf += msg + "\n"
 
 
-  def setUp(self):
-    self.keyname = "boobazblargfoo"
-    self.function = "appscale-describe-instances"
-
-    # mock out any writing to stdout
-    flexmock(AppScaleLogger)
-    AppScaleLogger.should_receive('log').and_return()
-
-    # mock out all sleeping
-    flexmock(time)
-    time.should_receive('sleep').and_return()
-
-    # throw some default mocks together for when invoking via shell succeeds
-    # and when it fails
-    self.fake_temp_file = flexmock(name='fake_temp_file')
-    self.fake_temp_file.should_receive('read').and_return('boo out')
-    self.fake_temp_file.should_receive('close').and_return()
-
-    flexmock(tempfile)
-    tempfile.should_receive('NamedTemporaryFile').and_return(self.fake_temp_file)
-
-    self.success = flexmock(name='success', returncode=0)
-    self.success.should_receive('wait').and_return(0)
-
-    self.failed = flexmock(name='success', returncode=1)
-    self.failed.should_receive('wait').and_return(1)
-
-
-  def test_describe_instances_with_two_nodes(self):
-    # mock out writing the secret key to ~/.appscale, as well as reading it
-    # later
-    builtins = flexmock(sys.modules['__builtin__'])
-    builtins.should_call('open')  # set the fall-through
-
-    secret_key_location = LocalState.get_secret_key_location(self.keyname)
-    fake_secret = flexmock(name="fake_secret")
-    fake_secret.should_receive('read').and_return('the secret')
-    fake_secret.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(secret_key_location, 'r') \
-      .and_return(fake_secret)
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('get_all_public_ips').with_args('the secret') \
-      .and_return(json.dumps(['public1', 'public2']))
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('nothing interesting here') \
-      .and_return('Database is at not-up-yet') \
-      .and_return('Database is at 1.2.3.4')
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public2:17443') \
-      .and_return(fake_appcontroller)
-
-    # mock out reading the locations.json file, and slip in our own json
-    flexmock(os.path)
-    os.path.should_call('exists')  # set the fall-through
-    os.path.should_receive('exists').with_args(
-      LocalState.get_locations_json_location(self.keyname)).and_return(True)
-
-    fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps(
-      {"node_info": [{
-        "public_ip": "public1",
-        "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+class TestPrintAppscaleStatus(unittest.TestCase):
+  def test_started_two_nodes(self):
+    # Mock functions which provides inputs for print_cluster_status
+    flexmock(LocalState).should_receive("get_login_host").and_return("1.1.1.1")
+    flexmock(LocalState).should_receive("get_secret_key").and_return("xxxxxxx")
+    fake_ac_client = flexmock()
+    (flexmock(appscale_tools)
+       .should_receive("AppControllerClient")
+       .and_return(fake_ac_client))
+    (fake_ac_client.should_receive("get_all_private_ips")
+       .and_return(["10.10.4.220", "10.10.7.12"]))
+    # This huge list is the most valuable input for the function
+    cluster_stats = [
+      # HEAD node
+      {
+        'private_ip': '10.10.4.220',
+        'public_ip': '1.1.1.1',
+        'roles': ['load_balancer', 'taskqueue_master', 'zookeeper',
+                  'db_master','taskqueue', 'shadow', 'login'],
+        'is_initialized': True,
+        'is_loaded': True,
+        'apps': {
+          'appscaledashboard': {
+            'http': 1080, 'language': 'python', 'total_reqs': 24, 'appservers': 3,
+            'pending_appservers': 0, 'https': 1443, 'reqs_enqueued': 0}},
+        'memory': {'available': 1117507584, 'total': 3839168512, 'used': 3400077312},
+        'disk': [{'/': {'total': 9687113728, 'free': 4895760384, 'used': 4364763136}}],
+        'cpu': {'count': 2, 'idle': 66.7, 'system': 9.5, 'user': 19.0},
+        'loadavg': {'last_1_min': 0.64, 'last_5_min': 1.04, 'last_15_min': 0.95,
+                    'scheduling_entities': 381, 'runnable_entities': 3},
+        # Irrelevant for status bellow
+        'state': 'Done starting up AppScale, now in heartbeat mode',
+        'swap': {'used': 0, 'free': 0},
+        'services': {},
       },
-        {
-          "public_ip": "public2",
-          "private_ip": "private2",
-          "jobs": ["appengine"]
-        },
-      ]}))
-    fake_nodes_json.should_receive('write').and_return()
-    builtins.should_receive('open').with_args(
-      LocalState.get_locations_json_location(self.keyname), 'r') \
-      .and_return(fake_nodes_json)
-    # assume that there are two machines running in our deployment
 
-    argv = [
-      "--keyname", self.keyname
+      # AppEngine node
+      {
+        'private_ip': '10.10.7.12',
+        'public_ip': '2.2.2.2',
+        'roles': ['memcache', 'appengine'],
+        'is_initialized': True,
+        'is_loaded': True,
+        'apps': {},
+        'loadavg': {'last_1_min': 1.05, 'last_5_min': 0.92, 'last_15_min': 0.95,
+                    'scheduling_entities': 312, 'runnable_entities': 2},
+        'memory': {'available': 2891546624, 'total': 3839168512, 'used': 1951600640},
+        'disk': [{'/': {'total': 9687113728, 'free': 5160316928, 'used': 4100206592}}],
+        'cpu': {'count': 2, 'idle': 100.0, 'system': 0.0, 'user': 0.0},
+
+        # Irrelevant for status bellow
+        'state': 'Done starting up AppScale, now in heartbeat mode',
+        'swap': {'used': 0, 'free': 0},
+        'services': {},
+      }
     ]
-    options = ParseArgs(argv, self.function).args
-    AppScaleTools.describe_instances(options)
+    (fake_ac_client.should_receive("get_cluster_stats")
+       .and_return(cluster_stats))
+
+    # Configure catching of all logged messages
+    fake_logger = LogsCollector()
+    flexmock(appscale_tools.AppScaleLogger,
+             log=fake_logger.log, warn=fake_logger.warn,
+             success=fake_logger.success)
+
+    # Do actual call to tested function
+    options = flexmock(keyname="bla-bla", verbose=False)
+    AppScaleTools.print_cluster_status(options)
+
+    # Verify if output matches expectation
+    self.assertRegexpMatches(
+      fake_logger.info_buf,
+      r"-+\n\n"
+      r"APP NAME +HTTP/HTTPS +APPSERVERS/PENDING +REQS\. ENQUEUED/TOTAL +STATE *\n"
+      r"appscaledashboard +1080/1443 +3/0 +0/24 +Ready *\n"
+    )
+    self.assertEqual(fake_logger.warn_buf, "")
+    self.assertEqual(fake_logger.success_buf,
+                     "\nAppScale is up. All 2 nodes are loaded\n"
+                     "\nView more about your AppScale deployment at "
+                     "http://1.1.1.1:1080/status\n")
+
+  def test_deployment_looks_down(self):
+    for err in (faultType, AppControllerException, BadConfigurationException):
+      flexmock(LocalState).should_receive("get_login_host").and_raise(err)
+
+      # Catch warning and check if it matches expectation
+      (flexmock(appscale_tools.AppScaleLogger)
+         .should_receive("warn")
+         .with_args("AppScale deployment is probably down")
+         .once())
+
+      options = flexmock(keyname="bla-bla", verbose=False)
+      self.assertRaises(err, AppScaleTools.print_cluster_status, options)

@@ -46,7 +46,7 @@ def main():
       sys.exit(1)
   elif command == "ssh":
     if len(sys.argv) < 3:
-      index = 0
+      index = None
     else:
       index = sys.argv[2]
 
@@ -60,7 +60,7 @@ def main():
       pass
   elif command == "status":
     try:
-      appscale.status()
+      appscale.status(sys.argv[2:])
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)

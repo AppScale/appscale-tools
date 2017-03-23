@@ -430,7 +430,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, mock out the actual appscale-describe-instances call
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('describe_instances')
+    AppScaleTools.should_receive('print_cluster_status')
     appscale.status()
 
 

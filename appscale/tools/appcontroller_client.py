@@ -178,6 +178,22 @@ class AppControllerClient():
       return json.loads(all_ips)
 
 
+  def get_all_private_ips(self):
+    """Queries the AppController for a list of all the machines running in this
+    AppScale deployment, and returns their private IP addresses.
+
+    Returns:
+      A list of the private IP addresses of each machine in this AppScale
+      deployment.
+    """
+    all_ips = self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
+      self.server.get_all_private_ips, self.secret)
+    if all_ips == "":
+      return []
+    else:
+      return json.loads(all_ips)
+
+
   def get_role_info(self):
     """Queries the AppController to determine what each node in the deployment
     is doing and how it can be externally or internally reached.
@@ -194,14 +210,15 @@ class AppControllerClient():
       return json.loads(role_info)
 
 
-  def get_status(self):
+  def get_cluster_stats(self):
     """Queries the AppController to see what its internal state is.
 
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
-      self.server.status, self.secret)
+    stats = self.run_with_timeout(self.DEFAULT_TIMEOUT, "{}", self.DEFAULT_NUM_RETRIES,
+      self.server.get_cluster_stats_json, self.secret)
+    return json.loads(stats)
 
 
   def is_initialized(self):
