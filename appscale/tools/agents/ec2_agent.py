@@ -410,9 +410,7 @@ class EC2Agent(BaseAgent):
     # In case of autoscaling, the server side passes these parameters as a
     # string, so this check makes sure that spot instances are only created
     # when the flag is True.
-    spot = False
-    if parameters[self.PARAM_SPOT] in ['True', 'true', True]:
-      spot = True
+    spot = parameters[self.PARAM_SPOT] in ['True', 'true', True]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
       "instance type {2}, keyname {3}, in security group {4}, in availability" \
