@@ -23,6 +23,7 @@ from custom_exceptions import ShellException
 
 
 # AppScale-specific imports
+from appengine_helper import AppEngineHelper
 from appscale_tools import AppScaleTools
 from local_state import LocalState
 from node_layout import NodeLayout
@@ -337,7 +338,13 @@ Available commands:
     if not os.path.exists(ssh_key_location):
       return False
 
-    all_ips = LocalState.get_all_public_ips(keyname)
+    try:
+      all_ips = LocalState.get_all_public_ips(keyname)
+    except BadConfigurationException:
+      # If this is an upgrade from 3.1.0, there may not be a locations JSON.
+      all_ips = set(run_instances_opts.ips.values())
+      assert all(AppEngineHelper.is_valid_ipv4_address(ip) for ip in all_ips),\
+        'Invalid IP address in {}'.format(all_ips)
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
