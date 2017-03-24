@@ -405,17 +405,18 @@ class EC2Agent(BaseAgent):
     instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
-    spot = parameters[self.PARAM_SPOT]
     zone = parameters[self.PARAM_ZONE]
+
+    # In case of autoscaling, the server side passes these parameters as a
+    # string, so this check makes sure that spot instances are only created
+    # when the flag is True.
+    spot = parameters[self.PARAM_SPOT] in ['True', 'true', True]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
       "instance type {2}, keyname {3}, in security group {4}, in availability" \
       " zone {5}".format(count, image_id, instance_type, keyname, group, zone))
 
-    # In case of autoscaling, the server side passes these parameters as a
-    # string, so this check makes sure that spot instances are only created
-    # when the flag is True.
-    if spot in ['True', True]:
+    if spot:
       AppScaleLogger.log("Using spot instances")
     else:
       AppScaleLogger.log("Using on-demand instances")
