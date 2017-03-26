@@ -116,6 +116,9 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/monit*'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(
+      re.compile('/var/log/haproxy*'), shell=True, stdout=self.fake_temp_file,
+      stderr=subprocess.STDOUT).and_return(self.success)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/nginx'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
