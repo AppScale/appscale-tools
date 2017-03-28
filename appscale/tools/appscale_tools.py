@@ -815,18 +815,28 @@ class AppScaleTools(object):
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
                                                  options.clean,
                                                  options.verbose)
-    except (IOError, AppScaleException):
-      # Don't fail if we cannot find the configuration.
-      pass
-    except AppControllerException as e:
-      # If we are terminating a cloud infrastructure, we should log and
-      # continue.
-      if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
+    except (IOError, AppScaleException, AppControllerException,
+            BadConfigurationException) as e:
+      if not (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
             options.terminate):
-        AppScaleLogger.warn(e)
-      # Otherwise this is considered fatal and we raise the exception.
-      else:
         raise
+
+      if options.test:
+        AppScaleLogger.warn(e)
+      else:
+        AppScaleLogger.verbose(e, options.verbose)
+        if e is AppControllerException:
+          response = raw_input(
+            'AppScale may not have shut down properly, are you sure you want '
+            'to continue terminating? (y/N) ')
+        else:
+          response = raw_input(
+            'AppScale could not find the configuration files for this '
+            'deployment, are you sure you want to continue terminating? '
+            '(y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException("Cancelled cloud termination.")
+
 
     # And if we are on a cloud infrastructure, terminate instances if
     # asked.
