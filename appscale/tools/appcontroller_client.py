@@ -272,7 +272,7 @@ class AppControllerClient():
                                        self.server.run_terminate, clean,
                                        self.secret)
     if request_id == "Error":
-      raise AppControllerException("Unable to send request to terminate "
+      raise AppControllerException("Unable to send request to stop AppScale "
                                    "deployment to AppController.")
     else:
       return request_id
