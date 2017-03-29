@@ -825,7 +825,7 @@ class AppScaleTools(object):
         AppScaleLogger.warn(e)
       else:
         AppScaleLogger.verbose(e, options.verbose)
-        if e is AppControllerException:
+        if type(e) is AppControllerException:
           response = raw_input(
             'AppScale may not have shut down properly, are you sure you want '
             'to continue terminating? (y/N) ')
