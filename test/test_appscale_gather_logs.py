@@ -102,8 +102,10 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     # fake the creation of the log directories locally
     os.should_receive('mkdir').with_args('/tmp/foobaz/public1').and_return()
     os.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2').and_return()
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2/cassandra')
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public2/rabbitmq')
 
     # finally, fake the copying of the log files
     flexmock(subprocess)
@@ -122,6 +124,9 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/nginx'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(
+      re.compile('/var/log/rabbitmq'), shell=True, stdout=self.fake_temp_file,
+      stderr=subprocess.STDOUT).and_return(self.success)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/syslog*'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)

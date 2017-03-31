@@ -461,14 +461,15 @@ class AppScaleTools(object):
 
     # The log paths that we collect logs from.
     log_paths = [
+      {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'},
       {'remote': '/var/log/appscale'},
+      {'remote': '/var/log/haproxy.log*'},
       {'remote': '/var/log/kern.log*'},
       {'remote': '/var/log/monit.log*'},
-      {'remote': '/var/log/haproxy.log*'},
       {'remote': '/var/log/nginx'},
+      {'remote': '/var/log/rabbitmq/*', 'local': 'rabbitmq'},
       {'remote': '/var/log/syslog*'},
-      {'remote': '/var/log/zookeeper'},
-      {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'}
+      {'remote': '/var/log/zookeeper'}
     ]
 
     failures = False
