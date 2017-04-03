@@ -953,7 +953,7 @@ class RemoteHelper(object):
         to stdout.
       clean: A bool representing whether clean should be ran on the nodes.
     """
-    AppScaleLogger.log("Terminating appscale deployment with keyname {0}"
+    AppScaleLogger.log("Stopping appscale deployment with keyname {0}"
                        .format(keyname))
     time.sleep(2)
 

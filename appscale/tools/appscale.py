@@ -802,7 +802,7 @@ Available commands:
     AppScaleTools.terminate_instances(options)
 
     LocalState.cleanup_appscale_files(keyname, terminate)
-    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+    AppScaleLogger.success("Successfully stopped your AppScale deployment.")
 
 
   def register(self, deployment_id):
