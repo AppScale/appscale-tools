@@ -845,6 +845,11 @@ class AppScaleTools(object):
           options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
+    elif infrastructure in InfrastructureAgentFactory.VALID_AGENTS and not \
+        options.terminate:
+      AppScaleLogger.log("AppScale did not terminate any of your cloud "
+                         "instances, to terminate them run 'appscale "
+                         "down --terminate'")
     if options.clean:
       LocalState.clean_local_metadata(keyname=options.keyname)
 

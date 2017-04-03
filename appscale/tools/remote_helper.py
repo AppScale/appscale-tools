@@ -953,7 +953,7 @@ class RemoteHelper(object):
         to stdout.
       clean: A bool representing whether clean should be ran on the nodes.
     """
-    AppScaleLogger.log("Terminating appscale deployment with keyname {0}"
+    AppScaleLogger.log("Stopping appscale deployment with keyname {0}"
                        .format(keyname))
     time.sleep(2)
 
@@ -983,14 +983,14 @@ class RemoteHelper(object):
           if node.get("status"):
             machines -= 1
             AppScaleLogger.success("Node at {node_ip}: {status}".format(
-              node_ip=node.get("ip"), status="Terminated Successfully"))
+              node_ip=node.get("ip"), status="Stopping AppScale finished"))
           else:
             AppScaleLogger.warn("Node at {node_ip}: {status}".format(
-              node_ip=node.get("ip"), status="Did not terminate successfully"))
+              node_ip=node.get("ip"), status="Stopping AppScale failed"))
             terminated_successfully = False
             log_dump += "Node at {node_ip}: {status}\nNode Output:"\
                         "{output}".format(node_ip=node.get("ip"),
-                                          status="Terminate failed",
+                                          status="Stopping AppScale failed",
                                           output=node.get("output"))
           AppScaleLogger.verbose("Output of node at {node_ip}:\n"
                                  "{output}".format(node_ip=node.get("ip"),
@@ -998,8 +998,8 @@ class RemoteHelper(object):
                                  is_verbose)
       if not terminated_successfully or machines > 0:
         LocalState.generate_crash_log(AppControllerException, log_dump)
-        raise AppScaleException("{0} node(s) failed terminating, head node "
-                                "is still running AppScale services."
+        raise AppScaleException("{0} node(s) failed stopping AppScale, "
+                                "head node is still running AppScale services."
                                 .format(machines))
       cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose, clean)
     except socket.error as socket_error:
@@ -1007,8 +1007,8 @@ class RemoteHelper(object):
                           format(socket_error.message))
       raise
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while terminating {0}'.
-                          format(str(exception)))
+      AppScaleLogger.verbose('Saw Exception while stopping AppScale {0}'.
+                              format(str(exception)), is_verbose)
       raise
 
 
