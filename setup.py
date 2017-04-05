@@ -42,7 +42,7 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'adal==0.4.0',
+    'adal==0.4.5',
     'azure==2.0.0rc6',
     'cryptography',
     'argparse',
