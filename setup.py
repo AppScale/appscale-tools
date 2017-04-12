@@ -44,6 +44,7 @@ setup(
   install_requires=[
     'adal==0.4.0',
     'azure==2.0.0rc6',
+    'azure-common[autorest]==1.1.4',
     'cryptography',
     'argparse',
     'boto',
