@@ -25,9 +25,10 @@ case ${DIST} in
         ;;
 esac
 
-# The namespace import that appscale packages use is not compatible with
-# setuptools 34.
-pip install "setuptools<34"
+# The syntax used in the install_requires field for some dependencies requires
+# setuptools>=8.0. The namespace import that appscale packages use is not
+# compatible with setuptools 34.
+pip install "setuptools>=8.0,<34"
 
 # These system packages are too old for google-api-python-client>=1.5.0.
 # The latest azure package needs to be installed with a --pre flag.
