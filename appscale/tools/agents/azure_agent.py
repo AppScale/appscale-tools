@@ -1220,13 +1220,14 @@ class AzureAgent(BaseAgent):
    Args:
      instance_id: The instance id of the VM running.
      image_name: The prefix to give the VHD we create.
-     credentials: A ServicePrincipalCredentials instance, that can be used to
-       access or create any resources.
      parameters: A dict, containing all the parameters necessary to
        authenticate this user with Azure.
      dest_container: The container to store the VHD we create in. Stored in 
        the format: 
       {resource_group}/system/Microsoft.Compute/Images/{dest_container}
+   Raises:
+     IndexError, AttributeError if VirtualMachineCaptureResult is not 
+      formatted as expected.
    """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
@@ -1255,17 +1256,14 @@ class AzureAgent(BaseAgent):
     vm_capture = compute_client.virtual_machines.capture(
       resource_group_name=resource_group, vm_name=instance_id,
       parameters=vm_capture_params)
-    # Wait until capture is complete.
-    vm_capture.wait()
+    # Wait until capture is complete and save the VirtualMachineCaptureResult.
+    capture_result = vm_capture.result()
 
     # Since we can only specify the prefix of the image, we need to find the
     # URL using the BlobService.
     storage_client = StorageManagementClient(credentials, subscription_id)
     account_keys = storage_client.storage_accounts.list_keys(
       resource_group_name=resource_group, account_name=storage_account)
-
-    # Our VHD will match this prefix.
-    img_prefix = "Microsoft.Compute/Images/release/{}".format(image_name)
 
     # Accounts have multiple keys, but account_keys.keys is a generator so we
     # must iterate through it.
@@ -1284,12 +1282,24 @@ class AzureAgent(BaseAgent):
       except AzureMissingResourceHttpError:
         AppScaleLogger.log("Blob already removed")
 
-      # Get a list of the blobs in the container with our VHD's prefix.
-      img_blob = blob_service.list_blobs(container_name="system",
-                                         prefix=img_prefix,
-                                         num_results=1)
-      # Again, img_blob is a generator so we must iterate through it.
-      for blob in img_blob:
-        AppScaleLogger.log("Found blob {}".format(blob.name))
-        # Make the full URL for the VHD and return it.
-        return blob_service.make_blob_url("system", blob.name)
+    # VirtualMachineCaptureResult has an attribute output that will have the
+    # URI of the image we just captured. The simplified structure is this:
+    # {
+    #   'resources': [
+    #     {
+    #       'properties': {
+    #         'storageProfile': {
+    #           'osDisk': {
+    #             'name': name_of_vhd,
+    #             'image': {
+    #               'uri': uri_of_vhd <- this is what we want
+    #             }
+    #           }
+    #         }
+    #       }
+    #     }
+    #   ]
+    # }
+    return capture_result.output.get('resources')[0].get('properties')\
+      .get('storageProfile').get('osDisk').get('image').get('uri')
+
