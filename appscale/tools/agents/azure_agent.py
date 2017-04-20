@@ -1222,11 +1222,11 @@ class AzureAgent(BaseAgent):
      image_name: The prefix to give the VHD we create.
      parameters: A dict, containing all the parameters necessary to
        authenticate this user with Azure.
-     dest_container: The container to store the VHD we create in. Stored in 
-       the format: 
+     dest_container: The container to store the VHD we create in. Stored in
+       the format:
       {resource_group}/system/Microsoft.Compute/Images/{dest_container}
    Raises:
-     IndexError, AttributeError if VirtualMachineCaptureResult is not 
+     IndexError, AttributeError if VirtualMachineCaptureResult is not
       formatted as expected.
    """
     credentials = self.open_connection(parameters)
