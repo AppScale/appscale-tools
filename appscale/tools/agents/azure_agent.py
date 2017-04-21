@@ -408,6 +408,8 @@ class AzureAgent(BaseAgent):
     os_type = OperatingSystemTypes.linux
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
+    image_ref = None
+    image_hd = None
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if re.search(".*:.*:.*:.*", azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
@@ -416,17 +418,14 @@ class AzureAgent(BaseAgent):
                                  offer=image_ref_params[1],
                                  sku=image_ref_params[2],
                                  version=image_ref_params[3])
-      os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
-                       create_option=DiskCreateOptionTypes.from_image,
-                       name=vm_network_name, vhd=virtual_hd)
-      storage_profile = StorageProfile(image_reference=image_ref,
-                                       os_disk=os_disk)
     else:
       image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
-      os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
-                       create_option=DiskCreateOptionTypes.from_image,
-                       name=vm_network_name, vhd=virtual_hd, image=image_hd)
-      storage_profile = StorageProfile(os_disk=os_disk)
+
+    os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
+                     create_option=DiskCreateOptionTypes.from_image,
+                     name=vm_network_name, vhd=virtual_hd, image=image_hd)
+    storage_profile = StorageProfile(image_reference=image_ref,
+                                     os_disk=os_disk)
     compute_client.virtual_machines.create_or_update(
       resource_group, vm_network_name, VirtualMachine(location=zone,
                                                       os_profile=os_profile,
@@ -1214,92 +1213,3 @@ class AzureAgent(BaseAgent):
     if resource_group_name in resource_group_names:
       return True
     return False
-
-  def create_image(self, instance_id, image_name, parameters, dest_container):
-    """ Creates an Azure virtual machine using the network interface created.
-   Args:
-     instance_id: The instance id of the VM running.
-     image_name: The prefix to give the VHD we create.
-     parameters: A dict, containing all the parameters necessary to
-       authenticate this user with Azure.
-     dest_container: The container to store the VHD we create in. Stored in
-       the format:
-      {resource_group}/system/Microsoft.Compute/Images/{dest_container}
-   Raises:
-     IndexError, AttributeError if VirtualMachineCaptureResult is not
-      formatted as expected.
-   """
-    credentials = self.open_connection(parameters)
-    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
-    compute_client = ComputeManagementClient(credentials, subscription_id)
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
-
-    # First we must deallocate the VM we wish to capture.
-    vm_deallocate = compute_client.virtual_machines.deallocate(resource_group,
-                                                               instance_id)
-    # Wait until we have finished deallocating.
-    vm_deallocate.wait()
-
-    # Then we generalize it.
-    compute_client.virtual_machines.generalize(resource_group,
-                                               instance_id)
-    # Safety precaution sleep.
-    time.sleep(self.SLEEP_TIME)
-
-    AppScaleLogger.log("Capturing VM: {}".format(instance_id))
-    vm_capture_params = VirtualMachineCaptureParameters(
-      vhd_prefix=image_name, destination_container_name=dest_container,
-      overwrite_vhds=False)
-
-    # Capture the VM with the parameters we specified above.
-    vm_capture = compute_client.virtual_machines.capture(
-      resource_group_name=resource_group, vm_name=instance_id,
-      parameters=vm_capture_params)
-    # Wait until capture is complete and save the VirtualMachineCaptureResult.
-    capture_result = vm_capture.result()
-
-    # Since we can only specify the prefix of the image, we need to find the
-    # URL using the BlobService.
-    storage_client = StorageManagementClient(credentials, subscription_id)
-    account_keys = storage_client.storage_accounts.list_keys(
-      resource_group_name=resource_group, account_name=storage_account)
-
-    # Accounts have multiple keys, but account_keys.keys is a generator so we
-    # must iterate through it.
-    for account_key in account_keys.keys:
-      # Create PageBlobService so we can find our image (which is a PageBlob).
-      blob_service = PageBlobService(account_name=storage_account,
-                                     account_key=account_key.value)
-      # Add file ending.
-      blob_name = "{}.vhd".format(instance_id)
-      AppScaleLogger.log("Removing blob: {}".format(blob_name))
-      # Remove the VHD of the VM we have captured since it will not be
-      # cleaned up anywhere else.
-      try:
-        blob_service.break_blob_lease(container_name="vhds", blob_name=blob_name)
-        blob_service.delete_blob(container_name="vhds", blob_name=blob_name)
-      except AzureMissingResourceHttpError:
-        AppScaleLogger.log("Blob already removed")
-
-    # VirtualMachineCaptureResult has an attribute output that will have the
-    # URI of the image we just captured. The simplified structure is this:
-    # {
-    #   'resources': [
-    #     {
-    #       'properties': {
-    #         'storageProfile': {
-    #           'osDisk': {
-    #             'name': name_of_vhd,
-    #             'image': {
-    #               'uri': uri_of_vhd <- this is what we want
-    #             }
-    #           }
-    #         }
-    #       }
-    #     }
-    #   ]
-    # }
-    return capture_result.output.get('resources')[0].get('properties')\
-      .get('storageProfile').get('osDisk').get('image').get('uri')
-
