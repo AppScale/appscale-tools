@@ -13,7 +13,6 @@ import threading
 import time
 
 # Azure specific imports
-from azure.common import AzureMissingResourceHttpError
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
@@ -35,7 +34,6 @@ from azure.mgmt.compute.models import UpgradePolicy
 from azure.mgmt.compute.models import UpgradeMode
 from azure.mgmt.compute.models import VirtualHardDisk
 from azure.mgmt.compute.models import VirtualMachine
-from azure.mgmt.compute.models import VirtualMachineCaptureParameters
 from azure.mgmt.compute.models import VirtualMachineScaleSet
 from azure.mgmt.compute.models import VirtualMachineScaleSetIPConfiguration
 from azure.mgmt.compute.models import VirtualMachineScaleSetNetworkConfiguration
@@ -61,8 +59,6 @@ from azure.mgmt.resource.resources.models import ResourceGroup
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
 from azure.mgmt.storage.models import Sku as StorageSku
-
-from azure.storage.blob import PageBlobService
 
 from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
