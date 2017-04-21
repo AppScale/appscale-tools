@@ -618,21 +618,6 @@ class EC2Agent(BaseAgent):
         return False
 
 
-  def create_image(self, instance_id, name, parameters):
-    """ Creates a new cloud image from the given instance id.
-    
-    Args:
-      instance_id: id of the (stopped) instance to create an image of.
-      name: A str containing the human-readable name for the image.
-      parameters: A dict that contains the credentials needed to authenticate
-        with AWS.
-    Returns:
-      A str containing the ami of the new image.
-     """
-    conn = self.open_connection(parameters)
-    return conn.create_image(instance_id, name)
-
-
   def does_address_exist(self, parameters):
     """ Queries Amazon EC2 to see if the specified Elastic IP address has been
     allocated with the given credentials.
