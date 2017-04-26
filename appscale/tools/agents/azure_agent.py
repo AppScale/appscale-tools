@@ -8,6 +8,7 @@ interact with Microsoft Azure.
 import adal
 import math
 import os.path
+import re
 import threading
 import time
 
@@ -18,6 +19,7 @@ from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
+from azure.mgmt.compute.models import ImageReference
 from azure.mgmt.compute.models import LinuxConfiguration
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference
@@ -399,19 +401,33 @@ class AzureAgent(BaseAgent):
       uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
         format(storage_account, vm_network_name))
 
-    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
     os_type = OperatingSystemTypes.linux
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+
+    image_ref = None
+    image_hd = None
+    # Publisher images are formatted Publisher:Offer:Sku:Tag
+    if re.search(".*:.*:.*:.*", azure_image_id):
+      AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+      image_ref_params = azure_image_id.split(":")
+      image_ref = ImageReference(publisher=image_ref_params[0],
+                                 offer=image_ref_params[1],
+                                 sku=image_ref_params[2],
+                                 version=image_ref_params[3])
+    else:
+      image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
+
     os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
                      create_option=DiskCreateOptionTypes.from_image,
                      name=vm_network_name, vhd=virtual_hd, image=image_hd)
-
+    storage_profile = StorageProfile(image_reference=image_ref,
+                                     os_disk=os_disk)
     compute_client.virtual_machines.create_or_update(
       resource_group, vm_network_name, VirtualMachine(location=zone,
                                                       os_profile=os_profile,
                                                       hardware_profile=hardware_profile,
                                                       network_profile=network_profile,
-                                                      storage_profile=StorageProfile(
-                                                        os_disk=os_disk)))
+                                                      storage_profile=storage_profile))
 
     # Sleep until an IP address gets associated with the VM.
     while True:
