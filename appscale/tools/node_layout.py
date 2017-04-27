@@ -115,6 +115,7 @@ class NodeLayout():
     self.max_vms = options.get('max')
     self.replication = options.get('replication')
     self.database_type = options.get('table', 'cassandra')
+    self.add_to_existing = options.get('add_to_existing')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
@@ -446,6 +447,10 @@ class NodeLayout():
         if not self.IP_REGEX.match(node.public_ip):
           return self.invalid("{0} must be an IP address".format(
             node.public_ip))
+
+    if self.add_to_existing:
+      self.nodes = nodes
+      return self.valid()
 
     master_nodes = []
     for node in nodes:
