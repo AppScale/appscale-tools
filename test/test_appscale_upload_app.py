@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -31,6 +30,7 @@ from appscale.tools.custom_exceptions import AppEngineConfigException
 from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScaleUploadApp(unittest.TestCase):
@@ -311,8 +311,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # Mock out service host and port
     app_data = {'owner' : 'a@a.com',
       'hosts' : {'192.168.1.1' : {'http' : 8080, 'https' : 4380 }}}
-    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
-      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+    app_stats_data = {'baz': {'nginx': 8080}}
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -330,7 +329,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_all_stats').with_args(
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -341,11 +340,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -451,11 +451,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -506,8 +507,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # Mock out service host and port
     app_data = {'owner' : 'a@a.com',
       'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
-      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+    app_stats_data = {'baz': {'nginx': 8080}}
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -525,7 +525,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_all_stats').with_args(
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -536,11 +536,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -620,8 +621,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # Mock out service host and port
     app_data = {'owner' : 'a@a.com',
       'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
-      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+    app_stats_data = {'baz': {'nginx': 8080}}
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
@@ -631,8 +631,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
@@ -641,7 +639,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_all_stats').with_args(
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
     fake_appcontroller.should_receive('reserve_app_id').with_args(
       'a@a.com','baz','python27','the secret').and_return("true")
@@ -654,11 +652,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -754,19 +753,18 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # Mock out service host and port
     app_data = {'owner' : 'a@a.com',
       'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
-      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+    app_stats_data = {'baz': {'nginx': 8080}}
+
+    remote_tarball = '/opt/appscale/apps/baz.tar.gz'
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
+      remote_tarball, 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
@@ -775,7 +773,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_all_stats').with_args(
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -786,11 +784,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -837,6 +836,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(None)
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
+
+    flexmock(RemoteHelper).should_receive('copy_app_to_host').\
+      and_return(remote_tarball)
 
     argv = [
       "--keyname", self.keyname,
@@ -886,19 +888,18 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # Mock out service host and port
     app_data = {'owner' : 'a@a.com',
       'hosts' : {'192.168.1.1' : { 'http' : 8080, 'https' : 4380 }}}
-    app_stats_data = {'apps': {'baz': {'http': 8080, 'language': 'python27',
-      'total_reqs': 'no_change', 'appservers': 1, 'https': 4380, 'reqs_enqueued': None}}}
+    app_stats_data = {'baz': {'nginx': 8080}}
+
+    remote_tarball = '/opt/appscale/apps/baz.tar.gz'
 
     # mock out the SOAP call to the AppController and assume it succeeded
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('status').with_args('the secret') \
       .and_return('Database is at public1')
     fake_appcontroller.should_receive('done_uploading').with_args('baz',
-      '/opt/appscale/apps/baz.tar.gz', 'the secret').and_return()
+      remote_tarball, 'the secret').and_return()
     fake_appcontroller.should_receive('update').with_args(['baz'],
       'the secret').and_return()
-    fake_appcontroller.should_receive('is_app_running').with_args('baz',
-      'the secret').and_return(False).and_return(True)
     fake_appcontroller.should_receive('does_user_exist').with_args(
       'a@a.com', 'the secret').and_return('true')
     fake_appcontroller.should_receive('does_user_exist').with_args(
@@ -907,7 +908,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'baz', 'the secret').and_return(json.dumps(app_data))
     fake_appcontroller.should_receive('get_app_data').with_args(
       'baz', 'the secret').and_return(json.dumps(app_data))
-    fake_appcontroller.should_receive('get_all_stats').with_args(
+    fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps(app_stats_data))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
@@ -918,11 +919,12 @@ class TestAppScaleUploadApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
@@ -969,6 +971,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
       .and_return(None)
     flexmock(socket)
     socket.should_receive('socket').and_return(fake_socket)
+
+    flexmock(RemoteHelper).should_receive('copy_app_to_host').\
+      and_return(remote_tarball)
 
     argv = [
       "--keyname", self.keyname,

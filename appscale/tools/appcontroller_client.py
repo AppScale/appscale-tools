@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
-# Adapted from Hiranya's version
 
 
 # General-purpose Python library imports
@@ -18,8 +16,9 @@ import SOAPpy
 # AppScale-specific imports
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
-from custom_exceptions import TimeoutException
 from custom_exceptions import AppScaleException
+from custom_exceptions import BadSecretException
+from custom_exceptions import TimeoutException
 
 
 class AppControllerClient():
@@ -123,7 +122,9 @@ class AppControllerClient():
         return self.run_with_timeout(timeout_time, default, num_retries - 1,
           function, *args)
       else:
-        raise exception
+        raise AppControllerException("Got exception from socket: {}".format(
+          exception))
+
     except ssl.SSLError:
       # these are intermittent, so don't decrement our retry count for this
       signal.alarm(0)  # turn off the alarm before we retry
@@ -133,31 +134,30 @@ class AppControllerClient():
       signal.alarm(0)  # turn off the alarm
 
     if retval == self.BAD_SECRET_MESSAGE:
-      raise AppControllerException("Could not authenticate successfully" + \
+      raise BadSecretException("Could not authenticate successfully" + \
         " to the AppController. You may need to change the keyname in use.")
 
     return retval
 
 
-  def set_parameters(self, locations, credentials, app=None):
+  def set_parameters(self, locations, params):
     """Passes the given parameters to an AppController, allowing it to start
     configuring API services in this AppScale deployment.
 
     Args:
       locations: A list that contains the first node's IP address.
-      credentials: A list that contains API service-level configuration info,
+      params: A list that contains API service-level configuration info,
         as well as a mapping of IPs to the API services they should host
         (excluding the first node).
-      app: A list of the App Engine apps that should be started.
     Raises:
       AppControllerException: If the remote AppController indicates that there
         was a problem with the parameters passed to it.
     """
-    if app is None:
-      app = 'none'
 
-    result = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.set_parameters, json.dumps(locations), credentials, [app], self.secret)
+    result = self.run_with_timeout(
+      self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
+      self.server.set_parameters, json.dumps(locations), json.dumps(params),
+      self.secret)
     if result.startswith('Error'):
       raise AppControllerException(result)
 
@@ -172,6 +172,22 @@ class AppControllerClient():
     """
     all_ips = self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
       self.server.get_all_public_ips, self.secret)
+    if all_ips == "":
+      return []
+    else:
+      return json.loads(all_ips)
+
+
+  def get_all_private_ips(self):
+    """Queries the AppController for a list of all the machines running in this
+    AppScale deployment, and returns their private IP addresses.
+
+    Returns:
+      A list of the private IP addresses of each machine in this AppScale
+      deployment.
+    """
+    all_ips = self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
+      self.server.get_all_private_ips, self.secret)
     if all_ips == "":
       return []
     else:
@@ -194,14 +210,15 @@ class AppControllerClient():
       return json.loads(role_info)
 
 
-  def get_status(self):
+  def get_cluster_stats(self):
     """Queries the AppController to see what its internal state is.
 
     Returns:
       A str that indicates what the AppController reports its status as.
     """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "", self.DEFAULT_NUM_RETRIES,
-      self.server.status, self.secret)
+    stats = self.run_with_timeout(self.DEFAULT_TIMEOUT, "{}", self.DEFAULT_NUM_RETRIES,
+      self.server.get_cluster_stats_json, self.secret)
+    return json.loads(stats)
 
 
   def is_initialized(self):
@@ -228,6 +245,56 @@ class AppControllerClient():
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.start_roles_on_nodes, roles_to_nodes, self.secret)
 
+  def is_appscale_terminated(self):
+    """Queries the AppController to see if the system has been terminated.
+
+    Returns:
+      A boolean indicating whether appscale has finished running terminate
+        on all nodes.
+    """
+    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                 self.DEFAULT_NUM_RETRIES,
+                                 self.server.is_appscale_terminated,
+                                 self.secret)
+
+  def run_terminate(self, clean):
+    """Tells the AppController to terminate AppScale on the deployment.
+
+    Args:
+      clean: A boolean indicating whether the clean parameter should be
+        passed to terminate.rb.
+    Returns:
+      The request id assigned from executing the SOAP call on the remote
+        AppController.
+    """
+    request_id = self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error",
+                                       self.DEFAULT_NUM_RETRIES,
+                                       self.server.run_terminate, clean,
+                                       self.secret)
+    if request_id == "Error":
+      raise AppControllerException("Unable to send request to stop AppScale "
+                                   "deployment to AppController.")
+    else:
+      return request_id
+
+  def receive_server_message(self):
+    """Queries the AppController for a message that the server wants to send
+    to the tools.
+
+    Returns:
+      The message from the AppController in JSON with format :
+      {'ip':ip, 'status': status, 'output':output}
+    """
+    server_message = self.run_with_timeout(self.DEFAULT_TIMEOUT * 5,
+                                           "Error: Client Timed Out",
+                                           self.DEFAULT_NUM_RETRIES,
+                                           self.server.receive_server_message,
+                                           self.DEFAULT_TIMEOUT * 4,
+                                           self.secret)
+    if server_message.startswith("Error"):
+      raise AppControllerException(server_message)
+    else:
+      return server_message
 
   def stop_app(self, app_id):
     """Tells the AppController to no longer host the named application.
@@ -239,19 +306,6 @@ class AppControllerClient():
     """
     return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
       self.server.stop_app, app_id, self.secret)
-
-
-  def is_app_running(self, app_id):
-    """Queries the AppController to see if the named application is running.
-
-    Args:
-      app_id: A str that indicates which application we should be checking
-        for.
-    Returns:
-      True if the application is running, False otherwise.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.is_app_running, app_id, self.secret)
 
 
   def done_uploading(self, app_id, remote_app_location):
@@ -435,6 +489,9 @@ class AppControllerClient():
           return False
         else:
           raise Exception(user_exists)
+      except BadSecretException as exception:
+        raise AppControllerException(
+          "Exception when checking if a user exists: {0}".format(exception))
       except Exception as acc_error:
         if not silent:
           AppScaleLogger.log("Exception when checking if a user exists: {0}".

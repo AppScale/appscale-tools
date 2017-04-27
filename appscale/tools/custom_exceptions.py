@@ -1,11 +1,18 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale)
 
 
 class AppControllerException(Exception):
   """A special Exception class that should be thrown if the user tries to
   interact with an AppController, but receives a failure message back from
   that AppController.
+  """
+  pass
+
+
+class BadSecretException(AppControllerException):
+  """A special AppControllerException class that should be thrown if the user
+  tries to interact with an AppController, but receives the bad secret
+  message from that AppController.
   """
   pass
 

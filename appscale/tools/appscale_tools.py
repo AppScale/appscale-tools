@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 # General-purpose Python library imports
 import datetime
 import errno
@@ -18,11 +17,18 @@ import traceback
 import urllib2
 import uuid
 
+from collections import Counter
+from itertools import chain
+
 # AppScale-specific imports
+from tabulate import tabulate
+from SOAPpy import faultType
+
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
+from cluster_stats import NodeStats, AppInfo
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -49,6 +55,12 @@ def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
     RemoteHelper.ssh(ip, keyname, script, verbose)
   except ShellException as ssh_error:
     error_bucket.put(ssh_error)
+
+
+MIN_FREE_DISK_DB = 40.0
+MIN_FREE_DISK = 10.0
+MIN_AVAILABLE_MEMORY = 7.0
+MAX_LOADAVG = 3.0
 
 
 class AppScaleTools(object):
@@ -130,7 +142,8 @@ class AppScaleTools(object):
 
     # In virtualized cluster deployments, we need to make sure that the user
     # has already set up SSH keys.
-    if LocalState.get_from_yaml(options.keyname, 'infrastructure') == "xen":
+    if LocalState.get_infrastructure_option(keyname=options.keyname,
+                                            tag='infrastructure') == "xen":
       ips_to_check = []
       for ip_group in options.ips.values():
         ips_to_check.extend(ip_group)
@@ -213,30 +226,207 @@ class AppScaleTools(object):
 
 
   @classmethod
-  def describe_instances(cls, options):
-    """Queries each node in the currently running AppScale deployment and
-    reports on their status.
+  def print_cluster_status(cls, options):
+    """
+    Gets cluster stats and prints it nicely.
 
     Args:
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    login_host = LocalState.get_login_host(options.keyname)
-    login_acc = AppControllerClient(login_host,
-      LocalState.get_secret_key(options.keyname))
+    try:
+      login_host = LocalState.get_login_host(options.keyname)
+      login_acc = AppControllerClient(login_host,
+        LocalState.get_secret_key(options.keyname))
+      all_private_ips = login_acc.get_all_private_ips()
+      cluster_stats = login_acc.get_cluster_stats()
+    except (faultType, AppControllerException, BadConfigurationException):
+      AppScaleLogger.warn("AppScale deployment is probably down")
+      raise
 
-    for ip in login_acc.get_all_public_ips():
-      acc = AppControllerClient(ip, LocalState.get_secret_key(options.keyname))
-      AppScaleLogger.log("Status of node at {0}:".format(ip))
-      try:
-        AppScaleLogger.log(acc.get_status())
-      except Exception as exception:
-        AppScaleLogger.warn("Unable to contact machine: {0}\n".
-          format(str(exception)))
+    # Convert cluster stats to useful structures
+    node_stats = {
+      ip: next((n for n in cluster_stats if n["private_ip"] == ip), None)
+      for ip in all_private_ips
+    }
+    apps_dict = next((n["apps"] for n in cluster_stats if n["apps"]), {})
+    apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
+    nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
+    invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
-    AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}:{1}/status".format(login_host,
-      RemoteHelper.APP_DASHBOARD_PORT))
+    if options.verbose:
+      AppScaleLogger.log("-"*76)
+      cls._print_nodes_info(nodes, invisible_nodes)
+      cls._print_roles_info(nodes)
+    else:
+      AppScaleLogger.log("-"*76)
+
+    cls._print_cluster_summary(nodes, invisible_nodes, apps)
+    cls._print_apps(apps)
+    cls._print_status_alerts(nodes)
+
+    dashboard = next(
+      (app for app in apps if app.http == RemoteHelper.APP_DASHBOARD_PORT), None
+    )
+    if dashboard and dashboard.appservers > 1:
+      AppScaleLogger.success(
+        "\nView more about your AppScale deployment at http://{}:{}/status"
+        .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
+      )
+    else:
+      AppScaleLogger.log(
+        "\nAs soon as AppScale Dashboard is started you can visit it at "
+        "http://{0}:{1}/status and see more about your deployment"
+        .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
+      )
+
+  @classmethod
+  def _print_nodes_info(cls, nodes, invisible_nodes):
+    """ Prints table with details about cluster nodes
+    Args:
+      nodes: a list of NodeStats
+      invisible_nodes: a list of IPs of nodes which didn't report its stats
+    """
+    header = (
+      "PUBLIC IP", "PRIVATE IP", "I/L*", "CPU%xCORES", "MEMORY%", "DISK%",
+      "LOADAVG", "ROLES"
+    )
+    table = [
+      (n.public_ip, n.private_ip,
+       "{}/{}".format("+" if n.is_initialized else "-",
+                      "+" if n.is_loaded else "-"),
+       "{:.1f}x{}".format(n.cpu.load, n.cpu.count),
+       100.0 - n.memory.available_percent,
+       " ".join("{:.1f}".format(p.used_percent) for p in n.disk.partitions),
+       "{:.1f} {:.1f} {:.1f}".format(
+         n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
+       " ".join(n.roles))
+      for n in nodes
+    ]
+    table += [("?", ip, "?", "?", "?", "?", "?", "?") for ip in invisible_nodes]
+    table_str = tabulate(table, header, tablefmt="plain", floatfmt=".1f")
+    AppScaleLogger.log(table_str)
+    AppScaleLogger.log("* I/L means 'Is node Initialized'/'Is node Loaded'")
+
+  @classmethod
+  def _print_roles_info(cls, nodes):
+    """ Prints table with roles and number of nodes serving each specific role
+    Args:
+      nodes: a list of NodeStats
+    """
+    # Report number of nodes and roles running in the cluster
+    roles_counter = Counter(chain(*[node.roles for node in nodes]))
+    header = ("ROLE", "COUNT")
+    table = roles_counter.iteritems()
+    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
+
+  @classmethod
+  def _print_cluster_summary(cls, nodes, invisible_nodes, apps):
+    """ Prints summary about deployment state
+    Args:
+      nodes: a list of NodeStats
+      invisible_nodes: IPs of nodes which didn't report its status yet
+      apps: a list of AppInfo
+    """
+    loaded = sum(1 for node in nodes if node.is_loaded)
+    initialized = sum(1 for node in nodes if node.is_initialized)
+    started_apps = sum(1 for app in apps if app.appservers > 0)
+    total = len(nodes)
+
+    if invisible_nodes:
+      # We don't have full information about cluster
+      AppScaleLogger.warn(
+        "\nThere are {nodes} nodes that didn't report it's state"
+        .format(nodes=len(invisible_nodes))
+      )
+      if nodes:
+        AppScaleLogger.log(
+          "Available stats for {n} nodes: {init} are initialized, {loaded} "
+          "are loaded, {started} of {apps} apps are started".format(
+            init=initialized, loaded=loaded, n=total, started=started_apps,
+            apps=len(apps))
+        )
+      else:
+        AppScaleLogger.log("No stats is available yet.")
+      return
+
+    if loaded < total or initialized < total or started_apps < len(apps):
+      AppScaleLogger.log(
+        "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
+        "of {n} nodes are loaded, {started} of {apps} apps are started"
+        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
+                apps=len(apps))
+      )
+    else:
+      AppScaleLogger.success(
+        "\nAppScale is up. All {n} nodes are loaded".format(n=total)
+      )
+
+  @classmethod
+  def _print_apps(cls, apps):
+    """ Prints main information about deployed apps
+    Args:
+      apps: a list AppInfo
+    """
+    header = (
+      "APP NAME", "HTTP/HTTPS", "APPSERVERS/PENDING",
+      "REQS. ENQUEUED/TOTAL", "STATE"
+    )
+    table = (
+      (app.name, "{}/{}".format(app.http, app.https),
+       "{}/{}".format(app.appservers, app.pending_appservers),
+       "{}/{}".format(app.reqs_enqueued, app.total_reqs),
+       "Ready" if app.appservers > 0 else "Starting")
+      for app in apps
+    )
+    AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
+
+  @classmethod
+  def _print_status_alerts(cls, nodes):
+    """ Detects if there are hardware issues in the cluster and prints
+        all detected problems
+    Args:
+      nodes: a list of NodeStats
+    """
+    hardware_alerts = []
+    for node in nodes:
+      # Check disk space
+      db_roles = ["db_master", "db_slave", "database"]
+      is_db_node = any(role in node.roles for role in db_roles)
+      partition = node.disk.most_loaded
+      if is_db_node and partition.free_percent < MIN_FREE_DISK_DB:
+        msg = ("Only {free:.1f}% of '{part}' partition at db node is free"
+               .format(free=partition.free_percent, part=partition.mountpoint))
+        hardware_alerts.append((node, msg))
+      elif partition.free_percent < MIN_FREE_DISK:
+        msg = ("Only {free:.1f}% of '{part}' partition is free"
+               .format(free=partition.free_percent, part=partition.mountpoint))
+        hardware_alerts.append((node, msg))
+
+      # Check memory
+      if node.memory.available_percent < MIN_AVAILABLE_MEMORY:
+        msg = ("Only {available:.1f}% of memory is available"
+               .format(available=node.memory.available_percent))
+        hardware_alerts.append((node, msg))
+
+      # Check average load
+      is_overloaded = any((
+        node.loadavg.last_1_min / node.cpu.count > MAX_LOADAVG,
+        node.loadavg.last_5_min / node.cpu.count > MAX_LOADAVG,
+        node.loadavg.last_15_min / node.cpu.count > MAX_LOADAVG,
+      ))
+      if is_overloaded:
+        msg = ("Average load is too high for {} CPUs: {:.1f} {:.1f} {:.1f}"
+               .format(node.cpu.count, node.loadavg.last_1_min,
+                       node.loadavg.last_5_min,
+                       node.loadavg.last_15_min))
+        hardware_alerts.append((node, msg))
+
+    if hardware_alerts:
+      AppScaleLogger.warn("\nSome nodes are in alarm state:")
+      header = ("PUBLIC IP", "PRIVATE IP", "ALERT MESSAGE")
+      table = ((n.public_ip, n.private_ip, msg) for n, msg in hardware_alerts)
+      AppScaleLogger.warn(tabulate(table, headers=header, tablefmt="plain"))
 
 
   @classmethod
@@ -271,13 +461,15 @@ class AppScaleTools(object):
 
     # The log paths that we collect logs from.
     log_paths = [
+      {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'},
       {'remote': '/var/log/appscale'},
+      {'remote': '/var/log/haproxy.log*'},
       {'remote': '/var/log/kern.log*'},
       {'remote': '/var/log/monit.log*'},
       {'remote': '/var/log/nginx'},
+      {'remote': '/var/log/rabbitmq/*', 'local': 'rabbitmq'},
       {'remote': '/var/log/syslog*'},
-      {'remote': '/var/log/zookeeper'},
-      {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'}
+      {'remote': '/var/log/zookeeper'}
     ]
 
     failures = False
@@ -396,25 +588,21 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     acc = AppControllerClient(login_host, secret)
 
-    if not acc.is_app_running(options.appname):
-      raise AppScaleException("The given application is not currently running.")
-
     # Makes a call to the AppController to get all the stats and looks
     # through them for the http port the app can be reached on.
     http_port = None
     for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_all_stats()
+      result = acc.get_app_info_map()
       try:
-        json_result = json.loads(result)
-        apps_result = json_result['apps']
-        current_app = apps_result[options.appname]
-        http_port = current_app['http']
+        current_app = result[options.appname]
+        http_port = current_app['nginx']
         if http_port:
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.",
-            options.verbose)
+        AppScaleLogger.verbose(
+          "Got json error from get_app_info_map result:\n{}".format(result),
+          options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(
@@ -480,17 +668,13 @@ class AppScaleTools(object):
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
-
-    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
-
     if options.infrastructure:
       if not options.disks and not options.test and not options.force:
         LocalState.ensure_user_wants_to_run_without_disks()
-      AppScaleLogger.log("Starting AppScale " + reduced_version +
-        " over the " + options.infrastructure + " cloud.")
-    else:
-      AppScaleLogger.log("Starting AppScale " + reduced_version +
-        " over a virtualized cluster.")
+
+    reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
+    AppScaleLogger.log("Starting AppScale " + reduced_version)
+
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
       APPSCALE_VERSION)
@@ -498,24 +682,44 @@ class AppScaleTools(object):
     node_layout = NodeLayout(options)
     if not node_layout.is_valid():
       raise BadConfigurationException("There were errors with your " + \
-        "placement strategy:\n{0}".format(str(node_layout.errors())))
+                                      "placement strategy:\n{0}".format(str(node_layout.errors())))
 
-    public_ip, instance_id = RemoteHelper.start_head_node(options, my_id,
-      node_layout)
-    AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines " +
-      "for use. This can take few minutes.")
+    head_node = node_layout.head_node()
+    # Start VMs in cloud via cloud agent.
+    if options.infrastructure:
+      node_layout = RemoteHelper.start_all_nodes(options, node_layout)
 
-    # Write our metadata as soon as possible to let users SSH into those
-    # machines via 'appscale ssh'.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
+      # Enables root logins and SSH access on the head node.
+      RemoteHelper.enable_root_ssh(options, head_node.public_ip)
+    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
+                           options.verbose)
 
-    acc = AppControllerClient(public_ip, LocalState.get_secret_key(
-      options.keyname))
+    # Ensure all nodes are compatible.
+    RemoteHelper.ensure_machine_is_compatible(
+      head_node.public_ip, options.keyname, options.verbose)
 
-    # Let's now wait till the server is initialized.
+    # Use rsync to move custom code into the deployment.
+    if options.scp:
+      AppScaleLogger.log("Copying over local copy of AppScale from {0}".
+        format(options.scp))
+      RemoteHelper.rsync_files(head_node.public_ip, options.keyname, options.scp,
+        options.verbose)
+
+    # Start services on head node.
+    RemoteHelper.start_head_node(options, my_id, node_layout)
+
+    # Write deployment metadata to disk (facilitates SSH operations, etc.)
+    db_master = node_layout.db_master().private_ip
+    head_node = node_layout.head_node().public_ip
+    LocalState.update_local_metadata(options, db_master, head_node)
+
+    # Copy the locations.json to the head node
+    RemoteHelper.copy_local_metadata(node_layout.head_node().public_ip,
+                                     options.keyname, options.verbose)
+
+    # Wait for services on head node to start.
+    secret_key = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(head_node, secret_key)
     try:
       while not acc.is_initialized():
         AppScaleLogger.log('Waiting for head node to initialize...')
@@ -523,26 +727,20 @@ class AppScaleTools(object):
         # we will have to initialize the database.
         time.sleep(cls.SLEEP_TIME*3)
     except socket.error as socket_error:
-      AppScaleLogger.warn(
-        'Unable to initialize AppController: {}'.format(socket_error.message))
+      AppScaleLogger.warn('Unable to initialize AppController: {}'.
+                          format(socket_error.message))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        public_ip, options.keyname, options.verbose)
+        head_node, options.keyname, options.verbose)
       raise AppControllerException(message)
 
+    # Set up admin account.
     try:
       # We don't need to have any exception information here: we do expect
       # some anyway while the UserAppServer is coming up.
       acc.does_user_exist("non-existent-user", True)
-    except Exception as exception:
+    except Exception:
       AppScaleLogger.log('UserAppServer not ready yet. Retrying ...')
       time.sleep(cls.SLEEP_TIME)
-
-    # Update our metadata again so that users can SSH into other boxes that
-    # may have been started.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
 
     if options.admin_user and options.admin_pass:
       AppScaleLogger.log("Using the provided admin username/password")
@@ -553,24 +751,19 @@ class AppScaleTools(object):
     else:
       username, password = LocalState.get_credentials()
 
-    RemoteHelper.create_user_accounts(username, password, public_ip,
-      options.keyname, options.clear_datastore)
+    RemoteHelper.create_user_accounts(username, password, head_node,
+                                      options.keyname)
     acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
 
-    RemoteHelper.wait_for_machines_to_finish_loading(public_ip, options.keyname)
-    # Finally, update our metadata once we know that all of the machines are
-    # up and have started all their API services.
-    LocalState.update_local_metadata(options, node_layout, public_ip,
-      instance_id)
-    RemoteHelper.copy_local_metadata(public_ip, options.keyname,
-      options.verbose)
-
+    # Wait for machines to finish loading and AppScale Dashboard to be deployed.
+    RemoteHelper.wait_for_machines_to_finish_loading(head_node, options.keyname)
     RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
       options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
+
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success("View status information about your AppScale " + \
-      "deployment at http://{0}:{1}/status".format(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
+                           "deployment at http://{0}:{1}".format(LocalState.get_login_host(
+                           options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
@@ -604,28 +797,62 @@ class AppScaleTools(object):
       AppScaleException: If AppScale is not running, and thus can't be
       terminated.
     """
-    if not os.path.exists(LocalState.get_secret_key_location(options.keyname)):
-      raise AppScaleException("AppScale is not running with the keyname {0}".
+    try:
+      infrastructure = LocalState.get_infrastructure(options.keyname)
+    except IOError:
+      raise AppScaleException("Cannot find AppScale's configuration for keyname {0}".
         format(options.keyname))
 
-    infrastructure = LocalState.get_infrastructure(options.keyname)
+    if infrastructure == "xen" and options.terminate:
+      raise AppScaleException("Terminate option is invalid for cluster mode.")
 
-    # If the user is on a cloud deployment, and not backing their data to
-    # persistent disks, warn them before shutting down AppScale.
-    # Also, if we're in developer mode, skip the warning.
-    if infrastructure != "xen" and not LocalState.are_disks_used(
-      options.keyname) and not options.test:
-      LocalState.ensure_user_wants_to_terminate()
+    if infrastructure == "xen" or not options.terminate:
+      # We are in cluster mode: let's check if AppScale is running.
+      if not os.path.exists(LocalState.get_secret_key_location(options.keyname)):
+        raise AppScaleException("AppScale is not running with the keyname {0}".
+          format(options.keyname))
 
-    if infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+    # Stop gracefully the AppScale deployment.
+    try:
+      RemoteHelper.terminate_virtualized_cluster(options.keyname,
+                                                 options.clean,
+                                                 options.verbose)
+    except (IOError, AppScaleException, AppControllerException,
+            BadConfigurationException) as e:
+      if not (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
+            options.terminate):
+        raise
+
+      if options.test:
+        AppScaleLogger.warn(e)
+      else:
+        AppScaleLogger.verbose(e, options.verbose)
+        if isinstance(e, AppControllerException):
+          response = raw_input(
+            'AppScale may not have shut down properly, are you sure you want '
+            'to continue terminating? (y/N) ')
+        else:
+          response = raw_input(
+            'AppScale could not find the configuration files for this '
+            'deployment, are you sure you want to continue terminating? '
+            '(y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException("Cancelled cloud termination.")
+
+
+    # And if we are on a cloud infrastructure, terminate instances if
+    # asked.
+    if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
+          options.terminate):
       RemoteHelper.terminate_cloud_infrastructure(options.keyname,
         options.verbose)
-    else:
-      RemoteHelper.terminate_virtualized_cluster(options.keyname,
-        options.verbose)
-
-    LocalState.cleanup_appscale_files(options.keyname)
-    AppScaleLogger.success("Successfully shut down your AppScale deployment.")
+    elif infrastructure in InfrastructureAgentFactory.VALID_AGENTS and not \
+        options.terminate:
+      AppScaleLogger.log("AppScale did not terminate any of your cloud "
+                         "instances, to terminate them run 'appscale "
+                         "down --terminate'")
+    if options.clean:
+      LocalState.clean_local_metadata(keyname=options.keyname)
 
 
   @classmethod
@@ -671,6 +898,10 @@ class AppScaleTools(object):
       file_location)
     AppEngineHelper.validate_app_id(app_id)
 
+    extras = {}
+    if app_language == 'go':
+      extras = LocalState.get_extra_go_dependencies(options.file, options.test)
+
     if app_language == 'java':
       if AppEngineHelper.is_sdk_mismatch(file_location):
         AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
@@ -691,7 +922,7 @@ class AppScaleTools(object):
     if not acc.does_user_exist(username):
       password = LocalState.get_password_from_stdin()
       RemoteHelper.create_user_accounts(username, password,
-        login_host, options.keyname, clear_datastore=False)
+        login_host, options.keyname)
 
     app_exists = acc.does_app_exist(app_id)
     app_admin = acc.get_app_admin(app_id)
@@ -711,7 +942,7 @@ class AppScaleTools(object):
       AppScaleLogger.log("Ignoring .pyc files")
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      options.keyname, options.verbose)
+      options.keyname, options.verbose, extras)
 
     acc.done_uploading(app_id, remote_file_path)
     acc.update([app_id])
@@ -727,18 +958,17 @@ class AppScaleTools(object):
     # through them for the http port the app can be reached on.
     http_port = None
     for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_all_stats()
+      result = acc.get_app_info_map()
       try:
-        json_result = json.loads(result)
-        apps_result = json_result['apps']
-        current_app = apps_result[app_id]
-        http_port = current_app['http']
+        current_app = result[app_id]
+        http_port = current_app['nginx']
         if http_port:
           break
         time.sleep(cls.SLEEP_TIME)
       except (KeyError, ValueError):
-        AppScaleLogger.verbose("Got json error from get_all_data result.",
-            options.verbose)
+        AppScaleLogger.verbose(
+          "Got json error from get_app_info_map result:\n{}".format(result),
+          options.verbose)
         time.sleep(cls.SLEEP_TIME)
     if not http_port:
       raise AppScaleException(

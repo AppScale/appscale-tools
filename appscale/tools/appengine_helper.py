@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python libraries
 import os
+import socket
 import re
 import yaml
 
@@ -261,3 +261,27 @@ class AppEngineHelper(object):
     if not cls.APP_ID_REGEX.match(app_id):
       raise AppEngineConfigException("Invalid application ID. You can only" + \
         " use alphanumeric characters and/or '-'.")
+
+  @classmethod
+  def is_valid_ipv4_address(cls, address):
+    """ Determines whether or not a string is an IP address.
+
+    Args:
+      address: A string containing a potential address.
+    Returns:
+      A boolean indicating whether or not the string is a valid IP address.
+    """
+    try:
+      socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:
+      # The inet_pton function is not available on all platforms.
+      try:
+        socket.inet_aton(address)
+      except socket.error:
+        return False
+      # Reject shortened addresses.
+      return address.count('.') == 3
+    except socket.error:
+      return False
+
+    return True

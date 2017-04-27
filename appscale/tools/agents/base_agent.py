@@ -66,7 +66,7 @@ class BaseAgent:
     raise NotImplementedError
 
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """Start a set of virtual machines using the parameters provided.
 
     Args:
@@ -222,7 +222,9 @@ class BaseAgent:
 
 
   def diff(self, list1, list2):
-    """Returns the list of entries that are present in list1 but not in list2.
+    """
+    Returns the list of entries that are present in list1 but not
+    in list2.
 
     Args:
       list1: A list of elements
@@ -231,7 +233,12 @@ class BaseAgent:
     Returns:
       A list of elements unique to list1
     """
-    return sorted(set(list1) - set(list2))
+    diffed_list = []
+    list2 = set(list2)
+    for item in list1:
+      if item not in list2:
+        diffed_list.append(item)
+    return diffed_list
 
 
 class AgentConfigurationException(Exception):

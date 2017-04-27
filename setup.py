@@ -1,7 +1,5 @@
-import glob
 import sys
 
-from appscale.tools import version_helper
 from setuptools import setup
 
 # Require users to uninstall versions that used the appscale namespace.
@@ -13,8 +11,6 @@ try:
 except ImportError:
   pass
 
-
-version_helper.ensure_valid_python_is_used()
 
 long_description = """AppScale Tools
 --------------
@@ -37,7 +33,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='3.0.1',
+  version='3.2.1',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
@@ -46,22 +42,25 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'adal',
+    'adal==0.4.5',
+    'azure==2.0.0rc6',
+    'azure-common[autorest]==1.1.4',
     'cryptography',
     'argparse',
     'boto',
-    'google-api-python-client>=1.5.0',
+    'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
-    'jwt',
     'msrest',
     'msrestazure',
-    'oauth2client>=2.0.0',
+    'oauth2client==4.0.0',
     'PyYAML',
-    'requests>=2.7.0',
+    'requests[security]>=2.7.0',
+    'setuptools>=11.3,<34',
     'SOAPpy',
     'termcolor',
-    'wstools==0.4.3'
+    'wstools==0.4.3',
+    'tabulate==0.7.7'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
@@ -74,7 +73,27 @@ setup(
     'Topic :: Utilities'
   ],
   namespace_packages=['appscale'],
-  packages=['appscale', 'appscale.tools', 'appscale.tools.agents'],
-  scripts=glob.glob('bin/*'),
+  packages=['appscale', 'appscale.tools', 'appscale.tools.agents',
+            'appscale.tools.scripts'],
+  entry_points={
+    'console_scripts': [
+      'appscale=appscale.tools.scripts.appscale:main',
+      'appscale-add-instances=appscale.tools.scripts.add_instances:main',
+      'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
+      'appscale-describe-instances='
+        'appscale.tools.scripts.describe_instances:main',
+      'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
+      'appscale-get-property=appscale.tools.scripts.get_property:main',
+      'appscale-relocate-app=appscale.tools.scripts.relocate_app:main',
+      'appscale-remove-app=appscale.tools.scripts.remove_app:main',
+      'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
+      'appscale-run-instances=appscale.tools.scripts.run_instances:main',
+      'appscale-set-property=appscale.tools.scripts.set_property:main',
+      'appscale-terminate-instances='
+        'appscale.tools.scripts.terminate_instances:main',
+      'appscale-upgrade=appscale.tools.scripts.upgrade:main',
+      'appscale-upload-app=appscale.tools.scripts.upload_app:main'
+    ]
+  },
   package_data={'appscale.tools': ['templates/*']}
 )

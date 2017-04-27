@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -72,11 +71,12 @@ class TestAppScaleGatherLogs(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(json.dumps(
+      {"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
     builtins.should_receive('open').with_args(
@@ -102,8 +102,10 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     # fake the creation of the log directories locally
     os.should_receive('mkdir').with_args('/tmp/foobaz/public1').and_return()
     os.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2').and_return()
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2/cassandra')
+    os.should_receive('mkdir').with_args('/tmp/foobaz/public2/rabbitmq')
 
     # finally, fake the copying of the log files
     flexmock(subprocess)
@@ -116,9 +118,15 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/monit*'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(
+      re.compile('/var/log/haproxy*'), shell=True, stdout=self.fake_temp_file,
+      stderr=subprocess.STDOUT).and_return(self.success)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/nginx'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)
+    subprocess.should_receive('Popen').with_args(
+      re.compile('/var/log/rabbitmq'), shell=True, stdout=self.fake_temp_file,
+      stderr=subprocess.STDOUT).and_return(self.success)
     subprocess.should_receive('Popen').with_args(re.compile('/var/log/syslog*'),
       shell=True, stdout=self.fake_temp_file, stderr=subprocess.STDOUT) \
       .and_return(self.success)

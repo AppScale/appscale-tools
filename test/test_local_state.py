@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -22,11 +21,14 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
+from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.custom_exceptions import ShellException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
+from appscale.tools.node_layout import SimpleNode
 from appscale.tools.parse_args import ParseArgs
 
 
@@ -61,10 +63,14 @@ class TestLocalState(unittest.TestCase):
 
 
   def test_ensure_appscale_isnt_running_but_it_is(self):
-    # if there is a locations.yaml file and force isn't set,
-    # we should abort
+    # if there is a secret file and force isn't set, we should abort
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
+
+    flexmock(LocalState).should_receive('get_login_host').and_return('login_ip')
+    flexmock(LocalState).should_receive('get_secret_key').and_return('super-secret')
+    (flexmock(AppControllerClient)
+       .should_receive('get_all_public_ips').and_return("OK"))
 
     self.assertRaises(BadConfigurationException,
       LocalState.ensure_appscale_isnt_running, self.keyname,
@@ -72,18 +78,14 @@ class TestLocalState(unittest.TestCase):
 
 
   def test_ensure_appscale_isnt_running_but_it_is_w_force(self):
-    # if there is a locations.yaml file and force is set,
+    # if there is a secret key file and force is set,
     # we shouldn't abort
-    os.path.should_receive('exists').with_args(self.locations_yaml) \
-      .and_return(True)
 
     LocalState.ensure_appscale_isnt_running(self.keyname, True)
 
 
   def test_ensure_appscale_isnt_running_and_it_isnt(self):
-    # if there isn't a locations.yaml file, we're good to go
-    os.path.should_receive('exists').with_args(self.locations_yaml) \
-      .and_return(False)
+    # if there isn't a secret key file, we're good to go
 
     LocalState.ensure_appscale_isnt_running(self.keyname, False)
 
@@ -92,11 +94,11 @@ class TestLocalState(unittest.TestCase):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
-      appengine='1', autoscale=False, group='bazgroup',
+      appengine='1', autoscale=False, group='bazgroup', replication=None,
       infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, alter_etc_resolv=True,
-      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
-      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
+      use_spot_instances=True, max_spot_price=1.23, clear_datastore=False,
+      disks={'node-1' : 'vol-ABCDEFG'}, zone='my-zone-1b', verbose=True,
+      user_commands=[], flower_password="abc",
       max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
@@ -105,32 +107,33 @@ class TestLocalState(unittest.TestCase):
       'max' : 1
     })
 
+    flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
+      'public1', 'some cloud', ['some role']))
+
     expected = {
-      'alter_etc_resolv' : 'True',
-      'clear_datastore' : 'False',
       'table' : 'cassandra',
-      'hostname' : 'public1',
-      'ips' : json.dumps([]),
+      'login' : 'public1',
+      'clear_datastore': 'False',
       'keyname' : 'boo',
-      'replication' : '1',
       'appengine' : '1',
       'autoscale' : 'False',
+      'replication': 'None',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : 1,
-      'max_images' : 1,
-      'use_spot_instances' : True,
+      'min_images' : '1',
+      'max_images' : '1',
+      'use_spot_instances' : 'True',
       'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
-      'zone' : json.dumps('my-zone-1b'),
+      'zone' : 'my-zone-1b',
       'verbose' : 'True',
       'flower_password' : 'abc',
-      'max_memory' : ParseArgs.DEFAULT_MAX_MEMORY
+      'max_memory' : str(ParseArgs.DEFAULT_MAX_MEMORY)
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
-      'public1', {'max_spot_price':'1.23'})
+      {'max_spot_price':'1.23'})
     self.assertEquals(expected, actual)
 
 
@@ -184,11 +187,6 @@ class TestLocalState(unittest.TestCase):
       LocalState.get_secret_key_location('booscale'), 'r') \
       .and_return(fake_secret)
 
-    # Mock out writing the yaml file.
-    locations_yaml = LocalState.get_locations_yaml_location('booscale')
-    builtins.should_receive('open').with_args(locations_yaml, 'w').\
-      and_return(flexmock(write=lambda yaml_contents: None))
-
     # Mock out writing the json file.
     json_location = LocalState.get_locations_json_location('booscale')
     builtins.should_receive('open').with_args(json_location, 'w')\
@@ -202,9 +200,7 @@ class TestLocalState(unittest.TestCase):
       'infrastructure' : 'ec2',
       'table' : 'cassandra'
     })
-    host = 'public1'
-    instance_id = 'i-ABCDEFG'
-    LocalState.update_local_metadata(options, node_layout, host, instance_id)
+    LocalState.update_local_metadata(options, 'public1', 'public1')
 
 
   def test_extract_tgz_app_to_dir(self):

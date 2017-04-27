@@ -17,16 +17,30 @@ if [ -f ./debian/control.${DIST} ]; then
     fi
 fi
 
+# Some dependencies require a newer Pip than the repositories provide.
+case ${DIST} in
+    precise|trusty)
+        pip install -U pip
+        hash -r
+        ;;
+esac
+
+# The syntax used in the install_requires field for some dependencies requires
+# setuptools>=8.0. The namespace import that appscale packages use is not
+# compatible with setuptools 34.
+pip install "setuptools>=8.0,<34"
+
 # These system packages are too old for google-api-python-client>=1.5.0.
 # The latest azure package needs to be installed with a --pre flag.
 case ${DIST} in
     precise|trusty)
         pip install --upgrade httplib2 six
-        pip install --pre azure
         ;;
 esac
 
-python2 setup.py install
+# Fill in new dependencies.
+# See pip.pypa.io/en/stable/user_guide/#only-if-needed-recursive-upgrade.
+pip install --upgrade --no-deps . && pip install .
 if [ $? -ne 0 ]; then
     echo "Unable to complete AppScale tools installation."
     exit 1

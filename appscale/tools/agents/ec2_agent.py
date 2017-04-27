@@ -130,10 +130,17 @@ class EC2Agent(BaseAgent):
     """
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
+    is_autoscale = parameters['autoscale_agent']
 
     AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
       " is not already registered.")
     conn = self.open_connection(parameters)
+
+    # While creating instances during autoscaling, we do not need to create a
+    # new keypair or a security group. We just make use of the existing one.
+    if is_autoscale in ['True', True]:
+      return
+
     if conn.get_key_pair(keyname):
       self.handle_failure("SSH keyname {0} is already registered. Please " \
         "change the 'keyname' specified in your AppScalefile to a different " \
@@ -259,7 +266,8 @@ class EC2Agent(BaseAgent):
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
-      'IS_VERBOSE' : args.get('verbose', False)
+      'IS_VERBOSE' : args.get('verbose', False),
+      'autoscale_agent' : False
     }
 
     if params[self.PARAM_ZONE]:
@@ -292,8 +300,9 @@ class EC2Agent(BaseAgent):
     return params
 
 
-  def get_params_from_yaml(self, keyname):
-    """Searches through the locations.yaml file to build a dict containing the
+  def get_cloud_params(self, keyname):
+    """Searches through the locations.json file with key
+    'infrastructure_info' to build a dict containing the
     parameters necessary to interact with Amazon EC2.
 
     Args:
@@ -370,11 +379,11 @@ class EC2Agent(BaseAgent):
       if (i.state == 'running' or (pending and i.state == 'pending'))\
            and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
-  def run_instances(self, count, parameters, security_configured):
+  def run_instances(self, count, parameters, security_configured, public_ip_needed):
     """
     Spawns the specified number of EC2 instances using the parameters
     provided. This method is blocking in that it waits until the
@@ -396,12 +405,17 @@ class EC2Agent(BaseAgent):
     instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
-    spot = parameters[self.PARAM_SPOT]
     zone = parameters[self.PARAM_ZONE]
+
+    # In case of autoscaling, the server side passes these parameters as a
+    # string, so this check makes sure that spot instances are only created
+    # when the flag is True.
+    spot = parameters[self.PARAM_SPOT] in ['True', 'true', True]
 
     AppScaleLogger.log("Starting {0} machines with machine id {1}, with " \
       "instance type {2}, keyname {3}, in security group {4}, in availability" \
       " zone {5}".format(count, image_id, instance_type, keyname, group, zone))
+
     if spot:
       AppScaleLogger.log("Using spot instances")
     else:
@@ -602,21 +616,6 @@ class EC2Agent(BaseAgent):
         return True
       if time.time() - time_start > max_wait_time:
         return False
-
-
-  def create_image(self, instance_id, name, parameters):
-    """ Creates a new cloud image from the given instance id.
-    
-    Args:
-      instance_id: id of the (stopped) instance to create an image of.
-      name: A str containing the human-readable name for the image.
-      parameters: A dict that contains the credentials needed to authenticate
-        with AWS.
-    Returns:
-      A str containing the ami of the new image.
-     """
-    conn = self.open_connection(parameters)
-    return conn.create_image(instance_id, name)
 
 
   def does_address_exist(self, parameters):
@@ -831,6 +830,6 @@ class EC2Agent(BaseAgent):
     for i in instances:
       if i.state == status and i.key_name == keyname:
         instance_ids.append(i.id)
-        public_ips.append(i.public_dns_name)
-        private_ips.append(i.private_dns_name)
+        public_ips.append(i.ip_address)
+        private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids

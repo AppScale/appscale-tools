@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch, Brian Drawert
-
 
 # General-purpose Python library imports
 import json
@@ -22,17 +20,32 @@ import SOAPpy
 
 # AppScale import, the library that we're testing here
 from appscale.tools.agents.euca_agent import EucalyptusAgent
+from appscale.tools.agents import factory
 from appscale.tools.agents.gce_agent import CredentialTypes
 from appscale.tools.agents.gce_agent import GCEAgent
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
-from appscale.tools.appscale_tools import AppScaleTools
-from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
+from appscale.tools.node_layout import SimpleNode
 from appscale.tools.remote_helper import RemoteHelper
 
+
+class FakeAgent(object):
+  PARAM_CREDENTIALS = None
+  PARAM_SPOT_PRICE = None
+  PARAM_REGION = None
+
+  def get_params_from_args(self, options):
+    return {}
+
+  @classmethod
+  def describe_instances(self, params):
+    return (
+     ['0.0.0.1', '0.0.0.2', '0.0.0.3', '0.0.0.4'],
+     ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4'],
+     ['i-APPSCALE1', 'i-APPSCALE2', 'i-APPSCALE3', 'i-APPSCALE4'])
 
 class TestRemoteHelper(unittest.TestCase):
 
@@ -48,10 +61,28 @@ class TestRemoteHelper(unittest.TestCase):
 
     # set up some fake options so that we don't have to generate them via
     # ParseArgs
-    self.options = flexmock(infrastructure='ec2', group='boogroup',
-      machine='ami-ABCDEFG', instance_type='m1.large', keyname='bookey',
-      table='cassandra', verbose=False, test=False, use_spot_instances=False,
-      zone='my-zone-1b', static_ip=None)
+    self.options = flexmock(
+      infrastructure='ec2',
+      group='boogroup',
+      machine='ami-ABCDEFG',
+      instance_type='m1.large',
+      keyname='bookey',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='my-zone-1b',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='400',
+      ips={
+        'zookeeper': 'node-2', 'master': 'node-1',
+        'appengine': 'node-3', 'database': 'node-4'}
+    )
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
 
@@ -118,7 +149,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_pending_reservation = flexmock(instances=fake_pending_instance)
 
     fake_running_instance = flexmock(state='running', key_name='bookey',
-      id='i-12345678', public_dns_name='public1', private_dns_name='private1')
+      id='i-12345678', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
@@ -179,112 +210,87 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('scp .*/root/.appscale/bookey.key'),False,5)\
       .and_return()
 
+  def test_start_head_node(self):
+    self.options = flexmock(
+      infrastructure='public cloud',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+    )
 
-  def test_start_head_node_in_cloud_but_ami_not_appscale(self):
-    local_state = flexmock(LocalState)
+    self.node_layout = NodeLayout(self.options)
 
-    # Mock out our attempts to enable the root login.
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
+    flexmock(LocalState).\
+      should_receive("generate_secret_key").\
+      with_args(self.options.keyname).\
+      and_return('some secret key')
 
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
+    flexmock(LocalState).\
+      should_receive("get_key_path_from_name").\
+      with_args(self.options.keyname).\
+      and_return('some key path')
 
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+    flexmock(NodeLayout).should_receive('head_node').\
+      and_return(SimpleNode('some IP', 'cloud'))
 
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory).\
+      should_receive('create_agent').\
+      with_args('public cloud').\
+      and_return(fake_agent)
 
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
-      )
-    ).and_return()
+    self.additional_params = {}
+    deployment_params = {}
 
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sed -n '
-        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
-      )
-    ).and_return()
+    flexmock(LocalState).\
+      should_receive('generate_deployment_params').\
+      with_args(self.options, self.node_layout, self.additional_params).\
+      and_return(deployment_params)
 
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
-    ).and_return()
+    flexmock(AppScaleLogger).should_receive('log').and_return()
+    flexmock(AppScaleLogger).should_receive('remote_log_tools_state').\
+      and_return()
 
-    # Assume AppScale is not installed.
+    flexmock(time).should_receive('sleep').and_return()
+
     flexmock(RemoteHelper).\
-      should_receive('get_host_appscale_version').and_return(None)
+      should_receive('copy_deployment_credentials').\
+      with_args('some IP', self.options).\
+      and_return()
 
-    # Check that the cleanup routine is called on error.
-    flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return().ordered()
-
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
-
-
-  def test_start_head_node_in_cloud_but_ami_wrong_version(self):
-    local_state = flexmock(LocalState)
-    # mock out our attempts to enable the root login.
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo touch /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
-
-    local_state.should_receive('shell') \
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
-      stdin=re.compile(
-        'sudo sed -n '
-        '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
-      )
-    ).and_return()
-
-    local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
-    ).and_return()
-
-    # Assume configuration directory exists.
-    local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5,
-      stdin=re.compile('ls {}'.format(RemoteHelper.CONFIG_DIR))
-    ).and_return()
-
-    # Assume AppScale is not installed.
     flexmock(RemoteHelper).\
-      should_receive('get_host_appscale_version').and_return('X.Y.Z')
+      should_receive('run_user_commands').\
+      with_args('some IP', self.options.user_commands,
+                self.options.keyname, self.options.verbose).\
+      and_return()
 
-    # check that the cleanup routine is called on error
-    flexmock(AppScaleTools).should_receive('terminate_instances')\
-      .and_return()
+    flexmock(RemoteHelper).\
+      should_receive('start_remote_appcontroller').\
+      with_args('some IP', self.options.keyname, self.options.verbose).\
+      and_return()
 
-    self.assertRaises(AppScaleException, RemoteHelper.start_head_node,
-      self.options, self.my_id, self.node_layout)
+    layout = {}
+    flexmock(NodeLayout).should_receive('to_list').and_return(layout)
+
+    flexmock(AppControllerClient).\
+      should_receive('set_parameters').\
+      with_args(layout, deployment_params).\
+      and_return()
+
+    RemoteHelper.start_head_node(self.options, 'an ID', self.node_layout)
 
 
   def test_rsync_files_from_dir_that_doesnt_exist(self):
@@ -431,11 +437,12 @@ class TestRemoteHelper(unittest.TestCase):
       LocalState.get_locations_json_location('bookey')).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps([{
-      "public_ip" : "public1",
-      "private_ip" : "private1",
-      "jobs" : ["shadow", "login"]
-    }]))
+    fake_nodes_json.should_receive('read').and_return(
+      json.dumps({"node_info": [{
+        "public_ip": "public1",
+        "private_ip": "private1",
+        "jobs": ["shadow", "login"]
+      }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location('bookey'), 'r') \
       .and_return(fake_nodes_json)
@@ -454,7 +461,7 @@ class TestRemoteHelper(unittest.TestCase):
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
     RemoteHelper.create_user_accounts('boo@foo.goo', 'password', 'public1',
-      'bookey', False)
+      'bookey')
 
 
   def test_wait_for_machines_to_finish_loading(self):
@@ -499,3 +506,138 @@ class TestRemoteHelper(unittest.TestCase):
       .and_return(fake_soap)
 
     RemoteHelper.wait_for_machines_to_finish_loading('public1', 'bookey')
+
+
+  reattach_options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'master': 'node-1', 'zookeeper': 'node-2',
+        'appengine': 'node-3', 'database': 'node-4'}
+    )
+
+  reattach_node_info = [{ "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE1",
+                          "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                                   'taskqueue_master'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE2",
+                          "jobs": ['memcache', 'appengine'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE3",
+                          "jobs": ['zookeeper'] },
+                        { "public_ip": "0.0.0.0",
+                          "private_ip": "0.0.0.0",
+                          "instance_id": "i-APPSCALE4",
+                          "jobs": ['db_master'] }
+                        ]
+
+  def test_start_all_nodes_reattach(self):
+    self.node_layout = NodeLayout(self.reattach_options)
+    self.node_layout.is_valid()
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('euca'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    LocalState.should_receive('get_local_nodes_info') \
+      .and_return(self.reattach_node_info)
+
+    RemoteHelper.start_all_nodes(self.reattach_options,
+                                 self.node_layout)
+
+
+
+  def test_start_all_nodes_reattach_changed_asf(self):
+    self.options = flexmock(
+      infrastructure='public cloud',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips={
+        'zookeeper': 'node-2', 'master': 'node-1',
+        'appengine': 'node-3', 'database': 'node-3'}
+    )
+
+    self.node_layout = NodeLayout(self.options)
+
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('public cloud'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    LocalState.should_receive('get_local_nodes_info')\
+      .and_return(self.reattach_node_info)
+
+    self.assertRaises(BadConfigurationException)
+
+  def test_start_all_nodes_reattach_changed_locations(self):
+    self.node_layout = NodeLayout(self.reattach_options)
+
+    fake_agent = FakeAgent()
+    flexmock(factory.InfrastructureAgentFactory). \
+      should_receive('create_agent'). \
+      with_args('public cloud'). \
+      and_return(fake_agent)
+
+    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+
+    node_info = [{ "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE1",
+                   "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                            'taskqueue_master'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE2",
+                   "jobs": ['memcache', 'appengine'] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE3",
+                   "jobs": ['zookeeper', "appengine"] },
+                 { "public_ip": "0.0.0.0",
+                   "private_ip": "0.0.0.0",
+                   "instance_id": "i-APPSCALE4",
+                   "jobs": ['db_master'] }
+                 ]
+
+    LocalState.should_receive('get_local_nodes_info').and_return(node_info)
+
+    self.assertRaises(BadConfigurationException)

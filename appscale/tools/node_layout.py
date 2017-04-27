@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -30,7 +29,7 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'taskqueue', 'search']
+    'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -520,13 +519,6 @@ class NodeLayout():
       master_node.add_role('taskqueue')
       master_node.add_role('taskqueue_master')
 
-    # Any node that runs appengine needs taskqueue to dispatch task requests to
-    # It's safe to add the slave role since we ensure above that somebody
-    # already has the master role
-    for node in nodes:
-      if node.is_role('appengine') and not node.is_role('taskqueue'):
-        node.add_role('taskqueue_slave')
-
     if self.disks:
       valid, reason = self.is_disks_valid(nodes)
       if not valid:
@@ -663,6 +655,30 @@ class NodeLayout():
         other_nodes.append(node)
     return other_nodes
 
+  def get_nodes(self, role, is_role):
+    """ Searches through the nodes in this NodeLayout for all nodes with or
+    without the role based on boolean value of is_role.
+
+    Args:
+      role: A string describing a role that the nodes list is being searched
+        for.
+      is_role: A boolean to determine whether the return value is the nodes
+        that are the role or the nodes that are not the role.
+
+    Returns:
+      A list of nodes either running or not running (based on is_role) the
+      argument role role, or the empty list if the NodeLayout isn't
+      acceptable for use with AppScale.
+    """
+    if not self.is_valid() or role not in self.VALID_ROLES:
+      return []
+
+    nodes_requested = []
+    for node in self.nodes:
+      if node.is_role(role) == is_role:
+        nodes_requested.append(node)
+    return nodes_requested
+
 
   def db_master(self):
     """ Searches through the nodes in this NodeLayout for the node with the
@@ -681,7 +697,7 @@ class NodeLayout():
     return None
 
 
-  def to_list_without_head_node(self):
+  def to_list(self):
     """ Converts all of the nodes (except the head node) to a format that can
     be easily JSON-dumped (a list of dicts).
 
@@ -690,11 +706,60 @@ class NodeLayout():
       AppScale deployment. As callers explicitly specify the head node, we
       don't include it in this list.
     """
-    return [{
-      'ip' : node.public_ip,
-      'jobs' : node.roles,
-      'disk' : node.disk
-    } for node in self.other_nodes()]
+    return [node.to_json() for node in self.nodes]
+
+
+  def from_locations_json_list(self, locations_nodes_list):
+    """Returns a list of nodes if the previous locations JSON matches with the
+    current NodeLayout from the AppScalefile. Otherwise returns None."""
+
+    # If the length does not match up the user has added or removed a node in
+    # the AppScalefile.
+    if len(locations_nodes_list) != len(self.nodes):
+      return None
+
+    nodes = []
+
+    # Use a copy so we do not overwrite self.nodes when we call
+    # Node.from_json since that method modifies the node it is called on.
+    nodes_copy = self.nodes[:]
+    open_nodes = []
+    for old_node in locations_nodes_list:
+      old_node_roles = old_node.get('jobs')
+      if old_node_roles == ["open"]:
+        open_nodes.append(old_node)
+        continue
+      for _, node in enumerate(nodes_copy):
+        # Match nodes based on jobs/roles.
+        if set(old_node_roles) == set(node.roles):
+          nodes_copy.remove(node)
+          node.from_json(old_node)
+          if node.is_valid():
+            nodes.append(node)
+          else:
+            # Locations JSON is incorrect if we get here.
+            return None
+          break
+    for open_node in open_nodes:
+      try:
+        node = nodes_copy.pop()
+      except IndexError:
+        return None
+      # Match nodes based on jobs/roles.
+      roles = node.roles
+      node.from_json(open_node)
+      node.roles = roles
+      if node.is_valid():
+        nodes.append(node)
+      else:
+        # Locations JSON is incorrect if we get here.
+        return None
+
+    # If these lengths are equal all nodes were matched.
+    if len(nodes) == len(self.nodes):
+      return nodes
+    else:
+      return None
 
 
   def valid(self, message = None):
@@ -723,6 +788,7 @@ class Node():
   or AdvancedNode, depending on the deployment type.
   """
 
+  DUMMY_INSTANCE_ID = "i-APPSCALE"
 
   def __init__(self, public_ip, cloud, roles=[], disk=None):
     """Creates a new Node, representing the given id in the specified cloud.
@@ -738,6 +804,7 @@ class Node():
     """
     self.public_ip = public_ip
     self.private_ip = public_ip
+    self.instance_id = self.DUMMY_INSTANCE_ID
     self.cloud = cloud
     self.roles = roles
     self.disk = disk
@@ -831,6 +898,36 @@ class Node():
     AdvancedNodes, we do not implement it here.
     """
     raise NotImplementedError
+
+  def to_json(self):
+    return {
+      'public_ip': self.public_ip,
+      'private_ip': self.private_ip,
+      'instance_id': self.instance_id,
+      'jobs': self.roles,
+      'disk': self.disk
+    }
+
+
+  def from_json(self, node_dict):
+    """Modifies the node it is called on to have the attributes of the passed
+    dictionary.
+
+    Args:
+      node_dict: A dictionary from JSON of the format:
+        {
+          'public_ip': self.public_ip,
+          'private_ip': self.private_ip,
+          'instance_id': self.instance_id,
+          'jobs': self.roles,
+          'disk': self.disk
+        }
+    """
+    self.public_ip = node_dict.get('public_ip')
+    self.private_ip = node_dict.get('private_ip')
+    self.instance_id = node_dict.get('instance_id')
+    self.roles = node_dict.get('jobs')
+    self.disk = node_dict.get('disk')
 
 
 class SimpleNode(Node):

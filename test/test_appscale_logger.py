@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -21,7 +20,6 @@ from appscale.tools.parse_args import ParseArgs
 
 
 class TestAppScaleLogger(unittest.TestCase):
-
 
   def setUp(self):
     # mock out printing to stdout
@@ -62,11 +60,9 @@ class TestAppScaleLogger(unittest.TestCase):
       "EC2_URL" : None,
       "admin_pass" : None,
       "admin_user" : None,
-      "alter_etc_resolv" : False,
       "appengine" : 1,
       "autoscale" : True,
       "client_secrets" : None,
-      "clear_datastore" : False,
       "disks" : None,
       "min" : 1,
       "max" : 1,
@@ -101,13 +97,14 @@ class TestAppScaleLogger(unittest.TestCase):
       "azure_resource_group" : None,
       "azure_group_tag" : None,
       "azure_storage_account" : None,
+      "clear_datastore" : False,
     }
 
     # finally, construct a http payload for mocking that the below
     # tests can use
     self.payload = "?boo=baz&min=1&max=1&infrastructure=ec2" + \
       "&machine=ami-ABCDEFG&force=False&group=appscale" + \
-      "&instance_type=m3.medium&ips=None&keyname=appscale&n=None" + \
+      "&instance_type=m3.medium&keyname=appscale&n=None" + \
       "table=cassandra&test=False&version=False"
 
 

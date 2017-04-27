@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Programmer: Chris Bunch (chris@appscale.com)
 
 
 # General-purpose Python library imports
@@ -70,7 +69,7 @@ class TestAppScale(unittest.TestCase):
     appscale = flexmock(AppScale())
     builtin = flexmock(sys.modules['__builtin__'])
     builtin.should_call('open')
-    nodes = [{'public_ip': 'blarg'}]
+    nodes = {'node_info':[{'public_ip': 'blarg'}]}
     appscale_yaml = {'keyname': 'boo'}
     appscale.should_receive('get_locations_json_file').\
       and_return('locations.json')
@@ -79,7 +78,8 @@ class TestAppScale(unittest.TestCase):
     # dictionary.
     builtin.should_receive('open').with_args('locations.json').\
       and_return(flexmock(read=lambda: json.dumps(nodes)))
-    self.assertEqual(nodes, appscale.get_nodes(appscale_yaml['keyname']))
+    self.assertEqual(nodes.get('node_info'),
+                     appscale.get_nodes(appscale_yaml['keyname']))
 
     # If the locations JSON file does not exist, it should throw an
     # AppScaleException.
@@ -361,7 +361,7 @@ class TestAppScale(unittest.TestCase):
     one = {
       'public_ip' : 'blarg'
     }
-    nodes = [one]
+    nodes = {'node_info': [one]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -387,7 +387,7 @@ class TestAppScale(unittest.TestCase):
     two = {
       'public_ip' : 'blarg2'
     }
-    nodes = [one, two]
+    nodes = {'node_info': [one, two]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -430,7 +430,7 @@ class TestAppScale(unittest.TestCase):
 
     # finally, mock out the actual appscale-describe-instances call
     flexmock(AppScaleTools)
-    AppScaleTools.should_receive('describe_instances')
+    AppScaleTools.should_receive('print_cluster_status')
     appscale.status()
 
 
@@ -584,7 +584,7 @@ class TestAppScale(unittest.TestCase):
     one = {
       'public_ip' : 'blarg'
     }
-    nodes = [one]
+    nodes = {'node_info': [one]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -609,7 +609,7 @@ class TestAppScale(unittest.TestCase):
     two = {
       'public_ip' : 'blarg2'
     }
-    nodes = [one, two]
+    nodes = {'node_info': [one, two]}
     nodes_contents = json.dumps(nodes)
 
     mock = self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -750,16 +750,16 @@ class TestAppScale(unittest.TestCase):
     appscale.set('key', 'value')
 
 
-  def testDestroyWithNoAppScalefile(self):
-    # calling 'appscale destroy' with no AppScalefile in the local
+  def testDownWithNoAppScalefile(self):
+    # calling 'appscale down' with no AppScalefile in the local
     # directory should throw up and die
     appscale = AppScale()
     self.addMockForNoAppScalefile(appscale)
-    self.assertRaises(AppScalefileException, appscale.destroy)
+    self.assertRaises(AppScalefileException, appscale.down)
 
 
-  def testDestroyWithCloudAppScalefile(self):
-    # calling 'appscale destroy' with an AppScalefile in the local
+  def testDownWithCloudAppScalefile(self):
+    # calling 'appscale down' with an AppScalefile in the local
     # directory should collect any parameters needed for the
     # 'appscale-terminate-instances' command and then exec it
     appscale = AppScale()
@@ -781,10 +781,10 @@ class TestAppScale(unittest.TestCase):
     # finally, mock out the actual appscale-terminate-instances call
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
-    appscale.destroy()
+    appscale.down()
 
 
-  def testDestroyWithEC2EnvironmentVariables(self):
+  def testDownWithEC2EnvironmentVariables(self):
     # if the user wants us to use their EC2 credentials when running AppScale,
     # we should make sure they get set
     appscale = AppScale()
@@ -807,64 +807,8 @@ class TestAppScale(unittest.TestCase):
     # finally, mock out the actual appscale-terminate-instances call
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('terminate_instances')
-    appscale.destroy()
+    appscale.down()
 
     self.assertEquals('access key', os.environ['EC2_ACCESS_KEY'])
     self.assertEquals('secret key', os.environ['EC2_SECRET_KEY'])
 
-
-  def testCleanWithNoAppScalefile(self):
-    # calling 'appscale clean' with no AppScalefile in the local
-    # directory should throw up and die
-    appscale = AppScale()
-    self.addMockForNoAppScalefile(appscale)
-    self.assertRaises(AppScalefileException, appscale.clean)
-
-
-  def testCleanInCloudDeployment(self):
-    # calling 'appscale clean' in a cloud deployment should throw up and die
-    appscale = AppScale()
-
-    # Mock out the actual file reading itself, and slip in a YAML-dumped
-    # file
-    contents = {
-      'infrastructure' : 'ec2',
-      'machine' : 'ami-ABCDEFG',
-      'keyname' : 'bookey',
-      'group' : 'boogroup',
-      'verbose' : True,
-      'min' : 1,
-      'max' : 1
-    }
-    yaml_dumped_contents = yaml.dump(contents)
-
-    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-    self.assertRaises(BadConfigurationException, appscale.clean)
-
-
-  def testCleanInClusterDeployment(self):
-    # calling 'appscale clean' in a cluster deployment should ssh into each of
-    # the boxes specified in the ips_layout and run the terminate script
-
-    # Mock out the actual file reading itself, and slip in a YAML-dumped
-    # file
-    contents = {
-      'ips_layout' : {
-        'controller': 'public1',
-        'servers': ['public2', 'public3']
-      },
-      'test' : True
-    }
-    yaml_dumped_contents = yaml.dump(contents)
-
-    flexmock(RemoteHelper)
-    RemoteHelper.should_receive('ssh') \
-      .with_args(re.compile('public[123]'), 'appscale', str, False)
-
-    flexmock(LocalState)
-    LocalState.should_receive('cleanup_appscale_files').with_args('appscale')
-
-    appscale = AppScale()
-    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-    expected = ['public1', 'public2', 'public3']
-    self.assertEquals(expected, appscale.clean())

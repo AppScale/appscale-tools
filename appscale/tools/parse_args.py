@@ -95,9 +95,10 @@ class ParseArgs(object):
     "Standard_DS4", "Standard_DS11", "Standard_DS12", "Standard_DS13",
     "Standard_DS14", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
     "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
-    "Standard_DS14_v2", "Standard_DS15_v2", "Standard_G1", "Standard_G2",
-    "Standard_G3", "Standard_G4", "Standard_G5", "Standard_GS1", "Standard_GS2",
-    "Standard_GS3", "Standard_GS4", "Standard_GS5"]
+    "Standard_DS14_v2", "Standard_DS15_v2", "Standard_F4", "Standard_F8",
+    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s"
+    "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
+    "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"]
 
   # A combined list of instance types for the different cloud infrastructures.
   ALLOWED_INSTANCE_TYPES = ALLOWED_EC2_INSTANCE_TYPES + ALLOWED_GCE_INSTANCE_TYPES + \
@@ -296,9 +297,6 @@ class ParseArgs(object):
         help="uses the given e-mail instead of prompting for one")
       self.parser.add_argument('--admin_pass',
         help="uses the given password instead of prompting for one")
-      self.parser.add_argument('--alter_etc_resolv', action='store_true',
-        default=False,
-        help="removes all nameservers in /etc/resolv.conf on all VMs")
       self.parser.add_argument('--user_commands',
         help="a base64-encoded YAML dictating the commands to run before " +
           "starting each AppController")
@@ -359,6 +357,12 @@ class ParseArgs(object):
       self.parser.add_argument('--test', action='store_true',
         default=False,
         help="uses a default username and password for cloud admin")
+      self.parser.add_argument('--terminate', action="store_true",
+        default=False,
+        help="terminate running instances (if in cloud environment)")
+      self.parser.add_argument('--clean', action="store_true",
+        default=False,
+        help="clean running instances")
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
