@@ -39,6 +39,7 @@ from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
 from version_helper import latest_tools_version
+from .admin_client import AdminClient
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -83,6 +84,10 @@ class AppScaleTools(object):
 
   # The maximum number of times we should retry for methods that take longer.
   MAX_RETRIES = 20
+
+
+  # The number of seconds to wait before giving up on a deployment operation.
+  MAX_DEPLOY_TIME = 100
 
 
   # The location of the expect script, used to interact with ssh-copy-id
@@ -896,6 +901,9 @@ class AppScaleTools(object):
 
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
+    threadsafe = None
+    if app_language in ['python27', 'java']:
+      threadsafe = AppEngineHelper.is_threadsafe(file_location)
     AppEngineHelper.validate_app_id(app_id)
 
     extras = {}
@@ -910,7 +918,7 @@ class AppScaleTools(object):
 
     login_host = LocalState.get_login_host(options.keyname)
     secret_key = LocalState.get_secret_key(options.keyname)
-    acc = AppControllerClient(login_host, secret_key)
+    admin_client = AdminClient(login_host, secret_key)
 
     if options.test:
       username = LocalState.DEFAULT_USER
@@ -919,68 +927,38 @@ class AppScaleTools(object):
     else:
       username = LocalState.get_username_from_stdin(is_admin=False)
 
-    if not acc.does_user_exist(username):
-      password = LocalState.get_password_from_stdin()
-      RemoteHelper.create_user_accounts(username, password,
-        login_host, options.keyname)
-
-    app_exists = acc.does_app_exist(app_id)
-    app_admin = acc.get_app_admin(app_id)
-    if app_admin is not None and username != app_admin:
-      raise AppScaleException("The given user doesn't own this application" + \
-        ", so they can't upload an app with that application ID. Please " + \
-        "change the application ID and try again.")
-
-    if app_exists:
-      AppScaleLogger.log("Uploading new version of app {0}".format(app_id))
-    else:
-      AppScaleLogger.log("Uploading initial version of app {0}".format(app_id))
-      acc.reserve_app_id(username, app_id, app_language)
-
-    # Ignore all .pyc files while tarring.
-    if app_language == 'python27':
-      AppScaleLogger.log("Ignoring .pyc files")
-
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose, extras)
 
-    acc.done_uploading(app_id, remote_file_path)
-    acc.update([app_id])
+    AppScaleLogger.log('Deploying project: {}'.format(app_id))
+    operation_id = admin_client.create_version(
+      app_id, username, remote_file_path, app_language, threadsafe)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
 
-    if app_exists:
-      time.sleep(20)  # give the AppController time to restart the app
+    deadline = time.time() + cls.MAX_DEPLOY_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The deployment operation took too long.')
+      operation = admin_client.get_operation(app_id, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
 
-    # Makes a call to the AppController to get all the stats and looks
-    # through them for the http port the app can be reached on.
-    http_port = None
-    for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_app_info_map()
-      try:
-        current_app = result[app_id]
-        http_port = current_app['nginx']
-        if http_port:
-          break
-        time.sleep(cls.SLEEP_TIME)
-      except (KeyError, ValueError):
-        AppScaleLogger.verbose(
-          "Got json error from get_app_info_map result:\n{}".format(result),
-          options.verbose)
-        time.sleep(cls.SLEEP_TIME)
-    if not http_port:
-      raise AppScaleException(
-        "Unable to get the serving port for the application.")
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+      version_url = operation['response']['versionUrl']
+      break
 
-    RemoteHelper.sleep_until_port_is_open(login_host, http_port, options.verbose)
-    AppScaleLogger.success("Your app can be reached at the following URL: " +
-      "http://{0}:{1}".format(login_host, http_port))
+    AppScaleLogger.success(
+      'Your app can be reached at the following URL: {}'.format(version_url))
 
     if created_dir:
       shutil.rmtree(file_location)
 
+    http_port = int(version_url.split(':')[-1])
     return (login_host, http_port)
 
   @classmethod
