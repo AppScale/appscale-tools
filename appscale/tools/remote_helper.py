@@ -54,13 +54,6 @@ class RemoteHelper(object):
     "-o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 
-  # The location on the local filesystem where a monit configuration file can
-  # be found that can be used to start the AppController service.
-  MONIT_APPCONTROLLER_CONFIG_FILE = os.path.join(
-    os.path.dirname(sys.modules['appscale.tools'].__file__),
-    'templates/appcontroller.cfg')
-
-
   # The amount of time to wait when waiting for all API services to start on
   # a machine.
   WAIT_TIME = 10
@@ -748,19 +741,10 @@ class RemoteHelper(object):
     # Remove any monit configuration files from previous AppScale deployments.
     cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
 
-    # Copy over the config file that indicates how the AppController should be
-    # started up.
-    cls.scp(host, keyname, cls.MONIT_APPCONTROLLER_CONFIG_FILE,
-      '/etc/monit/conf.d/appscale-controller-17443.cfg', is_verbose)
-
-    # Start up monit.
-    cls.ssh(host, keyname, 'monit quit; ', is_verbose)
     cls.ssh(host, keyname, 'service monit start', is_verbose)
-    time.sleep(1)
 
     # Start the AppController.
-    cls.ssh(host, keyname, 'monit start -g controller', is_verbose)
-    time.sleep(1)
+    cls.ssh(host, keyname, 'service appscale-controller start', is_verbose)
 
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")

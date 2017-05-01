@@ -341,10 +341,8 @@ group: {1}
       .with_args(re.compile('^ssh'),False,5,stdin=re.compile('monit'))\
       .and_return()
 
-    # and that we copied over the AppController's monit file
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
-      .and_return()
+    self.local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
 
     self.local_state.should_receive('shell').\
       with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
@@ -536,9 +534,8 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('monit'))
 
-    # and that we copied over the AppController's monit file
-    self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('controller-17443.cfg'))
+    self.local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
 
     self.setup_socket_mocks('elastic-ip')
     self.setup_appcontroller_mocks('elastic-ip', 'private1')
@@ -694,9 +691,8 @@ appengine:  1.2.3.4
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
       False, 5, stdin=re.compile('monit'))
 
-    # and that we copied over the AppController's monit file
-    self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('controller-17443.cfg'))
+    self.local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
