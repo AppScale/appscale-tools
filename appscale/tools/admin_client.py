@@ -51,8 +51,10 @@ class AdminClient(object):
     try:
       response.raise_for_status()
     except requests.exceptions.HTTPError:
-      message = content.get(
-        'message', 'AdminServer returned: {}'.format(response.status_code))
+      try:
+        message = content['error']['message']
+      except KeyError:
+        message = 'AdminServer returned: {}'.format(response.status_code)
       raise AdminError(message)
 
     return content
