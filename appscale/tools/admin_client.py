@@ -95,6 +95,29 @@ class AdminClient(object):
 
     return operation_id
 
+  def delete_version(self, project_id):
+    """ Deletes a version.
+
+    Args:
+      project_id: A string specifying the project ID.
+    Returns:
+      A dictionary containing the delete operation details.
+    Raises:
+      AdminError if the response is formatted incorrectly.
+    """
+    version_url = '{prefix}/{project}/services/{service}/versions/{version}'.\
+      format(prefix=self.prefix, project=project_id, service=DEFAULT_SERVICE,
+             version=DEFAULT_VERSION)
+    headers = {'AppScale-Secret': self.secret}
+    response = requests.delete(version_url, headers=headers, verify=False)
+    operation = self.extract_response(response)
+    try:
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
+
   def get_operation(self, project, operation_id):
     """ Retrieves the status of an operation.
 
