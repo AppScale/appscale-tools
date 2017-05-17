@@ -700,10 +700,54 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     verbose = parameters[self.PARAM_VERBOSE]
-    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
+    instances_to_delete = parameters[self.PARAM_INSTANCE_IDS]
     AppScaleLogger.verbose("Terminating the vm instance(s) '{}'".
-                           format(instance_ids), verbose)
+                           format(instances_to_delete), verbose)
+
     compute_client = ComputeManagementClient(credentials, subscription_id)
+    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    downscale = parameters['autoscale_agent']
+
+    # On downscaling of instances, we need to delete the specific instance
+    # from the Scale Set.
+    if downscale in ['True', True]:
+      # Delete the scale set virtual machines matching the given instance ids.
+      vmss_vm_delete_threads = []
+      for vmss in vmss_list:
+        vm_list = compute_client.virtual_machine_scale_set_vms.list(
+          resource_group, vmss.name)
+        for vm in vm_list:
+          if vm.name in instances_to_delete:
+            instances_to_delete.remove(vm.name)
+            thread = threading.Thread(target=self.delete_vmss_instance,
+                                      args=(compute_client, parameters,
+                                            vmss.name, vm.instance_id))
+            thread.start()
+            vmss_vm_delete_threads.append(thread)
+
+      for delete_thread in vmss_vm_delete_threads:
+        delete_thread.join()
+
+      AppScaleLogger.log("Virtual machine(s) have been successfully downscaled.")
+      AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
+      vmss_delete_threads = []
+      for vmss in vmss_list:
+        vm_list = compute_client.virtual_machine_scale_set_vms.list(
+          resource_group, vmss.name)
+        vm_names = []
+        for vm in vm_list:
+          vm_names.append(vm.name)
+
+        if not vm_names:
+          thread = threading.Thread(
+            target=self.delete_virtual_machine_scale_set, args=(
+              compute_client, parameters, vmss.name))
+          thread.start()
+          vmss_delete_threads.append(thread)
+
+      for delete_thread in vmss_delete_threads:
+        delete_thread.join()
+      return
 
     # Delete the virtual machine scale sets created.
     vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
