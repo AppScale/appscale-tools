@@ -112,6 +112,8 @@ class AdminClient(object):
     response = requests.delete(version_url, headers=headers, verify=False)
     operation = self.extract_response(response)
     try:
+      # Operation names should match the following template:
+      # "apps/{project_id}/operations/{operation_id}"
       operation_id = operation['name'].split('/')[-1]
     except (KeyError, IndexError):
       raise AdminError('Invalid operation: {}'.format(operation))
