@@ -86,8 +86,8 @@ class AppScaleTools(object):
   MAX_RETRIES = 20
 
 
-  # The number of seconds to wait before giving up on a deployment operation.
-  MAX_DEPLOY_TIME = 100
+  # The number of seconds to wait before giving up on an operation.
+  MAX_OPERATION_TIME = 100
 
 
   # The location of the expect script, used to interact with ssh-copy-id
@@ -591,42 +591,24 @@ class AppScaleTools(object):
 
     login_host = LocalState.get_login_host(options.keyname)
     secret = LocalState.get_secret_key(options.keyname)
-    acc = AppControllerClient(login_host, secret)
+    admin_client = AdminClient(login_host, secret)
 
-    # Makes a call to the AppController to get all the stats and looks
-    # through them for the http port the app can be reached on.
-    http_port = None
-    for _ in range(cls.MAX_RETRIES + 1):
-      result = acc.get_app_info_map()
-      try:
-        current_app = result[options.appname]
-        http_port = current_app['nginx']
-        if http_port:
-          break
-        time.sleep(cls.SLEEP_TIME)
-      except (KeyError, ValueError):
-        AppScaleLogger.verbose(
-          "Got json error from get_app_info_map result:\n{}".format(result),
-          options.verbose)
-        time.sleep(cls.SLEEP_TIME)
-    if not http_port:
-      raise AppScaleException(
-        "Unable to get the serving port for the application.")
+    operation_id = admin_client.delete_version(options.appname)
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The undeploy operation took too long.')
 
-    acc.stop_app(options.appname)
-    AppScaleLogger.log("Please wait for your app to shut down.")
+      operation = admin_client.get_operation(options.appname, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
 
-    for _ in range(cls.MAX_RETRIES + 1):
-      if RemoteHelper.is_port_open(login_host, http_port, options.verbose):
-        time.sleep(cls.SLEEP_TIME)
-        AppScaleLogger.log("Waiting for {0} to terminate...".format(
-          options.appname))
-      else:
-        AppScaleLogger.success("Done shutting down {0}.".format(
-          options.appname))
-        return
-    AppScaleLogger.warn("App {0} may still be running.".format(
-      options.appname))
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+      break
+
+    AppScaleLogger.success('Done shutting down {}.'.format(options.appname))
 
 
   @classmethod
@@ -938,7 +920,7 @@ class AppScaleTools(object):
     # the app is running on and wait for it to start serving
     AppScaleLogger.log("Please wait for your app to start serving.")
 
-    deadline = time.time() + cls.MAX_DEPLOY_TIME
+    deadline = time.time() + cls.MAX_OPERATION_TIME
     while True:
       if time.time() > deadline:
         raise AppScaleException('The deployment operation took too long.')
