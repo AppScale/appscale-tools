@@ -742,29 +742,30 @@ class AzureAgent(BaseAgent):
     AppScaleLogger.log("Load balancer virtual machine(s) have been successfully "
                        "deleted")
 
-  def delete_virtual_machine_scale_set(self, compute_client, resource_group,
-                                       verbose, scale_set_name):
+  def delete_virtual_machine_scale_set(self, compute_client, parameters, vmss_name):
     """ Deletes the virtual machine scale set created from the specified
     resource group.
     Args:
         compute_client: An instance of the Compute Management client.
-        resource_group: The resource group name to use for this deployment.
-        verbose: A boolean indicating whether or not the verbose mode is on.
-        scale_set_name: The name of the virtual machine scale set to be deleted.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        vmss_name: The name of the virtual machine scale set to be deleted.
     """
-    AppScaleLogger.verbose("Deleting Scale Set {} ...".format(scale_set_name), verbose)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
+    AppScaleLogger.verbose("Deleting Scale Set {} ...".format(vmss_name), verbose)
     try:
       delete_response = compute_client.virtual_machine_scale_sets.delete(
-        resource_group,scale_set_name)
-      resource_name = 'Virtual Machine Scale Set' + ":" + scale_set_name
+        resource_group, vmss_name)
+      resource_name = 'Virtual Machine Scale Set' + ":" + vmss_name
       self.sleep_until_delete_operation_done(delete_response, resource_name,
                                              self.MAX_VM_UPDATE_TIME, verbose)
       AppScaleLogger.verbose("Virtual Machine Scale Set {} has been successfully "
-                             "deleted.".format(scale_set_name), verbose)
+                             "deleted.".format(vmss_name), verbose)
     except CloudError as error:
       raise AgentConfigurationException("There was a problem while deleting the "
                                         "Scale Set {0} due to the error: {1}"
-                                        .format(scale_set_name, error.message))
+                                        .format(vmss_name, error.message))
 
   def delete_vmss_instance(self, compute_client, parameters, vmss_name, instance_id):
     """ Deletes the specified virtual machine instance from the given Scale Set.
@@ -787,16 +788,17 @@ class AzureAgent(BaseAgent):
                                            self.MAX_VM_UPDATE_TIME, verbose)
     AppScaleLogger.verbose("Virtual Machine Instance {0} from Scale Set {1} "
       "has been successfully deleted".format(instance_id, vmss_name), verbose)
-      
-  def delete_virtual_machine(self, compute_client, resource_group, verbose,
-                             vm_name):
+
+  def delete_virtual_machine(self, compute_client, parameters, vm_name):
     """ Deletes the virtual machine from the resource_group specified.
     Args:
       compute_client: An instance of the Compute Management client.
-      resource_group: The resource group name to use for this deployment.
-      verbose: A boolean indicating whether or not the verbose mode is on.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
       vm_name: The name of the virtual machine to be deleted.
     """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
     result = compute_client.virtual_machines.delete(resource_group, vm_name)
     resource_name = 'Virtual Machine' + ':' + vm_name
