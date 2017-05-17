@@ -766,6 +766,28 @@ class AzureAgent(BaseAgent):
                                         "Scale Set {0} due to the error: {1}"
                                         .format(scale_set_name, error.message))
 
+  def delete_vmss_instance(self, compute_client, parameters, vmss_name, instance_id):
+    """ Deletes the specified virtual machine instance from the given Scale Set.
+    Args:
+      compute_client: An instance of the Compute Management client.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+      vmss_name: The Scale Set from which the instance needs to be deleted.
+      instance_id: The ID of the instance in the Scale Set to be deleted.
+    """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
+    AppScaleLogger.verbose("Deleting Virtual Machine Instance {0} from Scale "
+      "Set {1} ...".format(instance_id, vmss_name), verbose)
+    result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
+                                                                 vmss_name,
+                                                                 instance_id)
+    resource_name = 'Virtual Machine Instance ' + instance_id
+    self.sleep_until_delete_operation_done(result, resource_name,
+                                           self.MAX_VM_UPDATE_TIME, verbose)
+    AppScaleLogger.verbose("Virtual Machine Instance {0} from Scale Set {1} "
+      "has been successfully deleted".format(instance_id, vmss_name), verbose)
+      
   def delete_virtual_machine(self, compute_client, resource_group, verbose,
                              vm_name):
     """ Deletes the virtual machine from the resource_group specified.
