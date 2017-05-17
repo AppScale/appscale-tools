@@ -749,42 +749,41 @@ class AzureAgent(BaseAgent):
         delete_thread.join()
       return
 
-    # Delete the virtual machine scale sets created.
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    # On appscale down --terminate, we delete all the Scale Sets within the
+    # resource group specified, as it is faster than deleting the individual
+    # instances within each Scale Set.
+    delete_ss_instances = []
     vmss_delete_threads = []
-    ss_instance_ids_to_delete = []
     for vmss in vmss_list:
       vm_list = compute_client.virtual_machine_scale_set_vms.list(
         resource_group, vmss.name)
       for vm in vm_list:
-        ss_instance_ids_to_delete.append(vm.name)
-      thread = threading.Thread(
-        target=self.delete_virtual_machine_scale_set, args=(
-          compute_client, resource_group, verbose, vmss.name))
+        delete_ss_instances.append(vm.name)
+      thread = threading.Thread(target=self.delete_virtual_machine_scale_set,
+                                args=(compute_client, parameters, vmss.name))
       thread.start()
       vmss_delete_threads.append(thread)
 
-    # Delete the virtual machines created outside of the scale set.
-    lb_instance_ids_to_delete = self.diff(instance_ids, ss_instance_ids_to_delete)
-    load_balancer_threads = []
-    for vm_name in lb_instance_ids_to_delete:
-      thread = threading.Thread(
-        target=self.delete_virtual_machine, args=(
-          compute_client, resource_group, verbose, vm_name))
+    # Delete the load balancer virtual machines matching the given instance ids.
+    delete_lb_instances = self.diff(instances_to_delete, delete_ss_instances)
+    lb_delete_threads = []
+    for vm_name in delete_lb_instances:
+      thread = threading.Thread(target=self.delete_virtual_machine,
+                                args=(compute_client, parameters, vm_name))
       thread.start()
-      load_balancer_threads.append(thread)
+      lb_delete_threads.append(thread)
 
     for delete_thread in vmss_delete_threads:
       delete_thread.join()
 
     AppScaleLogger.log("Virtual machine scale set(s) have been successfully "
-                       "deleted.")
+      "deleted.")
 
-    for load_balancer in load_balancer_threads:
-      load_balancer.join()
+    for delete_thread in lb_delete_threads:
+      delete_thread.join()
 
-    AppScaleLogger.log("Load balancer virtual machine(s) have been successfully "
-                       "deleted")
+    AppScaleLogger.log("Load balancer virtual machine(s) have been "
+       "successfully deleted")
 
   def delete_virtual_machine_scale_set(self, compute_client, parameters, vmss_name):
     """ Deletes the virtual machine scale set created from the specified
