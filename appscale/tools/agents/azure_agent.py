@@ -734,11 +734,7 @@ class AzureAgent(BaseAgent):
       for vmss in vmss_list:
         vm_list = compute_client.virtual_machine_scale_set_vms.list(
           resource_group, vmss.name)
-        vm_names = []
-        for vm in vm_list:
-          vm_names.append(vm.name)
-
-        if not vm_names:
+        if not any(True for _ in vm_list):
           thread = threading.Thread(
             target=self.delete_virtual_machine_scale_set, args=(
               compute_client, parameters, vmss.name))
