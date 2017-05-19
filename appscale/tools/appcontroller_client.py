@@ -566,27 +566,3 @@ class AppControllerClient():
       return None
 
     return app_data['owner']
-
-  def reserve_app_id(self, username, app_id, app_language):
-    """ Tells the AppController to reserve the given app_id for a particular
-    user.
-
-    Args:
-      username: A str representing the app administrator's e-mail address.
-      app_id: A str representing the application ID to reserve.
-      app_language: The runtime (Python 2.5/2.7, Java, or Go) that the app runs
-        over.
-    """
-    result = self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Reserve app id request timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.reserve_app_id, username, app_id, app_language, self.secret)
-    if result == "true":
-      AppScaleLogger.log("We have reserved {0} for your app".format(app_id))
-    elif result == "Error: appname already exists":
-      AppScaleLogger.log("We are uploading a new version of your app.")
-    elif result == "Error: User not found":
-      raise AppScaleException("No information found about user {0}".format(username))
-    else:
-      AppScaleLogger.log("Result {0}".format(result))
-      raise AppScaleException(result)
-
