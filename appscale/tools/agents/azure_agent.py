@@ -700,81 +700,144 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     verbose = parameters[self.PARAM_VERBOSE]
-    public_ips, private_ips, instance_ids = self.describe_instances(parameters)
+    instances_to_delete = parameters[self.PARAM_INSTANCE_IDS]
     AppScaleLogger.verbose("Terminating the vm instance(s) '{}'".
-                           format(instance_ids), verbose)
-    compute_client = ComputeManagementClient(credentials, subscription_id)
+                           format(instances_to_delete), verbose)
 
-    # Delete the virtual machine scale sets created.
+    compute_client = ComputeManagementClient(credentials, subscription_id)
     vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    downscale = parameters['autoscale_agent']
+
+    # On downscaling of instances, we need to delete the specific instance
+    # from the Scale Set.
+    if downscale in ['True', True]:
+      # Delete the scale set virtual machines matching the given instance ids.
+      vmss_vm_delete_threads = []
+      for vmss in vmss_list:
+        vm_list = compute_client.virtual_machine_scale_set_vms.list(
+          resource_group, vmss.name)
+        for vm in vm_list:
+          if vm.name in instances_to_delete:
+            instances_to_delete.remove(vm.name)
+            thread = threading.Thread(target=self.delete_vmss_instance,
+                                      args=(compute_client, parameters,
+                                            vmss.name, vm.instance_id))
+            thread.start()
+            vmss_vm_delete_threads.append(thread)
+
+      for delete_thread in vmss_vm_delete_threads:
+        delete_thread.join()
+
+      AppScaleLogger.log("Virtual machine(s) have been successfully downscaled.")
+      AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
+      vmss_delete_threads = []
+      for vmss in vmss_list:
+        vm_list = compute_client.virtual_machine_scale_set_vms.list(
+          resource_group, vmss.name)
+        if not any(True for _ in vm_list):
+          thread = threading.Thread(
+            target=self.delete_virtual_machine_scale_set, args=(
+              compute_client, parameters, vmss.name))
+          thread.start()
+          vmss_delete_threads.append(thread)
+
+      for delete_thread in vmss_delete_threads:
+        delete_thread.join()
+      return
+
+    # On appscale down --terminate, we delete all the Scale Sets within the
+    # resource group specified, as it is faster than deleting the individual
+    # instances within each Scale Set.
+    delete_ss_instances = []
     vmss_delete_threads = []
-    ss_instance_ids_to_delete = []
     for vmss in vmss_list:
       vm_list = compute_client.virtual_machine_scale_set_vms.list(
         resource_group, vmss.name)
       for vm in vm_list:
-        ss_instance_ids_to_delete.append(vm.name)
-      thread = threading.Thread(
-        target=self.delete_virtual_machine_scale_set, args=(
-          compute_client, resource_group, verbose, vmss.name))
+        delete_ss_instances.append(vm.name)
+      thread = threading.Thread(target=self.delete_virtual_machine_scale_set,
+                                args=(compute_client, parameters, vmss.name))
       thread.start()
       vmss_delete_threads.append(thread)
 
-    # Delete the virtual machines created outside of the scale set.
-    lb_instance_ids_to_delete = self.diff(instance_ids, ss_instance_ids_to_delete)
-    load_balancer_threads = []
-    for vm_name in lb_instance_ids_to_delete:
-      thread = threading.Thread(
-        target=self.delete_virtual_machine, args=(
-          compute_client, resource_group, verbose, vm_name))
+    # Delete the load balancer virtual machines matching the given instance ids.
+    delete_lb_instances = self.diff(instances_to_delete, delete_ss_instances)
+    lb_delete_threads = []
+    for vm_name in delete_lb_instances:
+      thread = threading.Thread(target=self.delete_virtual_machine,
+                                args=(compute_client, parameters, vm_name))
       thread.start()
-      load_balancer_threads.append(thread)
+      lb_delete_threads.append(thread)
 
     for delete_thread in vmss_delete_threads:
       delete_thread.join()
 
     AppScaleLogger.log("Virtual machine scale set(s) have been successfully "
-                       "deleted.")
+      "deleted.")
 
-    for load_balancer in load_balancer_threads:
-      load_balancer.join()
+    for delete_thread in lb_delete_threads:
+      delete_thread.join()
 
-    AppScaleLogger.log("Load balancer virtual machine(s) have been successfully "
-                       "deleted")
+    AppScaleLogger.log("Load balancer virtual machine(s) have been "
+       "successfully deleted")
 
-  def delete_virtual_machine_scale_set(self, compute_client, resource_group,
-                                       verbose, scale_set_name):
+  def delete_virtual_machine_scale_set(self, compute_client, parameters, vmss_name):
     """ Deletes the virtual machine scale set created from the specified
     resource group.
     Args:
         compute_client: An instance of the Compute Management client.
-        resource_group: The resource group name to use for this deployment.
-        verbose: A boolean indicating whether or not the verbose mode is on.
-        scale_set_name: The name of the virtual machine scale set to be deleted.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+        vmss_name: The name of the virtual machine scale set to be deleted.
     """
-    AppScaleLogger.verbose("Deleting Scale Set {} ...".format(scale_set_name), verbose)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
+    AppScaleLogger.verbose("Deleting Scale Set {} ...".format(vmss_name), verbose)
     try:
       delete_response = compute_client.virtual_machine_scale_sets.delete(
-        resource_group,scale_set_name)
-      resource_name = 'Virtual Machine Scale Set' + ":" + scale_set_name
+        resource_group, vmss_name)
+      resource_name = 'Virtual Machine Scale Set' + ":" + vmss_name
       self.sleep_until_delete_operation_done(delete_response, resource_name,
                                              self.MAX_VM_UPDATE_TIME, verbose)
       AppScaleLogger.verbose("Virtual Machine Scale Set {} has been successfully "
-                             "deleted.".format(scale_set_name), verbose)
+                             "deleted.".format(vmss_name), verbose)
     except CloudError as error:
       raise AgentConfigurationException("There was a problem while deleting the "
                                         "Scale Set {0} due to the error: {1}"
-                                        .format(scale_set_name, error.message))
+                                        .format(vmss_name, error.message))
 
-  def delete_virtual_machine(self, compute_client, resource_group, verbose,
-                             vm_name):
+  def delete_vmss_instance(self, compute_client, parameters, vmss_name, instance_id):
+    """ Deletes the specified virtual machine instance from the given Scale Set.
+    Args:
+      compute_client: An instance of the Compute Management client.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
+      vmss_name: The Scale Set from which the instance needs to be deleted.
+      instance_id: The ID of the instance in the Scale Set to be deleted.
+    """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
+    AppScaleLogger.verbose("Deleting Virtual Machine Instance {0} from Scale "
+      "Set {1} ...".format(instance_id, vmss_name), verbose)
+    result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
+                                                                 vmss_name,
+                                                                 instance_id)
+    resource_name = 'Virtual Machine Instance ' + instance_id
+    self.sleep_until_delete_operation_done(result, resource_name,
+                                           self.MAX_VM_UPDATE_TIME, verbose)
+    AppScaleLogger.verbose("Virtual Machine Instance {0} from Scale Set {1} "
+      "has been successfully deleted".format(instance_id, vmss_name), verbose)
+
+  def delete_virtual_machine(self, compute_client, parameters, vm_name):
     """ Deletes the virtual machine from the resource_group specified.
     Args:
       compute_client: An instance of the Compute Management client.
-      resource_group: The resource group name to use for this deployment.
-      verbose: A boolean indicating whether or not the verbose mode is on.
+      parameters: A dict, containing all the parameters necessary to
+        authenticate this user with Azure.
       vm_name: The name of the virtual machine to be deleted.
     """
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
     result = compute_client.virtual_machines.delete(resource_group, vm_name)
     resource_name = 'Virtual Machine' + ':' + vm_name
