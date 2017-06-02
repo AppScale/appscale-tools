@@ -30,8 +30,13 @@ class AdminClient(object):
     self.host = host
     self.secret = secret
     self.prefix = 'https://{}:{}/v1/apps'.format(host, self.PORT)
-    requests.packages.urllib3.disable_warnings(
-      requests.packages.urllib3.exceptions.InsecureRequestWarning)
+    try:
+      requests.packages.urllib3.disable_warnings(
+        requests.packages.urllib3.exceptions.InsecureRequestWarning)
+    except AttributeError:
+      # Requests 2.16 removed vendored dependencies.
+      import urllib3
+      urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
   def extract_response(self, response):
     """ Processes AdminServer responses.
