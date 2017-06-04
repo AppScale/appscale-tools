@@ -367,16 +367,9 @@ class TestRemoteHelper(unittest.TestCase):
       .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('monit'))\
       .and_return()
 
-    # also assume that we scp'ed over the god config file fine
-    local_state.should_receive('shell')\
-      .with_args(re.compile('scp .*controller-17443.cfg*'),False,5)\
-      .and_return()
-
     # and assume we started the AppController on public1 fine
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'), False, 5,
-        stdin=re.compile('^monit start -g controller'))\
-      .and_return()
+    local_state.should_receive('shell').with_args(
+      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
 
     # finally, assume the appcontroller comes up after a few tries
     # assume that ssh comes up on the third attempt

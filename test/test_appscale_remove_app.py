@@ -15,12 +15,13 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
+from appscale.tools.admin_client import AdminClient
+from appscale.tools.admin_client import AdminError
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import AppScaleException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
-from appscale.tools.remote_helper import RemoteHelper
 
 
 class TestAppScaleRemoveApp(unittest.TestCase):
@@ -60,22 +61,14 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     # mock out reading the secret key
     builtins.should_call('open')  # set the fall-through
 
-    app_stats_data = {'pippo': {'nginx': 8080}}
     secret_key_location = LocalState.get_secret_key_location(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
 
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('get_app_info_map').with_args(
-      'the secret').and_return(json.dumps(app_stats_data))
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
+    flexmock(AdminClient).should_receive('delete_version').\
+      and_raise(AdminError)
 
     # mock out reading the locations.json file, and slip in our own json
     flexmock(os.path)
@@ -100,7 +93,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       "--keyname", self.keyname
     ]
     options = ParseArgs(argv, self.function).args
-    self.assertRaises(AppScaleException, AppScaleTools.remove_app, options)
+    self.assertRaises(AdminError, AppScaleTools.remove_app, options)
 
 
   def test_remove_app_and_app_is_running(self):
@@ -116,21 +109,6 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     fake_secret.should_receive('read').and_return('the secret')
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
-    app_stats_data = {'blargapp': {'nginx': 8080}}
-
-    # mock out the SOAP call to the AppController and assume it succeeded
-    fake_appcontroller = flexmock(name='fake_appcontroller')
-    fake_appcontroller.should_receive('status').with_args('the secret') \
-      .and_return('Database is at public1')
-    fake_appcontroller.should_receive('stop_app').with_args('blargapp',
-      'the secret').and_return('OK')
-    fake_appcontroller.should_receive('does_app_exist').with_args('blargapp',
-      'the secret').and_return(True)
-    fake_appcontroller.should_receive('get_app_info_map').with_args(
-      'the secret').and_return(json.dumps(app_stats_data))
-    flexmock(SOAPpy)
-    SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
-      .and_return(fake_appcontroller)
 
     # mock out reading the locations.json file, and slip in our own json
     flexmock(os.path)
@@ -150,7 +128,11 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
 
-    flexmock(RemoteHelper).should_receive('is_port_open').and_return(False)
+    operation_id = 'operation-1'
+    flexmock(AdminClient).should_receive('delete_version').\
+      and_return(operation_id)
+    flexmock(AdminClient).should_receive('get_operation').\
+      and_return({'done': True})
 
     argv = [
       "--appname", "blargapp",

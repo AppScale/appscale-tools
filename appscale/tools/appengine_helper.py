@@ -32,6 +32,10 @@ class AppEngineHelper(object):
   JAVA_APP_ID_REGEX = re.compile(r'<application>(.*)<\/application>')
 
 
+  # A regular expression for finding the threadsafe key in appengine-web.xml.
+  JAVA_THREADSAFE_REGEX = re.compile(r'<threadsafe>(.*)<\/threadsafe>')
+
+
   # A list of language runtimes that App Engine apps can be written in.
   ALLOWED_RUNTIMES = ("python27", "java", "go", "php")
 
@@ -219,6 +223,43 @@ class AppEngineHelper(object):
     else:
       return 'java'
 
+  @classmethod
+  def is_threadsafe(cls, app_dir):
+    """ Retrieves threadsafe value from version configuration.
+
+    Args:
+      app_dir: The directory containing the version source code.
+    Returns:
+      A boolean containing the value of threadsafe.
+    Raises:
+      AppEngineConfigException if the version is configured incorrectly.
+    """
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      try:
+        threadsafe = yaml_contents['threadsafe']
+      except KeyError:
+        raise AppEngineConfigException(
+          '"threadsafe" must be definined in your app.yaml.')
+    else:
+      xml_contents = cls.read_file(app_config_file)
+      try:
+        threadsafe = cls.JAVA_THREADSAFE_REGEX.search(xml_contents).group(1)
+      except AttributeError:
+        raise AppEngineConfigException(
+          '"threadsafe" must be definined in your appengine-web.xml.')
+
+      print('threadsafe: {}'.format(threadsafe))
+      if threadsafe.lower() not in ['true', 'false']:
+        raise AppEngineConfigException(
+          'Invalid "threadsafe" value in your app configuration. '
+          'It must be either "true" or "false".')
+      threadsafe = threadsafe.lower() == 'true'
+
+    if not isinstance(threadsafe, bool):
+      raise AppEngineConfigException('"threadsafe" must be a boolean value.')
+    return threadsafe
 
   @classmethod
   def get_config_file_from_dir(cls, app_dir):
