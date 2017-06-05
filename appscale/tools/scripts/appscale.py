@@ -77,6 +77,24 @@ def main():
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
+  elif command == "create-user":
+    try:
+      if len(sys.argv) < 2 or len(sys.argv) > 3:
+        cprint("Usage: appscale create-user [--admin]", 'red')
+        sys.exit(1)
+      if len(sys.argv) == 3:
+        if sys.argv[2] == '--admin':
+          appscale.create_user(True)
+        else:
+          cprint("Error: Invalid argument to 'create-user' command. To create user as admin, "
+                 "you should specified the option '--admin'", 'red')
+          cprint("Usage: appscale create-user --admin", 'red')
+          sys.exit(1)
+      elif len(sys.argv) == 2:
+        appscale.create_user()
+    except Exception as exception:
+      LocalState.generate_crash_log(exception, traceback.format_exc())
+      sys.exit(1)
   elif command == "undeploy" or command == "remove":
     try:
       if len(sys.argv) != 3:
