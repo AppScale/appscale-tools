@@ -104,7 +104,7 @@ class NodeLayout():
     if isinstance(input_yaml, str):
       with open(input_yaml, 'r') as file_handle:
         self.input_yaml = yaml.safe_load(file_handle.read())
-    elif isinstance(input_yaml, dict):
+    elif isinstance(input_yaml, dict) or isinstance(input_yaml, list):
       self.input_yaml = input_yaml
     else:
       self.input_yaml = None
@@ -132,7 +132,9 @@ class NodeLayout():
     Returns:
       A bool that indicates if this placement strategy is valid.
     """
-    if self.is_simple_format():
+    if self.is_new_format():
+      return self.is_valid_new_format()['result']
+    elif self.is_simple_format():
       return self.is_valid_simple_format()['result']
     elif self.is_advanced_format():
       return self.is_valid_advanced_format()['result']
@@ -150,7 +152,9 @@ class NodeLayout():
     if self.is_valid():
       return []
 
-    if self.is_simple_format():
+    if self.is_new_format():
+      return self.is_valid_new_format()['message']
+    elif self.is_simple_format():
       return self.is_valid_simple_format()['message']
     elif self.is_advanced_format():
       return self.is_valid_advanced_format()['message']
@@ -243,6 +247,20 @@ class NodeLayout():
         return False
 
     return True
+
+  def is_new_format(self):
+    """Checks the YAML given to see if the user wants us to run services
+    via the advanced deployment strategy.
+
+    Returns:
+      True if all the roles specified are advanced roles, and False otherwise.
+    """
+    if not self.input_yaml:
+      return False
+    if isinstance(self.input_yaml, list):
+      return True
+    else:
+      return False
 
 
   def parse_ip(self, ip_address):
@@ -382,6 +400,149 @@ class NodeLayout():
     self.nodes = nodes
     return self.valid()
 
+  def is_valid_new_format(self):
+    """Checks to see if this NodeLayout represents an acceptable (new) advanced
+    deployment strategy, and if so, constructs self.nodes from it.
+    
+    Returns:
+      A dict that indicates if the deployment strategy is valid, and if
+      not, the reason why it is invalid.
+    """
+    if self.nodes:
+      return self.valid()
+
+    # Keep track of whether the deployment is valid while going through.
+    node_hash = {}
+    role_count = {
+      'appengine': 0,
+      'master': 0,
+      'memcache': 0,
+      'taskqueue': 0,
+      'zookeeper': 0
+    }
+    node_count = 1
+    db_master_created = False
+    tq_master_created = False
+    master_node = None
+    login_found = False
+    # Loop through the list of "node sets", which are grouped by role.
+    for node_set in self.input_yaml:
+      # If the key 'num_nodes' exists it should be a cloud deployment.
+      cloud = True if 'num_nodes' in node_set else False
+
+      # In cloud deployments, set the fake public ips to node-#.
+      if cloud:
+        ip_addr = ["node-{}".format(node_count + i) \
+                   for i in xrange(node_set.get('num_nodes'))]
+      # Otherwise get the ips and validate them.
+      else:
+        ip_addr = [self.parse_ip(ip)[0] for ip in node_set.get('nodes')]
+        for ip in ip_addr:
+          if not self.IP_REGEX.match(ip):
+            return self.invalid("{0} must be an IP address".format(ip))
+
+      if len(ip_addr) == 0:
+        return self.invalid("Node amount cannot be zero.")
+
+      # Get the roles.
+      roles = node_set.get('roles')
+
+      # Immediately fail if we have more than one node for master.
+      if ('master' in roles and len(ip_addr) > 1) or master_node is not None:
+        return self.invalid("Only one master is allowed")
+
+      # Create or retrieve the nodes from the node_hash.
+      nodes = [node_hash[ip] if ip in node_hash else AdvancedNode(ip, cloud)
+               for ip in ip_addr]
+
+      # Validate volume usage, there should be an equal number of volumes to
+      # number of nodes.
+      if node_set.get('volumes', None):
+        volumes = node_set.get('volumes')
+        if len(volumes) != len(nodes):
+          return self.invalid("When specifying volumes you must have the same "
+                              "amount as nodes or num_nodes.")
+
+        for node, disk in zip(nodes, volumes):
+          node.disk = disk
+
+      # Add the defined roles to the nodes.
+      [node.add_role(role) for node in nodes for role in roles]
+
+      # Check cases where a master is needed.
+      if 'master' in roles:
+        master_node = nodes[0]
+      if 'database' in roles and not db_master_created:
+        nodes[0].add_db_role(True)
+        nodes[0].add_role('zookeeper')
+        db_master_created = True
+      if 'taskqueue' in roles and not tq_master_created:
+        # Check if we have more than one node to choose from and the first node
+        # is already the database master.
+        if 'db_master' in nodes[0].roles and len(nodes) > 1:
+          nodes[1].add_taskqueue_role(True)
+        else:
+          nodes[0].add_taskqueue_role(True)
+      if 'login' in roles:
+        login_found = True
+      elif 'login' in roles and login_found:
+        return self.invalid("Only one login is allowed")
+
+      # Update dictionary containing role counts.
+      role_count.update({(role, role_count.get(role, 0) + len(nodes))
+                          for role in roles})
+      # Update the node_hash with the modified nodes.
+      node_hash.update({(node.public_ip, node) for node in nodes})
+
+      # Update node_count.
+      node_count += len(nodes)
+
+    # Check if a master node was specified.
+    if role_count.pop('master', 0) == 0:
+      return self.invalid("No master was specified")
+
+    # Check if an appengine node was specified.
+    if role_count.pop('appengine', 0) == 0:
+      return self.invalid("Need to specify at least one appengine node")
+
+    if not login_found:
+      master_node.add_role('login')
+
+    # Dont need the hash any more, make a nodes list
+    nodes = node_hash.values()
+
+    for role, count in role_count.iteritems():
+      # If count is not zero, we do not care.
+      if count != 0:
+        continue
+      # If no memcache nodes were specified, make all appengine nodes
+      # into memcache nodes.
+      if role == 'memcache':
+        for node in nodes:
+          if node.is_role('appengine'):
+            node.add_role('memcache')
+      # If no zookeeper nodes are specified, make the shadow a zookeeper node.
+      elif role == 'zookeeper':
+        master_node.add_role('zookeeper')
+      # If no taskqueue nodes are specified, make the shadow the
+      # taskqueue_master.
+      elif role == 'taskqueue':
+        master_node.add_role('taskqueue')
+        master_node.add_role('taskqueue_master')
+
+    if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+      if not self.min_vms:
+        self.min_vms = len(nodes)
+      if not self.max_vms:
+        self.max_vms = len(nodes)
+
+    rep = self.is_database_replication_valid(nodes)
+    if not rep['result']:
+      return rep
+
+    self.nodes = nodes
+
+    return self.valid()
 
   def is_valid_advanced_format(self):
     """Checks to see if this NodeLayout represents an acceptable advanced
