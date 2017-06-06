@@ -447,7 +447,9 @@ class NodeLayout():
         return self.invalid("Node amount cannot be zero.")
 
       # Get the roles.
-      roles = node_set.get('roles')
+      role_or_roles = node_set.get('roles')
+      roles = role_or_roles if isinstance(role_or_roles, list) else \
+        [role_or_roles]
 
       # Immediately fail if we have more than one node for master.
       if ('master' in roles and len(ip_addr) > 1) or master_node is not None:
