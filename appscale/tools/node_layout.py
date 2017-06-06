@@ -436,7 +436,9 @@ class NodeLayout():
                    for i in xrange(node_set.get('num_nodes'))]
       # Otherwise get the ips and validate them.
       else:
-        ip_addr = [self.parse_ip(ip)[0] for ip in node_set.get('nodes')]
+        ip_or_ips = node_set.get('nodes')
+        ips_list = ip_or_ips if isinstance(ip_or_ips, list) else [ip_or_ips]
+        ip_addr = [self.parse_ip(ip)[0] for ip in ips_list]
         for ip in ip_addr:
           if not self.IP_REGEX.match(ip):
             return self.invalid("{0} must be an IP address".format(ip))
