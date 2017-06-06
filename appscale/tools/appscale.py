@@ -330,9 +330,11 @@ Available commands:
     keyname = config['keyname']
     verbose = config.get('verbose', False)
 
-    if not isinstance(config['ips_layout'], dict):
+    if not isinstance(config['ips_layout'], dict) and \
+        not isinstance(config['ips_layout'], list):
       raise BadConfigurationException(
-        'ips_layout should be a dictionary. Please fix it and try again.')
+        'ips_layout should be a dictionary or list. Please fix it and try '
+        'again.')
 
     ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
     if not os.path.exists(ssh_key_location):
