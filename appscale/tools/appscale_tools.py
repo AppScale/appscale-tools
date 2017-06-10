@@ -667,10 +667,8 @@ class AppScaleTools(object):
       APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException("There were errors with your " + \
-                                      "placement strategy:\n{0}".format(str(node_layout.errors())))
-
+    if node_layout.warning:
+      AppScaleLogger.warn(node_layout.warning)
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
     if options.infrastructure:

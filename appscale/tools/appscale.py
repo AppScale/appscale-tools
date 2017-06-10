@@ -348,6 +348,8 @@ Available commands:
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
+    if node_layout.warning:
+      AppScaleLogger.warn(node_layout.warning)
     head_node = node_layout.head_node()
     if head_node is not None:
       remote_key = '{}/ssh.key'.format(RemoteHelper.CONFIG_DIR)
