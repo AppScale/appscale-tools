@@ -336,3 +336,9 @@ class TestLocalState(unittest.TestCase):
       and_return(True)
     actual_key_path = LocalState.get_key_path_from_name(keyname)
     self.assertEquals(etc_appscale_key_file_path, actual_key_path)
+
+  def test_generate_xmpp_username(self):
+    # It should generate xmpp username of given length
+    # and use it to append the given username (test) and _
+    username = LocalState.generate_xmpp_username('test', 8)
+    self.assertEquals(13, len(username))

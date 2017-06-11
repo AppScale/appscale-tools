@@ -792,6 +792,7 @@ class RemoteHelper(object):
     """
     acc = AppControllerClient(public_ip, LocalState.get_secret_key(keyname))
 
+    is_new_user = False
     # first, create the standard account
     encrypted_pass = LocalState.encrypt_password(email, password)
     if acc.does_user_exist(email):
@@ -799,6 +800,7 @@ class RemoteHelper(object):
         format(email))
     else:
       acc.create_user(email, encrypted_pass)
+      is_new_user = True
 
     # next, create the XMPP account. if the user's e-mail is a@a.a, then that
     # means their XMPP account name is a@login_ip
@@ -807,10 +809,18 @@ class RemoteHelper(object):
     xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
-    if acc.does_user_exist(xmpp_user):
-      AppScaleLogger.log(
-        "XMPP User {0} already exists, so not creating it again.".
-        format(xmpp_user))
+    is_xmpp_user_exist = acc.does_user_exist(xmpp_user)
+
+    if is_xmpp_user_exist and is_new_user:
+      AppScaleLogger.log("XMPP User {0} conflict!".format(xmpp_user))
+
+      generated_xmpp_username = LocalState.generate_xmpp_username(username)
+      xmpp_user = "{0}@{1}".format(generated_xmpp_username, LocalState.get_login_host(keyname))
+      xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
+
+      acc.create_user(xmpp_user, xmpp_pass)
+    elif is_xmpp_user_exist and not is_new_user:
+      AppScaleLogger.log("XMPP User {0} already exists, so not creating it again.".format(xmpp_user))
     else:
       acc.create_user(xmpp_user, xmpp_pass)
     AppScaleLogger.log("Your XMPP username is {0}".format(xmpp_user))
