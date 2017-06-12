@@ -204,9 +204,8 @@ class AppScaleTools(object):
         password = getpass.getpass()
 
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException("There were problems with your " + \
-        "placement strategy: " + str(node_layout.errors()))
+    if node_layout.warning:
+      AppScaleLogger.warn(node_layout.warning)
 
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
