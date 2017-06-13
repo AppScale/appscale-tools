@@ -386,7 +386,7 @@ class NodeLayout():
       # Check cases where a master is needed.
       if role == 'master':
         master_node = nodes[0]
-      if 'database' and not db_master_created:
+      if role == 'database' and not db_master_created:
         nodes[0].add_db_role(True)
         db_master_created = True
       if role == 'taskqueue' and not tq_master_created:
@@ -598,16 +598,13 @@ class NodeLayout():
     return True
 
   def distribute_unassigned_roles(self, nodes, role_count, master_node):
-    """
+    """ Distributes roles that were not defined by user.
     
     Args:
       nodes: The list of nodes.
       role_count: A dict containing roles mapped to their count.
       master_node: The master node of the deployment.
     """
-    print(role_count)
-    print(nodes)
-    print(master_node)
     # Check if a master node was specified.
     if role_count.pop('master', 0) == 0:
       self.invalid("Need to specify one master node.")

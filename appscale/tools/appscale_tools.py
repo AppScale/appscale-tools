@@ -141,10 +141,6 @@ class AppScaleTools(object):
       raise BadConfigurationException("Cannot add master nodes to an " + \
         "already running AppScale deployment.")
 
-    # Skip checking for -n (replication) because we don't allow the user
-    # to specify it here (only allowed in run-instances).
-    additional_nodes_layout = NodeLayout(options)
-
     # In virtualized cluster deployments, we need to make sure that the user
     # has already set up SSH keys.
     if LocalState.get_infrastructure_option(keyname=options.keyname,
