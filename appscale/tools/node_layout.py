@@ -228,7 +228,7 @@ class NodeLayout():
     Returns:
       True if the deployment strategy is valid.
     Raises:
-      BadConfigurationException with reason if the deployment strategy is not 
+      BadConfigurationException with reason if the deployment strategy is not
         valid.
     """
     if not self.input_yaml:
@@ -381,7 +381,8 @@ class NodeLayout():
           node.disk = self.disks.get(node.public_ip)
 
       # Add the defined roles to the nodes.
-      [node.add_role(role) for node in nodes]
+      for node in nodes:
+        node.add_role(role)
 
       # Check cases where a master is needed.
       if role == 'master':
@@ -468,7 +469,8 @@ class NodeLayout():
         ip_or_ips = node_set.get('nodes')
         ips_list = ip_or_ips if isinstance(ip_or_ips, list) else [ip_or_ips]
         # Validate that the ips_list are either node-id or ip addresses.
-        [self.is_cloud_ip(ip) for ip in ips_list]
+        for ip in ips_list:
+          self.is_cloud_ip(ip)
 
       if len(ips_list) == 0:
         self.invalid("Node amount cannot be zero.")
@@ -496,7 +498,9 @@ class NodeLayout():
           node.disk = disk
 
       # Add the defined roles to the nodes.
-      [node.add_role(role) for node in nodes for role in roles]
+      for node in nodes:
+        for role in roles:
+          node.add_role(role)
 
       # Check cases where a master is needed.
       if 'master' in roles:
@@ -551,7 +555,7 @@ class NodeLayout():
     Args:
       nodes: The list of Nodes.
       disks: The list of disks provided or None if using the old format.
-    Raises: BadConfigurationException indicating why the disks given were 
+    Raises: BadConfigurationException indicating why the disks given were
       invalid.
     """
     # Make sure that every node has a disk specified.
@@ -620,8 +624,9 @@ class NodeLayout():
       # If no memcache nodes were specified, make all appengine nodes
       # into memcache nodes.
       if role == 'memcache':
-        [node.add_role('memcache') for node in nodes \
-         if node.is_role('appengine')]
+        for node in nodes:
+          if node.is_role('appengine'):
+            node.add_role('memcache')
         # If no zookeeper nodes are specified, make the shadow a zookeeper node.
       elif role == 'zookeeper':
         master_node.add_role('zookeeper')
@@ -772,7 +777,7 @@ class NodeLayout():
       return None
 
   def invalid(self, message):
-    """ Wrapper that NodeLayout validation aspects call when the given layout 
+    """ Wrapper that NodeLayout validation aspects call when the given layout
       is invalid.
     
     Raises: BadConfigurationException with the given message.
@@ -793,7 +798,7 @@ class Node():
 
 
     Args:
-      public_ip: The public IP address, and in cloud deployments, we use 
+      public_ip: The public IP address, and in cloud deployments, we use
       node-int (since we don't know the IP address)
       cloud: The cloud that this Node belongs to.
       roles: A list of roles that this Node will run in an AppScale deployment.

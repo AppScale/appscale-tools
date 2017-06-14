@@ -380,10 +380,10 @@ Available commands:
 
     return True
 
+  @staticmethod
   def get_ips_from_options(self, ips):
-    """ Gets ips from run time options and validates that they are valid ip 
+    """ Gets ips from run time options and validates that they are valid ip
     addresses.
-    
     Args:
       ips: A list or dict containing the ips attribute of the run time options.
     Raises:
