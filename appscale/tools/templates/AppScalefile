@@ -13,20 +13,42 @@
 # Use the IPs of existing machines,
 # or node-X notation if you want AppScale to start new machines on the
 # Infrastructure of choice.
-
+# A single node deployment:
 ips_layout:
-  master : [vm1_private_IP | node-1]
-  appengine:
-   - [vm2_private_IP | node-2]
-   - [vm3_private_IP | node-3]
-  database:   # Cassandra needs a quorum to answer queries (hence 3)
-   - [vm4_private_IP | node-4]
-   - [vm5_private_IP | node-5]
-   - [vm6_private_IP | node-6]
-  zookeeper:  # Zookeeper needs a majority of peers online (hence 3)
-   - [vm7_private_IP | node-7]
-   - [vm8_private_IP | node-8]
-   - [vm9_private_IP | node-9]
+  -
+    roles:
+      - master
+      - appengine
+      - database
+      -zookeeper
+    nodes: [1 | vm1_private_IP]
+
+# A multi node deployment.
+#ips_layout:
+#  -
+#    roles: master
+#    nodes: [1 | vm1_private_IP]
+#  -
+#    roles: appengine
+#    nodes: [1 | vm2_private_IP]
+#  -
+#    roles: database   # Cassandra needs a quorum to answer queries (hence 3)
+#    nodes: [3 | [vm3_private_IP, vm4_private_IP, vm5_private_IP]]
+#  -
+#    roles: zookeeper  # Zookeeper needs a majority of peers online (hence 3)
+#    nodes: [3 | [vm6_private_IP, vm7_private_IP, vm8_private_IP]]
+
+# A slightly more complex multi node with multiple roles on nodes.
+#ips_layout:
+#  -
+#    roles: master
+#    nodes: [1 | vm1_private_IP]
+#  -
+#    roles: appengine, database
+#    nodes: [3 | [vm3_private_IP, vm4_private_IP, vm5_private_IP]]
+#  -
+#    roles: zookeeper  # Zookeeper needs a majority of peers online (hence 3)
+#    nodes: [3 | [vm6_private_IP, vm7_private_IP, vm8_private_IP]]
 
 # Login is used to instruct AppScale which one is the visible public IP used
 # by clients to connect. It could be the public IP of the master/load-balancer
