@@ -1,0 +1,171 @@
+---
+
+
+##################################################
+########## Virtual Machine (VM) Layout ###########
+##################################################
+# The deployment strategy used in this AppScale deployment.
+# Each service/role can run on one or multiple machines.
+# Primary roles: master, appengine, database, zookeeper
+# Optional roles: loadbalancer, taskqueue, search
+
+# For each role other than master you can specify multiple machines.
+# Use the IPs of existing machines,
+# or node-X notation if you want AppScale to start new machines on the
+# Infrastructure of choice.
+
+ips_layout:
+  master : [vm1_private_IP | node-1]
+  appengine:
+   - [vm2_private_IP | node-2]
+   - [vm3_private_IP | node-3]
+  database:   # Cassandra needs a quorum to answer queries (hence 3)
+   - [vm4_private_IP | node-4]
+   - [vm5_private_IP | node-5]
+   - [vm6_private_IP | node-6]
+  zookeeper:  # Zookeeper needs a majority of peers online (hence 3)
+   - [vm7_private_IP | node-7]
+   - [vm8_private_IP | node-8]
+   - [vm9_private_IP | node-9]
+
+# Login is used to instruct AppScale which one is the visible public IP used
+# by clients to connect. It could be the public IP of the master/load-balancer
+# instance, or it could be the list of IPs used for external load-balancers.
+login : [vm1_public_IP | Domain Name]
+
+
+
+#################################################
+########## Public Cloud configuration ###########
+#################################################
+
+############ Amazon Web Services EC2 ############
+# To deploy on AWS EC2, uncomment/fill out the following parameters:
+# infrastructure : 'ec2'
+
+# AppScale-ready AWS AMI.
+# machine : 'ami-XXXXXX’
+
+# AWS credentials.
+# EC2_ACCESS_KEY: 'YYYY'
+# EC2_SECRET_KEY: 'ZZZZ'
+
+# Instance type of your choice. Default is m3.medium.
+# instance_type : 'm3.medium'
+
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+# zone : 'us-east-1b'
+
+# The unique security and network group name that will be used for all machines
+# in this AppScale deployment.
+# By default, the group is auto-generated.
+# group : 'appscalegroup'
+
+# The Elastic IP that will be used as (part of) the application frontend URL.
+# static_ip: '1.2.3.4'
+
+
+############ Google Compute Engine ############
+# To deploy on GCE, uncomment/fill out the following parameters:
+# infrastructure : 'gce'
+
+# GCE Project ID.
+# project: 'project-id-here'
+
+# AppScale-ready VM Image.
+# machine : ‘image-name-here’
+
+# GCE credentials.
+# client_secrets: '~/client_secrets.json'
+
+# Instance type of your choice. Default is n1-standard-1.
+# instance_type : 'n1-standard-1'
+
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+# zone : 'us-central1-a'
+
+# The unique network and firewall rule name for the machines belonging to
+# this deployment.
+# By default, the group is auto-generated.
+# group : 'appscalegroup'
+
+
+############ Microsoft Azure ############
+# To deploy on Azure, uncomment/fill out the following parameters:
+# infrastructure : ‘azure’
+
+# AppScale-ready VM image URL.
+# machine : ‘URL-to-image-here’
+
+# Azure credentials.
+# azure_subscription_id : ‘JJJJ’
+# azure_app_id : ‘KKKK’
+# azure_tenant_id : ‘XXXX’
+# azure_app_secret_key : ‘YYYY’
+
+# Instance type of your choice. Default is Standard_A3.
+# instance_type : ‘Standard_A3’
+
+# The availability zone that should be used for all virtual machines in your
+# AppScale deployment. If using persistent disks in your AppScale deployment,
+# they should be in the same zone that you specify here.
+# zone : ‘West US’
+
+# The unique resource group that Azure resources will be created under for this
+# deployment. This group is auto-generated if not specified.
+# azure_resource_group : 'appscale-resource-group'
+
+# The unique Azure storage account to be used for this deployment.
+# This storage account is auto-generated if not specified.
+# azure_storage_account : 'appscalestorageaccount'
+
+
+
+#############################################
+############ Optional Parameters ############
+#############################################
+
+# The number of data replicas for this deployment. A value of 3 or 5 is
+# recommended for production settings.
+# By default, this value is set to 1.
+# replication : 3
+
+# The max number of machines that can be used for your AppScale deployment.
+# Supported only in the Public Clouds above.
+# By default, it is the number of distinct nodes specified in the ips_layout
+# section.
+# max : 1
+
+# The number of AppServer instances that serve application requests.
+# By default, we start with two AppServer instances for high availability
+# and dynamically scale up/down based on the number of application requests.
+# appengine : 3
+
+# The maximum amount of memory (in MB) an AppServer instance can use. 
+# By default, we limit each AppServer instance to 400MB.
+# max_memory: 400
+
+# The password that will be used for the Flower web interface to monitor task
+# queues.
+# By default, this value is set to 'appscale'.
+# flower_password: 'appscale'
+
+
+
+#######################################
+############ For Devs Only ############
+#######################################
+
+# Whether or not increased output should be presented to standard output.
+# We recommend setting this to True if you are encountering issues with
+# AppScale and wish to see precisely where they are coming from.
+# verbose : True
+
+# AppScale developers only: Bypasses the usual prompt for a cloud
+# username and password and uses a default set of values. Insecure for
+# a production environment but acceptable for testing.
+# test : True
