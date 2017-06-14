@@ -263,9 +263,9 @@ class TestNodeLayout(unittest.TestCase):
 
   def test_from_locations_json_list_valid(self):
     node_layout = NodeLayout(self.reattach_options)
-    self.assertNotEqual(node_layout.nodes, None)
+    self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
+    self.assertNotEqual([], new_layout.nodes)
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
@@ -300,9 +300,9 @@ class TestNodeLayout(unittest.TestCase):
     )
 
     node_layout = NodeLayout(options)
-    self.assertNotEqual(node_layout.nodes, None)
+    self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
+    self.assertNotEqual([], new_layout.nodes)
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
@@ -313,7 +313,7 @@ class TestNodeLayout(unittest.TestCase):
 
   def test_from_locations_json_list_invalid_locations(self):
     node_layout = NodeLayout(self.reattach_options)
-    self.assertNotEqual(node_layout.nodes, None)
+    self.assertNotEqual([], node_layout.nodes)
 
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
@@ -363,7 +363,7 @@ class TestNodeLayout(unittest.TestCase):
     )
 
     node_layout = NodeLayout(options)
-    self.assertNotEqual(node_layout.nodes, None)
+    self.assertNotEqual([], node_layout.nodes)
 
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
     self.assertEqual(new_layout, None)
