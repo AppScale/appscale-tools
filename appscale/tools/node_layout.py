@@ -429,7 +429,7 @@ class NodeLayout():
     Returns:
       True if the deployment strategy is valid.
     Raises:
-      BadConfigurationException with reason if the deployment strategy is not 
+      BadConfigurationException with reason if the deployment strategy is not
         valid.
     """
     # Keep track of whether the deployment is valid while going through.
