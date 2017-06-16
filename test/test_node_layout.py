@@ -164,8 +164,9 @@ class TestNodeLayout(unittest.TestCase):
     fake_node.should_receive('is_role').with_args('database').and_return(False)
     fake_node.should_receive('is_role').with_args('db_master').and_return(False)
     fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
-    output = NodeLayout(options).is_database_replication_valid([fake_node])
-    self.assertTrue(output)
+    # validate_database_replication will raise BadConfigurationException if
+    # it is invalid.
+    NodeLayout(options).validate_database_replication([fake_node])
 
 
   def test_with_wrong_number_of_disks(self):

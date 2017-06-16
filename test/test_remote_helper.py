@@ -561,8 +561,6 @@ class TestRemoteHelper(unittest.TestCase):
     RemoteHelper.start_all_nodes(self.reattach_options,
                                  self.node_layout)
 
-
-
   def test_start_all_nodes_reattach_changed_asf(self):
     self.options = flexmock(
       infrastructure='public cloud',

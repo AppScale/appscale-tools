@@ -200,8 +200,6 @@ class AppScaleTools(object):
         password = getpass.getpass()
 
     node_layout = NodeLayout(options)
-    if node_layout.warning:
-      AppScaleLogger.warn(node_layout.warning)
 
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
@@ -662,8 +660,7 @@ class AppScaleTools(object):
       APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
-    if node_layout.warning:
-      AppScaleLogger.warn(node_layout.warning)
+
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
     if options.infrastructure:
