@@ -338,7 +338,7 @@ class NodeLayout():
     Returns:
       True if the deployment strategy is valid.
     Raises:
-      BadConfigurationException with reason if the deployment strategy is not 
+      BadConfigurationException with reason if the deployment strategy is not
         valid.
     """
     # Keep track of whether the deployment is valid while going through.
@@ -396,15 +396,15 @@ class NodeLayout():
           nodes[1].add_taskqueue_role(True)
         else:
           nodes[0].add_taskqueue_role(True)
-      if role == 'login':
-        login_found = True
-      elif role == 'login' and login_found:
+      if role == 'login' and login_found:
         self.invalid("Only one login is allowed")
+      elif role == 'login':
+        login_found = True
 
       # Update dictionary containing role counts.
-      role_count.update({(role, role_count.get(role, 0) + len(nodes))})
+      role_count.update({role: role_count.get(role, 0) + len(nodes)})
       # Update the node_hash with the modified nodes.
-      node_hash.update({(node.public_ip, node) for node in nodes})
+      node_hash.update({node.public_ip: node for node in nodes})
 
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
@@ -522,7 +522,7 @@ class NodeLayout():
         login_found = True
 
       # Update dictionary containing role counts.
-      role_count.update({role: (role_count.get(role, 0) + len(nodes))
+      role_count.update({role: role_count.get(role, 0) + len(nodes)
                          for role in roles})
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
@@ -570,7 +570,7 @@ class NodeLayout():
     """Checks if the database replication factor specified is valid, setting
     it if it is not present.
 
-    Raises: BadConfigurationException when database replication factor is 
+    Raises: BadConfigurationException when database replication factor is
     invalid.
     """
     database_node_count = 0

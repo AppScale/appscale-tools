@@ -349,12 +349,10 @@ Available commands:
       all_ips = LocalState.get_all_public_ips(keyname)
     except BadConfigurationException:
       # If this is an upgrade from 3.1.0, there may not be a locations JSON.
-      self.get_ips_from_options(run_instances_opts.ips)
+      all_ips = self.get_ips_from_options(run_instances_opts.ips)
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
-    if node_layout.warning:
-      AppScaleLogger.warn(node_layout.warning)
     head_node = node_layout.head_node()
     if head_node is not None:
       remote_key = '{}/ssh.key'.format(RemoteHelper.CONFIG_DIR)
@@ -381,7 +379,7 @@ Available commands:
     return True
 
   @staticmethod
-  def get_ips_from_options(self, ips):
+  def get_ips_from_options(ips):
     """ Gets ips from run time options and validates that they are valid ip
     addresses.
     Args:
@@ -398,6 +396,7 @@ Available commands:
                        else [node_set['nodes']])
     assert all(AppEngineHelper.is_valid_ipv4_address(ip) for ip in all_ips), \
       'Invalid IP address in {}'.format(all_ips)
+    return all_ips
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
