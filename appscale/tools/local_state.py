@@ -1336,6 +1336,9 @@ class LocalState(object):
   @classmethod
   def generate_xmpp_username(cls, username, length=6, chars=ascii_lowercase + digits):
     AppScaleLogger.log("Generating a new XMPP username...")
-    generated_username = '' . join([choice(chars) for i in xrange(length)])
+    character_choices = []
+    for i in range(length):
+        character_choices.append(choice(chars))
+    generated_username = ''.join(character_choices)
 
     return username + '_' + generated_username
