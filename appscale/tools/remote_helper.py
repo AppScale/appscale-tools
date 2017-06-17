@@ -7,9 +7,7 @@ import os
 import re
 import socket
 import subprocess
-import sys
 import tarfile
-import threading
 import tempfile
 import time
 import uuid
