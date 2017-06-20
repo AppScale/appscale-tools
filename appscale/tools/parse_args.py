@@ -50,7 +50,7 @@ class ParseArgs(object):
   # limitation.
   ALLOWED_EC2_INSTANCE_TYPES = [
     # General Purpose Instances
-    "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
+    "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m1.large",
 
     # Compute Optimized Instances
     "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
