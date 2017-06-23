@@ -891,4 +891,6 @@ Available commands:
 
     options = ParseArgs(command, 'appscale-upgrade').args
     options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
+    options.terminate = False
+    options.clean = False
     AppScaleTools.upgrade(options)

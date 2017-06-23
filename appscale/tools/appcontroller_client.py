@@ -296,18 +296,6 @@ class AppControllerClient():
     else:
       return server_message
 
-  def stop_app(self, app_id):
-    """Tells the AppController to no longer host the named application.
-
-    Args:
-      app_id: A str that indicates which application should be stopped.
-    Returns:
-      The result of telling the AppController to no longer host the app.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.stop_app, app_id, self.secret)
-
-
   def done_uploading(self, app_id, remote_app_location):
     """Tells the AppController that an application has been uploaded to its
     machine, and where to find it.
