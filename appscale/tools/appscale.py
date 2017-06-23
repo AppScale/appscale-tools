@@ -77,7 +77,7 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  create-user [--admin]             Create a new user. If --admin option is specified, 
+  create-user [--admin]             Creates a new user. If --admin option is specified, 
                                     it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
@@ -314,7 +314,7 @@ Available commands:
     AppScaleTools.run_instances(run_instances_opts)
 
   def create_user(self, is_admin=False):
-    """ 'create_user' create a new user from the CLI
+    """ 'create_user' Creates a new user from the tools.
 
         Raises:
           AppScalefileException: If there is no AppScalefile in the current
@@ -324,7 +324,6 @@ Available commands:
     contents = self.read_appscalefile()
     contents_as_yaml = yaml.safe_load(contents)
 
-    # construct the appscale-gather-logs command
     command = []
     if 'keyname' in contents_as_yaml:
       command.append("--keyname")

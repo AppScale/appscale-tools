@@ -87,7 +87,7 @@ def main():
           appscale.create_user(True)
         else:
           cprint("Error: Invalid argument to 'create-user' command. To create user as admin, "
-                 "you should specified the option '--admin'", 'red')
+                 "you should specify the option '--admin'", 'red')
           cprint("Usage: appscale create-user --admin", 'red')
           sys.exit(1)
       elif len(sys.argv) == 2:
