@@ -635,6 +635,35 @@ class AppScaleTools(object):
         "following reason: {0}".format(str(exception)))
       sys.exit(1)
 
+  @classmethod
+  def create_user(cls, options, is_admin):
+    """Create a new user with the parameters given.
+
+        Args:
+          options: A Namespace that has fields for each parameter that can be
+            passed in via the command-line interface.
+          is_admin: A flag to indicate if the user to be created is an admin user
+        Raises:
+          AppControllerException: If the AppController on the head node crashes.
+            When this occurs, the message in the exception contains the reason why
+            the AppController crashed.
+        """
+    secret = LocalState.get_secret_key(options.keyname)
+    login_host = LocalState.get_login_host(options.keyname)
+
+    username, password = LocalState.get_credentials(is_admin)
+
+    acc = AppControllerClient(login_host, secret)
+
+    RemoteHelper.create_user_accounts(username, password, login_host, options.keyname)
+
+    try:
+      if is_admin:
+        acc.set_admin_role(username, 'true', cls.ADMIN_CAPABILITIES)
+    except Exception as exception:
+      AppScaleLogger.warn("Could not grant admin privileges to the user for the " +
+        "following reason: {0}".format(str(exception)))
+      sys.exit(1)
 
   @classmethod
   def run_instances(cls, options):

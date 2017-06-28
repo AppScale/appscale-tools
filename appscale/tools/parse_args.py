@@ -375,6 +375,10 @@ class ParseArgs(object):
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-create-user":
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
     elif function == "appscale-describe-instances":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -451,6 +455,8 @@ class ParseArgs(object):
       if not self.args.appname:
         raise SystemExit("Must specify appname")
     elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-create-user":
       pass
     elif function == "appscale-describe-instances":
       pass

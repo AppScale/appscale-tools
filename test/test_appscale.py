@@ -433,6 +433,35 @@ class TestAppScale(unittest.TestCase):
     AppScaleTools.should_receive('print_cluster_status')
     appscale.status()
 
+  def testCreateUserWithNoAppScalefile(self):
+    # calling 'appscale create-user' with no AppScalefile in the local
+    # directory should throw up and die
+    appscale = AppScale()
+    self.addMockForNoAppScalefile(appscale)
+    self.assertRaises(AppScalefileException, appscale.create_user)
+
+  def testCreateUserWithAppScalefile(self):
+    # calling 'appscale create-user' with AppScalefile in the local
+    appscale = AppScale()
+
+    # Mock out the actual file reading itself, and slip in a YAML-dumped
+    # file
+    contents = {
+      'infrastructure': 'ec2',
+      'machine': 'ami-ABCDEFG',
+      'keyname': 'bookey',
+      'group': 'boogroup',
+      'verbose': True,
+      'min': 1,
+      'max': 1
+    }
+    yaml_dumped_contents = yaml.dump(contents)
+    self.addMockForAppScalefile(appscale, yaml_dumped_contents)
+
+    # finally, mock out the actual appscale-create-user call
+    flexmock(AppScaleTools)
+    AppScaleTools.should_receive('create_user')
+    appscale.create_user()
 
   def testDeployWithNoAppScalefile(self):
     # calling 'appscale deploy' with no AppScalefile in the local
