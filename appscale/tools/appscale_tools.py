@@ -652,11 +652,10 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
 
     username, password = LocalState.get_credentials(is_admin)
-    encrypted_password = LocalState.encrypt_password(username, password)
 
     acc = AppControllerClient(login_host, secret)
 
-    RemoteHelper.create_user_accounts(username, encrypted_password, login_host, options.keyname)
+    RemoteHelper.create_user_accounts(username, password, login_host, options.keyname)
 
     try:
       if is_admin:
