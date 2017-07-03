@@ -449,8 +449,9 @@ class AppScaleTools(object):
       raise AppScaleException("Can't gather logs, as the location you " + \
         "specified, {0}, already exists.".format(options.location))
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      LocalState.get_secret_key(options.keyname))
+    login_host = LocalState.get_login_host(options.keyname)
+    secret = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(login_host, secret)
 
     try:
       all_ips = acc.get_all_public_ips()
@@ -483,6 +484,9 @@ class AppScaleTools(object):
       local_dir = "{0}/{1}".format(options.location, ip)
       os.mkdir(local_dir)
 
+      if ip == login_host:
+        os.symlink(local_dir, "{}/login-host".format(options.location))
+
       for log_path in log_paths:
         sub_dir = local_dir
 
@@ -498,7 +502,9 @@ class AppScaleTools(object):
 
         try:
           RemoteHelper.scp_remote_to_local(
-            ip, options.keyname, log_path['remote'], sub_dir, options.verbose)
+            ip, options.keyname, log_path['remote'], os.path.abspath(sub_dir),
+            options.verbose
+          )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
