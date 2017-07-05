@@ -486,7 +486,7 @@ class AppScaleTools(object):
       os.mkdir(local_dir)
 
       if ip == login_host:
-        os.symlink(local_dir, os.path.join(location, "login-host"))
+        os.symlink(local_dir, os.path.join(location, "load-balancer"))
 
       for log_path in log_paths:
         sub_dir = local_dir
