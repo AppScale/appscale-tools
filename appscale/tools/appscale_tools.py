@@ -141,10 +141,6 @@ class AppScaleTools(object):
       raise BadConfigurationException("Cannot add master nodes to an " + \
         "already running AppScale deployment.")
 
-    # Skip checking for -n (replication) because we don't allow the user
-    # to specify it here (only allowed in run-instances).
-    additional_nodes_layout = NodeLayout(options)
-
     # In virtualized cluster deployments, we need to make sure that the user
     # has already set up SSH keys.
     if LocalState.get_infrastructure_option(keyname=options.keyname,
@@ -204,9 +200,6 @@ class AppScaleTools(object):
         password = getpass.getpass()
 
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException("There were problems with your " + \
-        "placement strategy: " + str(node_layout.errors()))
 
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
@@ -696,9 +689,6 @@ class AppScaleTools(object):
       APPSCALE_VERSION)
 
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException("There were errors with your " + \
-                                      "placement strategy:\n{0}".format(str(node_layout.errors())))
 
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.

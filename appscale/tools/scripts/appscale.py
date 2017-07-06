@@ -23,14 +23,15 @@ def main():
 
   command = sys.argv[1]
   if command == "init":
-    if len(sys.argv) < 3:
-      cprint("Usage: appscale init <cloud or cluster>", 'red')
+    if len(sys.argv) < 2:
+      cprint("Usage: appscale init [cloud | cluster]", 'red')
       print("Specify 'cloud' for EC2, Eucalyptus, and Google Compute Engine " +
             "deployments, and 'cluster' if running over a virtualized cluster.")
       sys.exit(1)
 
     try:
-      appscale.init(sys.argv[2])
+      environment = sys.argv[2] if len(sys.argv) == 3 else None
+      appscale.init(environment)
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)

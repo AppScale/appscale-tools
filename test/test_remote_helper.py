@@ -229,6 +229,7 @@ class TestRemoteHelper(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
+      ips={'master': 'node-1', 'appengine': 'node-1', 'database': 'node-1'}
     )
 
     self.node_layout = NodeLayout(self.options)
@@ -540,12 +541,12 @@ class TestRemoteHelper(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['db_master'] }
+                          "jobs": ['database', 'memcache', 'db_master'] }
                         ]
 
   def test_start_all_nodes_reattach(self):
     self.node_layout = NodeLayout(self.reattach_options)
-    self.node_layout.is_valid()
+    self.assertNotEqual([], self.node_layout.nodes)
     fake_agent = FakeAgent()
     flexmock(factory.InfrastructureAgentFactory). \
       should_receive('create_agent'). \
@@ -559,8 +560,6 @@ class TestRemoteHelper(unittest.TestCase):
 
     RemoteHelper.start_all_nodes(self.reattach_options,
                                  self.node_layout)
-
-
 
   def test_start_all_nodes_reattach_changed_asf(self):
     self.options = flexmock(
