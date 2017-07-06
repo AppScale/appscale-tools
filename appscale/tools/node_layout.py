@@ -557,6 +557,8 @@ class NodeLayout():
     if disks and len(nodes) != len(disks):
       self.invalid("When specifying disks you must have the same "
         "amount as nodes.")
+    elif disks:
+      return
     # TODO: Deprecated, remove when we switch to new ips_layout fully.
     elif self.disks and len(nodes) != len(self.disks.keys()):
       self.invalid("Please specify a disk for every node.")
