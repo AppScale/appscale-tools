@@ -250,7 +250,6 @@ class AppEngineHelper(object):
         raise AppEngineConfigException(
           '"threadsafe" must be definined in your appengine-web.xml.')
 
-      print('threadsafe: {}'.format(threadsafe))
       if threadsafe.lower() not in ['true', 'false']:
         raise AppEngineConfigException(
           'Invalid "threadsafe" value in your app configuration. '
