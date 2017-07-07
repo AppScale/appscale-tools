@@ -1,6 +1,7 @@
 """ A client that makes requests to the AdminServer. """
 
 import requests
+import yaml
 
 # The default service.
 DEFAULT_SERVICE = 'default'
@@ -134,3 +135,29 @@ class AdminClient(object):
       prefix=self.prefix, project=project, operation_id=operation_id)
     response = requests.get(operation_url, headers=headers, verify=False)
     return self.extract_response(response)
+
+  def update_queues(self, project_id, queues):
+    """ Updates the the project's queue configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      queues: A dictionary containing queue configuration details.
+    Raises:
+      AdminError if unable to update queue configuration.
+    """
+    queue_yaml = yaml.safe_dump(queues, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    queues_url = 'https://{}:{}/api/queue/update?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(queues_url, headers=headers, data=queue_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
