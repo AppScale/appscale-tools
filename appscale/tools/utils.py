@@ -82,7 +82,7 @@ def config_from_dir(file_name, source_path):
     The contents of the configuration file.
   """
   candidates = []
-  for root, dirs, files in os.walk(source_path):
+  for root, _, files in os.walk(source_path):
     if file_name in files:
       candidates.append(os.path.join(root, file_name))
 
