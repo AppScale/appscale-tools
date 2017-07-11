@@ -564,7 +564,9 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    return AppScaleTools.upload_app(options)
+    login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_queues(options.file, options.keyname)
+    return login_host, http_port
 
 
   def undeploy(self, appid):
