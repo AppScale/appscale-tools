@@ -272,8 +272,10 @@ class ParseArgs(object):
 
       group = self.parser.add_mutually_exclusive_group()
       group.add_argument('--appengine', type=int,
+        default=1,
         help="the number of application servers to use per app")
       group.add_argument('--autoscale', action='store_true',
+        default=True,
         help="adds/removes application servers based on incoming traffic")
 
       # flags relating to the location where users reach appscale
@@ -726,12 +728,9 @@ class ParseArgs(object):
         invalid.
     """
     # Check that appengine is greater then 1. If Appen
-    if self.args.appengine:
-      if self.args.appengine < 1:
-        raise BadConfigurationException("Number of application servers " + \
-          "must exceed zero.")
-    else:
-      self.args.appengine = 1
+    if self.args.appengine < 1:
+      raise BadConfigurationException("Number of application servers " + \
+                                      "must exceed zero.")
 
 
   def validate_developer_flags(self):
