@@ -54,24 +54,6 @@ def config_from_zip(file_name, zip_location):
       return config_file.read()
 
 
-def path_length(path):
-  """ Gets the length of a file system path.
-
-  Args:
-    path: A string specifying the location of a file.
-  Returns:
-    An integer specifying the length of the path.
-  """
-  path_parts = list(os.path.split(path))
-  if path_parts and path_parts[0] == '.':
-    path_parts.pop(0)
-
-  if path_parts and path_parts[0] == '':
-    path_parts.pop(0)
-
-  return len(path_parts)
-
-
 def config_from_dir(file_name, source_path):
   """ Reads a configuration file from a source directory.
 
@@ -91,7 +73,7 @@ def config_from_dir(file_name, source_path):
 
   shortest_path = candidates[0]
   for candidate in candidates:
-    if path_length(candidate) < path_length(shortest_path):
+    if len(candidate.split(os.sep)) < len(shortest_path.split(os.sep)):
       shortest_path = candidate
 
   with open(shortest_path) as config_file:
