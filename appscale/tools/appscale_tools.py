@@ -903,6 +903,9 @@ class AppScaleTools(object):
       file_location = file_location + os.sep + ".."
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
 
+    # Let users know that versions are not supported yet.
+    AppEngineHelper.warn_if_version_defined(file_location, options.test)
+
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     threadsafe = None

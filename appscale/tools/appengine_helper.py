@@ -6,10 +6,13 @@ import os
 import socket
 import re
 import yaml
+from xml.etree import ElementTree
 
 
 # AppScale-specific imports
-from custom_exceptions import AppEngineConfigException
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import AppEngineConfigException
+from .custom_exceptions import AppScaleException
 
 
 class AppEngineHelper(object):
@@ -191,6 +194,39 @@ class AppEngineHelper(object):
         raise AppEngineConfigException("No application ID found in " +
           "your appengine-web.xml. " + cls.REGEX_MESSAGE)
 
+  @classmethod
+  def warn_if_version_defined(cls, app_dir, test=False):
+    """ Warns the user if version is defined in the application configuration.
+
+    Args:
+      app_dir: The directory on the local filesystem where the App Engine
+        application can be found.
+      test: A boolean indicating that the tools are in test mode.
+    Raises:
+      AppScaleException: If version is defined and user decides to cancel.
+    """
+    message = ''
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      if yaml_contents.get('version') is not None:
+        module = yaml_contents.get('module', 'default')
+        message = ('The version element is not supported in app.yaml. '
+                   'Module {} will be overwritten.'.format(module))
+    else:
+      app_config = ElementTree.parse(app_config_file).getroot()
+      namespace = '{http://appengine.google.com/ns/1.0}'
+      if app_config.find('{}version'.format(namespace)) is not None:
+        module = app_config.find('{}version'.format(namespace)) or 'default'
+        message = ('The version element is not supported in appengine-web.xml.'
+                   ' Module {} will be overwritten.'.format(module))
+
+    if message:
+      AppScaleLogger.log(message)
+      if not test:
+        response = raw_input('Continue? (y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException('Cancelled deploy operation')
 
   @classmethod
   def get_app_runtime_from_app_config(cls, app_dir):
