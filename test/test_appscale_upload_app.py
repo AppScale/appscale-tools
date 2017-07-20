@@ -143,6 +143,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
     flexmock(AppEngineHelper).should_receive('get_app_runtime_from_app_config').and_return('runtime')
     flexmock(LocalState).should_receive('get_secret_key').and_return()
+    flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -313,6 +314,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AdminClient).should_receive('get_operation').\
       and_return({'done': True, 'response': {'versionUrl': version_url}})
     flexmock(shutil).should_receive('rmtree').with_args(extracted_dir)
+    flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
 
     given_host, given_port = AppScaleTools.upload_app(options)
     self.assertEquals(given_host, login_host)
