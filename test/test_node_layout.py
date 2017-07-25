@@ -14,6 +14,7 @@ from flexmock import flexmock
 # AppScale import, the library that we're testing here
 from appscale.tools.agents.ec2_agent import EC2Agent
 from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.node_layout import NodeLayout
 
 
@@ -61,39 +62,33 @@ class TestNodeLayout(unittest.TestCase):
     options_1 = self.default_options.copy()
     options_1['ips'] = input_yaml_1
     layout_1 = NodeLayout(options_1)
-    self.assertEquals(True, layout_1.is_valid())
+    self.assertNotEqual([], layout_1.nodes)
 
     # Specifying one controller should be ok
     input_yaml_2 = {'controller' : self.ip_1}
     options_2 = self.default_options.copy()
     options_2['ips'] = input_yaml_2
     layout_2 = NodeLayout(options_2)
-    self.assertEquals(True, layout_2.is_valid())
+    self.assertNotEqual([], layout_2.nodes)
 
     # Specifying the same IP more than once is not ok
     input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_1]}
     options_3 = self.default_options.copy()
     options_3['ips'] = input_yaml_3
-    layout_3 = NodeLayout(options_3)
-    self.assertEquals(False, layout_3.is_valid())
-    self.assertEquals(NodeLayout.DUPLICATE_IPS, layout_3.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
 
     # Failing to specify a controller is not ok
     input_yaml_4 = {'servers' : [self.ip_1, self.ip_2]}
     options_4 = self.default_options.copy()
     options_4['ips'] = input_yaml_4
-    layout_4 = NodeLayout(options_4)
-    self.assertEquals(False, layout_4.is_valid())
-    self.assertEquals(NodeLayout.NO_CONTROLLER, layout_4.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_4)
 
     # Specifying more than one controller is not ok
     input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' :
       [self.ip_3]}
     options_5 = self.default_options.copy()
     options_5['ips'] = input_yaml_5
-    layout_5 = NodeLayout(options_5)
-    self.assertEquals(False, layout_5.is_valid())
-    self.assertEquals(NodeLayout.ONLY_ONE_CONTROLLER, layout_5.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
 
     # Specifying something other than controller and servers in simple
     # deployments is not ok
@@ -101,33 +96,24 @@ class TestNodeLayout(unittest.TestCase):
       'boo' : self.ip_3}
     options_6 = self.default_options.copy()
     options_6['ips'] = input_yaml_6
-    layout_6 = NodeLayout(options_6)
-    self.assertEquals(False, layout_6.is_valid())
-    self.assertEquals(["The flag boo is not a supported flag"],
-      layout_6.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_6)
 
 
   def test_simple_layout_options(self):
     # Using Euca with no input yaml, and no max or min images is not ok
     options_1 = self.default_options.copy()
     options_1['infrastructure'] = 'euca'
-    layout_1 = NodeLayout(options_1)
-    self.assertEquals(False, layout_1.is_valid())
-    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_1.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_1)
 
     options_2 = self.default_options.copy()
     options_2['infrastructure'] = "euca"
     options_2['max'] = 2
-    layout_2 = NodeLayout(options_2)
-    self.assertEquals(False, layout_2.is_valid())
-    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MIN, layout_2.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_2)
 
     options_3 = self.default_options.copy()
     options_3['infrastructure'] = "euca"
     options_3['min'] = 2
-    layout_3 = NodeLayout(options_3)
-    self.assertEquals(False, layout_3.is_valid())
-    self.assertEquals(NodeLayout.NO_YAML_REQUIRES_MAX, layout_3.errors())
+    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
 
     # Using Euca with no input yaml, with max and min images set is ok
     options_4 = self.default_options.copy()
@@ -135,14 +121,11 @@ class TestNodeLayout(unittest.TestCase):
     options_4['min'] = 2
     options_4['max'] = 2
     layout_4 = NodeLayout(options_4)
-    self.assertEquals(True, layout_4.is_valid())
+    self.assertNotEqual([], layout_4.nodes)
 
     # Using virtualized deployments with no input yaml is not ok
     options_5 = self.default_options.copy()
-    layout_5 = NodeLayout(options_5)
-    self.assertEquals(False, layout_5.is_valid())
-    self.assertEquals([NodeLayout.INPUT_YAML_REQUIRED], layout_5.errors())
-
+    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
 
   def test_advanced_format_yaml_only(self):
     input_yaml = {'master' : self.ip_1, 'database' : self.ip_1,
@@ -150,7 +133,7 @@ class TestNodeLayout(unittest.TestCase):
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout_1 = NodeLayout(options)
-    self.assertEquals(True, layout_1.is_valid())
+    self.assertNotEqual([], layout_1.nodes)
 
   def test_with_login_override(self):
     # if the user wants to set a login host, make sure that gets set as the
@@ -165,19 +148,25 @@ class TestNodeLayout(unittest.TestCase):
     options_1['ips'] = input_yaml_1
     options_1['login_host'] = "www.booscale.com"
     layout_1 = NodeLayout(options_1)
-    self.assertEquals(True, layout_1.is_valid())
+    self.assertNotEqual([], layout_1.nodes)
 
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
 
 
   def test_is_database_replication_valid_with_db_slave(self):
+    input_yaml = {
+      'controller' : self.ip_1
+    }
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
     fake_node = flexmock()
     fake_node.should_receive('is_role').with_args('database').and_return(False)
     fake_node.should_receive('is_role').with_args('db_master').and_return(False)
     fake_node.should_receive('is_role').with_args('db_slave').and_return(True)
-    output = NodeLayout({}).is_database_replication_valid([fake_node])
-    self.assertTrue(output['result'])
+    # validate_database_replication will raise BadConfigurationException if
+    # it is invalid.
+    NodeLayout(options).validate_database_replication([fake_node])
 
 
   def test_with_wrong_number_of_disks(self):
@@ -192,8 +181,7 @@ class TestNodeLayout(unittest.TestCase):
     options['disks'] = {
       self.ip_1 : 'disk_number_one'
     }
-    layout = NodeLayout(options)
-    self.assertEquals(False, layout.is_valid())
+    self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
   def test_with_right_number_of_disks_but_not_unique(self):
@@ -209,8 +197,7 @@ class TestNodeLayout(unittest.TestCase):
       self.ip_1 : 'disk_number_one',
       self.ip_2 : 'disk_number_one'
     }
-    layout = NodeLayout(options)
-    self.assertEquals(False, layout.is_valid())
+    self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
   def test_with_right_number_of_unique_disks(self):
@@ -227,7 +214,7 @@ class TestNodeLayout(unittest.TestCase):
       self.ip_2 : 'disk_number_two'
     }
     layout = NodeLayout(options)
-    self.assertEquals(True, layout.is_valid())
+    self.assertNotEqual([], layout.nodes)
     self.assertEquals('disk_number_one', layout.head_node().disk)
     self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
 
@@ -243,7 +230,7 @@ class TestNodeLayout(unittest.TestCase):
       test=False,
       use_spot_instances=False,
       zone='zone',
-      static_ip=None,
+      static_ip=[],
       replication=None,
       appengine=None,
       autoscale=None,
@@ -271,13 +258,13 @@ class TestNodeLayout(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['db_master'] }
+                          "jobs": ['database', 'memcache', 'db_master'] }
                         ]
 
 
   def test_from_locations_json_list_valid(self):
     node_layout = NodeLayout(self.reattach_options)
-    self.assertTrue(node_layout.is_valid())
+    self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
     self.assertNotEqual(new_layout, None)
     nodes_copy = new_layout[:]
@@ -314,8 +301,7 @@ class TestNodeLayout(unittest.TestCase):
     )
 
     node_layout = NodeLayout(options)
-    self.assertTrue(node_layout.is_valid())
-
+    self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
     self.assertNotEqual(new_layout, None)
     nodes_copy = new_layout[:]
@@ -328,7 +314,7 @@ class TestNodeLayout(unittest.TestCase):
 
   def test_from_locations_json_list_invalid_locations(self):
     node_layout = NodeLayout(self.reattach_options)
-    self.assertTrue(node_layout.is_valid())
+    self.assertNotEqual([], node_layout.nodes)
 
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
@@ -346,7 +332,7 @@ class TestNodeLayout(unittest.TestCase):
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['db_master', 'zookeeper'] }
+                   "jobs": ['database', 'memcache', 'db_master', 'zookeeper'] }
                  ]
 
     new_layout = node_layout.from_locations_json_list(node_info)
@@ -378,7 +364,7 @@ class TestNodeLayout(unittest.TestCase):
     )
 
     node_layout = NodeLayout(options)
-    self.assertTrue(node_layout.is_valid())
+    self.assertNotEqual([], node_layout.nodes)
 
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
     self.assertEqual(new_layout, None)
