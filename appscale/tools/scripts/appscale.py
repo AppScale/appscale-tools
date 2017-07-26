@@ -158,7 +158,7 @@ def main():
       sys.exit(1)
 
     try:
-      appscale.logs(sys.argv[2])
+      appscale.logs(sys.argv[2], sys.argv[3:])
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
