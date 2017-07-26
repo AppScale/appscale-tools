@@ -564,7 +564,9 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    return AppScaleTools.upload_app(options)
+    login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_queues(options.file, options.keyname)
+    return login_host, http_port
 
 
   def undeploy(self, appid):
@@ -720,13 +722,14 @@ Available commands:
     subprocess.call(command)
 
 
-  def logs(self, location):
+  def logs(self, location, other_args=None):
     """ 'logs' provides a cleaner experience for users than the
     appscale-gather-logs command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
     Args:
       location: The path on the local filesystem where logs should be copied to.
+      other_args: A list of other args from sys.argv.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -742,6 +745,8 @@ Available commands:
 
     command.append("--location")
     command.append(location)
+    if other_args:
+      command += other_args
 
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args

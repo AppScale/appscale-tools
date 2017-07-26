@@ -16,6 +16,8 @@ import time
 import traceback
 import urllib2
 import uuid
+import yaml
+from xml.etree import ElementTree
 
 from collections import Counter
 from itertools import chain
@@ -39,6 +41,7 @@ from local_state import LocalState
 from node_layout import NodeLayout
 from remote_helper import RemoteHelper
 from version_helper import latest_tools_version
+from . import utils
 from .admin_client import AdminClient
 
 
@@ -441,9 +444,11 @@ class AppScaleTools(object):
     if os.path.exists(options.location):
       raise AppScaleException("Can't gather logs, as the location you " + \
         "specified, {0}, already exists.".format(options.location))
+    location = os.path.abspath(options.location)
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      LocalState.get_secret_key(options.keyname))
+    login_host = LocalState.get_login_host(options.keyname)
+    secret = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(login_host, secret)
 
     try:
       all_ips = acc.get_all_public_ips()
@@ -473,8 +478,11 @@ class AppScaleTools(object):
     failures = False
     for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
-      local_dir = "{0}/{1}".format(options.location, ip)
+      local_dir = os.path.join(location, ip)
       os.mkdir(local_dir)
+
+      if ip == login_host:
+        os.symlink(local_dir, os.path.join(location, "load-balancer"))
 
       for log_path in log_paths:
         sub_dir = local_dir
@@ -491,7 +499,8 @@ class AppScaleTools(object):
 
         try:
           RemoteHelper.scp_remote_to_local(
-            ip, options.keyname, log_path['remote'], sub_dir, options.verbose)
+            ip, options.keyname, log_path['remote'], sub_dir, options.verbose
+          )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
@@ -961,6 +970,61 @@ class AppScaleTools(object):
 
     http_port = int(version_url.split(':')[-1])
     return (login_host, http_port)
+
+  @classmethod
+  def update_queues(cls, source_location, keyname):
+    """ Updates a project's queues from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    queue_config = fetch_function('queue.yaml', source_location)
+    if queue_config is None:
+      queue_config = fetch_function('queue.xml', source_location)
+      # If the source does not have a queue configuration file, do nothing.
+      if queue_config is None:
+        return
+
+      queues = utils.queues_from_xml(queue_config)
+    else:
+      queues = yaml.safe_load(queue_config)
+
+    app_config = fetch_function('app.yaml', source_location)
+    if app_config is None:
+      app_config = fetch_function('appengine-web.xml', source_location)
+      if app_config is None:
+        raise BadConfigurationException(
+          'Unable to find app.yaml or appengine-web.xml')
+
+      web_app = ElementTree.fromstring(app_config)
+      try:
+        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
+        project_id = web_app.find(tag_with_namespace).text
+      except AttributeError:
+        raise BadConfigurationException(
+          'appengine-web.xml must specify application')
+    else:
+      try:
+        project_id = yaml.safe_load(app_config)['application']
+      except KeyError:
+        raise BadConfigurationException('app.yaml must specify application')
+
+    AppScaleLogger.log('Updating queues')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_queues(project_id, queues)
 
   @classmethod
   def upgrade(cls, options):
