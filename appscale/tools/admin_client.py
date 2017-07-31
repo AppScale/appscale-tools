@@ -8,7 +8,7 @@ DEFAULT_SERVICE = 'default'
 
 # The version that AppScale uses. This is temporary until we support multiple
 # versions per service.
-DEFAULT_VERSION = '1'
+DEFAULT_VERSION = 'v1'
 
 
 class AdminError(Exception):
