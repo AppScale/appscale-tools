@@ -217,7 +217,10 @@ class AppEngineHelper(object):
       app_config = ElementTree.parse(app_config_file).getroot()
       namespace = '{http://appengine.google.com/ns/1.0}'
       if app_config.find('{}version'.format(namespace)) is not None:
-        module = app_config.find('{}version'.format(namespace)) or 'default'
+        module = app_config.find('{}module'.format(namespace))
+        if module is None:
+          module = 'default'
+
         message = ('The version element is not supported in appengine-web.xml.'
                    ' Module {} will be overwritten.'.format(module))
 
