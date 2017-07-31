@@ -439,12 +439,12 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
+    location = os.path.abspath(options.location)
     # First, make sure that the place we want to store logs doesn't
     # already exist.
-    if os.path.exists(options.location):
+    if os.path.exists(location):
       raise AppScaleException("Can't gather logs, as the location you " + \
-        "specified, {0}, already exists.".format(options.location))
-    location = os.path.abspath(options.location)
+        "specified, {}, already exists.".format(location))
 
     login_host = LocalState.get_login_host(options.keyname)
     secret = LocalState.get_secret_key(options.keyname)
@@ -460,7 +460,7 @@ class AppScaleTools(object):
 
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
-    os.mkdir(options.location)
+    os.mkdir(location)
 
     # The log paths that we collect logs from.
     log_paths = [
@@ -482,11 +482,7 @@ class AppScaleTools(object):
       os.mkdir(local_dir)
 
       if ip == login_host:
-        try:
-          os.symlink(local_dir, os.path.join(location, "load-balancer"))
-        except Exception as e:
-          AppScaleLogger.warn('Error: {}. local_dir = "{}"'.
-                              format(e, local_dir))
+        os.symlink(local_dir, os.path.join(location, "load-balancer"))
 
       for log_path in log_paths:
         sub_dir = local_dir
@@ -514,12 +510,11 @@ class AppScaleTools(object):
             options.verbose)
 
     if failures:
-      AppScaleLogger.log("Done copying to {0}. There were "
-        "failures while collecting AppScale logs.".format(
-        options.location))
+      AppScaleLogger.log("Done copying to {}. There were failures while "
+                         "collecting AppScale logs.".format(location))
     else:
       AppScaleLogger.success("Successfully collected all AppScale logs into "
-        "{0}".format(options.location))
+                             "{}".format(location))
 
 
   @classmethod
