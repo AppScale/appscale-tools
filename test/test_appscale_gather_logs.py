@@ -106,6 +106,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2').and_return()
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2/cassandra')
     os.should_receive('mkdir').with_args('/tmp/foobaz/public2/rabbitmq')
+    os.should_receive('symlink')
 
     # finally, fake the copying of the log files
     flexmock(subprocess)
