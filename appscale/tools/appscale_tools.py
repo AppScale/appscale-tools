@@ -482,7 +482,11 @@ class AppScaleTools(object):
       os.mkdir(local_dir)
 
       if ip == login_host:
-        os.symlink(local_dir, os.path.join(location, "load-balancer"))
+        try:
+          os.symlink(local_dir, os.path.join(location, "load-balancer"))
+        except Exception as e:
+          AppScaleLogger.warn('Error: {}. local_dir = "{}"'.
+                              format(e, local_dir))
 
       for log_path in log_paths:
         sub_dir = local_dir
