@@ -90,7 +90,7 @@ class AppScaleTools(object):
 
 
   # The number of seconds to wait before giving up on an operation.
-  MAX_OPERATION_TIME = 100
+  MAX_OPERATION_TIME = 200
 
 
   # The location of the expect script, used to interact with ssh-copy-id
