@@ -431,18 +431,6 @@ class AppControllerClient():
       self.server.get_all_stats, self.secret)
 
 
-  def does_app_exist(self, appname):
-    """ Queries the AppController to see if the named application exists,
-    and if it is listening to any port.
-
-    Args:
-      appname: The name of the app that we should check for existence.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Request to check if user application exists timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.does_app_exist, appname, self.secret)
-
-
   def reset_password(self, username, encrypted_password):
     """ Resets a user's password in the currently running AppScale deployment.
 
@@ -525,32 +513,3 @@ class AppControllerClient():
       'Set admin role request timed out.', self.DEFAULT_NUM_RETRIES,
       self.server.set_admin_role, username, is_cloud_admin,
       capabilities, self.secret)
-
-  def get_app_admin(self, app_id):
-    """ Queries the AppController to see which user owns the given application.
-
-    Args:
-      app_id: The name of the app that we should see the administrator on.
-    Returns:
-      A str containing the name of the application's administrator, or None
-        if there is none.
-    Raises:
-      AppScaleException if the AppController returns an error.
-    """
-    app_data_json = self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Get app admin request timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.get_app_data, app_id, self.secret)
-    if not app_data_json:
-      return None
-
-    try:
-      app_data = json.loads(app_data_json)
-    except ValueError as decode_error:
-      if 'Error:' in app_data_json:
-        raise AppScaleException(app_data_json)
-      raise decode_error
-
-    if 'owner' not in app_data:
-      return None
-
-    return app_data['owner']
