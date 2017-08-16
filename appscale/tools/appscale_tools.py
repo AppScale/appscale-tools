@@ -932,19 +932,12 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
-    if options.test:
-      username = LocalState.DEFAULT_USER
-    elif options.email:
-      username = options.email
-    else:
-      username = LocalState.get_username_from_stdin(is_admin=False)
-
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose, extras)
 
     AppScaleLogger.log('Deploying project: {}'.format(app_id))
     operation_id = admin_client.create_version(
-      app_id, username, remote_file_path, app_language, threadsafe)
+      app_id, remote_file_path, app_language, threadsafe)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
