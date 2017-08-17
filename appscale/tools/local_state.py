@@ -16,6 +16,8 @@ import tempfile
 import time
 import uuid
 import yaml
+from random import choice
+from string import ascii_lowercase, digits
 
 
 # AppScale-specific imports
@@ -1330,3 +1332,13 @@ class LocalState(object):
       extras[relative_path] = absolute_path
 
     return extras
+
+  @classmethod
+  def generate_xmpp_username(cls, username, length=6, chars=ascii_lowercase + digits):
+    AppScaleLogger.log("Generating a new XMPP username...")
+    character_choices = []
+    while len(character_choices) < length:
+        character_choices.append(choice(chars))
+    generated_username = ''.join(character_choices)
+
+    return username + '_' + generated_username
