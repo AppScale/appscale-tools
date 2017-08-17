@@ -1153,6 +1153,10 @@ class GCEAgent(BaseAgent):
         parameters[self.PARAM_KEYNAME])
       oauth2_storage_path = LocalState.get_oauth2_storage_location(
         parameters[self.PARAM_KEYNAME])
+      if not os.path.exists(client_secrets_path):
+        client_secrets_path = parameters.get(self.PARAM_SECRETS, '')
+      if not os.path.exists(oauth2_storage_path):
+        oauth2_storage_path = parameters.get(self.PARAM_STORAGE, '')
 
     if os.path.exists(client_secrets_path):
       # Attempt to perform authorization using Service account
