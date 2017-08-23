@@ -61,7 +61,7 @@ class AdminClient(object):
 
     return content
 
-  def create_version(self, project_id, source_path, runtime,
+  def create_version(self, project_id, source_path, runtime, env_variables,
                      threadsafe=None):
     """ Creates or updates a version.
 
@@ -69,6 +69,7 @@ class AdminClient(object):
       project_id: A string specifying the project ID.
       source_path: A string specifying the location of the source code.
       runtime: A string specifying the version's language.
+      env_variables: A dictionary containing environment variables.
       threadsafe: Indicates that the version is threadsafe.
     Returns:
       A dictionary containing the deployment operation details.
@@ -83,6 +84,9 @@ class AdminClient(object):
       'id': DEFAULT_VERSION,
       'runtime': runtime
     }
+    if env_variables:
+      body['envVariables'] = env_variables
+
     if threadsafe is not None:
       body['threadsafe'] = threadsafe
 
