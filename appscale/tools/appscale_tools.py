@@ -30,7 +30,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
-from cluster_stats import NodeStats, AppInfo
+from cluster_stats import NodeStats, ServiceInfo
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -253,7 +253,8 @@ class AppScaleTools(object):
       for ip in all_private_ips
     }
     apps_dict = next((n["apps"] for n in cluster_stats if n["apps"]), {})
-    apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
+    services = [ServiceInfo(key.split('_')[0], key.split('_')[1], app_info)
+                for key, app_info in apps_dict.iteritems()]
     nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
     invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
@@ -264,13 +265,13 @@ class AppScaleTools(object):
     else:
       AppScaleLogger.log("-"*76)
 
-    cls._print_cluster_summary(nodes, invisible_nodes, apps)
-    cls._print_apps(apps)
+    cls._print_cluster_summary(nodes, invisible_nodes, services)
+    cls._print_services(services)
     cls._print_status_alerts(nodes)
 
     dashboard = next(
-      (app for app in apps if app.http == RemoteHelper.APP_DASHBOARD_PORT), None
-    )
+      (service for service in services
+       if service.http == RemoteHelper.APP_DASHBOARD_PORT), None)
     if dashboard and dashboard.appservers > 1:
       AppScaleLogger.success(
         "\nView more about your AppScale deployment at http://{}:{}/status"
@@ -324,16 +325,16 @@ class AppScaleTools(object):
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
   @classmethod
-  def _print_cluster_summary(cls, nodes, invisible_nodes, apps):
+  def _print_cluster_summary(cls, nodes, invisible_nodes, services):
     """ Prints summary about deployment state
     Args:
       nodes: a list of NodeStats
       invisible_nodes: IPs of nodes which didn't report its status yet
-      apps: a list of AppInfo
+      services: a list of ServiceInfo objects
     """
     loaded = sum(1 for node in nodes if node.is_loaded)
     initialized = sum(1 for node in nodes if node.is_initialized)
-    started_apps = sum(1 for app in apps if app.appservers > 0)
+    started_services = sum(1 for service in services if service.appservers > 0)
     total = len(nodes)
 
     if invisible_nodes:
@@ -345,20 +346,21 @@ class AppScaleTools(object):
       if nodes:
         AppScaleLogger.log(
           "Available stats for {n} nodes: {init} are initialized, {loaded} "
-          "are loaded, {started} of {apps} apps are started".format(
-            init=initialized, loaded=loaded, n=total, started=started_apps,
-            apps=len(apps))
+          "are loaded, {started} of {services} services are started".format(
+            init=initialized, loaded=loaded, n=total, started=started_services,
+            apps=len(services))
         )
       else:
         AppScaleLogger.log("No stats is available yet.")
       return
 
-    if loaded < total or initialized < total or started_apps < len(apps):
+    if (loaded < total or initialized < total or
+        started_services < len(services)):
       AppScaleLogger.log(
         "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
-        "of {n} nodes are loaded, {started} of {apps} apps are started"
-        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
-                apps=len(apps))
+        "of {n} nodes are loaded, {started} of {services} services are started"
+        .format(init=initialized, loaded=loaded, n=total,
+                started=started_services, apps=len(services))
       )
     else:
       AppScaleLogger.success(
@@ -366,21 +368,23 @@ class AppScaleTools(object):
       )
 
   @classmethod
-  def _print_apps(cls, apps):
-    """ Prints main information about deployed apps
+  def _print_services(cls, services):
+    """ Prints information about deployed services.
+
     Args:
-      apps: a list AppInfo
+      services: A list ServiceInfo objects.
     """
     header = (
-      "APP NAME", "HTTP/HTTPS", "APPSERVERS/PENDING",
+      "PROJECT ID", "SERVICE ID", "HTTP/HTTPS", "APPSERVERS/PENDING",
       "REQS. ENQUEUED/TOTAL", "STATE"
     )
     table = (
-      (app.name, "{}/{}".format(app.http, app.https),
-       "{}/{}".format(app.appservers, app.pending_appservers),
-       "{}/{}".format(app.reqs_enqueued, app.total_reqs),
-       "Ready" if app.appservers > 0 else "Starting")
-      for app in apps
+      (service.project_id, service.service_id,
+       "{}/{}".format(service.http, service.https),
+       "{}/{}".format(service.appservers, service.pending_appservers),
+       "{}/{}".format(service.reqs_enqueued, service.total_reqs),
+       "Ready" if service.appservers > 0 else "Starting")
+      for service in services
     )
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
