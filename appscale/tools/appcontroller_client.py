@@ -296,30 +296,6 @@ class AppControllerClient():
     else:
       return server_message
 
-  def done_uploading(self, app_id, remote_app_location):
-    """Tells the AppController that an application has been uploaded to its
-    machine, and where to find it.
-
-    Args:
-      app_id: A str that indicates which application we have copied over.
-      remote_app_location: The location on the remote machine where the App
-        Engine application can be found.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.done_uploading, app_id, remote_app_location, self.secret)
-
-
-  def update(self, apps_to_run):
-    """Tells the AppController which applications to run, which we assume have
-    already been uploaded to that machine.
-
-    Args:
-      apps_to_run: A list of apps to start running on nodes running the App
-        Engine service.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.update, apps_to_run, self.secret)
-
 
   def get_app_info_map(self):
     """Asks the AppController for a list of all the applications it is proxying
