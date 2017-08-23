@@ -43,6 +43,8 @@ from remote_helper import RemoteHelper
 from version_helper import latest_tools_version
 from . import utils
 from .admin_client import AdminClient
+from .admin_client import DEFAULT_SERVICE
+from .admin_client import DEFAULT_VERSION
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -554,8 +556,9 @@ class AppScaleTools(object):
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
       options.keyname))
 
+    version_key = '_'.join([options.appname, DEFAULT_SERVICE, DEFAULT_VERSION])
     app_info_map = acc.get_app_info_map()
-    if options.appname not in app_info_map.keys():
+    if version_key not in app_info_map:
       raise AppScaleException("The given application, {0}, is not currently " \
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
