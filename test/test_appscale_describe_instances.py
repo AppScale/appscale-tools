@@ -51,7 +51,7 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'is_initialized': True,
         'is_loaded': True,
         'apps': {
-          'appscaledashboard': {
+          'appscaledashboard_default_v1': {
             'http': 1080, 'language': 'python', 'total_reqs': 24, 'appservers': 3,
             'pending_appservers': 0, 'https': 1443, 'reqs_enqueued': 0}},
         'memory': {'available': 1117507584, 'total': 3839168512, 'used': 3400077312},
@@ -102,8 +102,9 @@ class TestPrintAppscaleStatus(unittest.TestCase):
     self.assertRegexpMatches(
       fake_logger.info_buf,
       r"-+\n\n"
-      r"APP NAME +HTTP/HTTPS +APPSERVERS/PENDING +REQS\. ENQUEUED/TOTAL +STATE *\n"
-      r"appscaledashboard +1080/1443 +3/0 +0/24 +Ready *\n"
+      r"PROJECT ID +SERVICE ID +HTTP/HTTPS +APPSERVERS/PENDING "
+      r"+REQS\. ENQUEUED/TOTAL +STATE *\n"
+      r"appscaledashboard +default +1080/1443 +3/0 +0/24 +Ready *\n"
     )
     self.assertEqual(fake_logger.warn_buf, "")
     self.assertEqual(fake_logger.success_buf,

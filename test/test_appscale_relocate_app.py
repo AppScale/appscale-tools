@@ -117,10 +117,10 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps({
-      self.appid : {
+      '{}_default_v1'.format(self.appid) : {
         'nginx' : 8080
       },
-      'a-different-app' : {
+      'a-different-app_default_v1' : {
         'nginx' : 81
       }
     }))
