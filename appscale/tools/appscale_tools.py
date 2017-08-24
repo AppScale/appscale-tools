@@ -567,8 +567,8 @@ class AppScaleTools(object):
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    relocate_result = acc.relocate_app(options.appname, options.http_port,
-      options.https_port)
+    relocate_result = acc.relocate_version(version_key, options.http_port,
+                                           options.https_port)
     if relocate_result == "OK":
       AppScaleLogger.success("Successfully issued request to move {0} to " \
         "ports {1} and {2}.".format(options.appname, options.http_port,
