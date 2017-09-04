@@ -360,7 +360,7 @@ class AppScaleTools(object):
         "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
         "of {n} nodes are loaded, {started} of {services} services are started"
         .format(init=initialized, loaded=loaded, n=total,
-                started=started_services, apps=len(services))
+                started=started_services, services=len(services))
       )
     else:
       AppScaleLogger.success(
