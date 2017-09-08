@@ -348,7 +348,7 @@ class AppScaleTools(object):
           "Available stats for {n} nodes: {init} are initialized, {loaded} "
           "are loaded, {started} of {services} services are started".format(
             init=initialized, loaded=loaded, n=total, started=started_services,
-            apps=len(services))
+            services=len(services))
         )
       else:
         AppScaleLogger.log("No stats is available yet.")
