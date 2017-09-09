@@ -61,12 +61,13 @@ class AdminClient(object):
 
     return content
 
-  def create_version(self, project_id, source_path, runtime, env_variables,
-                     threadsafe=None):
+  def create_version(self, project_id, service_id, source_path, runtime,
+                     env_variables, threadsafe=None):
     """ Creates or updates a version.
 
     Args:
       project_id: A string specifying the project ID.
+      service_id: A string specifying the service ID.
       source_path: A string specifying the location of the source code.
       runtime: A string specifying the version's language.
       env_variables: A dictionary containing environment variables.
@@ -77,7 +78,7 @@ class AdminClient(object):
       AdminError if the response is formatted incorrectly.
     """
     versions_url = '{prefix}/{project}/services/{service}/versions'.format(
-      prefix=self.prefix, project=project_id, service=DEFAULT_SERVICE)
+      prefix=self.prefix, project=project_id, service=service_id)
     headers = {'AppScale-Secret': self.secret}
     body = {
       'deployment': {'zip': {'sourceUrl': source_path}},
