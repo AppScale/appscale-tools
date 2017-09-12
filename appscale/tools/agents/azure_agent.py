@@ -293,6 +293,9 @@ class AzureAgent(BaseAgent):
             ip_config_private_ip = ip_config.private_ip_address
             break
 
+          if ip_config_private_ip:
+            break
+
         if ip_config_private_ip:
           public_ips.append(ip_config_private_ip)
           private_ips.append(ip_config_private_ip)
