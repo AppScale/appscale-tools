@@ -141,9 +141,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
     os.path.should_receive('exists').with_args(
       AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
     flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
+    flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_app_runtime_from_app_config').and_return('runtime')
     flexmock(LocalState).should_receive('get_secret_key').and_return()
     flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
+    flexmock(AppEngineHelper).should_receive('get_service_id').and_return('default')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -299,6 +301,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       and_return('/tmp/{}'.format(app_id))
     flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
       and_return(app_id)
+    flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).\
       should_receive('get_app_runtime_from_app_config').and_return('python27')
     flexmock(AppEngineHelper).should_receive('is_threadsafe').and_return(True)
@@ -315,6 +318,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       and_return({'done': True, 'response': {'versionUrl': version_url}})
     flexmock(shutil).should_receive('rmtree').with_args(extracted_dir)
     flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
+    flexmock(AppEngineHelper).should_receive('get_service_id').and_return('default')
 
     given_host, given_port = AppScaleTools.upload_app(options)
     self.assertEquals(given_host, login_host)

@@ -296,30 +296,6 @@ class AppControllerClient():
     else:
       return server_message
 
-  def done_uploading(self, app_id, remote_app_location):
-    """Tells the AppController that an application has been uploaded to its
-    machine, and where to find it.
-
-    Args:
-      app_id: A str that indicates which application we have copied over.
-      remote_app_location: The location on the remote machine where the App
-        Engine application can be found.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.done_uploading, app_id, remote_app_location, self.secret)
-
-
-  def update(self, apps_to_run):
-    """Tells the AppController which applications to run, which we assume have
-    already been uploaded to that machine.
-
-    Args:
-      apps_to_run: A list of apps to start running on nodes running the App
-        Engine service.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT, "Error", self.DEFAULT_NUM_RETRIES,
-      self.server.update, apps_to_run, self.secret)
-
 
   def get_app_info_map(self):
     """Asks the AppController for a list of all the applications it is proxying
@@ -334,13 +310,13 @@ class AppControllerClient():
       self.server.get_app_info_map, self.secret))
 
 
-  def relocate_app(self, appid, http_port, https_port):
-    """Asks the AppController to start serving traffic for the named application
+  def relocate_version(self, version_key, http_port, https_port):
+    """Asks the AppController to start serving traffic for the named version
     on the given ports, instead of the ports that it was previously serving at.
 
     Args:
-      appid: A str that names the already deployed application that we want to
-        move to a different port.
+      version_key: A str that names version that we want to move to a
+        different port.
       http_port: An int between 80 and 90, or between 1024 and 65535, that names
         the port that unencrypted traffic should be served from for this app.
       https_port: An int between 443 and 453, or between 1024 and 65535, that
@@ -350,9 +326,10 @@ class AppControllerClient():
       A str that indicates if the operation was successful, and in unsuccessful
       cases, the reason why the operation failed.
     """
-    return self.run_with_timeout(self.LONGER_TIMEOUT, "Relocate request timed out.",
-      self.DEFAULT_NUM_RETRIES, self.server.relocate_app, appid, http_port,
-        https_port, self.secret)
+    return self.run_with_timeout(
+      self.LONGER_TIMEOUT, "Relocate request timed out.",
+      self.DEFAULT_NUM_RETRIES, self.server.relocate_version, version_key,
+      http_port, https_port, self.secret)
 
 
   def get_property(self, property_regex):
@@ -429,18 +406,6 @@ class AppControllerClient():
     return self.run_with_timeout(self.LONGER_TIMEOUT,
       'Get all JSON stats request timed out.', self.DEFAULT_NUM_RETRIES,
       self.server.get_all_stats, self.secret)
-
-
-  def does_app_exist(self, appname):
-    """ Queries the AppController to see if the named application exists,
-    and if it is listening to any port.
-
-    Args:
-      appname: The name of the app that we should check for existence.
-    """
-    return self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Request to check if user application exists timed out.',
-      self.DEFAULT_NUM_RETRIES, self.server.does_app_exist, appname, self.secret)
 
 
   def reset_password(self, username, encrypted_password):
@@ -525,32 +490,3 @@ class AppControllerClient():
       'Set admin role request timed out.', self.DEFAULT_NUM_RETRIES,
       self.server.set_admin_role, username, is_cloud_admin,
       capabilities, self.secret)
-
-  def get_app_admin(self, app_id):
-    """ Queries the AppController to see which user owns the given application.
-
-    Args:
-      app_id: The name of the app that we should see the administrator on.
-    Returns:
-      A str containing the name of the application's administrator, or None
-        if there is none.
-    Raises:
-      AppScaleException if the AppController returns an error.
-    """
-    app_data_json = self.run_with_timeout(self.DEFAULT_TIMEOUT,
-      'Get app admin request timed out.', self.DEFAULT_NUM_RETRIES,
-      self.server.get_app_data, app_id, self.secret)
-    if not app_data_json:
-      return None
-
-    try:
-      app_data = json.loads(app_data_json)
-    except ValueError as decode_error:
-      if 'Error:' in app_data_json:
-        raise AppScaleException(app_data_json)
-      raise decode_error
-
-    if 'owner' not in app_data:
-      return None
-
-    return app_data['owner']
