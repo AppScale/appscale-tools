@@ -287,14 +287,15 @@ class AzureAgent(BaseAgent):
           list_virtual_machine_scale_set_vm_network_interfaces(resource_group,
                                                                vmss.name,
                                                                vm.instance_id)
-        ip_config_private_ips = []
+        ip_config_private_ip = None
         for network_interface in network_interface_list:
           for ip_config in network_interface.ip_configurations:
-            ip_config_private_ips.append(ip_config.private_ip_address)
+            ip_config_private_ip = ip_config.private_ip_address
+            break
 
-        if ip_config_private_ips:
-          public_ips.append(ip_config_private_ips[0])
-          private_ips.append(ip_config_private_ips[0])
+        if ip_config_private_ip:
+          public_ips.append(ip_config_private_ip)
+          private_ips.append(ip_config_private_ip)
           instance_ids.append(vm.name)
 
     return public_ips, private_ips, instance_ids
