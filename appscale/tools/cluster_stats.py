@@ -1,6 +1,7 @@
-class AppInfo(object):
-  def __init__(self, app_name, app_info_dict):
-    self.name = app_name
+class ServiceInfo(object):
+  def __init__(self, project_id, service_id, app_info_dict):
+    self.project_id = project_id
+    self.service_id = service_id
     self.language = app_info_dict["language"]
     self.appservers = app_info_dict["appservers"]
     self.pending_appservers = app_info_dict["pending_appservers"]

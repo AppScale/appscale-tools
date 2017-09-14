@@ -42,6 +42,13 @@ class AppScale():
 
 
   # The location of the template AppScalefile that should be used when
+  # users execute 'appscale init'.
+  TEMPLATE_APPSCALEFILE = os.path.join(
+    os.path.dirname(sys.modules['appscale.tools'].__file__),
+    'templates/AppScalefile')
+
+
+  # The location of the template AppScalefile that should be used when
   # users execute 'appscale init cloud'.
   TEMPLATE_CLOUD_APPSCALEFILE = os.path.join(
     os.path.dirname(sys.modules['appscale.tools'].__file__),
@@ -77,6 +84,8 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
+  create-user [--admin]             Creates a new user. If --admin option is specified, 
+                                    it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
                                     instances were created, they will NOT
@@ -86,7 +95,7 @@ Available commands:
   get <regex>                       Gets all AppController properties matching
                                     the provided regex: for developers only.
   help                              Displays this message.
-  init <cloud|cluster>              Writes a new configuration file for
+  init [cloud|cluster]              Writes a new configuration file for
                                     AppScale: it will use the <cloud> or
                                     <cluster> template. Won't override
                                     an existing configuration.
@@ -97,7 +106,7 @@ Available commands:
                                     AppScale Portal.
   relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
-  remove                            An alias for 'undeploy'.
+  remove <appid>                    An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current
@@ -216,17 +225,17 @@ Available commands:
     return key_file
 
 
-  def init(self, environment):
+  def init(self, environment=None):
     """ Writes an AppScalefile in the local directory, that contains common
     configuration parameters.
 
     Args:
       environment: A str that indicates whether the AppScalefile to write should
-      be tailed to a 'cloud' environment or a 'cluster' environment.
+        be tailored to a 'cloud' environment or a 'cluster' environment or both.
 
     Raises:
       AppScalefileException: If there already is an AppScalefile in the local
-      directory.
+        directory.
     """
     # first, make sure there isn't already an AppScalefile in this
     # directory
@@ -243,9 +252,7 @@ Available commands:
     elif environment == 'cluster':
       template_file = self.TEMPLATE_CLUSTER_APPSCALEFILE
     else:
-      raise BadConfigurationException("The environment you specified " +
-        "was invalid. Valid environments are 'cloud' and " +
-        "'cluster'.")
+      template_file = self.TEMPLATE_APPSCALEFILE
 
     # finally, copy the template AppScalefile there
     shutil.copy(template_file, appscalefile_location)
@@ -311,6 +318,26 @@ Available commands:
 
     AppScaleTools.run_instances(run_instances_opts)
 
+  def create_user(self, is_admin=False):
+    """ 'create_user' Creates a new user from the tools.
+
+        Raises:
+          AppScalefileException: If there is no AppScalefile in the current
+            directory.
+          TypeError: If the user does not provide an new user credentials
+        """
+    contents = self.read_appscalefile()
+    contents_as_yaml = yaml.safe_load(contents)
+
+    command = []
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml["keyname"])
+
+    options = ParseArgs(command, "appscale-create-user").args
+
+    return AppScaleTools.create_user(options, is_admin)
+
   def valid_ssh_key(self, config, run_instances_opts):
     """ Checks if the tools can log into the head node with the current key.
 
@@ -330,9 +357,11 @@ Available commands:
     keyname = config['keyname']
     verbose = config.get('verbose', False)
 
-    if not isinstance(config['ips_layout'], dict):
+    if not isinstance(config['ips_layout'], dict) and \
+        not isinstance(config['ips_layout'], list):
       raise BadConfigurationException(
-        'ips_layout should be a dictionary. Please fix it and try again.')
+        'ips_layout should be a dictionary or list. Please fix it and try '
+        'again.')
 
     ssh_key_location = self.APPSCALE_DIRECTORY + keyname + ".key"
     if not os.path.exists(ssh_key_location):
@@ -342,9 +371,7 @@ Available commands:
       all_ips = LocalState.get_all_public_ips(keyname)
     except BadConfigurationException:
       # If this is an upgrade from 3.1.0, there may not be a locations JSON.
-      all_ips = set(run_instances_opts.ips.values())
-      assert all(AppEngineHelper.is_valid_ipv4_address(ip) for ip in all_ips),\
-        'Invalid IP address in {}'.format(all_ips)
+      all_ips = self.get_ips_from_options(run_instances_opts.ips)
 
     # If a login node is defined, use that to communicate with other nodes.
     node_layout = NodeLayout(run_instances_opts)
@@ -373,6 +400,25 @@ Available commands:
 
     return True
 
+  @staticmethod
+  def get_ips_from_options(ips):
+    """ Gets ips from run time options and validates that they are valid ip
+    addresses.
+    Args:
+      ips: A list or dict containing the ips attribute of the run time options.
+    Raises:
+      AssertionError if any ip addresses are not valid.
+    """
+    try:
+      all_ips = set(ips.values())
+    except AttributeError:
+      all_ips = set()
+      for node_set in ips:
+        all_ips.update(node_set['nodes'] if isinstance(node_set['nodes'], list)\
+                       else [node_set['nodes']])
+    assert all(AppEngineHelper.is_valid_ipv4_address(ip) for ip in all_ips), \
+      'Invalid IP address in {}'.format(all_ips)
+    return all_ips
 
   def can_ssh_to_ip(self, ip, keyname, is_verbose):
     """ Attempts to SSH into the machine located at the given IP address with the
@@ -518,7 +564,9 @@ Available commands:
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
-    return AppScaleTools.upload_app(options)
+    login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_queues(options.file, options.keyname)
+    return login_host, http_port
 
 
   def undeploy(self, appid):
@@ -674,13 +722,14 @@ Available commands:
     subprocess.call(command)
 
 
-  def logs(self, location):
+  def logs(self, location, other_args=None):
     """ 'logs' provides a cleaner experience for users than the
     appscale-gather-logs command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
     Args:
       location: The path on the local filesystem where logs should be copied to.
+      other_args: A list of other args from sys.argv.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -696,6 +745,8 @@ Available commands:
 
     command.append("--location")
     command.append(location)
+    if other_args:
+      command += other_args
 
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args

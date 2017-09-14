@@ -117,15 +117,16 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('get_app_info_map').with_args(
       'the secret').and_return(json.dumps({
-      self.appid : {
+      '{}_default_v1'.format(self.appid) : {
         'nginx' : 8080
       },
-      'a-different-app' : {
+      'a-different-app_default_v1' : {
         'nginx' : 81
       }
     }))
-    fake_appcontroller.should_receive('relocate_app').with_args(self.appid, 80,
-      443, 'the secret').and_return("OK")
+    version_key = '{}_default_v1'.format(self.appid)
+    fake_appcontroller.should_receive('relocate_version').with_args(
+      version_key, 80, 443, 'the secret').and_return("OK")
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)

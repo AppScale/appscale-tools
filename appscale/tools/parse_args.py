@@ -339,9 +339,7 @@ class ParseArgs(object):
         help="the keypair name to use")
       self.parser.add_argument('--test', action='store_true',
         default=False,
-        help="uses a default username and password for cloud admin")
-      self.parser.add_argument('--email',
-        help="the e-mail address to use as the app's admin")
+        help="avoids prompting for user input")
     elif function == "appscale-terminate-instances":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
@@ -372,6 +370,10 @@ class ParseArgs(object):
         default=False,
         help="does not ask user to confirm application removal")
     elif function == "appscale-reset-pwd":
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+    elif function == "appscale-create-user":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -451,6 +453,8 @@ class ParseArgs(object):
       if not self.args.appname:
         raise SystemExit("Must specify appname")
     elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-create-user":
       pass
     elif function == "appscale-describe-instances":
       pass

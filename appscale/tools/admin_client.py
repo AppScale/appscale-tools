@@ -1,12 +1,14 @@
 """ A client that makes requests to the AdminServer. """
 
 import requests
+import yaml
 
 # The default service.
 DEFAULT_SERVICE = 'default'
 
-# The default version.
-DEFAULT_VERSION = 'default'
+# The version that AppScale uses. This is temporary until we support multiple
+# versions per service.
+DEFAULT_VERSION = 'v1'
 
 
 class AdminError(Exception):
@@ -59,15 +61,16 @@ class AdminClient(object):
 
     return content
 
-  def create_version(self, project_id, user, source_path, runtime,
-                     threadsafe=None):
+  def create_version(self, project_id, service_id, source_path, runtime,
+                     env_variables, threadsafe=None):
     """ Creates or updates a version.
 
     Args:
       project_id: A string specifying the project ID.
-      user: A string specifying a user's email address.
+      service_id: A string specifying the service ID.
       source_path: A string specifying the location of the source code.
       runtime: A string specifying the version's language.
+      env_variables: A dictionary containing environment variables.
       threadsafe: Indicates that the version is threadsafe.
     Returns:
       A dictionary containing the deployment operation details.
@@ -75,13 +78,16 @@ class AdminClient(object):
       AdminError if the response is formatted incorrectly.
     """
     versions_url = '{prefix}/{project}/services/{service}/versions'.format(
-      prefix=self.prefix, project=project_id, service=DEFAULT_SERVICE)
-    headers = {'AppScale-Secret': self.secret, 'AppScale-User': user}
+      prefix=self.prefix, project=project_id, service=service_id)
+    headers = {'AppScale-Secret': self.secret}
     body = {
       'deployment': {'zip': {'sourceUrl': source_path}},
       'id': DEFAULT_VERSION,
       'runtime': runtime
     }
+    if env_variables:
+      body['envVariables'] = env_variables
+
     if threadsafe is not None:
       body['threadsafe'] = threadsafe
 
@@ -134,3 +140,29 @@ class AdminClient(object):
       prefix=self.prefix, project=project, operation_id=operation_id)
     response = requests.get(operation_url, headers=headers, verify=False)
     return self.extract_response(response)
+
+  def update_queues(self, project_id, queues):
+    """ Updates the the project's queue configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      queues: A dictionary containing queue configuration details.
+    Raises:
+      AdminError if unable to update queue configuration.
+    """
+    queue_yaml = yaml.safe_dump(queues, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    queues_url = 'https://{}:{}/api/queue/update?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(queues_url, headers=headers, data=queue_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
