@@ -5,6 +5,8 @@ import traceback
 # Third-party Python libraries
 from termcolor import cprint
 
+import services
+
 from .. import version_helper
 from ..appscale import AppScale
 from ..local_state import APPSCALE_VERSION
@@ -45,6 +47,15 @@ def main():
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
+  elif command == "services":
+    try:
+      services.main()
+    except Exception as exception:
+      LocalState.generate_crash_log(exception, traceback.format_exc())
+      sys.exit(1)
+    except KeyboardInterrupt:
+      # don't print the stack trace on a Control-C
+      pass
   elif command == "ssh":
     if len(sys.argv) < 3:
       index = None

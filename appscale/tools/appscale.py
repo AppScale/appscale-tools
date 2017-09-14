@@ -107,6 +107,8 @@ Available commands:
   relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
   remove <appid>                    An alias for 'undeploy'.
+  services                          Commands for services. Run appscale services
+                                    help for usage.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current
@@ -569,14 +571,14 @@ Available commands:
     return login_host, http_port
 
 
-  def undeploy(self, appid):
+  def undeploy(self, project_id):
     """ 'undeploy' is a more accessible way to tell an AppScale deployment to
     stop hosting a Google App Engine application than 'appscale-remove-app'. It
     calls that command with the configuration options found in the AppScalefile
     in the current working directory.
 
     Args:
-      appid: The name of the application that we should remove.
+      project_id: The name of the application that we should remove.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -596,8 +598,8 @@ Available commands:
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append('--confirm')
 
-    command.append("--appname")
-    command.append(appid)
+    command.append("--project-id")
+    command.append(project_id)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.

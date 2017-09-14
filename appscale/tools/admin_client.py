@@ -101,19 +101,70 @@ class AdminClient(object):
 
     return operation_id
 
-  def delete_version(self, project_id):
+  def delete_version(self, project_id, service_id, version_id):
+    """ Deletes a version.
+
+    Args:
+      project_id: A string specifying the project ID.
+      service_id: A string specifying the service ID.
+      version_id: A string specifying the version ID.
+    Returns:
+      A dictionary containing the delete version operation details.
+    Raises:
+      AdminError if the response is formatted incorrectly.
+    """
+    version_url = '{prefix}/{project}/services/{service}/versions/{version}'.\
+      format(prefix=self.prefix, project=project_id, service=service_id,
+             version=version_id)
+    headers = {'AppScale-Secret': self.secret}
+    response = requests.delete(version_url, headers=headers, verify=False)
+    operation = self.extract_response(response)
+    try:
+      # Operation names should match the following template:
+      # "apps/{project_id}/operations/{operation_id}"
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
+
+  def delete_service(self, project_id, service_id):
+    """ Deletes a service.
+  
+    Args:
+      project_id: A string specifying the project ID.
+      service_id: A string specifying the service ID.
+    Returns:
+      A dictionary containing the delete service operation details.
+    Raises:
+      AdminError if the response is formatted incorrectly.
+    """
+    service_url = '{prefix}/{project}/services/{service}'. \
+      format(prefix=self.prefix, project=project_id, service=service_id)
+    headers = {'AppScale-Secret': self.secret}
+    response = requests.delete(service_url, headers=headers, verify=False)
+    operation = self.extract_response(response)
+    try:
+      # Operation names should match the following template:
+      # "apps/{project_id}/operations/{operation_id}"
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
+
+  def delete_project(self, project_id):
     """ Deletes a version.
 
     Args:
       project_id: A string specifying the project ID.
     Returns:
-      A dictionary containing the delete operation details.
+      A dictionary containing the delete project operation details.
     Raises:
       AdminError if the response is formatted incorrectly.
     """
-    version_url = '{prefix}/{project}/services/{service}/versions/{version}'.\
-      format(prefix=self.prefix, project=project_id, service=DEFAULT_SERVICE,
-             version=DEFAULT_VERSION)
+    version_url = '{prefix}/{project}'. \
+      format(prefix=self.prefix, project=project_id)
     headers = {'AppScale-Secret': self.secret}
     response = requests.delete(version_url, headers=headers, verify=False)
     operation = self.extract_response(response)
