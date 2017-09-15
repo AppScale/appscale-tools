@@ -1149,14 +1149,16 @@ class GCEAgent(BaseAgent):
       client_secrets_path = self.CLIENT_SECRETS_LOCATION
       oauth2_storage_path = self.OAUTH2_STORAGE_LOCATION
     else:
+      # Determine client secrets path
       client_secrets_path = LocalState.get_client_secrets_location(
-        parameters[self.PARAM_KEYNAME])
-      oauth2_storage_path = LocalState.get_oauth2_storage_location(
         parameters[self.PARAM_KEYNAME])
       if not os.path.exists(client_secrets_path):
         client_secrets_path = parameters.get(self.PARAM_SECRETS, '')
-      if not os.path.exists(oauth2_storage_path):
-        oauth2_storage_path = parameters.get(self.PARAM_STORAGE, '')
+      # Determine oauth2 storage
+      oauth2_storage_path = parameters.get(self.PARAM_STORAGE)
+      if not oauth2_storage_path or not os.path.exists(oauth2_storage_path):
+        oauth2_storage_path = LocalState.get_oauth2_storage_location(
+          parameters[self.PARAM_KEYNAME])
 
     if os.path.exists(client_secrets_path):
       # Attempt to perform authorization using Service account
@@ -1173,7 +1175,7 @@ class GCEAgent(BaseAgent):
 
     if not credentials or credentials.invalid:
       # If we couldn't get valid credentials from OAuth2 storage
-      if os.path.exists(client_secrets_path):
+      if not os.path.exists(client_secrets_path):
         raise AgentConfigurationException(
           'Couldn\'t find client secrets file at {}'.format(client_secrets_path)
         )
