@@ -154,7 +154,7 @@ class AdminClient(object):
     return operation_id
 
   def delete_project(self, project_id):
-    """ Deletes a version.
+    """ Deletes a project.
 
     Args:
       project_id: A string specifying the project ID.
