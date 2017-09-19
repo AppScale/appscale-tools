@@ -17,19 +17,19 @@ from ..parse_args import ParseArgs
 
 version_helper.ensure_valid_python_is_used()
 
-class AppScaleServices():
-
-  def __init__(self):
-    self.appscale = AppScale()
-    self.appscale_tools = AppScaleTools()
+class AppScaleServices(object):
   # The usage that should be displayed to users if they call 'appscale services'
   # with a bad directive or ask for help.
   headers = ["\nUsage: appscale services command [<args>]\n\n"
              "Available commands:\n", "\n"]
   table = [["delete <project_id> <service_id>",
-             "Removes <project_id> <service_id> from the current deployment. "
-             "DATA ASSOCIATED WITH THE SERVICE WILL BE LOST."]]
+            "Removes <project_id> <service_id> from the current deployment. "
+            "DATA ASSOCIATED WITH THE SERVICE WILL BE LOST."]]
   USAGE = tabulate(table, headers)
+
+  def __init__(self):
+    self.appscale = AppScale()
+    self.appscale_tools = AppScaleTools()
 
   def delete_service(self, project_id, service_id):
     contents = self.appscale.read_appscalefile()
@@ -56,7 +56,7 @@ class AppScaleServices():
     try:
       self.appscale_tools.remove_service(options)
       sys.exit(0)
-    except Exception, e:
+    except Exception as e:
       LocalState.generate_crash_log(e, traceback.format_exc())
       sys.exit(1)
 
