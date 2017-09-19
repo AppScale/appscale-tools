@@ -737,12 +737,12 @@ class NodeLayout():
     nodes_copy = self.nodes[:]
     open_nodes = []
     for old_node in locations_nodes_list:
-      old_node_roles = old_node.get('jobs')
+      old_node_roles = old_node.get('roles')
       if old_node_roles == ["open"]:
         open_nodes.append(old_node)
         continue
       for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+        # Match nodes based on roles.
         if set(old_node_roles) == set(node.roles):
           nodes_copy.remove(node)
           node.from_json(old_node)
@@ -757,7 +757,7 @@ class NodeLayout():
         node = nodes_copy.pop()
       except IndexError:
         return None
-      # Match nodes based on jobs/roles.
+      # Match nodes based on roles.
       roles = node.roles
       node.from_json(open_node)
       node.roles = roles
@@ -903,7 +903,7 @@ class Node():
       'public_ip': self.public_ip,
       'private_ip': self.private_ip,
       'instance_id': self.instance_id,
-      'jobs': self.roles,
+      'roles': self.roles,
       'disk': self.disk
     }
 
@@ -918,14 +918,14 @@ class Node():
           'public_ip': self.public_ip,
           'private_ip': self.private_ip,
           'instance_id': self.instance_id,
-          'jobs': self.roles,
+          'roles': self.roles,
           'disk': self.disk
         }
     """
     self.public_ip = node_dict.get('public_ip')
     self.private_ip = node_dict.get('private_ip')
     self.instance_id = node_dict.get('instance_id')
-    self.roles = node_dict.get('jobs')
+    self.roles = node_dict.get('roles')
     self.disk = node_dict.get('disk')
 
 
