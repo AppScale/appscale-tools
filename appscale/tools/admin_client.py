@@ -130,7 +130,7 @@ class AdminClient(object):
 
   def delete_service(self, project_id, service_id):
     """ Deletes a service.
-  
+
     Args:
       project_id: A string specifying the project ID.
       service_id: A string specifying the service ID.
