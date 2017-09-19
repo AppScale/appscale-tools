@@ -643,7 +643,7 @@ class AppScaleTools(object):
       if time.time() > deadline:
         raise AppScaleException('The undeploy operation took too long.')
       operation = admin_client.get_operation(options.project_id, operation_id)
-      if operation['done']:
+      if not operation['done']:
         time.sleep(1)
         continue
 
