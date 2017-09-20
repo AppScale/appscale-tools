@@ -180,7 +180,7 @@ class AdminClient(object):
     """
     url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
     headers = {'AppScale-Secret': self.secret}
-    response = requests.post(url, headers=headers, verify=False)
+    response = requests.get(url, headers=headers, verify=False)
     return self.extract_response(response)
 
   def get_operation(self, project, operation_id):
