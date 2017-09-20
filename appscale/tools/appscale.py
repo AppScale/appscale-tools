@@ -30,6 +30,7 @@ from node_layout import NodeLayout
 from parse_args import ParseArgs
 from remote_helper import RemoteHelper
 from registration_helper import RegistrationHelper
+from scripts.services import print_services
 
 
 class AppScale():
@@ -109,6 +110,7 @@ Available commands:
   remove <appid>                    An alias for 'undeploy'.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
+  services                          Prints information about app service versions.
   ssh [#]                           Logs into the #th node of the current
                                     AppScale deployment or a valid role.
                                     Default is headnode. Machines
@@ -922,3 +924,25 @@ Available commands:
     options.terminate = False
     options.clean = False
     AppScaleTools.upgrade(options)
+
+  def services(self, appid=None):
+    """ Allows users to get information about application services.
+
+    Args:
+      appid: A str indicating the name of the application.
+    Raises:
+      AppScalefileException: If there is no AppScalefile
+      in the current directory.
+    """
+    contents = self.read_appscalefile()
+    command = []
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    command.append("--appname")
+    command.append(appid)
+
+    options = ParseArgs(command, "appscale-services").args
+    print_services(options)

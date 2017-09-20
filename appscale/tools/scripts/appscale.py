@@ -219,6 +219,15 @@ def main():
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
+  elif command == "services":
+    try:
+      if len(sys.argv) > 2:
+        appscale.services(sys.argv[2])
+      else:
+        appscale.services()
+    except Exception as exception:
+      LocalState.generate_crash_log(exception, traceback.format_exc())
+      sys.exit(1)
   else:
     print(AppScale.USAGE)
     if command == "help":

@@ -89,6 +89,7 @@ setup(
       'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
       'appscale-run-instances=appscale.tools.scripts.run_instances:main',
       'appscale-set-property=appscale.tools.scripts.set_property:main',
+      'appscale-services=appscale.tools.scripts.services:main',
       'appscale-terminate-instances='
         'appscale.tools.scripts.terminate_instances:main',
       'appscale-upgrade=appscale.tools.scripts.upgrade:main',
