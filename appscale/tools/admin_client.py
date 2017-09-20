@@ -1,5 +1,6 @@
 """ A client that makes requests to the AdminServer. """
 
+import json
 import requests
 import yaml
 
@@ -158,24 +159,29 @@ class AdminClient(object):
 
     Args:
       project_id: A string specifying the project ID.
+    Raises:
+      AdminError if the response is not 200.
+    """
+    url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
+    headers = {'AppScale-Secret': self.secret}
+    data = json.dumps({'projectId': project_id})
+    response = requests.delete(url, headers=headers, verify=False,
+                               data=data)
+    if response.status_code != 200:
+      raise AdminError('Error asking Admin Server to delete project!')
+
+  def list_projects(self):
+    """ Lists projects.
+
     Returns:
-      A dictionary containing the delete project operation details.
+      A list containing the projects of this deployment.
     Raises:
       AdminError if the response is formatted incorrectly.
     """
-    version_url = '{prefix}/{project}'. \
-      format(prefix=self.prefix, project=project_id)
+    url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
     headers = {'AppScale-Secret': self.secret}
-    response = requests.delete(version_url, headers=headers, verify=False)
-    operation = self.extract_response(response)
-    try:
-      # Operation names should match the following template:
-      # "apps/{project_id}/operations/{operation_id}"
-      operation_id = operation['name'].split('/')[-1]
-    except (KeyError, IndexError):
-      raise AdminError('Invalid operation: {}'.format(operation))
-
-    return operation_id
+    response = requests.post(url, headers=headers, verify=False)
+    return self.extract_response(response)
 
   def get_operation(self, project, operation_id):
     """ Retrieves the status of an operation.

@@ -601,20 +601,19 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    operation_id = admin_client.delete_project(options.project_id)
+    admin_client.delete_project(options.project_id)
+
     deadline = time.time() + cls.MAX_OPERATION_TIME
     while True:
       if time.time() > deadline:
         raise AppScaleException('The undeploy operation took too long.')
 
-      operation = admin_client.get_operation(options.project_id, operation_id)
-      if not operation['done']:
+      projects = admin_client.list_projects()
+      if options.project_id in projects:
         time.sleep(1)
         continue
-
-      if 'error' in operation:
-        raise AppScaleException(operation['error']['message'])
-      break
+      else:
+        break
 
     AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
 
