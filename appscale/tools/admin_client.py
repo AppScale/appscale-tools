@@ -162,11 +162,10 @@ class AdminClient(object):
     Raises:
       AdminError if the response is not 200.
     """
-    url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
+    url = 'https://{}:{}/v1/projects/{}'.format(self.host, self.PORT,
+                                                project_id)
     headers = {'AppScale-Secret': self.secret}
-    data = json.dumps({'projectId': project_id})
-    response = requests.delete(url, headers=headers, verify=False,
-                               data=data)
+    response = requests.delete(url, headers=headers, verify=False)
     if response.status_code != 200:
       raise AdminError('Error asking Admin Server to delete project!')
 
