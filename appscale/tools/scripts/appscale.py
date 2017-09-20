@@ -53,9 +53,6 @@ def main():
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
-    except KeyboardInterrupt:
-      # don't print the stack trace on a Control-C
-      pass
   elif command == "ssh":
     if len(sys.argv) < 3:
       index = None
