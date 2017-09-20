@@ -1,6 +1,5 @@
 """ A client that makes requests to the AdminServer. """
 
-import json
 import requests
 import yaml
 
