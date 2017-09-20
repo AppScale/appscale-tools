@@ -637,7 +637,8 @@ class GCEAgent(BaseAgent):
       has_client_secrets = os.path.exists(self.CLIENT_SECRETS_LOCATION)
       if not has_oauth2_storage and not has_client_secrets:
         raise AgentConfigurationException(
-          'Can\'t find neither OAuth2 file at {} nor client secrets file at {}'
+          'Could not find neither OAuth2 file '
+          'at {} nor client secrets file at {}'
           .format(self.OAUTH2_STORAGE_LOCATION, self.CLIENT_SECRETS_LOCATION)
         )
     else:
@@ -648,7 +649,7 @@ class GCEAgent(BaseAgent):
       )
       if not os.path.exists(creds_location):
         raise AgentConfigurationException(
-          'Can\'t find credentials file at {}'.format(creds_location))
+          'Could not find credentials file at {}'.format(creds_location))
 
 
   def describe_instances(self, parameters, pending=False):
