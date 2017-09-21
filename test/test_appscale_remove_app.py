@@ -131,8 +131,8 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     operation_id = 'operation-1'
     flexmock(AdminClient).should_receive('delete_project').\
       and_return(operation_id)
-    flexmock(AdminClient).should_receive('get_operation').\
-      and_return({'done': True})
+    flexmock(AdminClient).should_receive('list_projects').\
+      and_return({'projects': []})
 
     argv = [
       "--project-id", "blargapp",
