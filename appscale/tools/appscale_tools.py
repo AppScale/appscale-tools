@@ -607,9 +607,14 @@ class AppScaleTools(object):
     while True:
       if time.time() > deadline:
         raise AppScaleException('The undeploy operation took too long.')
+      found_project = False
+      projects = admin_client.list_projects()['projects']
+      for project in projects:
+        if options.project_id == project['projectId']:
+          found_project = True
+          break
 
-      projects = admin_client.list_projects()
-      if options.project_id in projects:
+      if found_project:
         time.sleep(1)
         continue
       else:
