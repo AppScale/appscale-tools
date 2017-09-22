@@ -601,13 +601,52 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    operation_id = admin_client.delete_version(options.appname)
+    admin_client.delete_project(options.project_id)
+
     deadline = time.time() + cls.MAX_OPERATION_TIME
     while True:
       if time.time() > deadline:
         raise AppScaleException('The undeploy operation took too long.')
+      found_project = False
+      projects = admin_client.list_projects()['projects']
+      for project in projects:
+        if options.project_id == project['projectId']:
+          found_project = True
+          break
 
-      operation = admin_client.get_operation(options.appname, operation_id)
+      if found_project:
+        time.sleep(1)
+        continue
+      else:
+        break
+
+    AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
+
+
+  @classmethod
+  def remove_service(cls, options):
+    """Instructs AppScale to no longer host the named application.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.confirm:
+      response = raw_input(
+        'Are you sure you want to remove this service? (y/N) ')
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled service removal.")
+
+    login_host = LocalState.get_login_host(options.keyname)
+    secret = LocalState.get_secret_key(options.keyname)
+    admin_client = AdminClient(login_host, secret)
+    operation_id = admin_client.delete_service(options.project_id,
+                                                options.service_id)
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The undeploy operation took too long.')
+      operation = admin_client.get_operation(options.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue
@@ -616,7 +655,8 @@ class AppScaleTools(object):
         raise AppScaleException(operation['error']['message'])
       break
 
-    AppScaleLogger.success('Done shutting down {}.'.format(options.appname))
+    AppScaleLogger.success('Done shutting down service {} for {}.'.format(
+      options.project_id, options.service_id))
 
 
   @classmethod
