@@ -23,8 +23,7 @@ class AppScaleServices(object):
   headers = ["\nUsage: appscale services command [<args>]\n\n"
              "Available commands:\n", "\n"]
   table = [["delete <project_id> <service_id>",
-            "Removes <project_id> <service_id> from the current deployment. "
-            "DATA ASSOCIATED WITH THE SERVICE WILL BE LOST."]]
+            "Removes <project_id> <service_id> from the current deployment."]]
   USAGE = tabulate(table, headers)
 
   def __init__(self):
