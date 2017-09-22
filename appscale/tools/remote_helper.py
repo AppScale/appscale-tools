@@ -128,7 +128,7 @@ class RemoteHelper(object):
 
       previous_node_list = node_layout.from_locations_json_list(node_info)
       # If this is None, the AppScalefile has been changed or the nodes could
-      # not be matched up by roles/jobs.
+      # not be matched up by roles.
       if previous_node_list is None:
         raise BadConfigurationException("AppScale does not currently support "
                                         "changes to AppScalefile or locations "

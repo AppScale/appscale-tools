@@ -203,7 +203,7 @@ Available commands:
       A string containing the IP address of the head node.
     """
     for node in nodes:
-      if 'shadow' in node['jobs']:
+      if 'shadow' in node['roles']:
         return node['public_ip']
 
     raise AppScaleException('Unable to find head node.')

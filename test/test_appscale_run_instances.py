@@ -216,7 +216,7 @@ group: {1}
     role_info = [{
       'public_ip' : public_ip,
       'private_ip' : private_ip,
-      'jobs' : ['shadow', 'login'],
+      'roles' : ['shadow', 'login'],
       'instance_id': 'i-APPSCALE'
     }]
     fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
@@ -359,7 +359,7 @@ group: {1}
       json.dumps([{
         "public_ip": "1.2.3.4",
         "private_ip": "1.2.3.4",
-        "jobs": ["shadow", "login"]
+        "roles": ["shadow", "login"]
       }])))
 
     # Assume the locations files were copied successfully.
@@ -545,7 +545,7 @@ appengine:  1.2.3.4
       json.dumps([{
         "public_ip" : "elastic-ip",
         "private_ip" : "private1",
-        "jobs": ["shadow", "login"]
+        "roles": ["shadow", "login"]
       }])))
 
     # copying over the locations yaml and json files should be fine
@@ -702,7 +702,7 @@ appengine:  1.2.3.4
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
-        "jobs" : ["shadow", "login"]
+        "roles" : ["shadow", "login"]
       }])))
 
     # copying over the locations json file should be fine
@@ -774,7 +774,7 @@ appengine:  1.2.3.4
       json.dumps([{
         "public_ip" : "1.2.3.4",
         "private_ip" : "1.2.3.4",
-        "jobs" : ["shadow", "login"]
+        "roles" : ["shadow", "login"]
       }])))
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 

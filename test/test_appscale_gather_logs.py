@@ -75,7 +75,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
       {"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+        "roles": ["shadow", "login"]
       }]}))
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')

@@ -443,8 +443,8 @@ class LocalState(object):
           file_contents = json.loads(file_handle.read())
         cleaned_nodes = []
         for node in file_contents.get('node_info'):
-          if 'load_balancer' not in node.get('jobs'):
-            node['jobs'] = ['open']
+          if 'load_balancer' not in node.get('roles'):
+            node['roles'] = ['open']
           cleaned_nodes.append(node)
         file_contents['node_info'] = cleaned_nodes
         # Now we write the JSON file after our changes.
@@ -574,7 +574,7 @@ class LocalState(object):
       role: A str, the role we are looking up the host for.
     """
     for node in cls.get_local_nodes_info(keyname):
-      if role in node["jobs"]:
+      if role in node["roles"]:
         return node["public_ip"]
 
 
@@ -638,7 +638,7 @@ class LocalState(object):
     """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if role in node['jobs']:
+      if role in node['roles']:
         return node['public_ip']
     raise AppScaleException("Couldn't find a {0} node.".format(role))
 

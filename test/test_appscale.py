@@ -90,9 +90,9 @@ class TestAppScale(unittest.TestCase):
 
 
   def test_get_head_node(self):
-    shadow_node_1 = {'public_ip': 'public2', 'jobs': ['shadow']}
-    appengine_node = {'public_ip': 'public1', 'jobs': ['appengine']}
-    shadow_node_2 = {'public_ip': 'public3', 'jobs': ['shadow']}
+    shadow_node_1 = {'public_ip': 'public2', 'roles': ['shadow']}
+    appengine_node = {'public_ip': 'public1', 'roles': ['appengine']}
+    shadow_node_2 = {'public_ip': 'public3', 'roles': ['shadow']}
     appscale = AppScale()
 
     # If the list of nodes does not have a node with the shadow role, the

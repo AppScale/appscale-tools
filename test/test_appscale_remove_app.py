@@ -81,7 +81,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+        "roles": ["shadow", "login"]
       }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins.should_receive('open').with_args(
@@ -121,7 +121,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+        "roles": ["shadow", "login"]
       }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins.should_receive('open').with_args(

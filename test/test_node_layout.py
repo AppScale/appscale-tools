@@ -245,20 +245,20 @@ class TestNodeLayout(unittest.TestCase):
   reattach_node_info = [{ "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
-                          "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                          "roles": ['load_balancer', 'taskqueue', 'shadow', 'login',
                                    'taskqueue_master'] },
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "jobs": ['memcache', 'appengine'] },
+                          "roles": ['memcache', 'appengine'] },
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "jobs": ['zookeeper'] },
+                          "roles": ['zookeeper'] },
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'memcache', 'db_master'] }
+                          "roles": ['database', 'memcache', 'db_master'] }
                         ]
 
 
@@ -270,7 +270,7 @@ class TestNodeLayout(unittest.TestCase):
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+        # Match nodes based on roles.
         if set(old_node.roles) == set(node.roles):
           nodes_copy.remove(node)
     self.assertEqual(nodes_copy, [])
@@ -307,7 +307,7 @@ class TestNodeLayout(unittest.TestCase):
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+        # Match nodes based on roles.
         if set(old_node.roles) == set(node.roles):
           nodes_copy.remove(node)
     self.assertEqual(nodes_copy, [])
@@ -319,20 +319,20 @@ class TestNodeLayout(unittest.TestCase):
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE1",
-                   "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                   "roles": ['load_balancer', 'taskqueue', 'shadow', 'login',
                             'taskqueue_master'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE2",
-                   "jobs": ['memcache', 'appengine'] },
+                   "roles": ['memcache', 'appengine'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE3",
-                   "jobs": ['zookeeper'] },
+                   "roles": ['zookeeper'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['database', 'memcache', 'db_master', 'zookeeper'] }
+                   "roles": ['database', 'memcache', 'db_master', 'zookeeper'] }
                  ]
 
     new_layout = node_layout.from_locations_json_list(node_info)
