@@ -506,16 +506,10 @@ class NodeLayout():
       # Check cases where a master is needed.
       if 'master' in roles:
         self.master = nodes[0]
-      if 'database' in roles and not db_master_created:
-        nodes[0].add_db_role(is_master=True)
+      if 'db_master' in roles:
         db_master_created = True
-      if 'taskqueue' in roles and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(is_master=True)
-        else:
-          nodes[0].add_taskqueue_role(is_master=True)
+      if 'taskqueue_master' in roles:
+        tq_master_created = True
       if 'login' in roles and login_found:
         self.invalid("Only one login is allowed.")
       elif 'login' in roles:
@@ -530,6 +524,13 @@ class NodeLayout():
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
+
+    for node in nodes:
+      if not db_master_created and node.is_role('database'):
+        nodes.add_db_role(is_master=True)
+        db_master_created = True
+      if not tq_master_created and node.is_role('taskqueue'):
+        node.add_taskqueue_role(is_master=True)
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       if not self.min_vms:
