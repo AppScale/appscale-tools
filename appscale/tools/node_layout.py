@@ -531,6 +531,7 @@ class NodeLayout():
         db_master_created = True
       if not tq_master_created and node.is_role('taskqueue'):
         node.add_taskqueue_role(is_master=True)
+        tq_master_created = True
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       if not self.min_vms:
