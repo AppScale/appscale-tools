@@ -20,7 +20,7 @@ ips_layout:
       - master
       - appengine
       - database
-      -zookeeper
+      - zookeeper
     nodes: [1 | vm1_private_IP]
 
 # A multi node deployment.
