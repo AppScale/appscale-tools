@@ -983,17 +983,19 @@ class AdvancedNode(Node):
     if 'login' in self.roles:
       self.roles.append('load_balancer')
 
+    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
+    if 'db_slave' in self.roles or 'db_master' in self.roles \
+        and 'database' not in self.roles:
+      self.roles.append('database')
+
+    if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
+      and 'taskqueue' not in self.roles:
+      self.roles.append('taskqueue')
+
     # TODO(cgb): Look into whether or not the database still needs memcache
     # support. If not, remove this addition and the validation of it above.
     if 'database' in self.roles:
       self.roles.append('memcache')
-
-    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
-    if 'db_slave' in self.roles and 'database' not in self.roles:
-      self.roles.append('database')
-
-    if 'taskqueue_slave' in self.roles and 'taskqueue' not in self.roles:
-      self.roles.append('taskqueue')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
