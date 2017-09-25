@@ -194,7 +194,7 @@ class TestRemoteHelper(unittest.TestCase):
     local_state = flexmock(LocalState)
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      .and_return('Please login as the user "ubuntu"')
 
     # and assume that we can ssh in as ubuntu to enable root login
     local_state = flexmock(LocalState)
