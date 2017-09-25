@@ -364,11 +364,23 @@ class ParseArgs(object):
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
-      self.parser.add_argument('--appname',
+      self.parser.add_argument('--project-id',
         help="the name of the application to remove")
       self.parser.add_argument('--confirm', action='store_true',
         default=False,
         help="does not ask user to confirm application removal")
+
+    elif function == "appscale-remove-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to remove")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to remove")
+      self.parser.add_argument('--confirm', action='store_true',
+                               default=False,
+                               help="does not ask user to confirm application removal")
+
     elif function == "appscale-reset-pwd":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
@@ -450,8 +462,13 @@ class ParseArgs(object):
     elif function == "appscale-terminate-instances":
       self.validate_environment_flags()
     elif function == "appscale-remove-app":
-      if not self.args.appname:
-        raise SystemExit("Must specify appname")
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+    elif function == "appscale-remove-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
     elif function == "appscale-reset-pwd":
       pass
     elif function == "appscale-create-user":
