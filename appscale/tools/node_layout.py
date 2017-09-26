@@ -527,7 +527,7 @@ class NodeLayout():
 
     for node in nodes:
       if not db_master_created and node.is_role('database'):
-        nodes.add_db_role(is_master=True)
+        node.add_db_role(is_master=True)
         db_master_created = True
       if not tq_master_created and node.is_role('taskqueue'):
         node.add_taskqueue_role(is_master=True)
