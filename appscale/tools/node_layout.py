@@ -303,7 +303,7 @@ class NodeLayout():
     # controller -> shadow
     controller_count = 0
     for node in nodes:
-      if node.is_role('master'):
+      if node.is_role('shadow'):
         controller_count += 1
 
     if controller_count == 0:
@@ -345,7 +345,7 @@ class NodeLayout():
     node_hash = {}
     role_count = {
       'appengine': 0,
-      'master': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
@@ -386,29 +386,36 @@ class NodeLayout():
       # Check cases where a master is needed.
       if role == 'master':
         self.master = nodes[0]
-      if role == 'database' and not db_master_created:
-        nodes[0].add_db_role(True)
+      if role == 'db_master':
         db_master_created = True
-      if role == 'taskqueue' and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(True)
-        else:
-          nodes[0].add_taskqueue_role(True)
+      if role == 'taskqueue_master':
+        tq_master_created = True
       if role == 'login' and login_found:
         self.invalid("Only one login is allowed")
       elif role == 'login':
         login_found = True
-
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
       # Update dictionary containing role counts.
-      role_count.update({role: role_count.get(role, 0) + len(nodes)})
+      role_count.update({role: role_count.get(role, 0) + len(nodes)
+                         for role in roles})
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
+
+    for node in nodes:
+      if db_master_created and tq_master_created:
+        break
+      if not db_master_created and node.is_role('database'):
+        node.add_db_role(is_master=True)
+        db_master_created = True
+      if not tq_master_created and node.is_role('taskqueue'):
+        node.add_taskqueue_role(is_master=True)
+        tq_master_created = True
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
       if not self.min_vms:
@@ -436,7 +443,7 @@ class NodeLayout():
     node_hash = {}
     role_count = {
       'appengine': 0,
-      'master': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
@@ -530,6 +537,8 @@ class NodeLayout():
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
 
     for node in nodes:
+      if db_master_created and tq_master_created:
+        break
       if not db_master_created and node.is_role('database'):
         node.add_db_role(is_master=True)
         db_master_created = True
@@ -613,7 +622,7 @@ class NodeLayout():
       if count != 0:
         continue
       # Check if a master node was specified.
-      if role == 'master':
+      if role == 'shadow':
         self.invalid("Need to specify one master node.")
       # Check if an appengine node was specified.
       elif role == 'appengine':
@@ -948,7 +957,6 @@ class SimpleNode(Node):
     if 'controller' in self.roles:
       self.roles.remove('controller')
       self.roles.append('shadow')
-      self.roles.append('master')
       self.roles.append('load_balancer')
       self.roles.append('database')
       self.roles.append('memcache')
@@ -980,6 +988,7 @@ class AdvancedNode(Node):
     adds dependencies necessary for the 'login' and 'database' roles.
     """
     if 'master' in self.roles:
+      self.roles.remove('master')
       self.roles.append('shadow')
       self.roles.append('load_balancer')
 
@@ -994,11 +1003,6 @@ class AdvancedNode(Node):
     if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
       and 'taskqueue' not in self.roles:
       self.roles.append('taskqueue')
-
-    # TODO(cgb): Look into whether or not the database still needs memcache
-    # support. If not, remove this addition and the validation of it above.
-    if 'database' in self.roles:
-      self.roles.append('memcache')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
