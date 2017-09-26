@@ -503,6 +503,10 @@ class NodeLayout():
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
 
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
+
       # Check cases where a master is needed.
       if 'master' in roles:
         self.master = nodes[0]
@@ -976,7 +980,6 @@ class AdvancedNode(Node):
     adds dependencies necessary for the 'login' and 'database' roles.
     """
     if 'master' in self.roles:
-      self.roles.remove('master')
       self.roles.append('shadow')
       self.roles.append('load_balancer')
 
