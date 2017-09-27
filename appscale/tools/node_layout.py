@@ -690,7 +690,7 @@ class NodeLayout():
       A list of nodes not running the 'shadow' role, or the empty list if the
       NodeLayout isn't acceptable for use with AppScale.
     """
-    return [node for node in self.nodes if not node.is_role('master')]
+    return [node for node in self.nodes if not node.is_role('shadow')]
 
   def get_nodes(self, role, is_role):
     """ Searches through the nodes in this NodeLayout for all nodes with or
