@@ -510,10 +510,6 @@ class NodeLayout():
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
 
-      # All nodes that have the same roles will be expanded the same way,
-      # so get the updated list of roles from the first node.
-      roles = nodes[0].roles
-
       # Check cases where a master is needed.
       if 'master' in roles:
         self.master = nodes[0]
@@ -525,6 +521,10 @@ class NodeLayout():
         self.invalid("Only one login is allowed.")
       elif 'login' in roles:
         login_found = True
+
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
 
       # Update dictionary containing role counts.
       role_count.update({role: role_count.get(role, 0) + len(nodes)
