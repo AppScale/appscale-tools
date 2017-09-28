@@ -258,7 +258,7 @@ class TestNodeLayout(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'memcache', 'db_master'] }
+                          "jobs": ['database', 'db_master'] }
                         ]
 
 
@@ -332,7 +332,7 @@ class TestNodeLayout(unittest.TestCase):
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['database', 'memcache', 'db_master', 'zookeeper'] }
+                   "jobs": ['database', 'db_master', 'zookeeper'] }
                  ]
 
     new_layout = node_layout.from_locations_json_list(node_info)

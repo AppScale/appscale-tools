@@ -303,7 +303,7 @@ class NodeLayout():
     # controller -> shadow
     controller_count = 0
     for node in nodes:
-      if node.is_role('master'):
+      if node.is_role('shadow'):
         controller_count += 1
 
     if controller_count == 0:
@@ -345,14 +345,14 @@ class NodeLayout():
     node_hash = {}
     role_count = {
       'appengine': 0,
-      'master': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
-      'login': 0
+      'login': 0,
+      'db_master': 0,
+      'taskqueue_master': 0
     }
-    db_master_created = False
-    tq_master_created = False
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for role, ips in self.input_yaml.iteritems():
@@ -386,26 +386,20 @@ class NodeLayout():
       # Check cases where a master is needed.
       if role == 'master':
         self.master = nodes[0]
-      if role == 'database' and not db_master_created:
-        nodes[0].add_db_role(True)
-        db_master_created = True
-      if role == 'taskqueue' and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(True)
-        else:
-          nodes[0].add_taskqueue_role(True)
       if role == 'login' and login_found:
         self.invalid("Only one login is allowed")
       elif role == 'login':
         login_found = True
-
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
       # Update dictionary containing role counts.
-      role_count.update({role: role_count.get(role, 0) + len(nodes)})
+      role_count.update({role: role_count.get(role, 0) + len(nodes)
+                         for role in roles})
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
@@ -415,8 +409,6 @@ class NodeLayout():
         self.min_vms = len(nodes)
       if not self.max_vms:
         self.max_vms = len(nodes)
-
-    self.validate_database_replication(nodes)
 
     self.nodes = nodes
 
@@ -436,15 +428,16 @@ class NodeLayout():
     node_hash = {}
     role_count = {
       'appengine': 0,
-      'master': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
-      'login': 0
+      'login': 0,
+      'db_master': 0,
+      'taskqueue_master': 0
     }
     node_count = 0
-    db_master_created = False
-    tq_master_created = False
+
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for node_set in self.input_yaml:
@@ -506,20 +499,14 @@ class NodeLayout():
       # Check cases where a master is needed.
       if 'master' in roles:
         self.master = nodes[0]
-      if 'database' in roles and not db_master_created:
-        nodes[0].add_db_role(is_master=True)
-        db_master_created = True
-      if 'taskqueue' in roles and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(is_master=True)
-        else:
-          nodes[0].add_taskqueue_role(is_master=True)
       if 'login' in roles and login_found:
         self.invalid("Only one login is allowed.")
       elif 'login' in roles:
         login_found = True
+
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
 
       # Update dictionary containing role counts.
       role_count.update({role: role_count.get(role, 0) + len(nodes)
@@ -527,6 +514,7 @@ class NodeLayout():
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
@@ -536,8 +524,6 @@ class NodeLayout():
         self.min_vms = len(nodes)
       if not self.max_vms:
         self.max_vms = len(nodes)
-
-    self.validate_database_replication(nodes)
 
     self.nodes = nodes
 
@@ -607,7 +593,7 @@ class NodeLayout():
       if count != 0:
         continue
       # Check if a master node was specified.
-      if role == 'master':
+      if role == 'shadow':
         self.invalid("Need to specify one master node.")
       # Check if an appengine node was specified.
       elif role == 'appengine':
@@ -615,20 +601,35 @@ class NodeLayout():
       # If no memcache nodes were specified, make all appengine nodes
       # into memcache nodes.
       elif role == 'memcache':
-        for node in nodes:
-          if node.is_role('appengine'):
-            node.add_role('memcache')
-        # If no zookeeper nodes are specified, make the shadow a zookeeper node.
+        for node in self.get_nodes('appengine', True, nodes):
+          node.add_role('memcache')
+      # If no zookeeper nodes are specified, make the shadow a zookeeper node.
       elif role == 'zookeeper':
         self.master.add_role('zookeeper')
-        # If no taskqueue nodes are specified, make the shadow the
-        # taskqueue_master.
+      # If no taskqueue nodes are specified, make the shadow the
+      # taskqueue_master.
       elif role == 'taskqueue':
         self.master.add_role('taskqueue')
         self.master.add_role('taskqueue_master')
       elif role == 'login':
         self.master.add_role('login')
-
+      elif role == 'db_master':
+        # Get first database node.
+        db_node = self.get_nodes('database', True, nodes)[0]
+        # Make first database node db_master.
+        db_node.add_db_role(is_master=True)
+      elif role == 'taskqueue_master':
+        # If master is already taskqueue_master, there is nothing for us to do.
+        if self.master.is_role('taskqueue_master'):
+          continue
+        # Get the taskqueue nodes.
+        tq_node = self.get_nodes('taskqueue', True, nodes)
+        # If there are no taskqueue nodes, do nothing since that is done in
+        # the taskqueue if statement.
+        if not tq_node:
+          continue
+        # Add taskqueue_master to first taskqueue node.
+        tq_node[0].add_taskqueue_role(is_master=True)
     return nodes
 
   def generate_cloud_layout(self):
@@ -675,9 +676,9 @@ class NodeLayout():
       A list of nodes not running the 'shadow' role, or the empty list if the
       NodeLayout isn't acceptable for use with AppScale.
     """
-    return [node for node in self.nodes if not node.is_role('master')]
+    return [node for node in self.nodes if not node.is_role('shadow')]
 
-  def get_nodes(self, role, is_role):
+  def get_nodes(self, role, is_role, nodes=None):
     """ Searches through the nodes in this NodeLayout for all nodes with or
     without the role based on boolean value of is_role.
 
@@ -686,6 +687,7 @@ class NodeLayout():
         for.
       is_role: A boolean to determine whether the return value is the nodes
         that are the role or the nodes that are not the role.
+      nodes: The list of nodes, or self.nodes if list is not supplied.
 
     Returns:
       A list of nodes either running or not running (based on is_role) the
@@ -694,8 +696,8 @@ class NodeLayout():
     """
     if role not in self.VALID_ROLES:
       return []
-
-    return [node for node in self.nodes if node.is_role(role) == is_role]
+    nodes = nodes or self.nodes
+    return [node for node in nodes if node.is_role(role) == is_role]
 
   def db_master(self):
     """ Searches through the nodes in this NodeLayout for the node with the
@@ -942,7 +944,6 @@ class SimpleNode(Node):
     if 'controller' in self.roles:
       self.roles.remove('controller')
       self.roles.append('shadow')
-      self.roles.append('master')
       self.roles.append('load_balancer')
       self.roles.append('database')
       self.roles.append('memcache')
@@ -981,10 +982,14 @@ class AdvancedNode(Node):
     if 'login' in self.roles:
       self.roles.append('load_balancer')
 
-    # TODO(cgb): Look into whether or not the database still needs memcache
-    # support. If not, remove this addition and the validation of it above.
-    if 'database' in self.roles:
-      self.roles.append('memcache')
+    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
+    if 'db_slave' in self.roles or 'db_master' in self.roles \
+        and 'database' not in self.roles:
+      self.roles.append('database')
+
+    if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
+      and 'taskqueue' not in self.roles:
+      self.roles.append('taskqueue')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
