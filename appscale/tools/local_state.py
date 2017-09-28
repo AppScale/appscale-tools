@@ -211,7 +211,7 @@ class LocalState(object):
       "user_commands": json.dumps(options.user_commands),
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
-      "max_memory": str(options.max_memory)
+      "default_max_appserver_memory": str(options.default_max_appserver_memory)
     }
     creds.update(additional_creds)
 

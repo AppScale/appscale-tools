@@ -500,9 +500,10 @@ public1 : vol-ABCDEFG
   def test_no_max_memory_flag_gets_set_to_default(self):
     argv = self.cluster_argv[:]
     actual = ParseArgs(argv, self.function).args
-    self.assertEquals(ParseArgs.DEFAULT_MAX_MEMORY, actual.max_memory)
+    self.assertEquals(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
+                      actual.default_max_appserver_memory)
 
   def test_max_memory_flag_gets_passed_through(self):
     argv = self.cluster_argv[:] + ["--max_memory", "800"]
     actual = ParseArgs(argv, self.function).args
-    self.assertEquals(800, actual.max_memory)
+    self.assertEquals(800, actual.default_max_appserver_memory)

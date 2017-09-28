@@ -76,7 +76,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "ips_layout" : None,
       "keyname" : "appscale",
       "login_host" : None,
-      "max_memory" : 400,
+      "default_max_appserver_memory" : 400,
       "max_spot_price": None,
       "oauth2_storage" : None,
       "project" : None,
