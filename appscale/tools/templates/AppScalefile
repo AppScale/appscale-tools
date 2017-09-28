@@ -166,7 +166,7 @@ login : [vm1_public_IP | Domain Name]
 # The number of AppServer instances that serve application requests.
 # By default, we start with two AppServer instances for high availability
 # and dynamically scale up/down based on the number of application requests.
-#appengine : 3
+#default_min_appservers : 3
 
 # The maximum amount of memory (in MB) an AppServer instance can use. 
 # By default, we limit each AppServer instance to 400MB.

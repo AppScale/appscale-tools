@@ -271,7 +271,7 @@ class ParseArgs(object):
         "(in megabytes)")
 
       group = self.parser.add_mutually_exclusive_group()
-      group.add_argument('--appengine', type=int,
+      group.add_argument('--default_min_appservers', '--appengine', type=int,
         help="the number of application servers to use per app")
       group.add_argument('--autoscale', action='store_true',
         help="adds/removes application servers based on incoming traffic")
@@ -740,16 +740,16 @@ class ParseArgs(object):
       BadConfigurationException: If the value for the --appengine flag is
         invalid.
     """
-    if self.args.appengine:
-      if self.args.appengine < 1:
+    if self.args.default_min_appservers:
+      if self.args.default_min_appservers < 1:
         raise BadConfigurationException("Number of application servers " + \
           "must exceed zero.")
 
       self.args.autoscale = False
     elif self.args.autoscale:
-      self.args.appengine = 1
+      self.args.default_min_appservers = 1
     else:  # neither are set
-      self.args.appengine = 1
+      self.args.default_min_appservers = 1
       self.args.autoscale = True
 
 

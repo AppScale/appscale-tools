@@ -94,11 +94,11 @@ class TestLocalState(unittest.TestCase):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
-      appengine='1', autoscale=False, group='bazgroup', replication=None,
-      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, clear_datastore=False,
-      disks={'node-1' : 'vol-ABCDEFG'}, zone='my-zone-1b', verbose=True,
-      user_commands=[], flower_password="abc",
+      default_min_appservers='1', autoscale=False, group='bazgroup',
+      replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
+      instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
@@ -115,7 +115,7 @@ class TestLocalState(unittest.TestCase):
       'login' : 'public1',
       'clear_datastore': 'False',
       'keyname' : 'boo',
-      'appengine' : '1',
+      'default_min_appservers' : '1',
       'autoscale' : 'False',
       'replication': 'None',
       'group' : 'bazgroup',

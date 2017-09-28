@@ -205,7 +205,7 @@ class LocalState(object):
       "login": node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
-      "appengine": str(options.appengine),
+      "default_min_appservers": str(options.default_min_appservers),
       "autoscale": str(options.autoscale),
       "clear_datastore": str(False),
       "user_commands": json.dumps(options.user_commands),
