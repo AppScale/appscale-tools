@@ -173,7 +173,8 @@ class ParseArgs(object):
     self.parser.add_argument('--verbose', '-v', action='store_true',
       default=False,
       help="prints additional output (useful for debugging)")
-
+    #TODO: remove arguments in appscale-run-instances that are no longer
+    # supported. (min, max, appengine, max_memory, scp)
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min_machines', '--min', type=int,

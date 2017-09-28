@@ -128,6 +128,18 @@ Available commands:
 """
 
 
+  # TODO: update these as items in the AppScalefile get deprecated and removed.
+  DEPRECATED_ASF_ARGS = {
+    'n': 'replication',
+    'scp': 'rsync_source',
+    'appengine': 'default_min_appservers',
+    'max_memory': 'default_max_appserver_memory',
+    'min': 'min_machines',
+    'max': 'max_machines'
+  }
+  REMOVED_ASF_ARGS = []
+
+
   def __init__(self):
     pass
 
@@ -279,9 +291,19 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
+      if key in self.REMOVED_ASF_ARGS:
+        raise BadConfigurationException("'{}' is no longer in use. Please refer "
+                                        "to our  website for more "
+                                        "information.".format(key))
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value
         continue
+      if key in self.DEPRECATED_ASF_ARGS.keys():
+        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"
+                            " and refer to our website to see the full "
+                            "changes".format(key,
+                                             self.DEPRECATED_ASF_ARGS[key]))
+        key = self.DEPRECATED_ASF_ARGS[key]
 
       if value is True:
         command.append(str("--%s" % key))

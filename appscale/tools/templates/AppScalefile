@@ -54,7 +54,7 @@ ips_layout:
 # Login is used to instruct AppScale which one is the visible public IP used
 # by clients to connect. It could be the public IP of the master/load-balancer
 # instance, or it could be the list of IPs used for external load-balancers.
-login : [vm1_public_IP | Domain Name]
+#login : [vm1_public_IP | Domain Name]
 
 
 
