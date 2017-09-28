@@ -304,7 +304,7 @@ class TestParseArgs(unittest.TestCase):
 
     argv_2 = self.cloud_argv[:] + ['--scp', '/tmp/booscale']
     actual = ParseArgs(argv_2, self.function).args
-    self.assertEquals('/tmp/booscale', actual.scp)
+    self.assertEquals('/tmp/booscale', actual.rsync_source)
 
 
   def test_login_flag(self):

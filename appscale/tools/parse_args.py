@@ -288,7 +288,7 @@ class ParseArgs(object):
       self.parser.add_argument('--force', action='store_true',
         default=False,
         help="forces tools to continue if keyname or group exist")
-      self.parser.add_argument('--scp',
+      self.parser.add_argument('--rsync_source', '--scp',
         help="the location to copy a local AppScale branch from")
       self.parser.add_argument('--test', action='store_true',
         default=False,

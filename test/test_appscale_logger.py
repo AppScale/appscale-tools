@@ -81,7 +81,7 @@ class TestAppScaleLogger(unittest.TestCase):
       "oauth2_storage" : None,
       "project" : None,
       "replication" : None,
-      "scp" : None,
+      "rsync_source" : None,
       "static_ip" : None,
       "table" : "cassandra",
       "test" : False,
