@@ -223,8 +223,8 @@ class LocalState(object):
         'zone': options.zone,
         'group': options.group,
         'use_spot_instances': str(options.use_spot_instances),
-        'min_images': str(node_layout.min_vms),
-        'max_images': str(node_layout.max_vms),
+        'min_machines': str(node_layout.min_machines),
+        'max_machines': str(node_layout.max_machines),
       }
 
       if options.infrastructure == "gce":

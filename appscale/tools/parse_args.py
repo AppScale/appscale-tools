@@ -176,9 +176,9 @@ class ParseArgs(object):
 
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
-      self.parser.add_argument('--min', type=int,
+      self.parser.add_argument('--min_machines', '--min', type=int,
         help="the minimum number of VMs to use")
-      self.parser.add_argument('--max', type=int,
+      self.parser.add_argument('--max_machines','--max', type=int,
         help="the maximum number of VMs to use")
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
@@ -523,8 +523,8 @@ class ParseArgs(object):
       return
 
     # if min is not set and max is, set min == max
-    if self.args.min is None and self.args.max:
-      self.args.min = self.args.max
+    if self.args.min_machines is None and self.args.max_machines:
+      self.args.min_machines = self.args.max_machines
 
     if self.args.ips:
       if not os.path.exists(self.args.ips):
@@ -532,13 +532,13 @@ class ParseArgs(object):
     elif self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
-      if self.args.min < 1:
+      if self.args.min_machines < 1:
         raise BadConfigurationException("Min cannot be less than 1.")
 
-      if self.args.max < 1:
+      if self.args.max_machines < 1:
         raise BadConfigurationException("Max cannot be less than 1.")
 
-      if self.args.min > self.args.max:
+      if self.args.min_machines > self.args.max_machines:
         raise BadConfigurationException("Min cannot exceed max.")
 
 

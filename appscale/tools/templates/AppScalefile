@@ -161,7 +161,7 @@ login : [vm1_public_IP | Domain Name]
 # Supported only in the Public Clouds above.
 # By default, it is the number of distinct nodes specified in the ips_layout
 # section.
-#max : 1
+#max_machines : 1
 
 # The number of AppServer instances that serve application requests.
 # By default, we start with two AppServer instances for high availability

@@ -118,8 +118,8 @@ class TestNodeLayout(unittest.TestCase):
     # Using Euca with no input yaml, with max and min images set is ok
     options_4 = self.default_options.copy()
     options_4['infrastructure'] = "euca"
-    options_4['min'] = 2
-    options_4['max'] = 2
+    options_4['min_machines'] = 2
+    options_4['max_machines'] = 2
     layout_4 = NodeLayout(options_4)
     self.assertNotEqual([], layout_4.nodes)
 

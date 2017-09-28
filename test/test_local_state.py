@@ -103,8 +103,8 @@ class TestLocalState(unittest.TestCase):
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     })
 
     flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
@@ -122,8 +122,8 @@ class TestLocalState(unittest.TestCase):
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : '1',
-      'max_images' : '1',
+      'min_machines' : '1',
+      'max_machines' : '1',
       'use_spot_instances' : 'True',
       'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
@@ -195,8 +195,8 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
       keyname='booscale', group='boogroup', zone='my-zone-1b')
     node_layout = NodeLayout(options={
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'infrastructure' : 'ec2',
       'table' : 'cassandra'
     })

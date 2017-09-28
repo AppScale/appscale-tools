@@ -122,7 +122,7 @@ class TestParseArgs(unittest.TestCase):
     # If max is specified but not min, min should be equal to max
     argv_3 = ['--max', '1']
     actual_3 = ParseArgs(argv_3, self.function)
-    self.assertEquals(actual_3.args.min, actual_3.args.max)
+    self.assertEquals(actual_3.args.min_machines, actual_3.args.max_machines)
 
     # If max is less than min, it should abort
     argv_4 = ['--min', '10', '--max', '1']
