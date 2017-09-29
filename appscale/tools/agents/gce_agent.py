@@ -701,8 +701,8 @@ class GCEAgent(BaseAgent):
     Returns:
       A str, a disk name associated with the root disk of AppScale on GCE.
     """
-    return '{group}-{time}'.format(group=parameters[self.PARAM_GROUP],
-                                   time=int(time.time() * 1000))[:60]
+    return '{group}-{uuid}'.format(group=parameters[self.PARAM_GROUP],
+                                   uuid=uuid.uuid4().hex)[:60]
 
   def create_scratch_disk(self, parameters):
     """ Creates a disk from a given machine image.
