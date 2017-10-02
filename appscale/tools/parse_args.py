@@ -179,7 +179,7 @@ class ParseArgs(object):
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min_machines', '--min', type=int,
         help="the minimum number of VMs to use")
-      self.parser.add_argument('--max_machines','--max', type=int,
+      self.parser.add_argument('--max_machines', '--max', type=int,
         help="the maximum number of VMs to use")
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")

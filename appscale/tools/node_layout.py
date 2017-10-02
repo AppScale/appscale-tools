@@ -24,6 +24,8 @@ class NodeLayout():
   nodes is not acceptable).
   """
 
+  APPSCALEFILE_INSTRUCTIONS = "https://www.appscale.com/" \
+                              "get-started/deploy-appscale#appscalefile"
 
   # A tuple containing the keys that can be used in simple deployments.
   SIMPLE_FORMAT_KEYS = ('controller', 'servers')
@@ -111,8 +113,8 @@ class NodeLayout():
     elif isinstance(input_yaml, dict):
       self.input_yaml = input_yaml
       AppScaleLogger.warn("The AppScalefile is changing, the layout you are "
-                          "using will be invalid soon. Please see our website "
-                          "for more details.")
+        "using will be invalid soon. Please see {} for more details.".format(
+        self.APPSCALEFILE_INSTRUCTIONS))
     elif isinstance(input_yaml, list):
       self.input_yaml = input_yaml
     else:

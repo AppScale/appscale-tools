@@ -137,7 +137,6 @@ Available commands:
     'min': 'min_machines',
     'max': 'max_machines'
   }
-  REMOVED_ASF_ARGS = []
 
 
   def __init__(self):
@@ -290,19 +289,15 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
+    deprecated = False
     for key, value in contents_as_yaml.items():
-      if key in self.REMOVED_ASF_ARGS:
-        raise BadConfigurationException("'{}' is no longer in use. Please refer "
-                                        "to our  website for more "
-                                        "information.".format(key))
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value
         continue
-      if key in self.DEPRECATED_ASF_ARGS.keys():
-        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"
-                            " and refer to our website to see the full "
-                            "changes".format(key,
-                                             self.DEPRECATED_ASF_ARGS[key]))
+      if key in self.DEPRECATED_ASF_ARGS:
+        deprecated = True
+        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"\
+                            .format(key, self.DEPRECATED_ASF_ARGS[key]))
         key = self.DEPRECATED_ASF_ARGS[key]
 
       if value is True:
@@ -322,6 +317,10 @@ Available commands:
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
+
+    if deprecated:
+      AppScaleLogger.warn("Refer to {} to see the full changes.".format(
+        NodeLayout.APPSCALEFILE_INSTRUCTIONS))
 
     run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 
