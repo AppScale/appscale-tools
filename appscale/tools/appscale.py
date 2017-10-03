@@ -128,6 +128,17 @@ Available commands:
 """
 
 
+  # TODO: update these as items in the AppScalefile get deprecated and removed.
+  DEPRECATED_ASF_ARGS = {
+    'n': 'replication',
+    'scp': 'rsync_source',
+    'appengine': 'default_min_appservers',
+    'max_memory': 'default_max_appserver_memory',
+    'min': 'min_machines',
+    'max': 'max_machines'
+  }
+
+
   def __init__(self):
     pass
 
@@ -278,10 +289,16 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
+    deprecated = False
     for key, value in contents_as_yaml.items():
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value
         continue
+      if key in self.DEPRECATED_ASF_ARGS:
+        deprecated = True
+        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"\
+                            .format(key, self.DEPRECATED_ASF_ARGS[key]))
+        key = self.DEPRECATED_ASF_ARGS[key]
 
       if value is True:
         command.append(str("--%s" % key))
@@ -300,6 +317,10 @@ Available commands:
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
+
+    if deprecated:
+      AppScaleLogger.warn("Refer to {} to see the full changes.".format(
+        NodeLayout.APPSCALEFILE_INSTRUCTIONS))
 
     run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 

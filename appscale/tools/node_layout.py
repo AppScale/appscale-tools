@@ -24,6 +24,8 @@ class NodeLayout():
   nodes is not acceptable).
   """
 
+  APPSCALEFILE_INSTRUCTIONS = "https://www.appscale.com/" \
+                              "get-started/deploy-appscale#appscalefile"
 
   # A tuple containing the keys that can be used in simple deployments.
   SIMPLE_FORMAT_KEYS = ('controller', 'servers')
@@ -111,8 +113,8 @@ class NodeLayout():
     elif isinstance(input_yaml, dict):
       self.input_yaml = input_yaml
       AppScaleLogger.warn("The AppScalefile is changing, the layout you are "
-                          "using will be invalid soon. Please see our website "
-                          "for more details.")
+        "using will be invalid soon. Please see {} for more details.".format(
+        self.APPSCALEFILE_INSTRUCTIONS))
     elif isinstance(input_yaml, list):
       self.input_yaml = input_yaml
     else:
@@ -120,8 +122,8 @@ class NodeLayout():
 
     self.disks = options.get('disks')
     self.infrastructure = options.get('infrastructure')
-    self.min_vms = options.get('min')
-    self.max_vms = options.get('max')
+    self.min_machines = options.get('min_machines')
+    self.max_machines = options.get('max_machines')
     self.replication = options.get('replication')
     self.database_type = options.get('table', 'cassandra')
     self.add_to_existing = options.get('add_to_existing')
@@ -234,10 +236,10 @@ class NodeLayout():
     """
     if not self.input_yaml:
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.min_vms:
+        if not self.min_machines:
           self.invalid(self.NO_YAML_REQUIRES_MIN)
 
-        if not self.max_vms:
+        if not self.max_machines:
           self.invalid(self.NO_YAML_REQUIRES_MAX)
 
         # No layout was created, so create a generic one and then allow it
@@ -405,10 +407,10 @@ class NodeLayout():
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_vms:
-        self.min_vms = len(nodes)
-      if not self.max_vms:
-        self.max_vms = len(nodes)
+      if not self.min_machines:
+        self.min_machines = len(nodes)
+      if not self.max_machines:
+        self.max_machines = len(nodes)
 
     self.nodes = nodes
 
@@ -520,10 +522,10 @@ class NodeLayout():
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_vms:
-        self.min_vms = len(nodes)
-      if not self.max_vms:
-        self.max_vms = len(nodes)
+      if not self.min_machines:
+        self.min_machines = len(nodes)
+      if not self.max_machines:
+        self.max_machines = len(nodes)
 
     self.nodes = nodes
 
@@ -641,7 +643,7 @@ class NodeLayout():
     """
     layout = {'controller' : "node-1"}
     servers = []
-    num_slaves = self.min_vms - 1
+    num_slaves = self.min_machines - 1
     for i in xrange(num_slaves):
       servers.append("node-{0}".format(i+2))
 

@@ -760,11 +760,11 @@ class AppScaleTools(object):
       head_node.public_ip, options.keyname, options.verbose)
 
     # Use rsync to move custom code into the deployment.
-    if options.scp:
+    if options.rsync_source:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".
-        format(options.scp))
-      RemoteHelper.rsync_files(head_node.public_ip, options.keyname, options.scp,
-        options.verbose)
+        format(options.rsync_source))
+      RemoteHelper.rsync_files(head_node.public_ip, options.keyname,
+                               options.rsync_source, options.verbose)
 
     # Start services on head node.
     RemoteHelper.start_head_node(options, my_id, node_layout)

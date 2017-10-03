@@ -94,17 +94,17 @@ class TestLocalState(unittest.TestCase):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
-      appengine='1', autoscale=False, group='bazgroup', replication=None,
-      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, clear_datastore=False,
-      disks={'node-1' : 'vol-ABCDEFG'}, zone='my-zone-1b', verbose=True,
-      user_commands=[], flower_password="abc",
-      max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
+      default_min_appservers='1', autoscale=False, group='bazgroup',
+      replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
+      instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
+      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     })
 
     flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
@@ -115,22 +115,22 @@ class TestLocalState(unittest.TestCase):
       'login' : 'public1',
       'clear_datastore': 'False',
       'keyname' : 'boo',
-      'appengine' : '1',
+      'default_min_appservers' : '1',
       'autoscale' : 'False',
       'replication': 'None',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : '1',
-      'max_images' : '1',
+      'min_machines' : '1',
+      'max_machines' : '1',
       'use_spot_instances' : 'True',
       'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
       'zone' : 'my-zone-1b',
       'verbose' : 'True',
       'flower_password' : 'abc',
-      'max_memory' : str(ParseArgs.DEFAULT_MAX_MEMORY)
+      'default_max_appserver_memory' : str(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       {'max_spot_price':'1.23'})
@@ -195,8 +195,8 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
       keyname='booscale', group='boogroup', zone='my-zone-1b')
     node_layout = NodeLayout(options={
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'infrastructure' : 'ec2',
       'table' : 'cassandra'
     })
