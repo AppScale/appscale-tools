@@ -27,19 +27,26 @@ class NodeLayout():
   APPSCALEFILE_INSTRUCTIONS = "https://www.appscale.com/" \
                               "get-started/deploy-appscale#appscalefile"
 
+
+  # TODO: Update this dictionary as roles get renamed/deprecated.
+  DEPRECATED_ROLES = {'appengine': 'compute'}
+
+
   # A tuple containing the keys that can be used in simple deployments.
   SIMPLE_FORMAT_KEYS = ('controller', 'servers')
 
 
   # A tuple containing the keys that can be used in advanced deployments.
-  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
+  # TODO: remove 'appengine' role.
+  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'compute', 'open',
+    'login', 'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
   # AppController recognizes. These include _master and _slave roles, which
   # the user may not be able to specify directly.
-  VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
+  # TODO: remove 'appengine' role.
+  VALID_ROLES = ('master', 'appengine', 'compute', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
     'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
 
@@ -299,7 +306,7 @@ class NodeLayout():
 
     if len(nodes) == 1:
       # Singleton node should be master and app engine
-      nodes[0].add_role('appengine')
+      nodes[0].add_role('compute')
       nodes[0].add_role('memcache')
 
     # controller -> shadow
@@ -346,7 +353,7 @@ class NodeLayout():
     # Keep track of whether the deployment is valid while going through.
     node_hash = {}
     role_count = {
-      'appengine': 0,
+      'compute': 0,
       'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
@@ -429,7 +436,7 @@ class NodeLayout():
     # Keep track of whether the deployment is valid while going through.
     node_hash = {}
     role_count = {
-      'appengine': 0,
+      'compute': 0,
       'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
@@ -597,13 +604,13 @@ class NodeLayout():
       # Check if a master node was specified.
       if role == 'shadow':
         self.invalid("Need to specify one master node.")
-      # Check if an appengine node was specified.
-      elif role == 'appengine':
-        self.invalid("Need to specify at least one appengine node.")
-      # If no memcache nodes were specified, make all appengine nodes
+      # Check if an compute node was specified.
+      elif role == 'compute':
+        self.invalid("Need to specify at least one compute node.")
+      # If no memcache nodes were specified, make all compute nodes
       # into memcache nodes.
       elif role == 'memcache':
-        for node in self.get_nodes('appengine', True, nodes):
+        for node in self.get_nodes('compute', True, nodes):
           node.add_role('memcache')
       # If no zookeeper nodes are specified, make the shadow a zookeeper node.
       elif role == 'zookeeper':
@@ -742,6 +749,9 @@ class NodeLayout():
     open_nodes = []
     for old_node in locations_nodes_list:
       old_node_roles = old_node.get('jobs')
+      # Convert deprecated roles to new roles.
+      old_node_roles = [role if role not in self.DEPRECATED_ROLES else
+                        self.DEPRECATED_ROLES[role] for role in old_node_roles]
       if old_node_roles == ["open"]:
         open_nodes.append(old_node)
         continue
@@ -954,10 +964,10 @@ class SimpleNode(Node):
       self.roles.append('taskqueue')
 
     # If they specify a servers role, expand it out to
-    # be database, appengine, and memcache
+    # be database, compute, and memcache
     if 'servers' in self.roles:
       self.roles.remove('servers')
-      self.roles.append('appengine')
+      self.roles.append('compute')
       self.roles.append('memcache')
       self.roles.append('database')
       self.roles.append('taskqueue')
@@ -976,6 +986,14 @@ class AdvancedNode(Node):
     """Converts the 'master' composite role into the roles it represents, and
     adds dependencies necessary for the 'login' and 'database' roles.
     """
+
+    # Convert deprecated roles.
+    for i in range(len(self.roles)):
+      role = self.roles[i]
+      if role in NodeLayout.DEPRECATED_ROLES:
+        self.roles.remove(role)
+        self.roles.append(NodeLayout.DEPRECATED_ROLES[role])
+
     if 'master' in self.roles:
       self.roles.remove('master')
       self.roles.append('shadow')
