@@ -128,7 +128,7 @@ class ParseArgs(object):
 
   # The amount of memory to use for App Engine apps if the user does not
   # explicitly provide a value, in megabytes.
-  DEFAULT_MAX_MEMORY = 400
+  DEFAULT_MAX_APPSERVER_MEMORY = 400
 
 
   def __init__(self, argv, function):
@@ -173,12 +173,13 @@ class ParseArgs(object):
     self.parser.add_argument('--verbose', '-v', action='store_true',
       default=False,
       help="prints additional output (useful for debugging)")
-
+    #TODO: remove arguments in appscale-run-instances that are no longer
+    # supported. (min, max, appengine, max_memory, scp)
     if function == "appscale-run-instances":
       # flags relating to how many VMs we should spawn
-      self.parser.add_argument('--min', type=int,
+      self.parser.add_argument('--min_machines', '--min', type=int,
         help="the minimum number of VMs to use")
-      self.parser.add_argument('--max', type=int,
+      self.parser.add_argument('--max_machines', '--max', type=int,
         help="the maximum number of VMs to use")
       self.parser.add_argument('--ips',
         help="a YAML file dictating the placement strategy")
@@ -265,13 +266,13 @@ class ParseArgs(object):
         help="erases all stored user and application data")
 
       # flags relating to application servers
-      self.parser.add_argument('--max_memory', type=int,
-        default=self.DEFAULT_MAX_MEMORY,
+      self.parser.add_argument('--default_max_appserver_memory',
+        '--max_memory', type=int, default=self.DEFAULT_MAX_APPSERVER_MEMORY,
         help="the maximum amount of memory to use for App Engine apps " \
         "(in megabytes)")
 
       group = self.parser.add_mutually_exclusive_group()
-      group.add_argument('--appengine', type=int,
+      group.add_argument('--default_min_appservers', '--appengine', type=int,
         help="the number of application servers to use per app")
       group.add_argument('--autoscale', action='store_true',
         help="adds/removes application servers based on incoming traffic")
@@ -288,7 +289,7 @@ class ParseArgs(object):
       self.parser.add_argument('--force', action='store_true',
         default=False,
         help="forces tools to continue if keyname or group exist")
-      self.parser.add_argument('--scp',
+      self.parser.add_argument('--rsync_source', '--scp',
         help="the location to copy a local AppScale branch from")
       self.parser.add_argument('--test', action='store_true',
         default=False,
@@ -364,11 +365,23 @@ class ParseArgs(object):
     elif function == "appscale-remove-app":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
-      self.parser.add_argument('--appname',
+      self.parser.add_argument('--project-id',
         help="the name of the application to remove")
       self.parser.add_argument('--confirm', action='store_true',
         default=False,
         help="does not ask user to confirm application removal")
+
+    elif function == "appscale-remove-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to remove")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to remove")
+      self.parser.add_argument('--confirm', action='store_true',
+                               default=False,
+                               help="does not ask user to confirm application removal")
+
     elif function == "appscale-reset-pwd":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
@@ -450,8 +463,13 @@ class ParseArgs(object):
     elif function == "appscale-terminate-instances":
       self.validate_environment_flags()
     elif function == "appscale-remove-app":
-      if not self.args.appname:
-        raise SystemExit("Must specify appname")
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+    elif function == "appscale-remove-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
     elif function == "appscale-reset-pwd":
       pass
     elif function == "appscale-create-user":
@@ -506,8 +524,8 @@ class ParseArgs(object):
       return
 
     # if min is not set and max is, set min == max
-    if self.args.min is None and self.args.max:
-      self.args.min = self.args.max
+    if self.args.min_machines is None and self.args.max_machines:
+      self.args.min_machines = self.args.max_machines
 
     if self.args.ips:
       if not os.path.exists(self.args.ips):
@@ -515,13 +533,13 @@ class ParseArgs(object):
     elif self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
-      if self.args.min < 1:
+      if self.args.min_machines < 1:
         raise BadConfigurationException("Min cannot be less than 1.")
 
-      if self.args.max < 1:
+      if self.args.max_machines < 1:
         raise BadConfigurationException("Max cannot be less than 1.")
 
-      if self.args.min > self.args.max:
+      if self.args.min_machines > self.args.max_machines:
         raise BadConfigurationException("Min cannot exceed max.")
 
 
@@ -723,16 +741,16 @@ class ParseArgs(object):
       BadConfigurationException: If the value for the --appengine flag is
         invalid.
     """
-    if self.args.appengine:
-      if self.args.appengine < 1:
+    if self.args.default_min_appservers:
+      if self.args.default_min_appservers < 1:
         raise BadConfigurationException("Number of application servers " + \
           "must exceed zero.")
 
       self.args.autoscale = False
     elif self.args.autoscale:
-      self.args.appengine = 1
+      self.args.default_min_appservers = 1
     else:  # neither are set
-      self.args.appengine = 1
+      self.args.default_min_appservers = 1
       self.args.autoscale = True
 
 

@@ -107,6 +107,8 @@ Available commands:
   relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
   remove <appid>                    An alias for 'undeploy'.
+  services                          Commands for services. Run appscale services
+                                    help for usage.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current
@@ -124,6 +126,17 @@ Available commands:
                                     THE APPLICATION WILL BE LOST.
   upgrade                           Upgrades AppScale code to its latest version.
 """
+
+
+  # TODO: update these as items in the AppScalefile get deprecated and removed.
+  DEPRECATED_ASF_ARGS = {
+    'n': 'replication',
+    'scp': 'rsync_source',
+    'appengine': 'default_min_appservers',
+    'max_memory': 'default_max_appserver_memory',
+    'min': 'min_machines',
+    'max': 'max_machines'
+  }
 
 
   def __init__(self):
@@ -276,10 +289,16 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
+    deprecated = False
     for key, value in contents_as_yaml.items():
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value
         continue
+      if key in self.DEPRECATED_ASF_ARGS:
+        deprecated = True
+        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"\
+                            .format(key, self.DEPRECATED_ASF_ARGS[key]))
+        key = self.DEPRECATED_ASF_ARGS[key]
 
       if value is True:
         command.append(str("--%s" % key))
@@ -298,6 +317,10 @@ Available commands:
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
+
+    if deprecated:
+      AppScaleLogger.warn("Refer to {} to see the full changes.".format(
+        NodeLayout.APPSCALEFILE_INSTRUCTIONS))
 
     run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 
@@ -569,14 +592,14 @@ Available commands:
     return login_host, http_port
 
 
-  def undeploy(self, appid):
+  def undeploy(self, project_id):
     """ 'undeploy' is a more accessible way to tell an AppScale deployment to
     stop hosting a Google App Engine application than 'appscale-remove-app'. It
     calls that command with the configuration options found in the AppScalefile
     in the current working directory.
 
     Args:
-      appid: The name of the application that we should remove.
+      project_id: The name of the application that we should remove.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -596,8 +619,8 @@ Available commands:
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append('--confirm')
 
-    command.append("--appname")
-    command.append(appid)
+    command.append("--project-id")
+    command.append(project_id)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
