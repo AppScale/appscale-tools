@@ -443,7 +443,7 @@ class LocalState(object):
           file_contents = json.loads(file_handle.read())
         cleaned_nodes = []
         for node in file_contents.get('node_info'):
-          if 'load_balancer' not in node.get('roles'):
+          if 'load_balancer' not in cls.get_node_roles(node):
             node['roles'] = ['open']
           cleaned_nodes.append(node)
         file_contents['node_info'] = cleaned_nodes
@@ -574,7 +574,7 @@ class LocalState(object):
       role: A str, the role we are looking up the host for.
     """
     for node in cls.get_local_nodes_info(keyname):
-      if role in node["roles"]:
+      if role in cls.get_node_roles(node):
         return node["public_ip"]
 
 
@@ -611,6 +611,19 @@ class LocalState(object):
 
 
   @classmethod
+  def get_node_roles(cls, node):
+    """ Method to get the roles of the specified node and convert 'jobs' key 
+    to 'roles' if needed.
+    """
+    try:
+      node['roles'] = node['jobs']
+      del node['jobs']
+    except KeyError:
+      pass
+    return node['roles']
+
+
+  @classmethod
   def get_login_host(cls, keyname):
     """Searches through the local metadata to see which virtual machine runs the
     login service.
@@ -638,7 +651,7 @@ class LocalState(object):
     """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if role in node['roles']:
+      if role in cls.get_node_roles(node):
         return node['public_ip']
     raise AppScaleException("Couldn't find a {0} node.".format(role))
 

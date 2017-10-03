@@ -10,6 +10,7 @@ import yaml
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
+from local_state import LocalState
 
 
 class NodeLayout():
@@ -737,7 +738,9 @@ class NodeLayout():
     nodes_copy = self.nodes[:]
     open_nodes = []
     for old_node in locations_nodes_list:
-      old_node_roles = old_node.get('roles')
+      # Because this function deals with the locations json file we use this
+      # method from LocalState.
+      old_node_roles = LocalState.get_node_roles(old_node)
       if old_node_roles == ["open"]:
         open_nodes.append(old_node)
         continue
@@ -757,7 +760,7 @@ class NodeLayout():
         node = nodes_copy.pop()
       except IndexError:
         return None
-      # Match nodes based on roles.
+      # Give open nodes roles.
       roles = node.roles
       node.from_json(open_node)
       node.roles = roles
