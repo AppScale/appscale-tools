@@ -54,7 +54,7 @@ ips_layout:
 # Login is used to instruct AppScale which one is the visible public IP used
 # by clients to connect. It could be the public IP of the master/load-balancer
 # instance, or it could be the list of IPs used for external load-balancers.
-login : [vm1_public_IP | Domain Name]
+#login : [vm1_public_IP | Domain Name]
 
 
 
@@ -161,16 +161,16 @@ login : [vm1_public_IP | Domain Name]
 # Supported only in the Public Clouds above.
 # By default, it is the number of distinct nodes specified in the ips_layout
 # section.
-#max : 1
+#max_machines : 1
 
 # The number of AppServer instances that serve application requests.
 # By default, we start with two AppServer instances for high availability
 # and dynamically scale up/down based on the number of application requests.
-#appengine : 3
+#default_min_appservers : 3
 
 # The maximum amount of memory (in MB) an AppServer instance can use. 
 # By default, we limit each AppServer instance to 400MB.
-#max_memory: 400
+#default_max_appserver_memory: 400
 
 # The password that will be used for the Flower web interface to monitor task
 # queues.

@@ -205,13 +205,13 @@ class LocalState(object):
       "login": node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
-      "appengine": str(options.appengine),
+      "default_min_appservers": str(options.default_min_appservers),
       "autoscale": str(options.autoscale),
       "clear_datastore": str(False),
       "user_commands": json.dumps(options.user_commands),
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
-      "max_memory": str(options.max_memory)
+      "default_max_appserver_memory": str(options.default_max_appserver_memory)
     }
     creds.update(additional_creds)
 
@@ -223,8 +223,8 @@ class LocalState(object):
         'zone': options.zone,
         'group': options.group,
         'use_spot_instances': str(options.use_spot_instances),
-        'min_images': str(node_layout.min_vms),
-        'max_images': str(node_layout.max_vms),
+        'min_machines': str(node_layout.min_machines),
+        'max_machines': str(node_layout.max_machines),
       }
 
       if options.infrastructure == "gce":

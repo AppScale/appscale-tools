@@ -118,8 +118,8 @@ class TestNodeLayout(unittest.TestCase):
     # Using Euca with no input yaml, with max and min images set is ok
     options_4 = self.default_options.copy()
     options_4['infrastructure'] = "euca"
-    options_4['min'] = 2
-    options_4['max'] = 2
+    options_4['min_machines'] = 2
+    options_4['max_machines'] = 2
     layout_4 = NodeLayout(options_4)
     self.assertNotEqual([], layout_4.nodes)
 
@@ -258,7 +258,7 @@ class TestNodeLayout(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'memcache', 'db_master'] }
+                          "jobs": ['database', 'db_master'] }
                         ]
 
 
@@ -332,7 +332,7 @@ class TestNodeLayout(unittest.TestCase):
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['database', 'memcache', 'db_master', 'zookeeper'] }
+                   "jobs": ['database', 'db_master', 'zookeeper'] }
                  ]
 
     new_layout = node_layout.from_locations_json_list(node_info)
