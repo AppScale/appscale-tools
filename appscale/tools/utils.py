@@ -124,7 +124,7 @@ def queues_from_xml(contents):
 
 def mkdir(dir_path):
   """ Creates a directory.
-  
+
   Args:
     dir_path: The path to create.
   """

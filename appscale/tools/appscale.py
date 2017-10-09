@@ -84,7 +84,7 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  create-user [--admin]             Creates a new user. If --admin option is specified, 
+  create-user [--admin]             Creates a new user. If --admin option is specified,
                                     it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If

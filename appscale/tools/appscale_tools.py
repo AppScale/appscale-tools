@@ -516,7 +516,8 @@ class AppScaleTools(object):
 
         try:
           RemoteHelper.scp_remote_to_local(
-            public_ip, options.keyname, log_path['remote'], sub_dir, options.verbose
+            public_ip, options.keyname, log_path['remote'],
+            sub_dir, options.verbose
           )
         except ShellException as shell_exception:
           failures = True
