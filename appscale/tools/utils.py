@@ -120,3 +120,12 @@ def queues_from_xml(contents):
     queues['queue'].append(queue)
 
   return queues
+
+
+def mkdir(dir_path):
+  """ Creates a directory.
+  
+  Args:
+    dir_path: The path to create.
+  """
+  return os.system("mkdir -p " + dir_path)

@@ -2,7 +2,6 @@
 
 # General-purpose Python library imports
 import datetime
-import errno
 import getpass
 import json
 import os
@@ -25,7 +24,6 @@ from itertools import chain
 # AppScale-specific imports
 from tabulate import tabulate
 from SOAPpy import faultType
-from appscale.common import file_io
 
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -496,7 +494,7 @@ class AppScaleTools(object):
     for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = os.path.join(location, ip)
-      file_io.mkdir(local_dir)
+      utils.mkdir(local_dir)
 
       # Create symlinks for easier navigation in gathered logs
       node_info = nodes_dict.get(ip, None)
@@ -505,7 +503,7 @@ class AppScaleTools(object):
         os.symlink(local_dir, os.path.join(location, public_ip))
         for role in node_info['jobs']:
           role_dir = os.path.join(location, "{}-nodes".format(role))
-          file_io.mkdir(role_dir)
+          utils.mkdir(role_dir)
           os.symlink(local_dir, os.path.join(role_dir, public_ip))
           os.symlink(local_dir, os.path.join(role_dir, ip))
 
@@ -514,7 +512,7 @@ class AppScaleTools(object):
 
         if 'local' in log_path:
           sub_dir = os.path.join(local_dir, log_path['local'])
-          file_io.mkdir(sub_dir)
+          utils.mkdir(sub_dir)
 
         try:
           RemoteHelper.scp_remote_to_local(
