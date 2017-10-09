@@ -499,7 +499,7 @@ class AppScaleTools(object):
       # Create symlinks for easier navigation in gathered logs
       node_info = nodes_dict.get(public_ip)
       if node_info:
-        private_ip = node_info["private_ip"]
+        private_ip = "{}-private-IP".format(node_info["private_ip"])
         os.symlink(local_dir, os.path.join(location, private_ip))
         for role in node_info['jobs']:
           role_dir = os.path.join(location, "{}-nodes".format(role))
