@@ -25,6 +25,7 @@ from itertools import chain
 # AppScale-specific imports
 from tabulate import tabulate
 from SOAPpy import faultType
+from appscale.common import file_io
 
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
@@ -457,12 +458,22 @@ class AppScaleTools(object):
     acc = AppControllerClient(login_host, secret)
 
     try:
-      all_ips = acc.get_all_public_ips()
+      all_ips = acc.get_all_private_ips()
     except socket.error:  # Occurs when the AppController has failed.
       AppScaleLogger.warn("Couldn't get an up-to-date listing of the " + \
         "machines in this AppScale deployment. Using our locally cached " + \
         "info instead.")
-      all_ips = LocalState.get_all_public_ips(options.keyname)
+      all_ips = LocalState.get_all_private_ips(options.keyname)
+
+    # Get information about roles and public IPs
+    # for creating navigation symlinks in gathered logs
+    try:
+      nodes_info = acc.get_role_info()
+    except socket.error:  # Occurs when the AppController has failed.
+      AppScaleLogger.warn("Couldn't get an up-to-date nodes info. "
+                          "Using our locally cached info instead.")
+      nodes_info = LocalState.get_local_nodes_info(options.keyname)
+    nodes_dict = {node['private_ip']: node for node in nodes_info}
 
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
@@ -485,23 +496,25 @@ class AppScaleTools(object):
     for ip in all_ips:
       # Get the logs from each node, and store them in our local directory
       local_dir = os.path.join(location, ip)
-      os.mkdir(local_dir)
+      file_io.mkdir(local_dir)
 
-      if ip == login_host:
-        os.symlink(local_dir, os.path.join(location, "load-balancer"))
+      # Create symlinks for easier navigation in gathered logs
+      node_info = nodes_dict.get(ip, None)
+      if nodes_info:
+        public_ip = node_info["public_ip"]
+        os.symlink(local_dir, os.path.join(location, public_ip))
+        for role in node_info['jobs']:
+          role_dir = os.path.join(location, "{}-nodes".format(role))
+          file_io.mkdir(role_dir)
+          os.symlink(local_dir, os.path.join(role_dir, public_ip))
+          os.symlink(local_dir, os.path.join(role_dir, ip))
 
       for log_path in log_paths:
         sub_dir = local_dir
 
         if 'local' in log_path:
           sub_dir = os.path.join(local_dir, log_path['local'])
-          try:
-            os.mkdir(sub_dir)
-          except OSError as os_error:
-            if os_error.errno == errno.EEXIST and os.path.isdir(sub_dir):
-              pass
-            else:
-              raise
+          file_io.mkdir(sub_dir)
 
         try:
           RemoteHelper.scp_remote_to_local(
