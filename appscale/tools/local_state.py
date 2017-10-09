@@ -659,21 +659,6 @@ class LocalState(object):
 
 
   @classmethod
-  def get_all_private_ips(cls, keyname):
-    """Searches through the local metadata to get all of the private IPs
-    for machines in this AppScale deployment.
-
-    Args:
-      keyname: The SSH keypair name that uniquely identifies this AppScale
-        deployment.
-    Returns:
-      A list containing all the private IPs in this AppScale deployment.
-    """
-    nodes = cls.get_local_nodes_info(keyname)
-    return [node['private_ip'] for node in nodes]
-
-
-  @classmethod
   def get_credentials(cls, is_admin=True):
     """Queries the user for the username and password that should be set for the
     cloud administrator's account in this AppScale deployment.
