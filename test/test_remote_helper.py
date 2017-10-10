@@ -28,7 +28,7 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
-from appscale.tools.node_layout import SimpleNode
+from appscale.tools.node_layout import Node
 from appscale.tools.remote_helper import RemoteHelper
 
 
@@ -245,7 +245,7 @@ class TestRemoteHelper(unittest.TestCase):
       and_return('some key path')
 
     flexmock(NodeLayout).should_receive('head_node').\
-      and_return(SimpleNode('some IP', 'cloud'))
+      and_return(Node('some IP', 'cloud'))
 
     fake_agent = FakeAgent()
     flexmock(factory.InfrastructureAgentFactory).\

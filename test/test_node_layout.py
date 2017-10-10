@@ -53,79 +53,6 @@ class TestNodeLayout(unittest.TestCase):
     self.ip_7 = '192.168.1.7'
     self.ip_8 = '192.168.1.8'
 
-  def test_simple_layout_yaml_only(self):
-    # Specifying one controller and one server should be ok
-    input_yaml_1 = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
-    options_1 = self.default_options.copy()
-    options_1['ips'] = input_yaml_1
-    layout_1 = NodeLayout(options_1)
-    self.assertNotEqual([], layout_1.nodes)
-
-    # Specifying one controller should be ok
-    input_yaml_2 = {'controller' : self.ip_1}
-    options_2 = self.default_options.copy()
-    options_2['ips'] = input_yaml_2
-    layout_2 = NodeLayout(options_2)
-    self.assertNotEqual([], layout_2.nodes)
-
-    # Specifying the same IP more than once is not ok
-    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_1]}
-    options_3 = self.default_options.copy()
-    options_3['ips'] = input_yaml_3
-    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
-
-    # Failing to specify a controller is not ok
-    input_yaml_4 = {'servers' : [self.ip_1, self.ip_2]}
-    options_4 = self.default_options.copy()
-    options_4['ips'] = input_yaml_4
-    self.assertRaises(BadConfigurationException, NodeLayout, options_4)
-
-    # Specifying more than one controller is not ok
-    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' :
-      [self.ip_3]}
-    options_5 = self.default_options.copy()
-    options_5['ips'] = input_yaml_5
-    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
-
-    # Specifying something other than controller and servers in simple
-    # deployments is not ok
-    input_yaml_6 = {'controller' : self.ip_1, 'servers' : [self.ip_2],
-      'boo' : self.ip_3}
-    options_6 = self.default_options.copy()
-    options_6['ips'] = input_yaml_6
-    self.assertRaises(BadConfigurationException, NodeLayout, options_6)
-
-
-  def test_simple_layout_options(self):
-    # Using Euca with no input yaml, and no max or min images is not ok
-    options_1 = self.default_options.copy()
-    options_1['infrastructure'] = 'euca'
-    self.assertRaises(BadConfigurationException, NodeLayout, options_1)
-
-    options_2 = self.default_options.copy()
-    options_2['infrastructure'] = "euca"
-    options_2['max'] = 2
-    self.assertRaises(BadConfigurationException, NodeLayout, options_2)
-
-    options_3 = self.default_options.copy()
-    options_3['infrastructure'] = "euca"
-    options_3['min'] = 2
-    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
-
-    # Using Euca with no input yaml, with max and min images set is ok
-    options_4 = self.default_options.copy()
-    options_4['infrastructure'] = "euca"
-    options_4['min_machines'] = 2
-    options_4['max_machines'] = 2
-    layout_4 = NodeLayout(options_4)
-    self.assertNotEqual([], layout_4.nodes)
-
-    # Using virtualized deployments with no input yaml is not ok
-    options_5 = self.default_options.copy()
-    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
 
   def test_advanced_format_yaml_only(self):
     input_yaml = {'master' : self.ip_1, 'database' : self.ip_1,
@@ -140,10 +67,8 @@ class TestNodeLayout(unittest.TestCase):
     # login node's public IP address instead of what we'd normally put in
 
     # use a simple deployment so we can get the login node with .head_node()
-    input_yaml_1 = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml_1 = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': ['appengine'], 'nodes': 1}]
     options_1 = self.default_options.copy()
     options_1['ips'] = input_yaml_1
     options_1['login_host'] = "www.booscale.com"
@@ -155,9 +80,7 @@ class TestNodeLayout(unittest.TestCase):
 
 
   def test_is_database_replication_valid_with_db_slave(self):
-    input_yaml = {
-      'controller' : self.ip_1
-    }
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     fake_node = flexmock()
@@ -172,10 +95,9 @@ class TestNodeLayout(unittest.TestCase):
   def test_with_wrong_number_of_disks(self):
     # suppose that the user has specified two nodes, but only one EBS / PD disk
     # this should fail.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': ['appengine'], 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     options['disks'] = {
@@ -187,10 +109,8 @@ class TestNodeLayout(unittest.TestCase):
   def test_with_right_number_of_disks_but_not_unique(self):
     # suppose that the user has specified two nodes, but uses the same name for
     # both disks. This isn't acceptable.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': ['appengine'], 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     options['disks'] = {
@@ -203,10 +123,8 @@ class TestNodeLayout(unittest.TestCase):
   def test_with_right_number_of_unique_disks(self):
     # suppose that the user has specified two nodes, and two EBS / PD disks
     # with different names. This is the desired user behavior.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': ['appengine'], 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     options['disks'] = {

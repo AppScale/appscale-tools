@@ -28,7 +28,7 @@ from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.custom_exceptions import ShellException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
-from appscale.tools.node_layout import SimpleNode
+from appscale.tools.node_layout import Node
 from appscale.tools.parse_args import ParseArgs
 
 
@@ -107,7 +107,7 @@ class TestLocalState(unittest.TestCase):
       'max_machines' : 1
     })
 
-    flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
+    flexmock(NodeLayout).should_receive("head_node").and_return(Node(
       'public1', 'some cloud', ['some role']))
 
     expected = {

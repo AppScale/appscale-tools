@@ -27,9 +27,6 @@ class NodeLayout():
   APPSCALEFILE_INSTRUCTIONS = "https://www.appscale.com/" \
                               "get-started/deploy-appscale#appscalefile"
 
-  # A tuple containing the keys that can be used in simple deployments.
-  SIMPLE_FORMAT_KEYS = ('controller', 'servers')
-
 
   # A tuple containing the keys that can be used in advanced deployments.
   ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
@@ -146,33 +143,10 @@ class NodeLayout():
     if self.is_advanced_format():
       return self.is_valid_advanced_format()
     # TODO: Deprecated format, remove when we switch to one ips_layout format.
-    elif self.is_simple_format():
-      return self.is_valid_simple_format()
-    # TODO: Deprecated format, remove when we switch to one ips_layout format.
     elif self.is_node_format():
       return self.is_valid_node_format()
     else:
       self.invalid("Node layout format was not recognized.")
-
-  # TODO: Deprecated format, remove when we switch to one ips_layout format.
-  def is_simple_format(self):
-    """Determines if this NodeLayout represents a simple AppScale deployment.
-
-    Returns:
-      True if the deployment is simple, False otherwise.
-    """
-    if self.input_yaml:
-      for key, _ in self.input_yaml.iteritems():
-        if key not in self.SIMPLE_FORMAT_KEYS:
-          return False
-
-      return True
-    else:
-      if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        # When running in a cloud, simple formats don't require an input_yaml
-        return True
-      else:
-        return False
 
   # TODO: Deprecated format, remove when we switch to one ips_layout format.
   def is_node_format(self):
@@ -198,9 +172,12 @@ class NodeLayout():
     Returns:
       True if all the roles specified are advanced roles, and False otherwise.
     """
-    if not self.input_yaml:
-      return False
     if isinstance(self.input_yaml, list):
+      return True
+    if self.input_yaml:
+      return False
+    if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+      # When running in a cloud, simple formats don't require an input_yaml
       return True
     else:
       return False
@@ -222,115 +199,6 @@ class NodeLayout():
     else:
       self.invalid("IP: {} does not match ip or node-id formats.".format(
         ip_address))
-
-  # TODO: Deprecated format, remove when we switch to one ips_layout format.
-  def is_valid_simple_format(self):
-    """Checks to see if this NodeLayout represents an acceptable simple
-    deployment strategy, and if so, constructs self.nodes from it.
-
-    Returns:
-      True if the deployment strategy is valid.
-    Raises:
-      BadConfigurationException with reason if the deployment strategy is not
-        valid.
-    """
-    if not self.input_yaml:
-      if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.min_machines:
-          self.invalid(self.NO_YAML_REQUIRES_MIN)
-
-        if not self.max_machines:
-          self.invalid(self.NO_YAML_REQUIRES_MAX)
-
-        # No layout was created, so create a generic one and then allow it
-        # to be validated.
-        self.input_yaml = self.generate_cloud_layout()
-      else:
-        self.invalid(self.INPUT_YAML_REQUIRED)
-
-    nodes = []
-    for role, ips in self.input_yaml.iteritems():
-      if not ips:
-        continue
-
-      if isinstance(ips, str):
-        ips = [ips]
-      for ip in ips:
-        cloud = self.is_cloud_ip(ip)
-        node = SimpleNode(ip, cloud, [role])
-
-        # In simple deployments the db master and taskqueue  master is always on
-        # the shadow node, and db slave / taskqueue slave is always on the other
-        # nodes
-        is_master = node.is_role('shadow')
-        node.add_db_role(is_master)
-        node.add_taskqueue_role(is_master)
-
-        if not node.is_valid():
-          self.invalid(",".join(node.errors()))
-        if is_master:
-          self.master = node
-        if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-          if not self.NODE_ID_REGEX.match(node.public_ip):
-            self.invalid("{0} is not a valid node ID (must be node-id).".
-              format(node.public_ip))
-        else:
-          # Virtualized cluster deployments use IP addresses as node IDs
-          if not self.IP_REGEX.match(node.public_ip):
-            self.invalid("{0} must be an IP address.".format(
-              node.public_ip))
-
-        nodes.append(node)
-
-    # make sure that the user hasn't erroneously specified the same ip
-    # address more than once
-
-    all_ips = []
-    ips_provided = self.input_yaml.values()
-    for ip_or_ips in ips_provided:
-      if isinstance(ip_or_ips, list):
-        all_ips += ip_or_ips
-      else:
-        all_ips.append(ip_or_ips)
-
-    num_of_duplicate_ips = len(all_ips) - len(set(all_ips))
-    if num_of_duplicate_ips > 0:
-      self.invalid(self.DUPLICATE_IPS)
-
-    if len(nodes) == 1:
-      # Singleton node should be master and app engine
-      nodes[0].add_role('appengine')
-      nodes[0].add_role('memcache')
-
-    # controller -> shadow
-    controller_count = 0
-    for node in nodes:
-      if node.is_role('shadow'):
-        controller_count += 1
-
-    if controller_count == 0:
-      self.invalid(self.NO_CONTROLLER)
-    elif controller_count > 1:
-      self.invalid(self.ONLY_ONE_CONTROLLER)
-
-    # by this point, somebody has a login role, so now's the time to see if we
-    # need to override their ip address with --login_host
-    if self.login_host is not None:
-      for node in nodes:
-        if node.is_role('login'):
-          node.public_ip = self.login_host
-
-    if self.disks:
-      self.validate_disks(nodes)
-
-      for node in nodes:
-        node.disk = self.disks.get(node.public_ip)
-
-    # Validate that database replication is valid.
-    self.validate_database_replication(nodes)
-
-    self.nodes = nodes
-    return True
 
   # TODO: Deprecated format, remove when we switch to one ips_layout format.
   def is_valid_node_format(self):
@@ -370,7 +238,7 @@ class NodeLayout():
 
       # Create or retrieve the nodes from the node_hash.
       nodes = [node_hash[ip] if ip in node_hash else \
-               AdvancedNode(ip, using_cloud_ids) for ip in ips_list]
+               Node(ip, using_cloud_ids) for ip in ips_list]
 
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
@@ -426,6 +294,21 @@ class NodeLayout():
       BadConfigurationException with reason if the deployment strategy is not
         valid.
     """
+
+    if not self.input_yaml:
+      if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
+        if not self.min_machines:
+          self.invalid(self.NO_YAML_REQUIRES_MIN)
+
+        if not self.max_machines:
+          self.invalid(self.NO_YAML_REQUIRES_MAX)
+
+        # No layout was created, so create a generic one and then allow it
+        # to be validated.
+        self.input_yaml = self.generate_cloud_layout()
+      else:
+        self.invalid(self.INPUT_YAML_REQUIRED)
+
     # Keep track of whether the deployment is valid while going through.
     node_hash = {}
     role_count = {
@@ -478,7 +361,7 @@ class NodeLayout():
 
       # Create or retrieve the nodes from the node_hash.
       nodes = [node_hash[ip] if ip in node_hash else \
-               AdvancedNode(ip, using_cloud_ids) for ip in ips_list]
+               Node(ip, using_cloud_ids) for ip in ips_list]
 
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
@@ -526,6 +409,12 @@ class NodeLayout():
         self.min_machines = len(nodes)
       if not self.max_machines:
         self.max_machines = len(nodes)
+
+    # by this point, somebody has a login role, so now's the time to see if we
+    # need to override their ip address with --login_host
+    if self.login_host:
+      login = self.get_nodes('login', True, nodes)[0]
+      login.public_ip = self.login_host
 
     self.nodes = nodes
 
@@ -641,13 +530,18 @@ class NodeLayout():
       Returns:
         A dict that has one controller node and the other nodes set as servers.
     """
-    layout = {'controller' : "node-1"}
-    servers = []
-    num_slaves = self.min_machines - 1
-    for i in xrange(num_slaves):
-      servers.append("node-{0}".format(i+2))
+    master_node_roles = ['master', 'database', 'memcache', 'login',
+                         'zookeeper', 'taskqueue']
+    layout = [{'roles' : master_node_roles, 'nodes' : 1}]
+    if self.min_machines == 1:
+      layout[0]['roles'].append('appengine')
+      return layout
 
-    layout['servers'] = servers
+    other_node_roles = ['database', 'memcache', 'appengine', 'taskqueue']
+
+    num_slaves = self.min_machines - 1
+    layout.append({'roles': other_node_roles, 'nodes': num_slaves})
+
     return layout
 
 
@@ -788,8 +682,6 @@ class NodeLayout():
 
 class Node():
   """Nodes are a representation of a virtual machine in an AppScale deployment.
-  Callers should not use this class directly, but should instead use SimpleNode
-  or AdvancedNode, depending on the deployment type.
   """
 
   DUMMY_INSTANCE_ID = "i-APPSCALE"
@@ -896,11 +788,28 @@ class Node():
 
 
   def expand_roles(self):
-    """Converts any composite roles in this Node to the roles that they
-    represent. As this function should be implemented by SimpleNodes and
-    AdvancedNodes, we do not implement it here.
+    """Converts the 'master' composite role into the roles it represents, and
+    adds dependencies necessary for the 'login' and 'database' roles.
     """
-    raise NotImplementedError
+    if 'master' in self.roles:
+      self.roles.remove('master')
+      self.roles.append('shadow')
+      self.roles.append('load_balancer')
+
+    if 'login' in self.roles:
+      self.roles.append('load_balancer')
+
+    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
+    if 'db_slave' in self.roles or 'db_master' in self.roles \
+        and 'database' not in self.roles:
+      self.roles.append('database')
+
+    if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
+        and 'taskqueue' not in self.roles:
+      self.roles.append('taskqueue')
+
+    # Remove any duplicate roles
+    self.roles = list(set(self.roles))
 
   def to_json(self):
     return {
@@ -931,67 +840,3 @@ class Node():
     self.instance_id = node_dict.get('instance_id')
     self.roles = node_dict.get('jobs')
     self.disk = node_dict.get('disk')
-
-
-class SimpleNode(Node):
-  """SimpleNode represents a Node in a simple AppScale deployment, along with
-  the roles that users can specify in simple deployments.
-  """
-
-
-  def expand_roles(self):
-    """Converts the 'controller' and 'servers' composite roles into the roles
-    that they represent.
-    """
-    if 'controller' in self.roles:
-      self.roles.remove('controller')
-      self.roles.append('shadow')
-      self.roles.append('load_balancer')
-      self.roles.append('database')
-      self.roles.append('memcache')
-      self.roles.append('login')
-      self.roles.append('zookeeper')
-      self.roles.append('taskqueue')
-
-    # If they specify a servers role, expand it out to
-    # be database, appengine, and memcache
-    if 'servers' in self.roles:
-      self.roles.remove('servers')
-      self.roles.append('appengine')
-      self.roles.append('memcache')
-      self.roles.append('database')
-      self.roles.append('taskqueue')
-
-    # Remove any duplicate roles
-    self.roles = list(set(self.roles))
-
-
-class AdvancedNode(Node):
-  """AdvancedNode represents a Node in an advanced AppScale deployment, along
-  with the roles that users can specify in advanced deployments.
-  """
-
-
-  def expand_roles(self):
-    """Converts the 'master' composite role into the roles it represents, and
-    adds dependencies necessary for the 'login' and 'database' roles.
-    """
-    if 'master' in self.roles:
-      self.roles.remove('master')
-      self.roles.append('shadow')
-      self.roles.append('load_balancer')
-
-    if 'login' in self.roles:
-      self.roles.append('load_balancer')
-
-    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
-    if 'db_slave' in self.roles or 'db_master' in self.roles \
-        and 'database' not in self.roles:
-      self.roles.append('database')
-
-    if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
-      and 'taskqueue' not in self.roles:
-      self.roles.append('taskqueue')
-
-    # Remove any duplicate roles
-    self.roles = list(set(self.roles))
