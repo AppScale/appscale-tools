@@ -133,55 +133,6 @@ class NodeLayout():
     self.nodes = []
     self.validate_node_layout()
 
-  def validate_node_layout(self):
-    """Determines if the current NodeLayout can be successfully used to
-    run an AppScale deployment.
-
-    Returns:
-      A bool that indicates if this placement strategy is valid.
-    """
-    if self.is_advanced_format():
-      return self.is_valid_advanced_format()
-    # TODO: Deprecated format, remove when we switch to one ips_layout format.
-    elif self.is_node_format():
-      return self.is_valid_node_format()
-    else:
-      self.invalid("Node layout format was not recognized.")
-
-  # TODO: Deprecated format, remove when we switch to one ips_layout format.
-  def is_node_format(self):
-    """Checks the YAML given to see if the user wants us to run services
-    via the advanced deployment strategy.
-
-    Returns:
-      True if all the roles specified are advanced roles, and False otherwise.
-    """
-    if not self.input_yaml:
-      return False
-
-    for key in self.input_yaml.keys():
-      if key not in self.ADVANCED_FORMAT_KEYS:
-        return False
-
-    return True
-
-  def is_advanced_format(self):
-    """Checks the YAML given to see if the user wants us to run services
-    via the advanced deployment strategy.
-
-    Returns:
-      True if all the roles specified are advanced roles, and False otherwise.
-    """
-    if isinstance(self.input_yaml, list):
-      return True
-    if self.input_yaml:
-      return False
-    if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      # When running in a cloud, simple formats don't require an input_yaml
-      return True
-    else:
-      return False
-
   def is_cloud_ip(self, ip_address):
     """Parses the given IP address or node ID and returns it and a str
     indicating whether or not we are in a cloud deployment.
@@ -200,8 +151,7 @@ class NodeLayout():
       self.invalid("IP: {} does not match ip or node-id formats.".format(
         ip_address))
 
-  # TODO: Deprecated format, remove when we switch to one ips_layout format.
-  def is_valid_node_format(self):
+  def validate_node_layout(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
     
@@ -211,89 +161,12 @@ class NodeLayout():
       BadConfigurationException with reason if the deployment strategy is not
         valid.
     """
-    # Keep track of whether the deployment is valid while going through.
-    node_hash = {}
-    role_count = {
-      'appengine': 0,
-      'shadow': 0,
-      'memcache': 0,
-      'taskqueue': 0,
-      'zookeeper': 0,
-      'login': 0,
-      'db_master': 0,
-      'taskqueue_master': 0
-    }
-    login_found = False
-    # Loop through the list of "node sets", which are grouped by role.
-    for role, ips in self.input_yaml.iteritems():
-      if len(ips) == 0:
-        self.invalid("Node amount cannot be zero for role {}.".format(role))
-      ips_list = ips if isinstance(ips, list) else [ips]
-      test_ips = [self.is_cloud_ip(ip) for ip in ips_list]
-      using_cloud_ids = any(test_ips)
-
-      # Immediately fail if we have more than one node for master.
-      if role == 'master' and self.master:
-        self.invalid("Only one master is allowed")
-
-      # Create or retrieve the nodes from the node_hash.
-      nodes = [node_hash[ip] if ip in node_hash else \
-               Node(ip, using_cloud_ids) for ip in ips_list]
-
-      # Validate volume usage, there should be an equal number of volumes to
-      # number of nodes.
-      if self.disks:
-        self.validate_disks(nodes)
-
-        for node in nodes:
-          node.disk = self.disks.get(node.public_ip)
-
-      # Add the defined roles to the nodes.
-      for node in nodes:
-        node.add_role(role)
-        if not node.is_valid():
-          self.invalid(",".join(node.errors()))
-      # Check cases where a master is needed.
-      if role == 'master':
-        self.master = nodes[0]
-      if role == 'login' and login_found:
-        self.invalid("Only one login is allowed")
-      elif role == 'login':
-        login_found = True
-      # All nodes that have the same roles will be expanded the same way,
-      # so get the updated list of roles from the first node.
-      roles = nodes[0].roles
-      # Update dictionary containing role counts.
-      role_count.update({role: role_count.get(role, 0) + len(nodes)
-                         for role in roles})
-      # Update the node_hash with the modified nodes.
-      node_hash.update({node.public_ip: node for node in nodes})
-
-    self.validate_database_replication(node_hash.values())
-    # Distribute unassigned roles and validate that certain roles are filled
-    # and return a list of nodes or raise BadConfigurationException.
-    nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
-
-    if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_machines:
-        self.min_machines = len(nodes)
-      if not self.max_machines:
-        self.max_machines = len(nodes)
-
-    self.nodes = nodes
-
-    return True
-
-  def is_valid_advanced_format(self):
-    """Checks to see if this NodeLayout represents an acceptable (new) advanced
-    deployment strategy, and if so, constructs self.nodes from it.
-    
-    Returns:
-      True if the deployment strategy is valid.
-    Raises:
-      BadConfigurationException with reason if the deployment strategy is not
-        valid.
-    """
+    if self.input_yaml and not isinstance(self.input_yaml, list):
+      return self.invalid("Node layout format was not recognized.")
+    if not self.input_yaml and self.infrastructure not in \
+        InfrastructureAgentFactory.VALID_AGENTS:
+      # When running in a cloud, simple formats don't require an input_yaml
+      return self.invalid("Node layout format was not recognized.")
 
     if not self.input_yaml:
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
@@ -322,7 +195,7 @@ class NodeLayout():
       'taskqueue_master': 0
     }
     node_count = 0
-
+    all_disks = []
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for node_set in self.input_yaml:
@@ -366,8 +239,11 @@ class NodeLayout():
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
       if node_set.get('disks', None):
-        disks = node_set.get('disks')
-        self.validate_disks(nodes, disks)
+        disk_or_disks = node_set.get('disks')
+        disks = disk_or_disks if isinstance(disk_or_disks, list) else \
+          [disk_or_disks]
+        all_disks.extend(disks)
+        self.validate_disks(len(nodes), disks)
 
         for node, disk in zip(nodes, disks):
           node.disk = disk
@@ -399,6 +275,9 @@ class NodeLayout():
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    # Make sure disks are unique.
+    self.validate_disks(len(all_disks), all_disks)
+
     self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
@@ -410,39 +289,27 @@ class NodeLayout():
       if not self.max_machines:
         self.max_machines = len(nodes)
 
-    # by this point, somebody has a login role, so now's the time to see if we
-    # need to override their ip address with --login_host
-    if self.login_host:
-      login = self.get_nodes('login', True, nodes)[0]
-      login.public_ip = self.login_host
-
     self.nodes = nodes
 
     return True
 
-  def validate_disks(self, nodes, disks=None):
+  def validate_disks(self, disks_expected, disks):
     """ Checks to make sure that the user has specified exactly one persistent
     disk per node.
 
     Args:
-      nodes: The list of Nodes.
+      disks_expected: The amount of nodes that should have a disk.
       disks: The list of disks provided or None if using the old format.
     Raises: BadConfigurationException indicating why the disks given were
       invalid.
     """
     # Make sure that every node has a disk specified.
-    if disks and len(nodes) != len(disks):
+    if disks_expected != len(disks):
       self.invalid("When specifying disks you must have the same "
         "amount as nodes.")
-    elif disks:
-      return
-    # TODO: Deprecated, remove when we switch to new ips_layout fully.
-    elif self.disks and len(nodes) != len(self.disks.keys()):
-      self.invalid("Please specify a disk for every node.")
 
     # Next, make sure that there are an equal number of unique disks and nodes.
-    if disks and len(nodes) != len(set(disks)) \
-        or len(nodes) != len(set(self.disks.values())): # TODO: Deprecated line.
+    if disks_expected != len(set(disks)):
       self.invalid("Please specify a unique disk for every node.")
 
   def validate_database_replication(self, nodes):
@@ -543,7 +410,6 @@ class NodeLayout():
     layout.append({'roles': other_node_roles, 'nodes': num_slaves})
 
     return layout
-
 
   def replication_factor(self):
     """Returns the replication factor for this NodeLayout, if the layout is one
@@ -810,6 +676,7 @@ class Node():
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))
+
 
   def to_json(self):
     return {

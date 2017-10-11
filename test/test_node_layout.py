@@ -17,6 +17,12 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.node_layout import NodeLayout
 
+from test_ip_layouts import (DISK_ONE, DISK_TWO, FOUR_NODE_CLOUD,
+                             THREE_NODES_TWO_DISKS_CLOUD,
+                             THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD,
+                             THREE_NODE_CLOUD, TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD,
+                             TWO_NODES_TWO_DISKS_CLOUD)
+
 
 class TestNodeLayout(unittest.TestCase):
 
@@ -55,28 +61,16 @@ class TestNodeLayout(unittest.TestCase):
 
 
   def test_advanced_format_yaml_only(self):
-    input_yaml = {'master' : self.ip_1, 'database' : self.ip_1,
-      'appengine' : self.ip_1, 'open' : self.ip_2}
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': 'open', 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout_1 = NodeLayout(options)
     self.assertNotEqual([], layout_1.nodes)
 
-  def test_with_login_override(self):
-    # if the user wants to set a login host, make sure that gets set as the
-    # login node's public IP address instead of what we'd normally put in
 
-    # use a simple deployment so we can get the login node with .head_node()
-    input_yaml_1 = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
-                  {'roles': ['appengine'], 'nodes': 1}]
-    options_1 = self.default_options.copy()
-    options_1['ips'] = input_yaml_1
-    options_1['login_host'] = "www.booscale.com"
-    layout_1 = NodeLayout(options_1)
-    self.assertNotEqual([], layout_1.nodes)
-
-    head_node = layout_1.head_node()
-    self.assertEquals(options_1['login_host'], head_node.public_ip)
+  def test_distribute_unassigned_roles(self):
+    return
 
 
   def test_is_database_replication_valid_with_db_slave(self):
@@ -96,45 +90,43 @@ class TestNodeLayout(unittest.TestCase):
     # suppose that the user has specified two nodes, but only one EBS / PD disk
     # this should fail.
 
-    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
-                  {'roles': ['appengine'], 'nodes': 1}]
+    input_yaml = THREE_NODES_TWO_DISKS_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one'
-    }
     self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
   def test_with_right_number_of_disks_but_not_unique(self):
     # suppose that the user has specified two nodes, but uses the same name for
     # both disks. This isn't acceptable.
-    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
-                  {'roles': ['appengine'], 'nodes': 1}]
+    input_yaml = TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one',
-      self.ip_2 : 'disk_number_one'
-    }
     self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
-  def test_with_right_number_of_unique_disks(self):
+  def test_with_right_number_of_unique_disks_both_nodes(self):
     # suppose that the user has specified two nodes, and two EBS / PD disks
     # with different names. This is the desired user behavior.
-    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
-                  {'roles': ['appengine'], 'nodes': 1}]
+    input_yaml = TWO_NODES_TWO_DISKS_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one',
-      self.ip_2 : 'disk_number_two'
-    }
     layout = NodeLayout(options)
     self.assertNotEqual([], layout.nodes)
-    self.assertEquals('disk_number_one', layout.head_node().disk)
-    self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
+    self.assertEquals(DISK_ONE, layout.head_node().disk)
+    self.assertEquals(DISK_TWO, layout.other_nodes()[0].disk)
+
+
+  def test_with_right_number_of_unique_disks_one_node(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    layout = NodeLayout(options)
+    self.assertNotEqual([], layout.nodes)
+    self.assertEquals(DISK_ONE, layout.other_nodes()[0].disk)
+    self.assertEquals(DISK_TWO, layout.other_nodes()[1].disk)
 
 
   reattach_options = flexmock(
@@ -155,9 +147,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'database': 'node-4'}
+      ips=FOUR_NODE_CLOUD
     )
 
   reattach_node_info = [{ "public_ip": "0.0.0.0",
@@ -213,9 +203,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-4', 'database': 'node-3'}
+      ips=FOUR_NODE_CLOUD
     )
 
     node_layout = NodeLayout(options)
@@ -276,9 +264,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'database': 'node-3'}
+      ips=THREE_NODE_CLOUD
     )
 
     node_layout = NodeLayout(options)
