@@ -116,6 +116,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
 
     # fake the creation of the log directories locally
     flexmock(utils)
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/private-ip-links')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
@@ -137,15 +138,8 @@ class TestAppScaleGatherLogs(unittest.TestCase):
 
     # fake creation of symlink to for friendly navigation
     links_mapping = {
-      '/tmp/foobaz/public1': [
-        '/tmp/foobaz/private1-private-IP',
-        '/tmp/foobaz/load_balancer-nodes/private1-private-IP',
-        '/tmp/foobaz/taskqueue_master-nodes/private1-private-IP',
-        '/tmp/foobaz/zookeeper-nodes/private1-private-IP',
-        '/tmp/foobaz/db_master-nodes/private1-private-IP',
-        '/tmp/foobaz/taskqueue-nodes/private1-private-IP',
-        '/tmp/foobaz/shadow-nodes/private1-private-IP',
-        '/tmp/foobaz/login-nodes/private1-private-IP',
+      '../public1': [
+        '/tmp/foobaz/private-ip-links/private1',
         '/tmp/foobaz/load_balancer-nodes/public1',
         '/tmp/foobaz/taskqueue_master-nodes/public1',
         '/tmp/foobaz/zookeeper-nodes/public1',
@@ -154,19 +148,14 @@ class TestAppScaleGatherLogs(unittest.TestCase):
         '/tmp/foobaz/shadow-nodes/public1',
         '/tmp/foobaz/login-nodes/public1',
       ],
-      '/tmp/foobaz/public2': [
-        '/tmp/foobaz/private2-private-IP',
-        '/tmp/foobaz/zookeeper-nodes/private2-private-IP',
-        '/tmp/foobaz/appengine-nodes/private2-private-IP',
-        '/tmp/foobaz/memcache-nodes/private2-private-IP',
+      '../public2': [
+        '/tmp/foobaz/private-ip-links/private2',
         '/tmp/foobaz/zookeeper-nodes/public2',
         '/tmp/foobaz/appengine-nodes/public2',
         '/tmp/foobaz/memcache-nodes/public2',
       ],
-      '/tmp/foobaz/public3': [
-        '/tmp/foobaz/private3-private-IP',
-        '/tmp/foobaz/appengine-nodes/private3-private-IP',
-        '/tmp/foobaz/memcache-nodes/private3-private-IP',
+      '../public3': [
+        '/tmp/foobaz/private-ip-links/private3',
         '/tmp/foobaz/appengine-nodes/public3',
         '/tmp/foobaz/memcache-nodes/public3',
       ]

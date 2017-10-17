@@ -5,6 +5,8 @@ import tarfile
 import zipfile
 from xml.etree import ElementTree
 
+import errno
+
 
 def config_from_tar_gz(file_name, tar_location):
   """ Reads a configuration file from a source tarball.
@@ -128,4 +130,10 @@ def mkdir(dir_path):
   Args:
     dir_path: The path to create.
   """
-  return os.system("mkdir -p " + dir_path)
+  try:
+    return os.makedirs(dir_path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(dir_path):
+      pass
+    else:
+      raise

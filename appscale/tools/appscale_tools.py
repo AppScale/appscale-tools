@@ -477,6 +477,10 @@ class AppScaleTools(object):
     # cause the tool to crash and not create this directory
     os.mkdir(location)
 
+    # make dir for private IP navigation links
+    private_ips_dir = os.path.join(location, 'private-ip-links')
+    utils.mkdir(private_ips_dir)
+
     # The log paths that we collect logs from.
     log_paths = [
       {'remote': '/opt/cassandra/cassandra/logs/*', 'local': 'cassandra'},
@@ -495,17 +499,17 @@ class AppScaleTools(object):
       # Get the logs from each node, and store them in our local directory
       local_dir = os.path.join(location, public_ip)
       utils.mkdir(local_dir)
+      local_link = os.path.join('..', public_ip)
 
       # Create symlinks for easier navigation in gathered logs
       node_info = nodes_dict.get(public_ip)
       if node_info:
-        private_ip = "{}-private-IP".format(node_info["private_ip"])
-        os.symlink(local_dir, os.path.join(location, private_ip))
+        private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
+        os.symlink(local_link, private_ip_dir)
         for role in node_info['jobs']:
           role_dir = os.path.join(location, "{}-nodes".format(role))
           utils.mkdir(role_dir)
-          os.symlink(local_dir, os.path.join(role_dir, private_ip))
-          os.symlink(local_dir, os.path.join(role_dir, public_ip))
+          os.symlink(local_link, os.path.join(role_dir, public_ip))
 
       for log_path in log_paths:
         sub_dir = local_dir
