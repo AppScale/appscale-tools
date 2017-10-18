@@ -116,7 +116,7 @@ class TestAppScaleGatherLogs(unittest.TestCase):
 
     # fake the creation of the log directories locally
     flexmock(utils)
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/private-ip-links')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/private-ips')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
@@ -126,38 +126,39 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public3')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public3/cassandra')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/public3/rabbitmq')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/load_balancer-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/taskqueue_master-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/zookeeper-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/db_master-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/taskqueue-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/shadow-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/login-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/memcache-nodes')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/appengine-nodes')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/load_balancer')
+    utils.should_receive('mkdir').with_args(
+      '/tmp/foobaz/symlinks/taskqueue_master')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/zookeeper')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/db_master')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/taskqueue')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/shadow')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/login')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/memcache')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/appengine')
 
     # fake creation of symlink to for friendly navigation
     links_mapping = {
-      '../public1': [
-        '/tmp/foobaz/private-ip-links/private1',
-        '/tmp/foobaz/load_balancer-nodes/public1',
-        '/tmp/foobaz/taskqueue_master-nodes/public1',
-        '/tmp/foobaz/zookeeper-nodes/public1',
-        '/tmp/foobaz/db_master-nodes/public1',
-        '/tmp/foobaz/taskqueue-nodes/public1',
-        '/tmp/foobaz/shadow-nodes/public1',
-        '/tmp/foobaz/login-nodes/public1',
+      '../../public1': [
+        '/tmp/foobaz/symlinks/private-ips/private1',
+        '/tmp/foobaz/symlinks/load_balancer/public1',
+        '/tmp/foobaz/symlinks/taskqueue_master/public1',
+        '/tmp/foobaz/symlinks/zookeeper/public1',
+        '/tmp/foobaz/symlinks/db_master/public1',
+        '/tmp/foobaz/symlinks/taskqueue/public1',
+        '/tmp/foobaz/symlinks/shadow/public1',
+        '/tmp/foobaz/symlinks/login/public1',
       ],
-      '../public2': [
-        '/tmp/foobaz/private-ip-links/private2',
-        '/tmp/foobaz/zookeeper-nodes/public2',
-        '/tmp/foobaz/appengine-nodes/public2',
-        '/tmp/foobaz/memcache-nodes/public2',
+      '../../public2': [
+        '/tmp/foobaz/symlinks/private-ips/private2',
+        '/tmp/foobaz/symlinks/zookeeper/public2',
+        '/tmp/foobaz/symlinks/appengine/public2',
+        '/tmp/foobaz/symlinks/memcache/public2',
       ],
-      '../public3': [
-        '/tmp/foobaz/private-ip-links/private3',
-        '/tmp/foobaz/appengine-nodes/public3',
-        '/tmp/foobaz/memcache-nodes/public3',
+      '../../public3': [
+        '/tmp/foobaz/symlinks/private-ips/private3',
+        '/tmp/foobaz/symlinks/appengine/public3',
+        '/tmp/foobaz/symlinks/memcache/public3',
       ]
     }
     for original_dir, expected_links in links_mapping.iteritems():
