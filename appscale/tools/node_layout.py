@@ -88,7 +88,7 @@ class NodeLayout():
   # deployment.
   USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not " \
     "to mix simple and advanced deployment methods."
-  
+
 
   def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
@@ -127,6 +127,7 @@ class NodeLayout():
     self.replication = options.get('replication')
     self.database_type = options.get('table', 'cassandra')
     self.add_to_existing = options.get('add_to_existing')
+    self.default_instance_type = options.get('instance_type')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
@@ -336,7 +337,7 @@ class NodeLayout():
   def is_valid_node_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -419,7 +420,7 @@ class NodeLayout():
   def is_valid_advanced_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -489,10 +490,17 @@ class NodeLayout():
         for node, disk in zip(nodes, disks):
           node.disk = disk
 
+      instance_type = node_set.get('instance_type', self.default_instance_type)
+
+      if not instance_type:
+        self.invalid("Must set a default instance type or specify instance "
+                     "type per role.")
+
       # Add the defined roles to the nodes.
       for node in nodes:
         for role in roles:
           node.add_role(role)
+        node.instance_type = instance_type
 
       for node in nodes:
         if not node.is_valid():
@@ -585,7 +593,7 @@ class NodeLayout():
 
   def distribute_unassigned_roles(self, nodes, role_count):
     """ Distributes roles that were not defined by user.
-    
+
     Args:
       nodes: The list of nodes.
       role_count: A dict containing roles mapped to their count.
@@ -780,7 +788,7 @@ class NodeLayout():
   def invalid(self, message):
     """ Wrapper that NodeLayout validation aspects call when the given layout
       is invalid.
-    
+
     Raises: BadConfigurationException with the given message.
     """
     raise BadConfigurationException(message)
@@ -794,7 +802,7 @@ class Node():
 
   DUMMY_INSTANCE_ID = "i-APPSCALE"
 
-  def __init__(self, public_ip, cloud, roles=[], disk=None):
+  def __init__(self, public_ip, cloud, roles=[], disk=None, instance_type=None):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -811,6 +819,7 @@ class Node():
     self.cloud = cloud
     self.roles = roles
     self.disk = disk
+    self.instance_type = instance_type
     self.expand_roles()
 
 
@@ -866,7 +875,7 @@ class Node():
     else:
       return False
 
-  
+
   def is_valid(self):
     """Checks to see if this Node's roles can be used together in an AppScale
     deployment.

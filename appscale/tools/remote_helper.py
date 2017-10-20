@@ -151,31 +151,52 @@ class RemoteHelper(object):
 
     agent.configure_instance_security(params)
 
-    load_balancer_nodes = node_layout.get_nodes('load_balancer', True)
-    instance_ids, public_ips, private_ips = cls.spawn_load_balancers_in_cloud(
-      options, agent, params,
-      len(load_balancer_nodes))
+    load_balancer_roles = {}
 
-    for node_index, node in enumerate(load_balancer_nodes):
-      index = node_layout.nodes.index(node)
-      node_layout.nodes[index].public_ip = public_ips[node_index]
-      node_layout.nodes[index].private_ip = private_ips[node_index]
-      node_layout.nodes[index].instance_id = instance_ids[node_index]
+    instance_type_roles = {'with_disks':{}, 'without_disks': {}}
+
+    for node in node_layout.get_nodes('load_balancer', True):
+      load_balancer_roles.setdefault(node.instance_type, []).append(node)
+
+    for node in node_layout.get_nodes('load_balancer', False):
+      instance_type = instance_type_roles['with_disks'] if node.disk else \
+        instance_type_roles['without_disks']
+      instance_type.setdefault(node.instance_type, []).append(node)
+
+    for instance_type, load_balancer_nodes in load_balancer_roles.items():
+
+      instance_type_params = params.copy()
+      instance_type_params['instance_type'] = instance_type
+
+      instance_ids, public_ips, private_ips = cls.spawn_load_balancers_in_cloud(
+        options, agent, instance_type_params, len(load_balancer_nodes))
+
+      for node_index, node in enumerate(load_balancer_nodes):
+        index = node_layout.nodes.index(node)
+        node_layout.nodes[index].public_ip = public_ips[node_index]
+        node_layout.nodes[index].private_ip = private_ips[node_index]
+        node_layout.nodes[index].instance_id = instance_ids[node_index]
 
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    other_nodes = node_layout.get_nodes('load_balancer', False)
-    if len(other_nodes) > 0:
-      _instance_ids, _public_ips, _private_ips = cls.spawn_other_nodes_in_cloud(
-        agent, params,
-        len(other_nodes))
+    for _, nodes in instance_type_roles.items():
+      for instance_type, other_nodes in nodes.items():
+        if len(other_nodes) <= 0:
+          break
 
-      for node_index, node in enumerate(other_nodes):
-        index = node_layout.nodes.index(node)
-        node_layout.nodes[index].public_ip = _public_ips[node_index]
-        node_layout.nodes[index].private_ip = _private_ips[node_index]
-        node_layout.nodes[index].instance_id = _instance_ids[node_index]
+        instance_type_params = params.copy()
+        instance_type_params['instance_type'] = instance_type
+
+        _instance_ids, _public_ips, _private_ips =\
+          cls.spawn_other_nodes_in_cloud(agent, instance_type_params,
+                                         len(other_nodes))
+
+        for node_index, node in enumerate(other_nodes):
+          index = node_layout.nodes.index(node)
+          node_layout.nodes[index].public_ip = _public_ips[node_index]
+          node_layout.nodes[index].private_ip = _private_ips[node_index]
+          node_layout.nodes[index].instance_id = _instance_ids[node_index]
 
     return node_layout
 
