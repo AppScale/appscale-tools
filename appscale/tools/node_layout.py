@@ -95,7 +95,7 @@ class NodeLayout():
   # deployment.
   USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not " \
     "to mix simple and advanced deployment methods."
-  
+
 
   def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
@@ -343,7 +343,7 @@ class NodeLayout():
   def is_valid_node_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -426,7 +426,7 @@ class NodeLayout():
   def is_valid_advanced_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -592,7 +592,7 @@ class NodeLayout():
 
   def distribute_unassigned_roles(self, nodes, role_count):
     """ Distributes roles that were not defined by user.
-    
+
     Args:
       nodes: The list of nodes.
       role_count: A dict containing roles mapped to their count.
@@ -790,7 +790,7 @@ class NodeLayout():
   def invalid(self, message):
     """ Wrapper that NodeLayout validation aspects call when the given layout
       is invalid.
-    
+
     Raises: BadConfigurationException with the given message.
     """
     raise BadConfigurationException(message)
@@ -876,7 +876,7 @@ class Node():
     else:
       return False
 
-  
+
   def is_valid(self):
     """Checks to see if this Node's roles can be used together in an AppScale
     deployment.
@@ -991,6 +991,8 @@ class AdvancedNode(Node):
     for i in range(len(self.roles)):
       role = self.roles[i]
       if role in NodeLayout.DEPRECATED_ROLES:
+        AppScaleLogger.warn("'{}' role has been deprecated, please use '{}'"
+                            .format(role, NodeLayout.DEPRECATED_ROLES[role]))
         self.roles.remove(role)
         self.roles.append(NodeLayout.DEPRECATED_ROLES[role])
 
