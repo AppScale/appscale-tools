@@ -247,6 +247,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
+    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
+      and_return('none')
 
     argv = [
       "--keyname", self.keyname,
@@ -275,6 +277,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
+    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
+      and_return('baz*')
 
     argv = [
       "--keyname", self.keyname,
