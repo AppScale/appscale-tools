@@ -6,7 +6,7 @@
 ##################################################
 # The deployment strategy used in this AppScale deployment.
 # Each service/role can run on one or multiple machines.
-# Primary roles: master, appengine, database, zookeeper
+# Primary roles: master, compute, database, zookeeper
 # Optional roles: loadbalancer, taskqueue, search
 
 # For each role other than master you can specify multiple machines.
@@ -18,7 +18,7 @@ ips_layout:
   -
     roles:
       - master
-      - appengine
+      - compute
       - database
       - zookeeper
     nodes: [1 | vm1_private_IP]
@@ -29,7 +29,7 @@ ips_layout:
 #    roles: master
 #    nodes: [1 | vm1_private_IP]
 #  -
-#    roles: appengine
+#    roles: compute
 #    nodes: [1 | vm2_private_IP]
 #  -
 #    roles: database   # Cassandra needs a quorum to answer queries (hence 3)
@@ -44,7 +44,7 @@ ips_layout:
 #    roles: master
 #    nodes: [1 | vm1_private_IP]
 #  -
-#    roles: appengine, database
+#    roles: compute, database
 #    nodes: [3 | [vm3_private_IP, vm4_private_IP, vm5_private_IP]]
 #  -
 #    roles: zookeeper  # Zookeeper needs a majority of peers online (hence 3)
