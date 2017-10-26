@@ -10,6 +10,8 @@ import yaml
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
+from local_state import LocalState
+from parse_args import ParseArgs
 
 
 class NodeLayout():
@@ -128,6 +130,8 @@ class NodeLayout():
     self.database_type = options.get('table', 'cassandra')
     self.add_to_existing = options.get('add_to_existing')
     self.default_instance_type = options.get('instance_type')
+    self.test = options.get('test')
+    self.force = options.get('force')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
@@ -495,7 +499,15 @@ class NodeLayout():
       if not instance_type:
         self.invalid("Must set a default instance type or specify instance "
                      "type per role.")
-
+      # Check if this is an allowed instance type.
+      if instance_type in ParseArgs.DISALLOWED_INSTANCE_TYPES and \
+          not (self.force or self.test):
+        reason = "the suggested 4GB of RAM"
+        if 'database' in roles:
+          reason += " to run Cassandra"
+        LocalState.confirm_or_abort("The {0} instance type does not have {1}."
+                                    "Please consider using a larger instance "
+                                    "type.".format(instance_type, reason))
       # Add the defined roles to the nodes.
       for node in nodes:
         for role in roles:
