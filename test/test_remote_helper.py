@@ -541,7 +541,7 @@ class TestRemoteHelper(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'memcache', 'db_master'] }
+                          "jobs": ['database', 'db_master'] }
                         ]
 
   def test_start_all_nodes_reattach(self):
