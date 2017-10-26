@@ -172,9 +172,9 @@ class RemoteHelper(object):
       instance_type_params = params.copy()
       instance_type_params['instance_type'] = instance_type
 
-      instance_ids, public_ips, private_ips = cls.spawn_load_balancers_in_cloud(
+      instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
         options, agent, instance_type_params, spawned_instance_ids,
-        len(load_balancer_nodes))
+        count=len(load_balancer_nodes), load_balancer=True)
 
       # Keep track of instances we have started.
       spawned_instance_ids.extend(instance_ids)
@@ -184,6 +184,13 @@ class RemoteHelper(object):
         node_layout.nodes[index].public_ip = public_ips[node_index]
         node_layout.nodes[index].private_ip = private_ips[node_index]
         node_layout.nodes[index].instance_id = instance_ids[node_index]
+
+    if options.static_ip:
+      node = node_layout.head_node()
+      agent.associate_static_ip(params, node.instance_id,
+                                options.static_ip)
+      node.public_ip = options.static_ip
+      AppScaleLogger.log("Static IP associated with head node.")
 
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
@@ -197,8 +204,8 @@ class RemoteHelper(object):
         instance_type_params['instance_type'] = instance_type
 
         _instance_ids, _public_ips, _private_ips =\
-          cls.spawn_other_nodes_in_cloud(agent, instance_type_params,
-                                         spawned_instance_ids, len(other_nodes))
+          cls.spawn_nodes_in_cloud(options, agent, instance_type_params,
+                                   spawned_instance_ids, count=len(other_nodes))
 
         # Keep track of instances we have started.
         spawned_instance_ids.extend(_instance_ids)
@@ -308,8 +315,8 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def spawn_load_balancers_in_cloud(cls, options, agent, params,
-                                    spawned_instance_ids, count=1):
+  def spawn_nodes_in_cloud(cls, options, agent, params, spawned_instance_ids,
+                           count=1, load_balancer=False):
     """Starts count number of virtual machines in a cloud infrastructure with
     public ips.
 
@@ -323,6 +330,8 @@ class RemoteHelper(object):
       params: The parameters to be sent to the agent.
       spawned_instance_ids: Ids of instances that AppScale has started.
       count: A int, the number of instances to start.
+      load_balancer: A boolean indicating whether the spawned instance should
+        have a public ip or not.
     Returns:
       The instance ID, public IP address, and private IP address of the machine
         that was started.
@@ -330,7 +339,7 @@ class RemoteHelper(object):
     try:
       instance_ids, public_ips, private_ips = agent.run_instances(
         count=count, parameters=params, security_configured=True,
-        public_ip_needed=True)
+        public_ip_needed=load_balancer)
     except (AgentRuntimeException, BotoServerError):
       AppScaleLogger.warn("AppScale was unable to start the requested number "
                           "of instances, attempting to terminate those that "
@@ -338,45 +347,13 @@ class RemoteHelper(object):
       if len(spawned_instance_ids) > 0:
         AppScaleLogger.warn("Attempting to terminate those that were started.")
         cls.terminate_spawned_instances(spawned_instance_ids, agent, params)
+
+      # Cleanup the keyname since it failed.
+      LocalState.cleanup_keyname(options.keyname)
+
       # Re-raise the original exception.
       raise
 
-    if options.static_ip:
-      agent.associate_static_ip(params, instance_ids[0], options.static_ip)
-      public_ips[0] = options.static_ip
-      AppScaleLogger.log("Static IP associated with head node.")
-    return instance_ids, public_ips, private_ips
-
-
-  @classmethod
-  def spawn_other_nodes_in_cloud(cls, agent, params, spawned_instance_ids,
-                                 count=1):
-    """Starts count number of virtual machines in a cloud infrastructure.
-
-    This method also prepares the virtual machine for use by the AppScale Tools.
-
-    Args:
-      agent: The agent to start VMs with, must be passed as an argument
-        because agents cannot be made twice.
-      params: The parameters to be sent to the agent.
-      spawned_instance_ids: Ids of instances that AppScale has started.
-      count: A int, the number of instances to start.
-    Returns:
-      The instance ID, public IP address, and private IP address of the machine
-        that was started.
-    """
-    try:
-      instance_ids, public_ips, private_ips = agent.run_instances(
-        count=count, parameters=params, security_configured=True,
-        public_ip_needed=False)
-    except (AgentRuntimeException, BotoServerError):
-      AppScaleLogger.warn("AppScale was unable to start the requested number "
-                          "of instances.")
-      if len(spawned_instance_ids) > 0:
-        AppScaleLogger.warn("Attempting to terminate those that were started.")
-        cls.terminate_spawned_instances(spawned_instance_ids, agent, params)
-      # Re-raise the original exception.
-      raise
     return instance_ids, public_ips, private_ips
 
   @classmethod
