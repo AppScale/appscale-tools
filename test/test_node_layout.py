@@ -219,6 +219,63 @@ class TestNodeLayout(unittest.TestCase):
     self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
 
 
+  # Disk tests for new ASF.
+  DISK_ONE = 'disk_number_1'
+  DISK_TWO = 'disk_number_2'
+
+  def test_new_with_wrong_number_of_disks(self):
+    # suppose that the user has specified two nodes, but only one EBS / PD disk
+    # this should fail.
+
+    input_yaml = [
+      {'roles': ['master', 'database'], 'nodes': 1, 'disks': self.DISK_ONE},
+      {'roles': ['appengine'], 'nodes': 2, 'disks': self.DISK_TWO}]
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    self.assertRaises(BadConfigurationException, NodeLayout, options)
+
+
+  def test_new_with_right_number_of_disks_but_not_unique(self):
+    # suppose that the user has specified two nodes, but uses the same name for
+    # both disks. This isn't acceptable.
+    input_yaml = [
+      {'roles': ['master', 'database'], 'nodes': 1, 'disks': self.DISK_ONE},
+      {'roles': ['appengine'], 'nodes': 1, 'disks': self.DISK_ONE}]
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    self.assertRaises(BadConfigurationException, NodeLayout, options)
+
+
+  def test_new_with_right_number_of_unique_disks_both_nodes(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = [{'roles': ['master', 'database'], 'nodes': 1,
+                   'disks': self.DISK_ONE},
+                  {'roles': ['appengine'], 'nodes': 1,
+                   'disks': self.DISK_TWO}]
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    layout = NodeLayout(options)
+    self.assertNotEqual([], layout.nodes)
+    self.assertEquals(self.DISK_ONE, layout.head_node().disk)
+    self.assertEquals(self.DISK_TWO, layout.other_nodes()[0].disk)
+
+
+  def test_new_with_right_number_of_unique_disks_one_node(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = [
+      {'roles': ['master', 'database'], 'nodes': 1},
+      {'roles': ['appengine'], 'nodes': 2,
+       'disks': [self.DISK_ONE, self.DISK_TWO]}]
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    layout = NodeLayout(options)
+    self.assertNotEqual([], layout.nodes)
+    self.assertEquals(self.DISK_ONE, layout.other_nodes()[0].disk)
+    self.assertEquals(self.DISK_TWO, layout.other_nodes()[1].disk)
+
+
   reattach_options = flexmock(
       infrastructure='euca',
       group='group',

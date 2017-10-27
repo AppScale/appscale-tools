@@ -328,7 +328,7 @@ class NodeLayout():
           node.public_ip = self.login_host
 
     if self.disks:
-      self.validate_disks(nodes)
+      self.validate_disks(len(nodes))
 
       for node in nodes:
         node.disk = self.disks.get(node.public_ip)
@@ -382,7 +382,7 @@ class NodeLayout():
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
       if self.disks:
-        self.validate_disks(nodes)
+        self.validate_disks(len(nodes))
 
         for node in nodes:
           node.disk = self.disks.get(node.public_ip)
@@ -446,7 +446,7 @@ class NodeLayout():
       'taskqueue_master': 0
     }
     node_count = 0
-
+    all_disks = []
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for node_set in self.input_yaml:
@@ -490,8 +490,11 @@ class NodeLayout():
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
       if node_set.get('disks', None):
-        disks = node_set.get('disks')
-        self.validate_disks(nodes, disks)
+        disk_or_disks = node_set.get('disks')
+        disks = disk_or_disks if isinstance(disk_or_disks, list) else \
+          [disk_or_disks]
+        all_disks.extend(disks)
+        self.validate_disks(len(nodes), disks)
 
         for node, disk in zip(nodes, disks):
           node.disk = disk
@@ -523,6 +526,10 @@ class NodeLayout():
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    # Make sure disks are unique.
+    if all_disks:
+      self.validate_disks(len(all_disks), all_disks)
+
     self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
@@ -538,29 +545,31 @@ class NodeLayout():
 
     return True
 
-  def validate_disks(self, nodes, disks=None):
+  def validate_disks(self, disks_expected, disks=None):
     """ Checks to make sure that the user has specified exactly one persistent
     disk per node.
 
     Args:
-      nodes: The list of Nodes.
+      disks_expected: The amount of nodes that should have a disk.
       disks: The list of disks provided or None if using the old format.
     Raises: BadConfigurationException indicating why the disks given were
       invalid.
     """
     # Make sure that every node has a disk specified.
-    if disks and len(nodes) != len(disks):
-      self.invalid("When specifying disks you must have the same "
-        "amount as nodes.")
-    elif disks:
+    if disks:
+      if disks_expected != len(disks):
+        self.invalid("When specifying disks you must have the same "
+                     "amount as nodes.")
+      # Next, make sure that there are an equal number of unique disks and nodes.
+      if disks and disks_expected != len(set(disks)):
+        self.invalid("Please specify a unique disk for every node.")
+      # At this point if invalid has not been called it is safe to return if
+      # disks is assigned since this is only in the new format.
       return
     # TODO: Deprecated, remove when we switch to new ips_layout fully.
-    elif self.disks and len(nodes) != len(self.disks.keys()):
+    if self.disks and disks_expected != len(self.disks.keys()):
       self.invalid("Please specify a disk for every node.")
-
-    # Next, make sure that there are an equal number of unique disks and nodes.
-    if disks and len(nodes) != len(set(disks)) \
-        or len(nodes) != len(set(self.disks.values())): # TODO: Deprecated line.
+    if disks_expected != len(set(self.disks.values())): # TODO: Deprecated line.
       self.invalid("Please specify a unique disk for every node.")
 
   def validate_database_replication(self, nodes):
