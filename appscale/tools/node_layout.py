@@ -24,20 +24,29 @@ class NodeLayout():
   nodes is not acceptable).
   """
 
+  APPSCALEFILE_INSTRUCTIONS = "https://www.appscale.com/" \
+                              "get-started/deploy-appscale#appscalefile"
+
+
+  # TODO: Update this dictionary as roles get renamed/deprecated.
+  DEPRECATED_ROLES = {'appengine': 'compute'}
+
 
   # A tuple containing the keys that can be used in simple deployments.
   SIMPLE_FORMAT_KEYS = ('controller', 'servers')
 
 
   # A tuple containing the keys that can be used in advanced deployments.
-  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'open', 'login',
-    'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
+  # TODO: remove 'appengine' role.
+  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'compute', 'open',
+    'login', 'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
   # AppController recognizes. These include _master and _slave roles, which
   # the user may not be able to specify directly.
-  VALID_ROLES = ('master', 'appengine', 'database', 'shadow', 'open',
+  # TODO: remove 'appengine' role.
+  VALID_ROLES = ('master', 'appengine', 'compute', 'database', 'shadow', 'open',
     'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
     'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
 
@@ -86,7 +95,7 @@ class NodeLayout():
   # deployment.
   USED_SIMPLE_AND_ADVANCED_KEYS = "Check your node layout and make sure not " \
     "to mix simple and advanced deployment methods."
-  
+
 
   def __init__(self, options):
     """Creates a new NodeLayout from the given YAML file.
@@ -111,8 +120,8 @@ class NodeLayout():
     elif isinstance(input_yaml, dict):
       self.input_yaml = input_yaml
       AppScaleLogger.warn("The AppScalefile is changing, the layout you are "
-                          "using will be invalid soon. Please see our website "
-                          "for more details.")
+        "using will be invalid soon. Please see {} for more details.".format(
+        self.APPSCALEFILE_INSTRUCTIONS))
     elif isinstance(input_yaml, list):
       self.input_yaml = input_yaml
     else:
@@ -120,8 +129,8 @@ class NodeLayout():
 
     self.disks = options.get('disks')
     self.infrastructure = options.get('infrastructure')
-    self.min_vms = options.get('min')
-    self.max_vms = options.get('max')
+    self.min_machines = options.get('min_machines')
+    self.max_machines = options.get('max_machines')
     self.replication = options.get('replication')
     self.database_type = options.get('table', 'cassandra')
     self.add_to_existing = options.get('add_to_existing')
@@ -234,10 +243,10 @@ class NodeLayout():
     """
     if not self.input_yaml:
       if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-        if not self.min_vms:
+        if not self.min_machines:
           self.invalid(self.NO_YAML_REQUIRES_MIN)
 
-        if not self.max_vms:
+        if not self.max_machines:
           self.invalid(self.NO_YAML_REQUIRES_MAX)
 
         # No layout was created, so create a generic one and then allow it
@@ -297,13 +306,13 @@ class NodeLayout():
 
     if len(nodes) == 1:
       # Singleton node should be master and app engine
-      nodes[0].add_role('appengine')
+      nodes[0].add_role('compute')
       nodes[0].add_role('memcache')
 
     # controller -> shadow
     controller_count = 0
     for node in nodes:
-      if node.is_role('master'):
+      if node.is_role('shadow'):
         controller_count += 1
 
     if controller_count == 0:
@@ -319,7 +328,7 @@ class NodeLayout():
           node.public_ip = self.login_host
 
     if self.disks:
-      self.validate_disks(nodes)
+      self.validate_disks(len(nodes))
 
       for node in nodes:
         node.disk = self.disks.get(node.public_ip)
@@ -334,7 +343,7 @@ class NodeLayout():
   def is_valid_node_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -344,15 +353,15 @@ class NodeLayout():
     # Keep track of whether the deployment is valid while going through.
     node_hash = {}
     role_count = {
-      'appengine': 0,
-      'master': 0,
+      'compute': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
-      'login': 0
+      'login': 0,
+      'db_master': 0,
+      'taskqueue_master': 0
     }
-    db_master_created = False
-    tq_master_created = False
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for role, ips in self.input_yaml.iteritems():
@@ -373,7 +382,7 @@ class NodeLayout():
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
       if self.disks:
-        self.validate_disks(nodes)
+        self.validate_disks(len(nodes))
 
         for node in nodes:
           node.disk = self.disks.get(node.public_ip)
@@ -386,37 +395,29 @@ class NodeLayout():
       # Check cases where a master is needed.
       if role == 'master':
         self.master = nodes[0]
-      if role == 'database' and not db_master_created:
-        nodes[0].add_db_role(True)
-        db_master_created = True
-      if role == 'taskqueue' and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(True)
-        else:
-          nodes[0].add_taskqueue_role(True)
       if role == 'login' and login_found:
         self.invalid("Only one login is allowed")
       elif role == 'login':
         login_found = True
-
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
       # Update dictionary containing role counts.
-      role_count.update({role: role_count.get(role, 0) + len(nodes)})
+      role_count.update({role: role_count.get(role, 0) + len(nodes)
+                         for role in roles})
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_vms:
-        self.min_vms = len(nodes)
-      if not self.max_vms:
-        self.max_vms = len(nodes)
-
-    self.validate_database_replication(nodes)
+      if not self.min_machines:
+        self.min_machines = len(nodes)
+      if not self.max_machines:
+        self.max_machines = len(nodes)
 
     self.nodes = nodes
 
@@ -425,7 +426,7 @@ class NodeLayout():
   def is_valid_advanced_format(self):
     """Checks to see if this NodeLayout represents an acceptable (new) advanced
     deployment strategy, and if so, constructs self.nodes from it.
-    
+
     Returns:
       True if the deployment strategy is valid.
     Raises:
@@ -435,16 +436,17 @@ class NodeLayout():
     # Keep track of whether the deployment is valid while going through.
     node_hash = {}
     role_count = {
-      'appengine': 0,
-      'master': 0,
+      'compute': 0,
+      'shadow': 0,
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
-      'login': 0
+      'login': 0,
+      'db_master': 0,
+      'taskqueue_master': 0
     }
     node_count = 0
-    db_master_created = False
-    tq_master_created = False
+    all_disks = []
     login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for node_set in self.input_yaml:
@@ -488,8 +490,11 @@ class NodeLayout():
       # Validate volume usage, there should be an equal number of volumes to
       # number of nodes.
       if node_set.get('disks', None):
-        disks = node_set.get('disks')
-        self.validate_disks(nodes, disks)
+        disk_or_disks = node_set.get('disks')
+        disks = disk_or_disks if isinstance(disk_or_disks, list) else \
+          [disk_or_disks]
+        all_disks.extend(disks)
+        self.validate_disks(len(nodes), disks)
 
         for node, disk in zip(nodes, disks):
           node.disk = disk
@@ -506,20 +511,14 @@ class NodeLayout():
       # Check cases where a master is needed.
       if 'master' in roles:
         self.master = nodes[0]
-      if 'database' in roles and not db_master_created:
-        nodes[0].add_db_role(is_master=True)
-        db_master_created = True
-      if 'taskqueue' in roles and not tq_master_created:
-        # Check if we have more than one node to choose from and the first node
-        # is already the database master.
-        if 'db_master' in nodes[0].roles and len(nodes) > 1:
-          nodes[1].add_taskqueue_role(is_master=True)
-        else:
-          nodes[0].add_taskqueue_role(is_master=True)
       if 'login' in roles and login_found:
         self.invalid("Only one login is allowed.")
       elif 'login' in roles:
         login_found = True
+
+      # All nodes that have the same roles will be expanded the same way,
+      # so get the updated list of roles from the first node.
+      roles = nodes[0].roles
 
       # Update dictionary containing role counts.
       role_count.update({role: role_count.get(role, 0) + len(nodes)
@@ -527,45 +526,50 @@ class NodeLayout():
       # Update the node_hash with the modified nodes.
       node_hash.update({node.public_ip: node for node in nodes})
 
+    # Make sure disks are unique.
+    if all_disks:
+      self.validate_disks(len(all_disks), all_disks)
+
+    self.validate_database_replication(node_hash.values())
     # Distribute unassigned roles and validate that certain roles are filled
     # and return a list of nodes or raise BadConfigurationException.
     nodes = self.distribute_unassigned_roles(node_hash.values(), role_count)
 
     if self.infrastructure in InfrastructureAgentFactory.VALID_AGENTS:
-      if not self.min_vms:
-        self.min_vms = len(nodes)
-      if not self.max_vms:
-        self.max_vms = len(nodes)
-
-    self.validate_database_replication(nodes)
+      if not self.min_machines:
+        self.min_machines = len(nodes)
+      if not self.max_machines:
+        self.max_machines = len(nodes)
 
     self.nodes = nodes
 
     return True
 
-  def validate_disks(self, nodes, disks=None):
+  def validate_disks(self, disks_expected, disks=None):
     """ Checks to make sure that the user has specified exactly one persistent
     disk per node.
 
     Args:
-      nodes: The list of Nodes.
+      disks_expected: The amount of nodes that should have a disk.
       disks: The list of disks provided or None if using the old format.
     Raises: BadConfigurationException indicating why the disks given were
       invalid.
     """
     # Make sure that every node has a disk specified.
-    if disks and len(nodes) != len(disks):
-      self.invalid("When specifying disks you must have the same "
-        "amount as nodes.")
-    elif disks:
+    if disks:
+      if disks_expected != len(disks):
+        self.invalid("When specifying disks you must have the same "
+                     "amount as nodes.")
+      # Next, make sure that there are an equal number of unique disks and nodes.
+      if disks and disks_expected != len(set(disks)):
+        self.invalid("Please specify a unique disk for every node.")
+      # At this point if invalid has not been called it is safe to return if
+      # disks is assigned since this is only in the new format.
       return
     # TODO: Deprecated, remove when we switch to new ips_layout fully.
-    elif self.disks and len(nodes) != len(self.disks.keys()):
+    if self.disks and disks_expected != len(self.disks.keys()):
       self.invalid("Please specify a disk for every node.")
-
-    # Next, make sure that there are an equal number of unique disks and nodes.
-    if disks and len(nodes) != len(set(disks)) \
-        or len(nodes) != len(set(self.disks.values())): # TODO: Deprecated line.
+    if disks_expected != len(set(self.disks.values())): # TODO: Deprecated line.
       self.invalid("Please specify a unique disk for every node.")
 
   def validate_database_replication(self, nodes):
@@ -597,7 +601,7 @@ class NodeLayout():
 
   def distribute_unassigned_roles(self, nodes, role_count):
     """ Distributes roles that were not defined by user.
-    
+
     Args:
       nodes: The list of nodes.
       role_count: A dict containing roles mapped to their count.
@@ -607,28 +611,43 @@ class NodeLayout():
       if count != 0:
         continue
       # Check if a master node was specified.
-      if role == 'master':
+      if role == 'shadow':
         self.invalid("Need to specify one master node.")
-      # Check if an appengine node was specified.
-      elif role == 'appengine':
-        self.invalid("Need to specify at least one appengine node.")
-      # If no memcache nodes were specified, make all appengine nodes
+      # Check if an compute node was specified.
+      elif role == 'compute':
+        self.invalid("Need to specify at least one compute node.")
+      # If no memcache nodes were specified, make all compute nodes
       # into memcache nodes.
       elif role == 'memcache':
-        for node in nodes:
-          if node.is_role('appengine'):
-            node.add_role('memcache')
-        # If no zookeeper nodes are specified, make the shadow a zookeeper node.
+        for node in self.get_nodes('compute', True, nodes):
+          node.add_role('memcache')
+      # If no zookeeper nodes are specified, make the shadow a zookeeper node.
       elif role == 'zookeeper':
         self.master.add_role('zookeeper')
-        # If no taskqueue nodes are specified, make the shadow the
-        # taskqueue_master.
+      # If no taskqueue nodes are specified, make the shadow the
+      # taskqueue_master.
       elif role == 'taskqueue':
         self.master.add_role('taskqueue')
         self.master.add_role('taskqueue_master')
       elif role == 'login':
         self.master.add_role('login')
-
+      elif role == 'db_master':
+        # Get first database node.
+        db_node = self.get_nodes('database', True, nodes)[0]
+        # Make first database node db_master.
+        db_node.add_db_role(is_master=True)
+      elif role == 'taskqueue_master':
+        # If master is already taskqueue_master, there is nothing for us to do.
+        if self.master.is_role('taskqueue_master'):
+          continue
+        # Get the taskqueue nodes.
+        tq_node = self.get_nodes('taskqueue', True, nodes)
+        # If there are no taskqueue nodes, do nothing since that is done in
+        # the taskqueue if statement.
+        if not tq_node:
+          continue
+        # Add taskqueue_master to first taskqueue node.
+        tq_node[0].add_taskqueue_role(is_master=True)
     return nodes
 
   def generate_cloud_layout(self):
@@ -640,7 +659,7 @@ class NodeLayout():
     """
     layout = {'controller' : "node-1"}
     servers = []
-    num_slaves = self.min_vms - 1
+    num_slaves = self.min_machines - 1
     for i in xrange(num_slaves):
       servers.append("node-{0}".format(i+2))
 
@@ -675,9 +694,9 @@ class NodeLayout():
       A list of nodes not running the 'shadow' role, or the empty list if the
       NodeLayout isn't acceptable for use with AppScale.
     """
-    return [node for node in self.nodes if not node.is_role('master')]
+    return [node for node in self.nodes if not node.is_role('shadow')]
 
-  def get_nodes(self, role, is_role):
+  def get_nodes(self, role, is_role, nodes=None):
     """ Searches through the nodes in this NodeLayout for all nodes with or
     without the role based on boolean value of is_role.
 
@@ -686,6 +705,7 @@ class NodeLayout():
         for.
       is_role: A boolean to determine whether the return value is the nodes
         that are the role or the nodes that are not the role.
+      nodes: The list of nodes, or self.nodes if list is not supplied.
 
     Returns:
       A list of nodes either running or not running (based on is_role) the
@@ -694,8 +714,8 @@ class NodeLayout():
     """
     if role not in self.VALID_ROLES:
       return []
-
-    return [node for node in self.nodes if node.is_role(role) == is_role]
+    nodes = nodes or self.nodes
+    return [node for node in nodes if node.is_role(role) == is_role]
 
   def db_master(self):
     """ Searches through the nodes in this NodeLayout for the node with the
@@ -738,6 +758,9 @@ class NodeLayout():
     open_nodes = []
     for old_node in locations_nodes_list:
       old_node_roles = old_node.get('jobs')
+      # Convert deprecated roles to new roles.
+      old_node_roles = [role if role not in self.DEPRECATED_ROLES else
+                        self.DEPRECATED_ROLES[role] for role in old_node_roles]
       if old_node_roles == ["open"]:
         open_nodes.append(old_node)
         continue
@@ -776,7 +799,7 @@ class NodeLayout():
   def invalid(self, message):
     """ Wrapper that NodeLayout validation aspects call when the given layout
       is invalid.
-    
+
     Raises: BadConfigurationException with the given message.
     """
     raise BadConfigurationException(message)
@@ -862,7 +885,7 @@ class Node():
     else:
       return False
 
-  
+
   def is_valid(self):
     """Checks to see if this Node's roles can be used together in an AppScale
     deployment.
@@ -942,7 +965,6 @@ class SimpleNode(Node):
     if 'controller' in self.roles:
       self.roles.remove('controller')
       self.roles.append('shadow')
-      self.roles.append('master')
       self.roles.append('load_balancer')
       self.roles.append('database')
       self.roles.append('memcache')
@@ -951,10 +973,10 @@ class SimpleNode(Node):
       self.roles.append('taskqueue')
 
     # If they specify a servers role, expand it out to
-    # be database, appengine, and memcache
+    # be database, compute, and memcache
     if 'servers' in self.roles:
       self.roles.remove('servers')
-      self.roles.append('appengine')
+      self.roles.append('compute')
       self.roles.append('memcache')
       self.roles.append('database')
       self.roles.append('taskqueue')
@@ -973,6 +995,16 @@ class AdvancedNode(Node):
     """Converts the 'master' composite role into the roles it represents, and
     adds dependencies necessary for the 'login' and 'database' roles.
     """
+
+    # Convert deprecated roles.
+    for i in range(len(self.roles)):
+      role = self.roles[i]
+      if role in NodeLayout.DEPRECATED_ROLES:
+        AppScaleLogger.warn("'{}' role has been deprecated, please use '{}'"
+                            .format(role, NodeLayout.DEPRECATED_ROLES[role]))
+        self.roles.remove(role)
+        self.roles.append(NodeLayout.DEPRECATED_ROLES[role])
+
     if 'master' in self.roles:
       self.roles.remove('master')
       self.roles.append('shadow')
@@ -981,10 +1013,14 @@ class AdvancedNode(Node):
     if 'login' in self.roles:
       self.roles.append('load_balancer')
 
-    # TODO(cgb): Look into whether or not the database still needs memcache
-    # support. If not, remove this addition and the validation of it above.
-    if 'database' in self.roles:
-      self.roles.append('memcache')
+    # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.
+    if 'db_slave' in self.roles or 'db_master' in self.roles \
+        and 'database' not in self.roles:
+      self.roles.append('database')
+
+    if 'taskqueue_slave' in self.roles or 'taskqueue_master' in self.roles \
+      and 'taskqueue' not in self.roles:
+      self.roles.append('taskqueue')
 
     # Remove any duplicate roles
     self.roles = list(set(self.roles))

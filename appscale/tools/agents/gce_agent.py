@@ -568,9 +568,11 @@ class GCEAgent(BaseAgent):
       params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     if args.get(self.PARAM_SECRETS):
-      params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
+      params[self.PARAM_SECRETS] = os.path.expanduser(
+        args.get(self.PARAM_SECRETS))
     elif args.get(self.PARAM_STORAGE):
-      params[self.PARAM_STORAGE] = args.get(self.PARAM_STORAGE)
+      params[self.PARAM_STORAGE] = os.path.expanduser(
+        args.get(self.PARAM_STORAGE))
 
     params[self.PARAM_VERBOSE] = args.get('verbose', False)
     self.assert_credentials_are_valid(params)
@@ -701,8 +703,8 @@ class GCEAgent(BaseAgent):
     Returns:
       A str, a disk name associated with the root disk of AppScale on GCE.
     """
-    return '{group}-{time}'.format(group=parameters[self.PARAM_GROUP],
-                                   time=int(time.time() * 1000))[:60]
+    return '{group}-{uuid}'.format(group=parameters[self.PARAM_GROUP],
+                                   uuid=uuid.uuid4().hex)[:60]
 
   def create_scratch_disk(self, parameters):
     """ Creates a disk from a given machine image.
