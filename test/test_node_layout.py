@@ -69,10 +69,6 @@ class TestNodeLayout(unittest.TestCase):
     self.assertNotEqual([], layout_1.nodes)
 
 
-  def test_distribute_unassigned_roles(self):
-    return
-
-
   def test_is_database_replication_valid_with_db_slave(self):
     input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1}]
     options = self.default_options.copy()
