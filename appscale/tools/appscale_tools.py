@@ -1018,6 +1018,83 @@ class AppScaleTools(object):
     return (login_host, http_port)
 
   @classmethod
+  def project_id_from_source(cls, source_location):
+    """ Retrieves a project ID from a version's configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    app_config = fetch_function('app.yaml', source_location)
+    if app_config is None:
+      app_config = fetch_function('appengine-web.xml', source_location)
+      if app_config is None:
+        raise BadConfigurationException(
+          'Unable to find app.yaml or appengine-web.xml')
+
+      web_app = ElementTree.fromstring(app_config)
+      try:
+        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
+        project_id = web_app.find(tag_with_namespace).text
+      except AttributeError:
+        raise BadConfigurationException(
+          'appengine-web.xml must specify application')
+    else:
+      try:
+        project_id = yaml.safe_load(app_config)['application']
+      except KeyError:
+        raise BadConfigurationException('app.yaml must specify application')
+
+    return project_id
+
+  @classmethod
+  def update_cron(cls, source_location, keyname):
+    """ Updates a project's cron jobs from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    cron_config = fetch_function('cron.yaml', source_location)
+    if cron_config is None:
+      cron_config = fetch_function('cron.xml', source_location)
+      # If the source does not have a cron configuration file, do nothing.
+      if cron_config is None:
+        return
+
+      cron_jobs = utils.cron_from_xml(cron_config)
+    else:
+      cron_jobs = yaml.safe_load(cron_config)
+
+    project_id = cls.project_id_from_source(source_location)
+
+    AppScaleLogger.log('Updating cron jobs')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_cron(project_id, cron_jobs)
+
+  @classmethod
   def update_queues(cls, source_location, keyname):
     """ Updates a project's queues from the configuration file.
 
@@ -1046,25 +1123,7 @@ class AppScaleTools(object):
     else:
       queues = yaml.safe_load(queue_config)
 
-    app_config = fetch_function('app.yaml', source_location)
-    if app_config is None:
-      app_config = fetch_function('appengine-web.xml', source_location)
-      if app_config is None:
-        raise BadConfigurationException(
-          'Unable to find app.yaml or appengine-web.xml')
-
-      web_app = ElementTree.fromstring(app_config)
-      try:
-        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
-        project_id = web_app.find(tag_with_namespace).text
-      except AttributeError:
-        raise BadConfigurationException(
-          'appengine-web.xml must specify application')
-    else:
-      try:
-        project_id = yaml.safe_load(app_config)['application']
-      except KeyError:
-        raise BadConfigurationException('app.yaml must specify application')
+    project_id = cls.project_id_from_source(source_location)
 
     AppScaleLogger.log('Updating queues')
     login_host = LocalState.get_login_host(keyname)
