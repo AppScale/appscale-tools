@@ -93,9 +93,11 @@ def queues_from_xml(contents):
   for queue_entry in queue_entries:
     if queue_entry.tag == 'total-storage-limit':
       queues['total_storage_limit'] = queue_entry.text
+      continue
 
     if queue_entry.tag != 'queue':
-      continue
+      raise BadConfigurationException(
+        'Unrecognized element in queue.xml: {}'.format(queue_entry.tag))
 
     queue = {}
     for element in queue_entry:
