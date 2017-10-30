@@ -2,6 +2,8 @@
 
 import requests
 import yaml
+from retrying import retry
+
 
 # The default service.
 DEFAULT_SERVICE = 'default'
@@ -21,6 +23,13 @@ class AdminClient(object):
 
   # The Nginx port for the AdminServer.
   PORT = 17441
+
+  # Do 4 attempts with delays: 1s, 2s, 4s if AdminError is raised.
+  RETRY_POLICY = {
+    'stop_max_attempt_number': 4,
+    'wait_exponential_multiplier': 1000,
+    'retry_on_exception': lambda e: isinstance(e, AdminError)
+  }
 
   def __init__(self, host, secret):
     """ Creates a new AdminClient.
@@ -61,6 +70,7 @@ class AdminClient(object):
 
     return content
 
+  @retry(**RETRY_POLICY)
   def create_version(self, project_id, service_id, source_path, runtime,
                      env_variables, threadsafe=None):
     """ Creates or updates a version.
@@ -101,6 +111,7 @@ class AdminClient(object):
 
     return operation_id
 
+  @retry(**RETRY_POLICY)
   def delete_version(self, project_id, service_id, version_id):
     """ Deletes a version.
 
@@ -128,6 +139,7 @@ class AdminClient(object):
 
     return operation_id
 
+  @retry(**RETRY_POLICY)
   def delete_service(self, project_id, service_id):
     """ Deletes a service.
 
@@ -153,6 +165,7 @@ class AdminClient(object):
 
     return operation_id
 
+  @retry(**RETRY_POLICY)
   def delete_project(self, project_id):
     """ Deletes a project.
 
@@ -168,6 +181,7 @@ class AdminClient(object):
     if response.status_code != 200:
       raise AdminError('Error asking Admin Server to delete project!')
 
+  @retry(**RETRY_POLICY)
   def list_projects(self):
     """ Lists projects.
 
@@ -181,6 +195,7 @@ class AdminClient(object):
     response = requests.get(url, headers=headers, verify=False)
     return self.extract_response(response)
 
+  @retry(**RETRY_POLICY)
   def get_operation(self, project, operation_id):
     """ Retrieves the status of an operation.
 
@@ -196,6 +211,7 @@ class AdminClient(object):
     response = requests.get(operation_url, headers=headers, verify=False)
     return self.extract_response(response)
 
+  @retry(**RETRY_POLICY)
   def update_queues(self, project_id, queues):
     """ Updates the the project's queue configuration.
 

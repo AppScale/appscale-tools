@@ -1096,9 +1096,6 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException(
-        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
 
     latest_tools = APPSCALE_VERSION
     try:

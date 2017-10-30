@@ -33,7 +33,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='3.3.1',
+  version='3.4.0',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
@@ -56,11 +56,12 @@ setup(
     'oauth2client==4.0.0',
     'PyYAML',
     'requests[security]>=2.7.0,<2.15',
+    'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
+    'tabulate==0.7.7',
     'termcolor',
-    'wstools==0.4.3',
-    'tabulate==0.7.7'
+    'wstools==0.4.3'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
