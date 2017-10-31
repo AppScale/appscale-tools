@@ -962,6 +962,7 @@ class AppScaleTools(object):
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     env_variables = AppEngineHelper.get_env_vars(file_location)
+    inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
     if app_language in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
@@ -988,7 +989,7 @@ class AppScaleTools(object):
       'Deploying service {} for {}'.format(service_id, app_id))
     operation_id = admin_client.create_version(
       app_id, service_id, remote_file_path, app_language, env_variables,
-      threadsafe)
+      threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
