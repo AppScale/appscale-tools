@@ -18,7 +18,7 @@ from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.node_layout import NodeLayout
 
 from test_ip_layouts import (DISK_ONE, DISK_TWO, FOUR_NODE_CLOUD,
-                             THREE_NODES_TWO_DISKS_CLOUD,
+                             FOUR_NODE_CLUSTER, THREE_NODES_TWO_DISKS_CLOUD,
                              THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD,
                              THREE_NODE_CLOUD, TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD,
                              TWO_NODES_TWO_DISKS_CLOUD)
@@ -67,6 +67,21 @@ class TestNodeLayout(unittest.TestCase):
     options['ips'] = input_yaml
     layout_1 = NodeLayout(options)
     self.assertNotEqual([], layout_1.nodes)
+
+  def test_with_login_override(self):
+    # if the user wants to set a login host, make sure that gets set as the
+    # login node's public IP address instead of what we'd normally put in
+
+    # use a simple deployment so we can get the login node with .head_node()
+    input_yaml_1 = FOUR_NODE_CLUSTER
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    options_1['login_host'] = "www.booscale.com"
+    layout_1 = NodeLayout(options_1)
+    self.assertNotEqual([], layout_1.nodes)
+
+    head_node = layout_1.head_node()
+    self.assertEquals(options_1['login_host'], head_node.public_ip)
 
 
   def test_is_database_replication_valid_with_db_slave(self):

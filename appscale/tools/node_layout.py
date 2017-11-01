@@ -230,6 +230,9 @@ class NodeLayout():
                        "specify an integer or an ip address."\
                        .format(node_set.get('roles')))
 
+        if len(ips_list) - len(set(ips_list)) > 0:
+          self.invalid(self.DUPLICATE_IPS)
+
       # Get the roles.
       role_or_roles = node_set.get('roles')
       if len(ips_list) == 0:
@@ -258,26 +261,28 @@ class NodeLayout():
         for node, disk in zip(nodes, disks):
           node.disk = disk
 
+      # Assign master.
+      if 'master' in roles:
+        self.master = nodes[0]
+
       # Add the defined roles to the nodes.
       for node in nodes:
         for role in roles:
           node.add_role(role)
-
-      for node in nodes:
+          if role == 'login':
+            node.public_ip = self.login_host
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
-
-      # Check cases where a master is needed.
-      if 'master' in roles:
-        self.master = nodes[0]
-      if 'login' in roles and login_found:
-        self.invalid("Only one login is allowed.")
-      elif 'login' in roles:
-        login_found = True
 
       # All nodes that have the same roles will be expanded the same way,
       # so get the updated list of roles from the first node.
       roles = nodes[0].roles
+
+      # Check for login after roles have been expanded.
+      if 'login' in roles and login_found:
+        self.invalid("Only one login is allowed.")
+      elif 'login' in roles:
+        login_found = True
 
       # Update dictionary containing role counts.
       role_count.update({role: role_count.get(role, 0) + len(nodes)
