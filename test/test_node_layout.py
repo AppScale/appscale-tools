@@ -21,7 +21,8 @@ from test_ip_layouts import (DISK_ONE, DISK_TWO, FOUR_NODE_CLOUD,
                              FOUR_NODE_CLUSTER, THREE_NODES_TWO_DISKS_CLOUD,
                              THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD,
                              THREE_NODE_CLOUD, TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD,
-                             TWO_NODES_TWO_DISKS_CLOUD)
+                             TWO_NODES_TWO_DISKS_CLOUD, OPEN_NODE_CLOUD,
+                             LOGIN_NODE_CLOUD)
 
 
 class TestNodeLayout(unittest.TestCase):
@@ -50,29 +51,19 @@ class TestNodeLayout(unittest.TestCase):
     self.default_options = {
       'table' : 'cassandra'
     }
-    self.ip_1 = '192.168.1.1'
-    self.ip_2 = '192.168.1.2'
-    self.ip_3 = '192.168.1.3'
-    self.ip_4 = '192.168.1.4'
-    self.ip_5 = '192.168.1.5'
-    self.ip_6 = '192.168.1.6'
-    self.ip_7 = '192.168.1.7'
-    self.ip_8 = '192.168.1.8'
 
 
   def test_advanced_format_yaml_only(self):
-    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
-                  {'roles': 'open', 'nodes': 1}]
+    input_yaml = OPEN_NODE_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout_1 = NodeLayout(options)
     self.assertNotEqual([], layout_1.nodes)
 
-  def test_with_login_override(self):
+  def test_login_override_master(self):
     # if the user wants to set a login host, make sure that gets set as the
-    # login node's public IP address instead of what we'd normally put in
+    # master node's public IP address instead of what we'd normally put in
 
-    # use a simple deployment so we can get the login node with .head_node()
     input_yaml_1 = FOUR_NODE_CLUSTER
     options_1 = self.default_options.copy()
     options_1['ips'] = input_yaml_1
@@ -82,6 +73,22 @@ class TestNodeLayout(unittest.TestCase):
 
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
+
+  def test_login_override_login_node(self):
+    # if the user wants to set a login host, make sure that gets set as the
+    # login node's public IP address instead of what we'd normally put in
+
+    # use a simple deployment so we can get the login node with .head_node()
+    input_yaml_1 = LOGIN_NODE_CLOUD
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    options_1['login_host'] = "www.booscale.com"
+    layout_1 = NodeLayout(options_1)
+    self.assertNotEqual([], layout_1.nodes)
+
+    login_nodes = layout_1.get_nodes(role='login', is_role=True)
+    self.assertEqual(1, len(login_nodes))
+    self.assertEquals(options_1['login_host'], login_nodes[0].public_ip)
 
 
   def test_is_database_replication_valid_with_db_slave(self):

@@ -27,6 +27,12 @@ ONE_NODE_CLUSTER = [
   }
 ]
 
+OPEN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': 'open', 'nodes': 1}]
+
+LOGIN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1},
+                  {'roles': 'login', 'nodes': 1}]
+
 FOUR_NODE_CLOUD = [{'roles': 'master', 'nodes': 1},
                    {'roles': 'appengine', 'nodes': 1},
                    {'roles': 'database', 'nodes': 1},
