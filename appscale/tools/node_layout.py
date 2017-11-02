@@ -387,6 +387,7 @@ class NodeLayout():
         self.master.add_role('taskqueue_master')
       elif role == 'login':
         self.master.add_role('login')
+        self.master.public_ip = self.login_host
       elif role == 'db_master':
         # Get first database node.
         db_node = self.get_nodes('database', True, nodes)[0]
