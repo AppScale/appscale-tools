@@ -270,7 +270,7 @@ class NodeLayout():
         for role in roles:
           node.add_role(role)
           if role == 'login':
-            node.public_ip = self.login_host
+            node.public_ip = self.login_host or node.public_ip
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
 
@@ -387,7 +387,7 @@ class NodeLayout():
         self.master.add_role('taskqueue_master')
       elif role == 'login':
         self.master.add_role('login')
-        self.master.public_ip = self.login_host
+        self.master.public_ip = self.login_host or self.master.public_ip
       elif role == 'db_master':
         # Get first database node.
         db_node = self.get_nodes('database', True, nodes)[0]
