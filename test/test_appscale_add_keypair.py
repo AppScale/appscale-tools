@@ -25,6 +25,8 @@ from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 
+from test_ip_layouts import (FOUR_NODE_CLUSTER, IP_1, IP_2, IP_3, IP_4)
+
 
 class TestAppScaleAddKeypair(unittest.TestCase):
 
@@ -72,12 +74,7 @@ class TestAppScaleAddKeypair(unittest.TestCase):
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
-    ips_layout = yaml.safe_load("""
-master : public1
-database: public1
-zookeeper: public2
-appengine:  public3
-    """)
+    ips_layout = FOUR_NODE_CLUSTER
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),
@@ -91,11 +88,13 @@ appengine:  public3
   def test_appscale_with_ips_layout_flag_and_success(self):
     # assume that ssh is running on each machine
     fake_socket = flexmock(name='socket')
-    fake_socket.should_receive('connect').with_args(('1.2.3.4', 22)) \
+    fake_socket.should_receive('connect').with_args((IP_1, 22)) \
       .and_return(None)
-    fake_socket.should_receive('connect').with_args(('1.2.3.5', 22)) \
+    fake_socket.should_receive('connect').with_args((IP_2, 22)) \
       .and_return(None)
-    fake_socket.should_receive('connect').with_args(('1.2.3.6', 22)) \
+    fake_socket.should_receive('connect').with_args((IP_3, 22)) \
+      .and_return(None)
+    fake_socket.should_receive('connect').with_args((IP_4, 22)) \
       .and_return(None)
 
     flexmock(socket)
@@ -155,12 +154,7 @@ appengine:  public3
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
-    ips_layout = yaml.safe_load("""
-master : 1.2.3.4
-database: 1.2.3.4
-zookeeper: 1.2.3.5
-appengine: 1.2.3.6
-    """)
+    ips_layout = FOUR_NODE_CLUSTER
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),

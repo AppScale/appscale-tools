@@ -56,11 +56,12 @@ setup(
     'oauth2client==4.0.0',
     'PyYAML',
     'requests[security]>=2.7.0,<2.15',
+    'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
+    'tabulate==0.7.7',
     'termcolor',
-    'wstools==0.4.3',
-    'tabulate==0.7.7'
+    'wstools==0.4.3'
   ],
   classifiers=[
     'Development Status :: 5 - Production/Stable',
