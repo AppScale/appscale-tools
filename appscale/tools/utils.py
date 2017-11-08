@@ -5,6 +5,8 @@ import tarfile
 import zipfile
 from xml.etree import ElementTree
 
+import errno
+
 
 def config_from_tar_gz(file_name, tar_location):
   """ Reads a configuration file from a source tarball.
@@ -120,3 +122,18 @@ def queues_from_xml(contents):
     queues['queue'].append(queue)
 
   return queues
+
+
+def mkdir(dir_path):
+  """ Creates a directory.
+
+  Args:
+    dir_path: The path to create.
+  """
+  try:
+    return os.makedirs(dir_path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(dir_path):
+      pass
+    else:
+      raise

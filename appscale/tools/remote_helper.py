@@ -268,7 +268,7 @@ class RemoteHelper(object):
     try:
       acc.set_parameters(node_layout.to_list(), deployment_params)
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}'.
+      AppScaleLogger.warn(u'Saw Exception while setting AC parameters: {0}'.
                           format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(
         head_node, options.keyname, options.verbose)
@@ -966,7 +966,7 @@ class RemoteHelper(object):
       machines = len(acc.get_all_public_ips()) - 1
       acc.run_terminate(clean)
       terminated_successfully = True
-      log_dump = ""
+      log_dump = u""
       while not acc.is_appscale_terminated():
         # For terminate receive_server_message will return a JSON string that
         # is a list of dicts with keys: ip, status, output
@@ -984,13 +984,13 @@ class RemoteHelper(object):
             AppScaleLogger.warn("Node at {node_ip}: {status}".format(
               node_ip=node.get("ip"), status="Stopping AppScale failed"))
             terminated_successfully = False
-            log_dump += "Node at {node_ip}: {status}\nNode Output:"\
-                        "{output}".format(node_ip=node.get("ip"),
-                                          status="Stopping AppScale failed",
-                                          output=node.get("output"))
-          AppScaleLogger.verbose("Output of node at {node_ip}:\n"
-                                 "{output}".format(node_ip=node.get("ip"),
-                                                   output=node.get("output")),
+            log_dump += u"Node at {node_ip}: {status}\nNode Output:"\
+                        u"{output}".format(node_ip=node.get("ip"),
+                                           status="Stopping AppScale failed",
+                                           output=node.get("output"))
+          AppScaleLogger.verbose(u"Output of node at {node_ip}:\n"
+                                 u"{output}".format(node_ip=node.get("ip"),
+                                                    output=node.get("output")),
                                  is_verbose)
       if not terminated_successfully or machines > 0:
         LocalState.generate_crash_log(AppControllerException, log_dump)
@@ -999,12 +999,12 @@ class RemoteHelper(object):
                                 .format(machines))
       cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose, clean)
     except socket.error as socket_error:
-      AppScaleLogger.warn('Unable to talk to AppController: {}'.
+      AppScaleLogger.warn(u'Unable to talk to AppController: {}'.
                           format(socket_error.message))
       raise
     except Exception as exception:
-      AppScaleLogger.verbose('Saw Exception while stopping AppScale {0}'.
-                              format(str(exception)), is_verbose)
+      AppScaleLogger.verbose(u'Saw Exception while stopping AppScale {0}'.
+                             format(str(exception)), is_verbose)
       raise
 
 
@@ -1104,8 +1104,8 @@ class RemoteHelper(object):
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
-        message = "AppController at {0} crashed because: {1}".format(host,
-          file_handle.read())
+        message = u"AppController at {0} crashed because: {1}".format(
+          host, file_handle.read())
       os.remove(local_crashlog)
     except ShellException:
       message = "AppController at {0} crashed for reasons unknown.".format(host)
