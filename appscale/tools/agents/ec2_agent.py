@@ -708,7 +708,7 @@ class EC2Agent(BaseAgent):
       return mount_point
     except EC2ResponseError as exception:
       AppScaleLogger.log('An error occurred when trying to attach volume {0} '
-        'to instance {1} at /dev/sdc'.format(disk_name, instance_id))
+        'to instance {1} at {2}'.format(disk_name, instance_id, mount_point))
       self.handle_failure('EC2 response error while attaching volume:' +
         exception.error_message)
 
