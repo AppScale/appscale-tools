@@ -700,17 +700,46 @@ class EC2Agent(BaseAgent):
     else:
       mount_point = '/dev/sdc'
 
+    conn = self.open_connection(parameters)
+
     try:
-      conn = self.open_connection(parameters)
       AppScaleLogger.log('Attaching volume {0} to instance {1}, at {2}'.format(
         disk_name, instance_id, mount_point))
       conn.attach_volume(disk_name, instance_id, mount_point)
       return mount_point
     except EC2ResponseError as exception:
+      if self.disk_attached(conn, disk_name, instance_id):
+        return mount_point
       AppScaleLogger.log('An error occurred when trying to attach volume {0} '
         'to instance {1} at {2}'.format(disk_name, instance_id, mount_point))
       self.handle_failure('EC2 response error while attaching volume:' +
         exception.error_message)
+
+
+  def disk_attached(self, conn, disk_name, instance_id):
+    """ Check if disk is attached to instance id.
+
+    Args:
+      conn: A boto connection.
+      disk_name: A str naming the EBS mount to check.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to.
+    Returns:
+      True if the volume is attached to the instance, False if it is not.
+    """
+    try:
+      volumes = conn.get_all_volumes(filters={'attachment.instance-id':
+                                                instance_id})
+      for volume in volumes:
+        if volume.id == disk_name:
+          return True
+
+      return False
+    except EC2ResponseError as exception:
+      AppScaleLogger.log('An error occurred when trying to find '
+                         'attached volumes.')
+      self.handle_failure('EC2 response error while checking attached '
+                          'volumes: {}'.format(exception.error_message))
 
 
   def detach_disk(self, parameters, disk_name, instance_id):
