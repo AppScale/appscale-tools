@@ -61,6 +61,12 @@ class RemoteHelper(object):
   MAX_WAIT_TIME = 15 * 60
 
 
+  # The message that is sent if we try to log into a VM as the root user but
+  # root login isn't enabled yet.
+  LOGIN_AS_UBUNTU_USER = ('Please login as the user "(.*)" rather than the '
+    'user "root"')
+
+
   APPCONTROLLER_CRASHLOG_PATH = "/var/log/appscale/appcontroller_crashlog.txt"
 
 
@@ -431,9 +437,9 @@ class RemoteHelper(object):
 
     # Amazon EC2 rejects a root login request and tells the user to log in as
     # a different user, so do that to enable root login.
-    error_prefix = 'Please login as the user'
-    if error_prefix in output:
-      user = output.split(error_prefix)[1].split()[0][1:-1]
+    match = re.match(cls.LOGIN_AS_UBUNTU_USER, output)
+    if match:
+      user = match.group(1)
       cls.merge_authorized_keys(host, keyname, user, is_verbose)
     else:
       AppScaleLogger.log("Root login already enabled for {}.".format(host))

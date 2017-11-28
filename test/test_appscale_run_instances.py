@@ -456,7 +456,8 @@ group: {1}
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return('Please login as the user "ubuntu"')
+      False, 5, stdin='ls').and_return(
+      'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
@@ -639,7 +640,8 @@ group: {1}
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return('Please login as the user "ubuntu"')
+      False, 5, stdin='ls').and_return(
+      'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
