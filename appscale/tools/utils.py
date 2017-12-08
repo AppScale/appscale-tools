@@ -28,8 +28,11 @@ def config_from_tar_gz(file_name, tar_location):
       if len(candidate.name.split('/')) < len(shortest_path.name.split('/')):
         shortest_path = candidate
 
-    with tar.extractfile(shortest_path) as config_file:
+    config_file = tar.extractfile(shortest_path)
+    try:
       return config_file.read()
+    finally:
+      config_file.close()
 
 
 def config_from_zip(file_name, zip_location):
