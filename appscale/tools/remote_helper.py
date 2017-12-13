@@ -63,8 +63,8 @@ class RemoteHelper(object):
 
   # The message that is sent if we try to log into a VM as the root user but
   # root login isn't enabled yet.
-  LOGIN_AS_UBUNTU_USER = 'Please login as the user "ubuntu" rather than ' + \
-    'the user "root".'
+  LOGIN_AS_UBUNTU_USER = ('Please login as the user "(.*)" rather than the '
+    'user "root"')
 
 
   APPCONTROLLER_CRASHLOG_PATH = "/var/log/appscale/appcontroller_crashlog.txt"
@@ -268,7 +268,7 @@ class RemoteHelper(object):
     try:
       acc.set_parameters(node_layout.to_list(), deployment_params)
     except Exception as exception:
-      AppScaleLogger.warn('Saw Exception while setting AC parameters: {0}'.
+      AppScaleLogger.warn(u'Saw Exception while setting AC parameters: {0}'.
                           format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(
         head_node, options.keyname, options.verbose)
@@ -436,9 +436,11 @@ class RemoteHelper(object):
         raise exception
 
     # Amazon EC2 rejects a root login request and tells the user to log in as
-    # the ubuntu user, so do that to enable root login.
-    if re.search(cls.LOGIN_AS_UBUNTU_USER, output):
-      cls.merge_authorized_keys(host, keyname, 'ubuntu', is_verbose)
+    # a different user, so do that to enable root login.
+    match = re.match(cls.LOGIN_AS_UBUNTU_USER, output)
+    if match:
+      user = match.group(1)
+      cls.merge_authorized_keys(host, keyname, user, is_verbose)
     else:
       AppScaleLogger.log("Root login already enabled for {}.".format(host))
 
@@ -966,7 +968,7 @@ class RemoteHelper(object):
       machines = len(acc.get_all_public_ips()) - 1
       acc.run_terminate(clean)
       terminated_successfully = True
-      log_dump = ""
+      log_dump = u""
       while not acc.is_appscale_terminated():
         # For terminate receive_server_message will return a JSON string that
         # is a list of dicts with keys: ip, status, output
@@ -984,13 +986,13 @@ class RemoteHelper(object):
             AppScaleLogger.warn("Node at {node_ip}: {status}".format(
               node_ip=node.get("ip"), status="Stopping AppScale failed"))
             terminated_successfully = False
-            log_dump += "Node at {node_ip}: {status}\nNode Output:"\
-                        "{output}".format(node_ip=node.get("ip"),
-                                          status="Stopping AppScale failed",
-                                          output=node.get("output"))
-          AppScaleLogger.verbose("Output of node at {node_ip}:\n"
-                                 "{output}".format(node_ip=node.get("ip"),
-                                                   output=node.get("output")),
+            log_dump += u"Node at {node_ip}: {status}\nNode Output:"\
+                        u"{output}".format(node_ip=node.get("ip"),
+                                           status="Stopping AppScale failed",
+                                           output=node.get("output"))
+          AppScaleLogger.verbose(u"Output of node at {node_ip}:\n"
+                                 u"{output}".format(node_ip=node.get("ip"),
+                                                    output=node.get("output")),
                                  is_verbose)
       if not terminated_successfully or machines > 0:
         LocalState.generate_crash_log(AppControllerException, log_dump)
@@ -999,12 +1001,12 @@ class RemoteHelper(object):
                                 .format(machines))
       cls.stop_remote_appcontroller(shadow_host, keyname, is_verbose, clean)
     except socket.error as socket_error:
-      AppScaleLogger.warn('Unable to talk to AppController: {}'.
+      AppScaleLogger.warn(u'Unable to talk to AppController: {}'.
                           format(socket_error.message))
       raise
     except Exception as exception:
-      AppScaleLogger.verbose('Saw Exception while stopping AppScale {0}'.
-                              format(str(exception)), is_verbose)
+      AppScaleLogger.verbose(u'Saw Exception while stopping AppScale {0}'.
+                             format(str(exception)), is_verbose)
       raise
 
 
@@ -1104,8 +1106,8 @@ class RemoteHelper(object):
       cls.scp_remote_to_local(host, keyname, cls.APPCONTROLLER_CRASHLOG_PATH,
         local_crashlog, is_verbose)
       with open(local_crashlog, 'r') as file_handle:
-        message = "AppController at {0} crashed because: {1}".format(host,
-          file_handle.read())
+        message = u"AppController at {0} crashed because: {1}".format(
+          host, file_handle.read())
       os.remove(local_crashlog)
     except ShellException:
       message = "AppController at {0} crashed for reasons unknown.".format(host)

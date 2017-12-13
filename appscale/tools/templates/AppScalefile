@@ -28,12 +28,14 @@ ips_layout:
 #  -
 #    roles: master
 #    nodes: [1 | vm1_private_IP]
+#    disks: disk_1
 #  -
 #    roles: compute
 #    nodes: [1 | vm2_private_IP]
 #  -
 #    roles: database   # Cassandra needs a quorum to answer queries (hence 3)
 #    nodes: [3 | [vm3_private_IP, vm4_private_IP, vm5_private_IP]]
+#    disks: [disk_1, disk_2, disk_3]
 #  -
 #    roles: zookeeper  # Zookeeper needs a majority of peers online (hence 3)
 #    nodes: [3 | [vm6_private_IP, vm7_private_IP, vm8_private_IP]]
@@ -67,7 +69,7 @@ ips_layout:
 #infrastructure : 'ec2'
 
 # AppScale-ready AWS AMI.
-#machine : 'ami-XXXXXX’
+#machine : 'ami-XXXXXX'
 
 # AWS credentials.
 #EC2_ACCESS_KEY: 'YYYY'
@@ -98,7 +100,7 @@ ips_layout:
 #project: 'project-id-here'
 
 # AppScale-ready VM Image.
-#machine : ‘image-name-here’
+#machine : 'image-name-here'
 
 # GCE credentials.
 #client_secrets: '~/client_secrets.json'
@@ -119,24 +121,24 @@ ips_layout:
 
 ############ Microsoft Azure ############
 # To deploy on Azure, uncomment/fill out the following parameters:
-#infrastructure : ‘azure’
+#infrastructure : 'azure'
 
 # AppScale-ready VM image URL.
-#machine : ‘URL-to-image-here’
+#machine : 'URL-to-image-here'
 
 # Azure credentials.
-#azure_subscription_id : ‘JJJJ’
-#azure_app_id : ‘KKKK’
-#azure_tenant_id : ‘XXXX’
-#azure_app_secret_key : ‘YYYY’
+#azure_subscription_id : 'JJJJ'
+#azure_app_id : 'KKKK'
+#azure_tenant_id : 'XXXX'
+#azure_app_secret_key : 'YYYY'
 
 # Instance type of your choice. Default is Standard_A3.
-#instance_type : ‘Standard_A3’
+#instance_type : 'Standard_A3'
 
 # The availability zone that should be used for all virtual machines in your
 # AppScale deployment. If using persistent disks in your AppScale deployment,
 # they should be in the same zone that you specify here.
-#zone : ‘West US’
+#zone : 'West US'
 
 # The unique resource group that Azure resources will be created under for this
 # deployment. This group is auto-generated if not specified.
@@ -168,7 +170,7 @@ ips_layout:
 # and dynamically scale up/down based on the number of application requests.
 #default_min_appservers : 3
 
-# The maximum amount of memory (in MB) an AppServer instance can use. 
+# The maximum amount of memory (in MB) an AppServer instance can use.
 # By default, we limit each AppServer instance to 400MB.
 #default_max_appserver_memory: 400
 

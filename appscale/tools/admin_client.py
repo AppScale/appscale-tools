@@ -72,7 +72,7 @@ class AdminClient(object):
 
   @retry(**RETRY_POLICY)
   def create_version(self, project_id, service_id, source_path, runtime,
-                     env_variables, threadsafe=None):
+                     env_variables, threadsafe=None, inbound_services=None):
     """ Creates or updates a version.
 
     Args:
@@ -82,6 +82,7 @@ class AdminClient(object):
       runtime: A string specifying the version's language.
       env_variables: A dictionary containing environment variables.
       threadsafe: Indicates that the version is threadsafe.
+      inbound_services: A list of strings specifying service types for XMPP.
     Returns:
       A dictionary containing the deployment operation details.
     Raises:
@@ -100,6 +101,9 @@ class AdminClient(object):
 
     if threadsafe is not None:
       body['threadsafe'] = threadsafe
+
+    if inbound_services is not None:
+      body['inboundServices'] = inbound_services
 
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)

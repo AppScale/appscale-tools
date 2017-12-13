@@ -48,20 +48,6 @@ class AppScale():
     'templates/AppScalefile')
 
 
-  # The location of the template AppScalefile that should be used when
-  # users execute 'appscale init cloud'.
-  TEMPLATE_CLOUD_APPSCALEFILE = os.path.join(
-    os.path.dirname(sys.modules['appscale.tools'].__file__),
-    'templates/AppScalefile-cloud')
-
-
-  # The location of the template AppScalefile that should be used when
-  # users execute 'appscale init cluster'.
-  TEMPLATE_CLUSTER_APPSCALEFILE = os.path.join(
-    os.path.dirname(sys.modules['appscale.tools'].__file__),
-    'templates/AppScalefile-cluster')
-
-
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
@@ -84,7 +70,7 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  create-user [--admin]             Creates a new user. If --admin option is specified, 
+  create-user [--admin]             Creates a new user. If --admin option is specified,
                                     it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
@@ -258,17 +244,8 @@ Available commands:
         " in this directory. Please remove it and run 'appscale init'" +
         " again to generate a new AppScalefile.")
 
-    # next, see if we're making a cloud template file or a cluster
-    # template file
-    if environment == 'cloud':
-      template_file = self.TEMPLATE_CLOUD_APPSCALEFILE
-    elif environment == 'cluster':
-      template_file = self.TEMPLATE_CLUSTER_APPSCALEFILE
-    else:
-      template_file = self.TEMPLATE_APPSCALEFILE
-
     # finally, copy the template AppScalefile there
-    shutil.copy(template_file, appscalefile_location)
+    shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
 
 
   def up(self):

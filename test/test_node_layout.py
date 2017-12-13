@@ -17,6 +17,13 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.node_layout import NodeLayout
 
+from test_ip_layouts import (DISK_ONE, DISK_TWO, FOUR_NODE_CLOUD,
+                             FOUR_NODE_CLUSTER, THREE_NODES_TWO_DISKS_CLOUD,
+                             THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD,
+                             THREE_NODE_CLOUD, TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD,
+                             TWO_NODES_TWO_DISKS_CLOUD, OPEN_NODE_CLOUD,
+                             LOGIN_NODE_CLOUD)
+
 
 class TestNodeLayout(unittest.TestCase):
 
@@ -44,106 +51,20 @@ class TestNodeLayout(unittest.TestCase):
     self.default_options = {
       'table' : 'cassandra'
     }
-    self.ip_1 = '192.168.1.1'
-    self.ip_2 = '192.168.1.2'
-    self.ip_3 = '192.168.1.3'
-    self.ip_4 = '192.168.1.4'
-    self.ip_5 = '192.168.1.5'
-    self.ip_6 = '192.168.1.6'
-    self.ip_7 = '192.168.1.7'
-    self.ip_8 = '192.168.1.8'
 
-  def test_simple_layout_yaml_only(self):
-    # Specifying one controller and one server should be ok
-    input_yaml_1 = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
-    options_1 = self.default_options.copy()
-    options_1['ips'] = input_yaml_1
-    layout_1 = NodeLayout(options_1)
-    self.assertNotEqual([], layout_1.nodes)
-
-    # Specifying one controller should be ok
-    input_yaml_2 = {'controller' : self.ip_1}
-    options_2 = self.default_options.copy()
-    options_2['ips'] = input_yaml_2
-    layout_2 = NodeLayout(options_2)
-    self.assertNotEqual([], layout_2.nodes)
-
-    # Specifying the same IP more than once is not ok
-    input_yaml_3 = {'controller' : self.ip_1, 'servers' : [self.ip_1]}
-    options_3 = self.default_options.copy()
-    options_3['ips'] = input_yaml_3
-    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
-
-    # Failing to specify a controller is not ok
-    input_yaml_4 = {'servers' : [self.ip_1, self.ip_2]}
-    options_4 = self.default_options.copy()
-    options_4['ips'] = input_yaml_4
-    self.assertRaises(BadConfigurationException, NodeLayout, options_4)
-
-    # Specifying more than one controller is not ok
-    input_yaml_5 = {'controller' : [self.ip_1, self.ip_2], 'servers' :
-      [self.ip_3]}
-    options_5 = self.default_options.copy()
-    options_5['ips'] = input_yaml_5
-    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
-
-    # Specifying something other than controller and servers in simple
-    # deployments is not ok
-    input_yaml_6 = {'controller' : self.ip_1, 'servers' : [self.ip_2],
-      'boo' : self.ip_3}
-    options_6 = self.default_options.copy()
-    options_6['ips'] = input_yaml_6
-    self.assertRaises(BadConfigurationException, NodeLayout, options_6)
-
-
-  def test_simple_layout_options(self):
-    # Using Euca with no input yaml, and no max or min images is not ok
-    options_1 = self.default_options.copy()
-    options_1['infrastructure'] = 'euca'
-    self.assertRaises(BadConfigurationException, NodeLayout, options_1)
-
-    options_2 = self.default_options.copy()
-    options_2['infrastructure'] = "euca"
-    options_2['max'] = 2
-    self.assertRaises(BadConfigurationException, NodeLayout, options_2)
-
-    options_3 = self.default_options.copy()
-    options_3['infrastructure'] = "euca"
-    options_3['min'] = 2
-    self.assertRaises(BadConfigurationException, NodeLayout, options_3)
-
-    # Using Euca with no input yaml, with max and min images set is ok
-    options_4 = self.default_options.copy()
-    options_4['infrastructure'] = "euca"
-    options_4['min_machines'] = 2
-    options_4['max_machines'] = 2
-    layout_4 = NodeLayout(options_4)
-    self.assertNotEqual([], layout_4.nodes)
-
-    # Using virtualized deployments with no input yaml is not ok
-    options_5 = self.default_options.copy()
-    self.assertRaises(BadConfigurationException, NodeLayout, options_5)
 
   def test_advanced_format_yaml_only(self):
-    input_yaml = {'master' : self.ip_1, 'database' : self.ip_1,
-      'appengine' : self.ip_1, 'open' : self.ip_2}
+    input_yaml = OPEN_NODE_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout_1 = NodeLayout(options)
     self.assertNotEqual([], layout_1.nodes)
 
-  def test_with_login_override(self):
+  def test_login_override_master(self):
     # if the user wants to set a login host, make sure that gets set as the
-    # login node's public IP address instead of what we'd normally put in
+    # master node's public IP address instead of what we'd normally put in
 
-    # use a simple deployment so we can get the login node with .head_node()
-    input_yaml_1 = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml_1 = FOUR_NODE_CLUSTER
     options_1 = self.default_options.copy()
     options_1['ips'] = input_yaml_1
     options_1['login_host'] = "www.booscale.com"
@@ -153,11 +74,25 @@ class TestNodeLayout(unittest.TestCase):
     head_node = layout_1.head_node()
     self.assertEquals(options_1['login_host'], head_node.public_ip)
 
+  def test_login_override_login_node(self):
+    # if the user wants to set a login host, make sure that gets set as the
+    # login node's public IP address instead of what we'd normally put in
+
+    # use a simple deployment so we can get the login node with .head_node()
+    input_yaml_1 = LOGIN_NODE_CLOUD
+    options_1 = self.default_options.copy()
+    options_1['ips'] = input_yaml_1
+    options_1['login_host'] = "www.booscale.com"
+    layout_1 = NodeLayout(options_1)
+    self.assertNotEqual([], layout_1.nodes)
+
+    login_nodes = layout_1.get_nodes(role='login', is_role=True)
+    self.assertEqual(1, len(login_nodes))
+    self.assertEquals(options_1['login_host'], login_nodes[0].public_ip)
+
 
   def test_is_database_replication_valid_with_db_slave(self):
-    input_yaml = {
-      'controller' : self.ip_1
-    }
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     fake_node = flexmock()
@@ -172,51 +107,44 @@ class TestNodeLayout(unittest.TestCase):
   def test_with_wrong_number_of_disks(self):
     # suppose that the user has specified two nodes, but only one EBS / PD disk
     # this should fail.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+
+    input_yaml = THREE_NODES_TWO_DISKS_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one'
-    }
     self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
   def test_with_right_number_of_disks_but_not_unique(self):
     # suppose that the user has specified two nodes, but uses the same name for
     # both disks. This isn't acceptable.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml = TWO_NODES_ONE_NOT_UNIQUE_DISK_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one',
-      self.ip_2 : 'disk_number_one'
-    }
     self.assertRaises(BadConfigurationException, NodeLayout, options)
 
 
-  def test_with_right_number_of_unique_disks(self):
+  def test_with_right_number_of_unique_disks_both_nodes(self):
     # suppose that the user has specified two nodes, and two EBS / PD disks
     # with different names. This is the desired user behavior.
-    input_yaml = {
-      'controller' : self.ip_1,
-      'servers' : [self.ip_2]
-    }
+    input_yaml = TWO_NODES_TWO_DISKS_CLOUD
     options = self.default_options.copy()
     options['ips'] = input_yaml
-    options['disks'] = {
-      self.ip_1 : 'disk_number_one',
-      self.ip_2 : 'disk_number_two'
-    }
     layout = NodeLayout(options)
     self.assertNotEqual([], layout.nodes)
-    self.assertEquals('disk_number_one', layout.head_node().disk)
-    self.assertEquals('disk_number_two', layout.other_nodes()[0].disk)
+    self.assertEquals(DISK_ONE, layout.head_node().disk)
+    self.assertEquals(DISK_TWO, layout.other_nodes()[0].disk)
+
+
+  def test_with_right_number_of_unique_disks_one_node(self):
+    # suppose that the user has specified two nodes, and two EBS / PD disks
+    # with different names. This is the desired user behavior.
+    input_yaml = THREE_NODES_TWO_DISKS_FOR_NODESET_CLOUD
+    options = self.default_options.copy()
+    options['ips'] = input_yaml
+    layout = NodeLayout(options)
+    self.assertNotEqual([], layout.nodes)
+    self.assertEquals(DISK_ONE, layout.other_nodes()[0].disk)
+    self.assertEquals(DISK_TWO, layout.other_nodes()[1].disk)
 
 
   # Disk tests for new ASF.
@@ -294,9 +222,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'database': 'node-4'}
+      ips=FOUR_NODE_CLOUD
     )
 
   reattach_node_info = [{ "public_ip": "0.0.0.0",
@@ -352,9 +278,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-4', 'database': 'node-3'}
+      ips=FOUR_NODE_CLOUD
     )
 
     node_layout = NodeLayout(options)
@@ -415,9 +339,7 @@ class TestNodeLayout(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'database': 'node-3'}
+      ips=THREE_NODE_CLOUD
     )
 
     node_layout = NodeLayout(options)

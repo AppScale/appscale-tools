@@ -33,3 +33,25 @@ class TestAppEngineHelper(unittest.TestCase):
     flexmock(ElementTree).should_receive('parse').and_return(tree)
     self.assertEqual(AppEngineHelper.get_app_id_from_app_config('test_dir'),
                      'guestbook2')
+
+  def test_get_inbound_services(self):
+    flexmock(AppEngineHelper).should_receive('get_config_file_from_dir').\
+      and_return('appengine-web.xml')
+
+    config_contents = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+      <inbound-services>
+        <service>xmpp_message</service>
+        <service>xmpp_presence</service>
+      </inbound-services>
+    </appengine-web-app>
+    """.strip()
+    root = ElementTree.fromstring(config_contents)
+    tree = flexmock(getroot=lambda: root)
+    flexmock(ElementTree).should_receive('parse').and_return(tree)
+
+    expected_services = ['INBOUND_SERVICE_XMPP_MESSAGE',
+                         'INBOUND_SERVICE_XMPP_PRESENCE']
+    self.assertListEqual(AppEngineHelper.get_inbound_services('test_dir'),
+                         expected_services)

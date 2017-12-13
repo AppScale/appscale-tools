@@ -2,7 +2,6 @@
 
 # General-purpose Python library imports
 import datetime
-import errno
 import getpass
 import json
 import os
@@ -464,9 +463,23 @@ class AppScaleTools(object):
         "info instead.")
       all_ips = LocalState.get_all_public_ips(options.keyname)
 
+    # Get information about roles and public IPs
+    # for creating navigation symlinks in gathered logs
+    try:
+      nodes_info = acc.get_role_info()
+    except socket.error:  # Occurs when the AppController has failed.
+      AppScaleLogger.warn("Couldn't get an up-to-date nodes info. "
+                          "Using our locally cached info instead.")
+      nodes_info = LocalState.get_local_nodes_info(options.keyname)
+    nodes_dict = {node['public_ip']: node for node in nodes_info}
+
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
     os.mkdir(location)
+
+    # make dir for private IP navigation links
+    private_ips_dir = os.path.join(location, 'symlinks', 'private-ips')
+    utils.mkdir(private_ips_dir)
 
     # The log paths that we collect logs from.
     log_paths = [
@@ -482,35 +495,38 @@ class AppScaleTools(object):
     ]
 
     failures = False
-    for ip in all_ips:
+    for public_ip in all_ips:
       # Get the logs from each node, and store them in our local directory
-      local_dir = os.path.join(location, ip)
-      os.mkdir(local_dir)
+      local_dir = os.path.join(location, public_ip)
+      utils.mkdir(local_dir)
+      local_link = os.path.join('..', '..', public_ip)
 
-      if ip == login_host:
-        os.symlink(local_dir, os.path.join(location, "load-balancer"))
+      # Create symlinks for easier navigation in gathered logs
+      node_info = nodes_dict.get(public_ip)
+      if node_info:
+        private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
+        os.symlink(local_link, private_ip_dir)
+        for role in node_info['jobs']:
+          role_dir = os.path.join(location, 'symlinks', role)
+          utils.mkdir(role_dir)
+          os.symlink(local_link, os.path.join(role_dir, public_ip))
 
       for log_path in log_paths:
         sub_dir = local_dir
 
         if 'local' in log_path:
           sub_dir = os.path.join(local_dir, log_path['local'])
-          try:
-            os.mkdir(sub_dir)
-          except OSError as os_error:
-            if os_error.errno == errno.EEXIST and os.path.isdir(sub_dir):
-              pass
-            else:
-              raise
+          utils.mkdir(sub_dir)
 
         try:
           RemoteHelper.scp_remote_to_local(
-            ip, options.keyname, log_path['remote'], sub_dir, options.verbose
+            public_ip, options.keyname, log_path['remote'],
+            sub_dir, options.verbose
           )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
-                              format(log_path['remote'], ip))
+                              format(log_path['remote'], public_ip))
           AppScaleLogger.verbose(
             'Encountered exception: {}'.format(str(shell_exception)),
             options.verbose)
@@ -962,6 +978,7 @@ class AppScaleTools(object):
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
     env_variables = AppEngineHelper.get_env_vars(file_location)
+    inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
     if app_language in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
@@ -988,7 +1005,7 @@ class AppScaleTools(object):
       'Deploying service {} for {}'.format(service_id, app_id))
     operation_id = admin_client.create_version(
       app_id, service_id, remote_file_path, app_language, env_variables,
-      threadsafe)
+      threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
