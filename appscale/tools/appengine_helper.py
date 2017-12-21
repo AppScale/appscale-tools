@@ -236,9 +236,11 @@ class AppEngineHelper(object):
     else:
       app_config = ElementTree.parse(app_config_file).getroot()
       if app_config.find('{}version'.format(cls.XML_NAMESPACE)) is not None:
-        module = app_config.find('{}module'.format(cls.XML_NAMESPACE))
-        if module is None:
+        module_element = app_config.find('{}module'.format(cls.XML_NAMESPACE))
+        if module_element is None:
           module = 'default'
+        else:
+          module = module_element.text
 
         message = ('The version element is not supported in appengine-web.xml.'
                    ' Module {} will be overwritten.'.format(module))
