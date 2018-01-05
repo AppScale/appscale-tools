@@ -102,6 +102,7 @@ class AzureAgent(BaseAgent):
   PARAM_APP_ID = 'azure_app_id'
   PARAM_APP_SECRET = 'azure_app_secret_key'
   PARAM_CREDENTIALS = 'credentials'
+  PARAM_DISKS = 'disks'
   PARAM_EXISTING_RG = 'does_exist'
   PARAM_GROUP = 'group'
   PARAM_INSTANCE_IDS = 'instance_ids'
@@ -123,6 +124,7 @@ class AzureAgent(BaseAgent):
     PARAM_APP_SECRET,
     PARAM_APP_ID,
     PARAM_IMAGE_ID,
+    PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
     PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
@@ -507,13 +509,13 @@ class AzureAgent(BaseAgent):
 
       if not vmss.sku.name == instance_type:
         continue
-          
+
       scaleset = compute_client.virtual_machine_scale_sets.get(
         resource_group, vmss.name)
       ss_upgrade_policy = scaleset.upgrade_policy
       ss_location = scaleset.location
       ss_profile = scaleset.virtual_machine_profile
-      ss_overprovision = scaleset.over_provision
+      ss_overprovision = scaleset.overprovision
 
       new_capacity = min(ss_instance_count + count, self.MAX_VMSS_CAPACITY)
       sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
@@ -522,7 +524,7 @@ class AzureAgent(BaseAgent):
                                         upgrade_policy=ss_upgrade_policy,
                                         location=ss_location,
                                         virtual_machine_profile=ss_profile,
-                                        over_provision=ss_overprovision)
+                                        overprovision=ss_overprovision)
       create_update_response = compute_client.virtual_machine_scale_sets.\
         create_or_update(resource_group, vmss.name, scaleset)
       self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
