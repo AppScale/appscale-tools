@@ -17,10 +17,12 @@ from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
+from azure.mgmt.compute.models import DataDisk
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
 from azure.mgmt.compute.models import ImageReference
 from azure.mgmt.compute.models import LinuxConfiguration
+from azure.mgmt.compute.models import ManagedDiskParameters
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
@@ -635,11 +637,6 @@ class AzureAgent(BaseAgent):
       computer_name_prefix=resource_name, admin_username=self.ADMIN_USERNAME,
       linux_configuration=linux_configuration)
 
-    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
-    os_disk = VirtualMachineScaleSetOSDisk(
-      name=resource_name, caching=CachingTypes.read_write,
-      create_option=DiskCreateOptionTypes.from_image,
-      os_type=OperatingSystemTypes.linux, image=image_hd)
 
     subnet_reference = ApiEntityReference(id=subnet.id)
     ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
@@ -651,7 +648,27 @@ class AzureAgent(BaseAgent):
     network_profile = VirtualMachineScaleSetNetworkProfile(
       network_interface_configurations=[network_interface_config])
 
-    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
+    image_hd = None
+    image_ref = None
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    # Publisher images are formatted Publisher:Offer:Sku:Tag
+    if re.search(".*:.*:.*:.*", azure_image_id):
+      AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+      image_ref_params = azure_image_id.split(":")
+      image_ref = ImageReference(publisher=image_ref_params[0],
+                                 offer=image_ref_params[1],
+                                 sku=image_ref_params[2],
+                                 version=image_ref_params[3])
+    else:
+      image_hd = VirtualHardDisk(uri=azure_image_id)
+
+    os_disk = VirtualMachineScaleSetOSDisk(
+        name=resource_name, caching=CachingTypes.read_write,
+        create_option=DiskCreateOptionTypes.from_image,
+        os_type=OperatingSystemTypes.linux, image=image_hd)
+
+    storage_profile = VirtualMachineScaleSetStorageProfile(
+        os_disk=os_disk, image_reference=image_ref)
     virtual_machine_profile = VirtualMachineScaleSetVMProfile(
       os_profile=os_profile, storage_profile=storage_profile,
       network_profile=network_profile)
