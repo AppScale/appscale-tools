@@ -44,7 +44,7 @@ setup(
   install_requires=[
     'adal==0.4.7',
     'azure==2.0.0',
-    'azure-common[autorest]==1.1.4',
+    'azure-common[autorest]==1.1.8',
     'cryptography',
     'argparse',
     'boto',
@@ -55,7 +55,7 @@ setup(
     'msrestazure<0.4.20',
     'oauth2client==4.0.0',
     'PyYAML',
-    'requests[security]>=2.7.0,<2.15',
+    'requests[security]',
     'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
