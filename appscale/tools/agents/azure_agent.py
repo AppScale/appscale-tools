@@ -13,7 +13,7 @@ import threading
 import time
 
 # Azure specific imports
-from azure.common.credentials import ServicePrincipalCredentials
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
@@ -658,7 +658,7 @@ class AzureAgent(BaseAgent):
     upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
-      virtual_machine_profile=virtual_machine_profile, over_provision=False)
+      virtual_machine_profile=virtual_machine_profile, overprovision=False)
 
     create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
       resource_group, scale_set_name, vm_scale_set)
