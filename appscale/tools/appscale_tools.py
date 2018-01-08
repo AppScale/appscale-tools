@@ -1041,6 +1041,8 @@ class AppScaleTools(object):
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+    Returns:
+      A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
