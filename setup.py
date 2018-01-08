@@ -52,7 +52,7 @@ setup(
     'haikunator',
     'httplib2',
     'msrest',
-    'msrestazure',
+    'msrestazure<0.4.20',
     'oauth2client==4.0.0',
     'PyYAML',
     'requests[security]>=2.7.0,<2.15',
