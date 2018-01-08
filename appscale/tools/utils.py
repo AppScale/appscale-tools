@@ -6,7 +6,7 @@ import tarfile
 import zipfile
 from xml.etree import ElementTree
 
-from appscale.tools.custom_exceptions import BadConfigurationException
+from .custom_exceptions import BadConfigurationException
 
 
 def config_from_tar_gz(file_name, tar_location):
