@@ -216,6 +216,33 @@ class AdminClient(object):
     return self.extract_response(response)
 
   @retry(**RETRY_POLICY)
+  def update_cron(self, project_id, cron_config):
+    """ Updates the the project's cron configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      cron_config: A dictionary containing cron configuration details.
+    Raises:
+      AdminError if unable to update cron configuration.
+    """
+    cron_yaml = yaml.safe_dump(cron_config, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    cron_url = 'https://{}:{}/api/cron/update?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(cron_url, headers=headers, data=cron_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
+
+  @retry(**RETRY_POLICY)
   def update_queues(self, project_id, queues):
     """ Updates the the project's queue configuration.
 
