@@ -612,7 +612,7 @@ class LocalState(object):
 
   @classmethod
   def get_node_roles(cls, node):
-    """ Method to get the roles of the specified node and convert 'jobs' key 
+    """ Method to get the roles of the specified node and convert 'jobs' key
     to 'roles' if needed.
     """
     try:
