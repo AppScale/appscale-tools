@@ -72,7 +72,7 @@ class AdminClient(object):
 
   @retry(**RETRY_POLICY)
   def create_version(self, project_id, service_id, source_path, runtime,
-                     env_variables, threadsafe=None):
+                     env_variables, threadsafe=None, inbound_services=None):
     """ Creates or updates a version.
 
     Args:
@@ -82,6 +82,7 @@ class AdminClient(object):
       runtime: A string specifying the version's language.
       env_variables: A dictionary containing environment variables.
       threadsafe: Indicates that the version is threadsafe.
+      inbound_services: A list of strings specifying service types for XMPP.
     Returns:
       A dictionary containing the deployment operation details.
     Raises:
@@ -100,6 +101,9 @@ class AdminClient(object):
 
     if threadsafe is not None:
       body['threadsafe'] = threadsafe
+
+    if inbound_services is not None:
+      body['inboundServices'] = inbound_services
 
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)
@@ -210,6 +214,33 @@ class AdminClient(object):
       prefix=self.prefix, project=project, operation_id=operation_id)
     response = requests.get(operation_url, headers=headers, verify=False)
     return self.extract_response(response)
+
+  @retry(**RETRY_POLICY)
+  def update_cron(self, project_id, cron_config):
+    """ Updates the the project's cron configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      cron_config: A dictionary containing cron configuration details.
+    Raises:
+      AdminError if unable to update cron configuration.
+    """
+    cron_yaml = yaml.safe_dump(cron_config, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    cron_url = 'https://{}:{}/api/cron/update?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(cron_url, headers=headers, data=cron_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
 
   @retry(**RETRY_POLICY)
   def update_queues(self, project_id, queues):

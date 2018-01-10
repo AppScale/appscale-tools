@@ -236,9 +236,11 @@ class AppEngineHelper(object):
     else:
       app_config = ElementTree.parse(app_config_file).getroot()
       if app_config.find('{}version'.format(cls.XML_NAMESPACE)) is not None:
-        module = app_config.find('{}module'.format(cls.XML_NAMESPACE))
-        if module is None:
+        module_element = app_config.find('{}module'.format(cls.XML_NAMESPACE))
+        if module_element is None:
           module = 'default'
+        else:
+          module = module_element.text
 
         message = ('The version element is not supported in appengine-web.xml.'
                    ' Module {} will be overwritten.'.format(module))
@@ -338,6 +340,33 @@ class AppEngineHelper(object):
         return {}
 
       return {var.attrib['name']: var.attrib['value'] for var in env_vars}
+
+  @classmethod
+  def get_inbound_services(cls, app_dir):
+    """ Retrieves inbound services from the version configuration.
+
+    Args:
+      app_dir: The directory containing the version source code.
+    Returns:
+      A list of inbound service types or None.
+    """
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      inbound_services = yaml_contents.get('inbound_services')
+      if inbound_services is None:
+        return None
+    else:
+      app_config = ElementTree.parse(app_config_file).getroot()
+      inbound_services = app_config.find(
+        '{}inbound-services'.format(cls.XML_NAMESPACE))
+      if inbound_services is None:
+        return None
+
+      inbound_services = [service.text for service in inbound_services]
+
+    return ['INBOUND_SERVICE_{}'.format(service).upper()
+            for service in inbound_services]
 
   @classmethod
   def get_config_file_from_dir(cls, app_dir):
