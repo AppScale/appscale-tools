@@ -431,13 +431,17 @@ class AzureAgent(BaseAgent):
                      name=vm_network_name, vhd=virtual_hd, image=image_hd)
     storage_profile = StorageProfile(image_reference=image_ref,
                                      os_disk=os_disk)
-    compute_client.virtual_machines.create_or_update(
-      resource_group, vm_network_name, VirtualMachine(location=zone,
-                                                      os_profile=os_profile,
-                                                      hardware_profile=hardware_profile,
-                                                      network_profile=network_profile,
-                                                      storage_profile=storage_profile))
-
+    try:
+      compute_client.virtual_machines.create_or_update(
+        resource_group, vm_network_name, VirtualMachine(location=zone,
+                                                        os_profile=os_profile,
+                                                        hardware_profile=hardware_profile,
+                                                        network_profile=network_profile,
+                                                        storage_profile=storage_profile))
+    except CloudError as error:
+      raise AgentRuntimeException("There was a problem creating the "
+                                  "Virtual Machine due to the error: {0}"
+                                  .format(error.message))
     # Sleep until an IP address gets associated with the VM.
     while True:
       public_ip_address = network_client.public_ip_addresses.get(resource_group,
@@ -520,8 +524,13 @@ class AzureAgent(BaseAgent):
                                         location=ss_location,
                                         virtual_machine_profile=ss_profile,
                                         over_provision=ss_overprovision)
-      create_update_response = compute_client.virtual_machine_scale_sets.\
-        create_or_update(resource_group, vmss.name, scaleset)
+      try:
+        create_update_response = compute_client.virtual_machine_scale_sets.\
+          create_or_update(resource_group, vmss.name, scaleset)
+      except CloudError as error:
+        raise AgentRuntimeException("There was a problem while updating the "
+                                    "Scale Set {0} due to the error: {1}"
+                                    .format(vmss.name, error.message))
       self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
 
       newly_added = new_capacity - ss_instance_count
@@ -656,9 +665,13 @@ class AzureAgent(BaseAgent):
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
       virtual_machine_profile=virtual_machine_profile, over_provision=False)
-
-    create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
-      resource_group, scale_set_name, vm_scale_set)
+    try:
+      create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
+        resource_group, scale_set_name, vm_scale_set)
+    except CloudError as error:
+      raise AgentRuntimeException("There was a problem while creating the "
+                                  "Scale Set {0} due to the error: {1}"
+                                  .format(scale_set_name, error.message))
     self.wait_for_ss_update(count, create_update_response, scale_set_name)
 
   def wait_for_ss_update(self, count, create_update_response, scale_set_name):
