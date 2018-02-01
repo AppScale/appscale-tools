@@ -811,9 +811,9 @@ class AzureAgent(BaseAgent):
       AppScaleLogger.verbose("Virtual Machine Scale Set {} has been successfully "
                              "deleted.".format(vmss_name), verbose)
     except CloudError as error:
-      raise AgentConfigurationException("There was a problem while deleting the "
-                                        "Scale Set {0} due to the error: {1}"
-                                        .format(vmss_name, error.message))
+      raise AgentRuntimeException("There was a problem while deleting the "
+                                  "Scale Set {0} due to the error: {1}"
+                                  .format(vmss_name, error.message))
 
   def delete_vmss_instance(self, compute_client, parameters, vmss_name, instance_id):
     """ Deletes the specified virtual machine instance from the given Scale Set.
@@ -826,16 +826,44 @@ class AzureAgent(BaseAgent):
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
-    AppScaleLogger.verbose("Deleting Virtual Machine Instance {0} from Scale "
-      "Set {1} ...".format(instance_id, vmss_name), verbose)
-    result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
-                                                                 vmss_name,
-                                                                 instance_id)
-    resource_name = 'Virtual Machine Instance ' + instance_id
-    self.sleep_until_delete_operation_done(result, resource_name,
-                                           self.MAX_VM_UPDATE_TIME, verbose)
-    AppScaleLogger.verbose("Virtual Machine Instance {0} from Scale Set {1} "
-      "has been successfully deleted".format(instance_id, vmss_name), verbose)
+
+    vm_info = "Virtual Machine {0} from Scale Set {1}".format(instance_id,
+                                                              vmss_name)
+
+    # Double check if we succeeded deleting the instance.
+    vm_list = compute_client.virtual_machine_scale_set_vms.list(
+        resource_group, vmss_name)
+    already_deleted = True
+    for vm in vm_list:
+      if instance_id == vm.name:
+        already_deleted = False
+        break
+    if already_deleted:
+      AppScaleLogger.verbose("{0} has already been deleted".format(vm_info),
+                             verbose)
+      return
+    AppScaleLogger.verbose("Deleting {0} ...".format(vm_info), verbose)
+    try:
+      result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
+                                                                   vmss_name,
+                                                                   instance_id)
+      resource_name = 'Virtual Machine Instance ' + instance_id
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_VM_UPDATE_TIME, verbose)
+    except CloudError as error:
+      raise AgentRuntimeException("There was a problem while deleting {0} "
+          " due to the error: {1}".format(vm_info, error.message))
+
+    # Double check if we succeeded deleting the instance.
+    vm_list = compute_client.virtual_machine_scale_set_vms.list(
+        resource_group, vmss_name)
+    for vm in vm_list:
+      if instance_id == vm.name:
+        raise AgentRuntimeException("{0} has not been successfully "
+                                    "deleted".format(vm_info))
+
+    AppScaleLogger.verbose("{0} has been successfully deleted".format(
+        instance_id, vmss_name), verbose)
 
   def delete_virtual_machine(self, compute_client, parameters, vm_name):
     """ Deletes the virtual machine from the resource_group specified.
@@ -848,10 +876,23 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
-    result = compute_client.virtual_machines.delete(resource_group, vm_name)
-    resource_name = 'Virtual Machine' + ':' + vm_name
-    self.sleep_until_delete_operation_done(result, resource_name,
-                                           self.MAX_VM_UPDATE_TIME, verbose)
+    try:
+      result = compute_client.virtual_machines.delete(resource_group, vm_name)
+      resource_name = 'Virtual Machine' + ':' + vm_name
+      self.sleep_until_delete_operation_done(result, resource_name,
+                                             self.MAX_VM_UPDATE_TIME, verbose)
+    except CloudError as error:
+      raise AgentRuntimeException("There was a problem while deleting the "
+                                  "Virtual Machine {0} due to the error: {1}"
+                                  .format(vm_name, error.message))
+
+    # Double check if we succeeded deleting the instance.
+    virtual_machines = compute_client.virtual_machines.list(resource_group)
+    for vm in virtual_machines:
+      if vm_name == vm.name:
+        raise AgentRuntimeException("Virtual Machine {0} has not "
+                                    "been successfully deleted".format(vm_name))
+
     AppScaleLogger.verbose("Virtual Machine {} has been successfully deleted.".
                            format(vm_name), verbose)
 
