@@ -830,7 +830,7 @@ class AzureAgent(BaseAgent):
     vm_info = "Virtual Machine {0} from Scale Set {1}".format(instance_id,
                                                               vmss_name)
 
-    # Double check if we succeeded deleting the instance.
+    # Check if we succeeded deleting the instance before but timed out.
     vm_list = compute_client.virtual_machine_scale_set_vms.list(
         resource_group, vmss_name)
     already_deleted = True
@@ -842,6 +842,7 @@ class AzureAgent(BaseAgent):
       AppScaleLogger.verbose("{0} has already been deleted".format(vm_info),
                              verbose)
       return
+
     AppScaleLogger.verbose("Deleting {0} ...".format(vm_info), verbose)
     try:
       result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
@@ -875,6 +876,20 @@ class AzureAgent(BaseAgent):
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
+
+    # Check if we succeeded deleting the instance before but timed out.
+    virtual_machines = compute_client.virtual_machines.list(resource_group)
+
+    already_deleted = True
+    for vm in virtual_machines:
+      if vm_name == vm.name:
+        already_deleted = False
+        break
+    if already_deleted:
+      AppScaleLogger.verbose("Virtual Machine {0} has already been "
+                             "deleted".format(vm_name), verbose)
+      return
+
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
     try:
       result = compute_client.virtual_machines.delete(resource_group, vm_name)
