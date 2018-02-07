@@ -565,6 +565,7 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
     login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_cron(options.file, options.keyname)
     AppScaleTools.update_queues(options.file, options.keyname)
     return login_host, http_port
 
