@@ -733,7 +733,8 @@ class Node():
       'private_ip': self.private_ip,
       'instance_id': self.instance_id,
       'jobs': self.roles,
-      'disk': self.disk
+      'disk': self.disk,
+      'instance_type' : self.instance_type
     }
 
 
@@ -756,3 +757,4 @@ class Node():
     self.instance_id = node_dict.get('instance_id')
     self.roles = node_dict.get('jobs')
     self.disk = node_dict.get('disk')
+    self.instance_type = node_dict.get('instance_type')
