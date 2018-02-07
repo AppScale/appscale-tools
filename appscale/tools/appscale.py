@@ -70,7 +70,7 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  create-user [--admin]             Creates a new user. If --admin option is specified, 
+  create-user [--admin]             Creates a new user. If --admin option is specified,
                                     it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
@@ -565,6 +565,7 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
     login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_cron(options.file, options.keyname)
     AppScaleTools.update_queues(options.file, options.keyname)
     return login_host, http_port
 

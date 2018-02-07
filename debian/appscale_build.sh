@@ -23,6 +23,11 @@ case ${DIST} in
         pip install -U pip
         hash -r
         ;;
+    jessie)
+        # The system's pip does not allow updating itself.
+        easy_install pip
+        hash -r
+        ;;
 esac
 
 # The syntax used in the install_requires field for some dependencies requires

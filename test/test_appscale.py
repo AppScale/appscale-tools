@@ -498,6 +498,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('upload_app').and_return(
       (fake_host, fake_port))
+    AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
@@ -566,6 +567,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('upload_app').and_return(
       (fake_host, fake_port))
+    AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
