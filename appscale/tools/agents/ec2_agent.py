@@ -4,6 +4,7 @@ Helper library for EC2 interaction
 import boto
 import boto.ec2
 import datetime
+import glob
 import os
 import time
 
@@ -394,7 +395,7 @@ class EC2Agent(BaseAgent):
 
     Args:
       count: Number of VMs to spawned.
-      parameters: A dictionary of parameters. This must contain 
+      parameters: A dictionary of parameters. This must contain
         'keyname', 'group', 'image_id' and 'instance_type' parameters.
       security_configured: Uses this boolean value as an heuristic to
         detect brand new AppScale deployments.
@@ -586,7 +587,7 @@ class EC2Agent(BaseAgent):
   def wait_for_status_change(self, parameters, conn, state_requested, \
                               max_wait_time=60,poll_interval=10):
     """ After we have sent a signal to the cloud infrastructure to change the state
-      of the instances (unsually from runnning to either stoppped or 
+      of the instances (unsually from runnning to either stoppped or
       terminated), wait for the status to change.  If all the instances change
       successfully, return True, if not return False.
 
@@ -676,6 +677,69 @@ class EC2Agent(BaseAgent):
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log('EBS volume {0} does not exist'.format(disk_name))
       return False
+
+
+  def attach_disk(self, parameters, disk_name, instance_id):
+    """ Attaches the Elastic Block Store volume specified in 'disk_name' to this
+    virtual machine.
+
+    Args:
+      parameters: A dict with keys for each parameter needed to connect to AWS.
+      disk_name: A str naming the EBS mount to attach to this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to. In practice, callers add disks to their own instances.
+    Returns:
+      The location on the local filesystem where the disk has been attached.
+    """
+    # In Amazon Web Services, if we're running on a Xen Paravirtualized machine,
+    # then devices get added starting at /dev/xvda. If not, they get added at
+    # /dev/sda. Find out which one we're on so that we know where the disk will
+    # get attached to.
+    if glob.glob("/dev/xvd*"):
+      mount_point = '/dev/xvdc'
+    else:
+      mount_point = '/dev/sdc'
+
+    conn = self.open_connection(parameters)
+
+    try:
+      AppScaleLogger.log('Attaching volume {0} to instance {1}, at {2}'.format(
+        disk_name, instance_id, mount_point))
+      conn.attach_volume(disk_name, instance_id, mount_point)
+      return mount_point
+    except EC2ResponseError as exception:
+      if self.disk_attached(conn, disk_name, instance_id):
+        return mount_point
+      AppScaleLogger.log('An error occurred when trying to attach volume {0} '
+        'to instance {1} at {2}'.format(disk_name, instance_id, mount_point))
+      self.handle_failure('EC2 response error while attaching volume:' +
+        exception.error_message)
+
+
+  def disk_attached(self, conn, disk_name, instance_id):
+    """ Check if disk is attached to instance id.
+
+    Args:
+      conn: A boto connection.
+      disk_name: A str naming the EBS mount to check.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to.
+    Returns:
+      True if the volume is attached to the instance, False if it is not.
+    """
+    try:
+      volumes = conn.get_all_volumes(filters={'attachment.instance-id':
+                                                instance_id})
+      for volume in volumes:
+        if volume.id == disk_name:
+          return True
+
+      return False
+    except EC2ResponseError as exception:
+      AppScaleLogger.log('An error occurred when trying to find '
+                         'attached volumes.')
+      self.handle_failure('EC2 response error while checking attached '
+                          'volumes: {}'.format(exception.error_message))
 
 
   def detach_disk(self, parameters, disk_name, instance_id):
