@@ -13,7 +13,6 @@ import threading
 import time
 
 # Azure specific imports
-from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
@@ -44,7 +43,6 @@ from azure.mgmt.compute.models import VirtualMachineScaleSetOSDisk
 from azure.mgmt.compute.models import VirtualMachineScaleSetOSProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetStorageProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetVMProfile
-from azure.mgmt.compute.models import VirtualMachineSizeTypes
 
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.network.models import AddressSpace
@@ -62,6 +60,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
 from azure.mgmt.storage.models import Sku as StorageSku
 
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
 
@@ -244,6 +243,111 @@ class AzureAgent(BaseAgent):
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_client.providers.register(self.MICROSOFT_COMPUTE_RESOURCE)
     resource_client.providers.register(self.MICROSOFT_NETWORK_RESOURCE)
+
+  def attach_disk(self, parameters, disk_name, instance_id):
+    """ Attaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud.
+      disk_name: A str naming the managed disk to attach to this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to.
+    Returns:
+      A str indicating a symlink to where the persistent disk has been
+      attached to.
+    Raises:
+      AgentRuntimeException if the disk cannot be attached due to a
+      CloudError or does not have a successful provisioning state.
+    """
+    credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    virtual_machine = compute_client.virtual_machines.get(resource_group,
+                                                          instance_id)
+    storage_profile = virtual_machine.storage_profile
+
+    # pick the LUN (this must be unique)
+    existing_luns = []
+    for disk in storage_profile.data_disks:
+      # While we're looping check if disk is already attached and return the
+      # symlink if it is.
+      if disk.name == disk_name:
+        return '/dev/disk/azure/scsi1/lun{}'.format(disk.lun)
+      existing_luns.append(disk.lun)
+
+    # Choose 500 arbitrarily to give up on, why would someone have 500 disks.
+    the_chosen_lun = 0
+    for lun in range(500):
+      if lun in existing_luns:
+        continue
+      the_chosen_lun = lun
+      break
+
+    disk = compute_client.disks.get(resource_group, disk_name)
+    managed_disk_params = ManagedDiskParameters(id=disk.id)
+    data_disk = DataDisk(lun=the_chosen_lun, name=disk.name,
+                         create_option=DiskCreateOptionTypes.attach,
+                         managed_disk=managed_disk_params)
+    storage_profile.data_disks.append(data_disk)
+    disk_response = compute_client.virtual_machines.create_or_update(
+        resource_group, instance_id, virtual_machine)
+    try:
+      disk_response.wait(timeout=self.MAX_VM_UPDATE_TIME)
+      result = disk_response.result()
+      if result.provisioning_state == 'Succeeded':
+        return '/dev/disk/azure/scsi1/lun{}'.format(the_chosen_lun)
+      else:
+        raise AgentRuntimeException("Unable to attach disk {0} to "
+                                    "VM {1}".format(disk_name, instance_id))
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to attach disk {0} to "
+          "VM {1}: {2}".format(disk_name, instance_id, error.message))
+
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud.
+      disk_name: A str naming the managed disk to detach from this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    Returns:
+      True if the disk was detached, and False otherwise.
+    """
+    credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    virtual_machine = compute_client.virtual_machines.get(resource_group,
+                                                          instance_id)
+    storage_profile = virtual_machine.storage_profile
+    disks_to_keep = []
+
+    for disk in storage_profile.data_disks:
+      if disk.name != disk_name:
+        disks_to_keep.append(disk)
+      else:
+        return True
+
+    storage_profile.data_disks = disks_to_keep
+    disk_response = compute_client.virtual_machines.create_or_update(
+        resource_group, instance_id, virtual_machine)
+    try:
+      disk_response.wait(timeout=self.MAX_VM_UPDATE_TIME)
+      result = disk_response.result()
+      if result.provisioning_state == 'Succeeded':
+        return True
+      else:
+        AppScaleLogger.log("Unable to detach Disk {} from VM {}".format(
+            disk_name, instance_id))
+        return False
+    except CloudError as error:
+      AppScaleLogger.log("Unable to detach Disk {} from VM {}: {}".format(
+          disk_name, instance_id, error.message))
+      return False
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Microsoft Azure to see which instances are currently
