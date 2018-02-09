@@ -436,8 +436,13 @@ class AzureAgent(BaseAgent):
 
     active_public_ips, active_private_ips, active_instances = \
       self.describe_instances(parameters)
+    using_disks = parameters.has_key(self.PARAM_DISKS)
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    if using_disks and not re.search(".*:.*:.*:.*", azure_image_id):
+      raise AgentConfigurationException("Managed Disks require use of a "
+                                        "publisher image.")
 
-    if public_ip_needed:
+    if public_ip_needed or using_disks:
       lb_vms_threads = []
       for _ in range(count):
         thread = threading.Thread(target=self.setup_virtual_machine_creation,

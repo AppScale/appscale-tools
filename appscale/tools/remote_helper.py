@@ -153,27 +153,28 @@ class RemoteHelper(object):
 
     agent.configure_instance_security(params)
 
-    load_balancer_roles = {}
-    instance_type_roles = {}
+    instance_type_map = {'public_or_disks': {}, 'private': {}}
 
-    for node in node_layout.get_nodes('load_balancer', True):
-      load_balancer_roles.setdefault(node.instance_type, []).append(node)
-
-    for node in node_layout.get_nodes('load_balancer', False):
-      instance_type = instance_type_roles
-      instance_type.setdefault(node.instance_type, []).append(node)
+    for node in node_layout.nodes:
+      if node.is_role('load_balancer') or node.disk:
+        instance_type_map['public_or_disks'].setdefault(
+            node.instance_type, []).append(node)
+        continue
+      instance_type_map['private'].setdefault(
+          node.instance_type, []).append(node)
 
     spawned_instance_ids = []
 
-    for instance_type, load_balancer_nodes in load_balancer_roles.items():
+    for instance_type, load_balancer_nodes in \
+        instance_type_map['public_or_disks'].items():
       # Copy parameters so we can modify the instance type.
-      instance_type_params = params.copy()
-      instance_type_params['instance_type'] = instance_type
+      params['instance_type'] = instance_type
+      params['disks'] = any([node.disk for node in load_balancer_nodes])
 
       try:
         instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
-          agent, instance_type_params, count=len(load_balancer_nodes),
-          load_balancer=True)
+            options, agent, params, count=len(load_balancer_nodes),
+            load_balancer=True)
       except (AgentRuntimeException, BotoServerError):
         AppScaleLogger.warn("AppScale was unable to start the requested number "
                             "of instances, attempting to terminate those that "
@@ -207,14 +208,16 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    for instance_type, nodes in instance_type_roles.items():
+    for instance_type, nodes in instance_type_map['private'].items():
+      if len(nodes) <= 0:
+        break
       # Copy parameters so we can modify the instance type.
-      instance_type_params = params.copy()
-      instance_type_params['instance_type'] = instance_type
+      params['instance_type'] = instance_type
+      params['disks'] = False # Nodes with disks were already filtered out.
 
       try:
-        _instance_ids, _public_ips, _private_ips = cls.spawn_nodes_in_cloud(
-          agent, instance_type_params, count=len(nodes))
+        _instance_ids, _public_ips, _private_ips = \
+          cls.spawn_nodes_in_cloud(options, agent, params, count=len(nodes))
       except (AgentRuntimeException, BotoServerError):
         AppScaleLogger.warn("AppScale was unable to start the requested number "
                             "of instances, attempting to terminate those that "
