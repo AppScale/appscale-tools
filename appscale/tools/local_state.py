@@ -16,6 +16,8 @@ import tempfile
 import time
 import uuid
 import yaml
+from random import choice
+from string import ascii_lowercase, digits
 
 
 # AppScale-specific imports
@@ -29,7 +31,7 @@ from custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "3.3.1"
+APPSCALE_VERSION = "3.4.0"
 
 
 class LocalState(object):
@@ -203,13 +205,13 @@ class LocalState(object):
       "login": node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
-      "appengine": str(options.appengine),
+      "default_min_appservers": str(options.default_min_appservers),
       "autoscale": str(options.autoscale),
       "clear_datastore": str(False),
       "user_commands": json.dumps(options.user_commands),
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
-      "max_memory": str(options.max_memory)
+      "default_max_appserver_memory": str(options.default_max_appserver_memory)
     }
     creds.update(additional_creds)
 
@@ -221,8 +223,8 @@ class LocalState(object):
         'zone': options.zone,
         'group': options.group,
         'use_spot_instances': str(options.use_spot_instances),
-        'min_images': str(node_layout.min_vms),
-        'max_images': str(node_layout.max_vms),
+        'min_machines': str(node_layout.min_machines),
+        'max_machines': str(node_layout.max_machines),
       }
 
       if options.infrastructure == "gce":
@@ -1330,3 +1332,13 @@ class LocalState(object):
       extras[relative_path] = absolute_path
 
     return extras
+
+  @classmethod
+  def generate_xmpp_username(cls, username, length=6, chars=ascii_lowercase + digits):
+    AppScaleLogger.log("Generating a new XMPP username...")
+    character_choices = []
+    while len(character_choices) < length:
+        character_choices.append(choice(chars))
+    generated_username = ''.join(character_choices)
+
+    return username + '_' + generated_username

@@ -99,7 +99,7 @@ class GCEAgent(BaseAgent):
 
   PARAM_REGION = 'region'
 
-  
+
   PARAM_SECRETS = 'client_secrets'
 
 
@@ -163,8 +163,9 @@ class GCEAgent(BaseAgent):
   DISALLOWED_INSTANCE_TYPES = ["n1-highcpu-2", "n1-highcpu-2-d", "f1-micro",
     "g1-small"]
 
-  # The oauth2 storage location on the machine.
+  # The credentials files location on the machine.
   OAUTH2_STORAGE_LOCATION = '/etc/appscale/oauth2.dat'
+  CLIENT_SECRETS_LOCATION = '/etc/appscale/client_secrets.json'
 
 
   def assert_credentials_are_valid(self, parameters):
@@ -211,11 +212,11 @@ class GCEAgent(BaseAgent):
       AgentRuntimeException: If the named network or firewall already exist in
       GCE.
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale_agent = parameters.get('autoscale_agent', False)
 
     # While creating instances during autoscaling, we do not need to create a
     # new keypair or a network. We just make use of the existing one.
-    if is_autoscale in ['True', True]:
+    if is_autoscale_agent:
       return
 
     AppScaleLogger.log("Verifying that SSH key exists locally")
@@ -343,7 +344,7 @@ class GCEAgent(BaseAgent):
     except errors.HttpError:
       return False
 
-  
+
   def create_ssh_key(self, parameters, all_ssh_keys):
     """ Creates a new SSH key in Google Compute Engine with the contents of
     our newly generated public key.
@@ -567,9 +568,11 @@ class GCEAgent(BaseAgent):
       params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     if args.get(self.PARAM_SECRETS):
-      params[self.PARAM_SECRETS] = args.get(self.PARAM_SECRETS)
+      params[self.PARAM_SECRETS] = os.path.expanduser(
+        args.get(self.PARAM_SECRETS))
     elif args.get(self.PARAM_STORAGE):
-      params[self.PARAM_STORAGE] = args.get(self.PARAM_STORAGE)
+      params[self.PARAM_STORAGE] = os.path.expanduser(
+        args.get(self.PARAM_STORAGE))
 
     params[self.PARAM_VERBOSE] = args.get('verbose', False)
     self.assert_credentials_are_valid(params)
@@ -606,7 +609,7 @@ class GCEAgent(BaseAgent):
     return params
 
 
-  def assert_required_parameters(self, parameters, _):
+  def assert_required_parameters(self, parameters, operation):
     """ Checks the given parameters to make sure that they can be used to
     interact with Google Compute Engine.
 
@@ -621,7 +624,7 @@ class GCEAgent(BaseAgent):
         present, or if the client_secrets parameter refers to a file that is not
         present on the local filesystem.
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale_agent = parameters.get('autoscale_agent', False)
 
     # Make sure the user has set each parameter.
     for param in self.REQUIRED_CREDENTIALS:
@@ -629,32 +632,26 @@ class GCEAgent(BaseAgent):
         raise AgentConfigurationException('The required parameter, {0}, was' \
           ' not specified.'.format(param))
 
-    # For validating instances being created during autoscaling, check that the
-    # oauth2 storage location is valid.
-    if is_autoscale in ['True', True]:
-      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
-        raise AgentConfigurationException('Could not find your signed OAuth2' \
-          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
-      return
-
-    # Next, make sure that either the client_secrets file or the oauth2
-    # credentials file exists.
-    credentials_file = parameters.get(self.PARAM_SECRETS) or parameters.get(
-      self.PARAM_STORAGE)
-    if not os.path.exists(os.path.expanduser(credentials_file)):
-      raise AgentConfigurationException('Could not find your credentials ' \
-        'file at {0}'.format(credentials_file))
-
-    # TODO: Remove this warning once service accounts have been fully tested.
-    secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
-    secrets_type = GCEAgent.get_secrets_type(secrets_location)
-    if (secrets_type == CredentialTypes.SERVICE and
-        not parameters[self.PARAM_TEST]):
-      response = raw_input('It looks like you are using service account '
-        'credentials, which are not currently supported for cloud '
-        'autoscaling.\nWould you like to continue? (y/N)')
-      if response.lower() not in ['y', 'yes']:
-        raise AgentConfigurationException('User cancelled starting AppScale.')
+    # Determine if credentials file exists
+    if is_autoscale_agent:
+      # AppScale VM holds creds files in /etc/appscale/ directory
+      has_oauth2_storage = os.path.exists(self.OAUTH2_STORAGE_LOCATION)
+      has_client_secrets = os.path.exists(self.CLIENT_SECRETS_LOCATION)
+      if not has_oauth2_storage and not has_client_secrets:
+        raise AgentConfigurationException(
+          'Could not find neither OAuth2 file '
+          'at {} nor client secrets file at {}'
+          .format(self.OAUTH2_STORAGE_LOCATION, self.CLIENT_SECRETS_LOCATION)
+        )
+    else:
+      # AppScale tools has creds file in ~/.appscale/ directory
+      creds_location = (
+        parameters.get(self.PARAM_SECRETS)
+         or parameters.get(self.PARAM_STORAGE)
+      )
+      if not os.path.exists(creds_location):
+        raise AgentConfigurationException(
+          'Could not find credentials file at {}'.format(creds_location))
 
 
   def describe_instances(self, parameters, pending=False):
@@ -706,8 +703,8 @@ class GCEAgent(BaseAgent):
     Returns:
       A str, a disk name associated with the root disk of AppScale on GCE.
     """
-    return '{group}-{time}'.format(group=parameters[self.PARAM_GROUP],
-                                   time=int(time.time() * 1000))[:60]
+    return '{group}-{uuid}'.format(group=parameters[self.PARAM_GROUP],
+                                   uuid=uuid.uuid4().hex)[:60]
 
   def create_scratch_disk(self, parameters):
     """ Creates a disk from a given machine image.
@@ -726,7 +723,7 @@ class GCEAgent(BaseAgent):
     http = httplib2.Http()
     auth_http = credentials.authorize(http)
     disk_name = self.generate_disk_name(parameters)
-    project_url = '{0}{1}'.format(self.GCE_URL, 
+    project_url = '{0}{1}'.format(self.GCE_URL,
       parameters[self.PARAM_PROJECT])
     source_image_url = '{0}{1}/global/images/{2}'.format(self.GCE_URL,
       parameters[self.PARAM_PROJECT], parameters[self.PARAM_IMAGE_ID])
@@ -734,7 +731,7 @@ class GCEAgent(BaseAgent):
       project=parameters[self.PARAM_PROJECT],
       zone=parameters[self.PARAM_ZONE],
       body={
-        'name':disk_name 
+        'name':disk_name
       },
       sourceImage=source_image_url
     )
@@ -823,7 +820,7 @@ class GCEAgent(BaseAgent):
       AppScaleLogger.verbose(str(response), parameters[self.PARAM_VERBOSE])
       self.ensure_operation_succeeds(gce_service, auth_http, response,
         parameters[self.PARAM_PROJECT])
-    
+
     instance_ids = []
     public_ips = []
     private_ips = []
@@ -1148,34 +1145,46 @@ class GCEAgent(BaseAgent):
     Raises:
       AppScaleException if the user wants to abort.
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale_agent = parameters.get('autoscale_agent', False)
 
-    # Perform OAuth 2.0 authorization.
-    flow = None
-    if self.PARAM_SECRETS in parameters:
-      secrets_location = os.path.expanduser(parameters[self.PARAM_SECRETS])
-      secrets_type = GCEAgent.get_secrets_type(secrets_location)
+    # Determine paths to credential files
+    if is_autoscale_agent:
+      client_secrets_path = self.CLIENT_SECRETS_LOCATION
+      oauth2_storage_path = self.OAUTH2_STORAGE_LOCATION
+    else:
+      # Determine client secrets path
+      client_secrets_path = LocalState.get_client_secrets_location(
+        parameters[self.PARAM_KEYNAME])
+      if not os.path.exists(client_secrets_path):
+        client_secrets_path = parameters.get(self.PARAM_SECRETS, '')
+      # Determine oauth2 storage
+      oauth2_storage_path = parameters.get(self.PARAM_STORAGE)
+      if not oauth2_storage_path or not os.path.exists(oauth2_storage_path):
+        oauth2_storage_path = LocalState.get_oauth2_storage_location(
+          parameters[self.PARAM_KEYNAME])
+
+    if os.path.exists(client_secrets_path):
+      # Attempt to perform authorization using Service account
+      secrets_type = GCEAgent.get_secrets_type(client_secrets_path)
       if secrets_type == CredentialTypes.SERVICE:
         scopes = [GCPScopes.COMPUTE]
-        credentials = ServiceAccountCredentials\
-          .from_json_keyfile_name(secrets_location, scopes=scopes)
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(
+          client_secrets_path, scopes=scopes)
         return discovery.build('compute', self.API_VERSION), credentials
-      else:
-        flow = oauth2client.client.flow_from_clientsecrets(secrets_location,
-          scope=self.GCE_SCOPE)
 
-    if is_autoscale in ['True', True]:
-      if not os.path.exists(self.OAUTH2_STORAGE_LOCATION):
-        raise AgentConfigurationException('Could not find your signed OAuth2' \
-          'file at {0}'.format(self.OAUTH2_STORAGE_LOCATION))
-      else:
-        storage = oauth2client.file.Storage(self.OAUTH2_STORAGE_LOCATION)
-    else:
-     storage = oauth2client.file.Storage(LocalState.get_oauth2_storage_location(
-       parameters[self.PARAM_KEYNAME]))
+    # Perform authorization using OAuth2 storage
+    storage = oauth2client.file.Storage(oauth2_storage_path)
     credentials = storage.get()
 
-    if credentials is None or (credentials.invalid in ['True', True]):
+    if not credentials or credentials.invalid:
+      # If we couldn't get valid credentials from OAuth2 storage
+      if not os.path.exists(client_secrets_path):
+        raise AgentConfigurationException(
+          'Couldn\'t find client secrets file at {}'.format(client_secrets_path)
+        )
+      # Run OAuth2 flow to get credentials
+      flow = oauth2client.client.flow_from_clientsecrets(
+        client_secrets_path, scope=self.GCE_SCOPE)
       flags = oauth2client.tools.argparser.parse_args(args=[])
       credentials = oauth2client.tools.run_flow(flow, storage, flags)
 

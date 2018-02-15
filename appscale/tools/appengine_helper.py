@@ -6,10 +6,14 @@ import os
 import socket
 import re
 import yaml
+from xml.etree import ElementTree
 
 
 # AppScale-specific imports
-from custom_exceptions import AppEngineConfigException
+from .admin_client import DEFAULT_SERVICE
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import AppEngineConfigException
+from .custom_exceptions import AppScaleException
 
 
 class AppEngineHelper(object):
@@ -26,14 +30,6 @@ class AppEngineHelper(object):
   # A regular expression that can be used to see if the given configuration file
   # is a YAML File.
   FILE_IS_YAML = re.compile(r'\.yaml\Z')
-
-
-  # A regular expression that can be used to find an appid in a XML file.
-  JAVA_APP_ID_REGEX = re.compile(r'<application>(.*)<\/application>')
-
-
-  # A regular expression for finding the threadsafe key in appengine-web.xml.
-  JAVA_THREADSAFE_REGEX = re.compile(r'<threadsafe>(.*)<\/threadsafe>')
 
 
   # A list of language runtimes that App Engine apps can be written in.
@@ -68,6 +64,10 @@ class AppEngineHelper(object):
 
   # The directory that contains useful libraries for Java Apps.
   LIB = 'lib'
+
+
+  # The namespace used for appengine-web.xml.
+  XML_NAMESPACE = '{http://appengine.google.com/ns/1.0}'
 
 
   @classmethod
@@ -178,19 +178,79 @@ class AppEngineHelper(object):
     if cls.FILE_IS_YAML.search(app_config_file):
       yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
       if 'application' in yaml_contents and yaml_contents['application'] != '':
-        return yaml_contents['application']
+        project_id = yaml_contents['application']
       else:
         raise AppEngineConfigException("No valid application ID found in " +
           "your app.yaml. " + cls.REGEX_MESSAGE)
     else:
-      xml_contents = cls.read_file(app_config_file)
-      app_id_matchdata = cls.JAVA_APP_ID_REGEX.search(xml_contents)
-      if app_id_matchdata:
-        return app_id_matchdata.group(1)
-      else:
-        raise AppEngineConfigException("No application ID found in " +
-          "your appengine-web.xml. " + cls.REGEX_MESSAGE)
+      root = ElementTree.parse(app_config_file).getroot()
+      app_element = root.find('{}application'.format(cls.XML_NAMESPACE))
+      if app_element is None:
+        raise AppEngineConfigException(
+          'No application ID found in appengine-web.xml')
 
+      project_id = app_element.text
+
+    cls.validate_app_id(project_id)
+    return project_id
+
+  @classmethod
+  def get_service_id(cls, app_dir):
+    """ Retrieves the service ID from the application configuration.
+
+    Args:
+      app_dir: The directory on the local filesystem where the App Engine
+        application can be found.
+    """
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      return yaml_contents.get('module', DEFAULT_SERVICE)
+    else:
+      root = ElementTree.parse(app_config_file).getroot()
+      service_element = root.find('{}module'.format(cls.XML_NAMESPACE))
+      if service_element is None:
+        return DEFAULT_SERVICE
+
+      return service_element.text
+
+  @classmethod
+  def warn_if_version_defined(cls, app_dir, test=False):
+    """ Warns the user if version is defined in the application configuration.
+
+    Args:
+      app_dir: The directory on the local filesystem where the App Engine
+        application can be found.
+      test: A boolean indicating that the tools are in test mode.
+    Raises:
+      AppScaleException: If version is defined and user decides to cancel.
+    """
+    message = ''
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      if yaml_contents.get('version') is not None:
+        module = yaml_contents.get('module', 'default')
+        message = ('The version element is not supported in app.yaml. '
+                   'Module {} will be overwritten.'.format(module))
+    else:
+      app_config = ElementTree.parse(app_config_file).getroot()
+      if app_config.find('{}version'.format(cls.XML_NAMESPACE)) is not None:
+        module_element = app_config.find('{}module'.format(cls.XML_NAMESPACE))
+        if module_element is None:
+          module = 'default'
+        else:
+          module = module_element.text
+
+        message = ('The version element is not supported in appengine-web.xml.'
+                   ' Module {} will be overwritten.'.format(module))
+
+    if message:
+      AppScaleLogger.log(message)
+      if not test:
+        response = raw_input('Continue? (y/N) ')
+        if response.lower() not in ['y', 'yes']:
+          raise AppScaleException('Cancelled deploy operation')
 
   @classmethod
   def get_app_runtime_from_app_config(cls, app_dir):
@@ -243,23 +303,70 @@ class AppEngineHelper(object):
         raise AppEngineConfigException(
           '"threadsafe" must be definined in your app.yaml.')
     else:
-      xml_contents = cls.read_file(app_config_file)
-      try:
-        threadsafe = cls.JAVA_THREADSAFE_REGEX.search(xml_contents).group(1)
-      except AttributeError:
+      root = ElementTree.parse(app_config_file).getroot()
+      threadsafe_element = root.find('{}threadsafe'.format(cls.XML_NAMESPACE))
+      if threadsafe_element is None:
         raise AppEngineConfigException(
           '"threadsafe" must be definined in your appengine-web.xml.')
 
-      print('threadsafe: {}'.format(threadsafe))
-      if threadsafe.lower() not in ['true', 'false']:
+      if threadsafe_element.text.lower() not in ['true', 'false']:
         raise AppEngineConfigException(
           'Invalid "threadsafe" value in your app configuration. '
           'It must be either "true" or "false".')
-      threadsafe = threadsafe.lower() == 'true'
+
+      threadsafe = threadsafe_element.text.lower() == 'true'
 
     if not isinstance(threadsafe, bool):
       raise AppEngineConfigException('"threadsafe" must be a boolean value.')
     return threadsafe
+
+  @classmethod
+  def get_env_vars(cls, app_dir):
+    """ Retrieves environment varibles from the version configuration.
+
+    Args:
+      app_dir: The directory containing the version source code.
+    Returns:
+      A dictionary containing environment variables.
+    """
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      return yaml_contents.get('env_variables', {})
+    else:
+      app_config = ElementTree.parse(app_config_file).getroot()
+      env_vars = app_config.find('{}env-variables'.format(cls.XML_NAMESPACE))
+      if env_vars is None:
+        return {}
+
+      return {var.attrib['name']: var.attrib['value'] for var in env_vars}
+
+  @classmethod
+  def get_inbound_services(cls, app_dir):
+    """ Retrieves inbound services from the version configuration.
+
+    Args:
+      app_dir: The directory containing the version source code.
+    Returns:
+      A list of inbound service types or None.
+    """
+    app_config_file = cls.get_config_file_from_dir(app_dir)
+    if cls.FILE_IS_YAML.search(app_config_file):
+      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
+      inbound_services = yaml_contents.get('inbound_services')
+      if inbound_services is None:
+        return None
+    else:
+      app_config = ElementTree.parse(app_config_file).getroot()
+      inbound_services = app_config.find(
+        '{}inbound-services'.format(cls.XML_NAMESPACE))
+      if inbound_services is None:
+        return None
+
+      inbound_services = [service.text for service in inbound_services]
+
+    return ['INBOUND_SERVICE_{}'.format(service).upper()
+            for service in inbound_services]
 
   @classmethod
   def get_config_file_from_dir(cls, app_dir):

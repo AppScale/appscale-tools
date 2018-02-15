@@ -28,8 +28,9 @@ from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.custom_exceptions import ShellException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
-from appscale.tools.node_layout import SimpleNode
+from appscale.tools.node_layout import Node
 from appscale.tools.parse_args import ParseArgs
+from test_ip_layouts import (FOUR_NODE_CLUSTER, IP_1)
 
 
 class TestLocalState(unittest.TestCase):
@@ -94,20 +95,20 @@ class TestLocalState(unittest.TestCase):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
     options = flexmock(name='options', table='cassandra', keyname='boo',
-      appengine='1', autoscale=False, group='bazgroup', replication=None,
-      infrastructure='ec2', machine='ami-ABCDEFG', instance_type='m1.large',
-      use_spot_instances=True, max_spot_price=1.23, clear_datastore=False,
-      disks={'node-1' : 'vol-ABCDEFG'}, zone='my-zone-1b', verbose=True,
-      user_commands=[], flower_password="abc",
-      max_memory=ParseArgs.DEFAULT_MAX_MEMORY)
+      default_min_appservers='1', autoscale=False, group='bazgroup',
+      replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
+      instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
+      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     })
 
-    flexmock(NodeLayout).should_receive("head_node").and_return(SimpleNode(
+    flexmock(NodeLayout).should_receive("head_node").and_return(Node(
       'public1', 'some cloud', ['some role']))
 
     expected = {
@@ -115,25 +116,73 @@ class TestLocalState(unittest.TestCase):
       'login' : 'public1',
       'clear_datastore': 'False',
       'keyname' : 'boo',
-      'appengine' : '1',
+      'default_min_appservers' : '1',
       'autoscale' : 'False',
       'replication': 'None',
       'group' : 'bazgroup',
       'machine' : 'ami-ABCDEFG',
       'infrastructure' : 'ec2',
       'instance_type' : 'm1.large',
-      'min_images' : '1',
-      'max_images' : '1',
+      'min_machines' : '1',
+      'max_machines' : '1',
       'use_spot_instances' : 'True',
       'user_commands' : json.dumps([]),
       'max_spot_price' : '1.23',
       'zone' : 'my-zone-1b',
       'verbose' : 'True',
       'flower_password' : 'abc',
-      'max_memory' : str(ParseArgs.DEFAULT_MAX_MEMORY)
+      'default_max_appserver_memory' : str(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       {'max_spot_price':'1.23'})
+    self.assertEquals(expected, actual)
+
+
+  def test_generate_deployment_params_no_login(self):
+    # this method is fairly light, so just make sure that it constructs the dict
+    # to send to the AppController correctly
+    options = flexmock(name='options', table='cassandra', keyname='boo',
+      default_min_appservers='1', autoscale=False, group='bazgroup',
+      replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
+      instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
+      clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
+      zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
+      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
+    node_layout = NodeLayout({
+      'table': 'cassandra',
+      'infrastructure': "ec2",
+      'min_machines': 1,
+      'max_machines': 1,
+      'ips': FOUR_NODE_CLUSTER
+    })
+
+    # flexmock(NodeLayout).should_receive("head_node").and_return(Node(
+    #   'public1', 'some cloud', ['some role']))
+
+    expected = {
+      'table': 'cassandra',
+      'login': IP_1,
+      'clear_datastore': 'False',
+      'keyname': 'boo',
+      'default_min_appservers': '1',
+      'autoscale': 'False',
+      'replication': 'None',
+      'group': 'bazgroup',
+      'machine': 'ami-ABCDEFG',
+      'infrastructure': 'ec2',
+      'instance_type': 'm1.large',
+      'min_machines': '1',
+      'max_machines': '1',
+      'use_spot_instances': 'True',
+      'user_commands': json.dumps([]),
+      'max_spot_price': '1.23',
+      'zone': 'my-zone-1b',
+      'verbose': 'True',
+      'flower_password': 'abc',
+      'default_max_appserver_memory': str(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
+    }
+    actual = LocalState.generate_deployment_params(options, node_layout,
+      {'max_spot_price': '1.23'})
     self.assertEquals(expected, actual)
 
 
@@ -195,8 +244,8 @@ class TestLocalState(unittest.TestCase):
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
       keyname='booscale', group='boogroup', zone='my-zone-1b')
     node_layout = NodeLayout(options={
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'infrastructure' : 'ec2',
       'table' : 'cassandra'
     })
@@ -268,13 +317,13 @@ class TestLocalState(unittest.TestCase):
     flexmock(time).should_receive('sleep').and_return()
 
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
-    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False,
         stdin='fake_stdin')
-      
+
     fake_subprocess.should_receive('Popen').and_raise(OSError)
 
     self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False)
-    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False, 
+    self.assertRaises(ShellException, LocalState.shell, 'fake_cmd', False,
         stdin='fake_stdin')
 
 
@@ -336,3 +385,9 @@ class TestLocalState(unittest.TestCase):
       and_return(True)
     actual_key_path = LocalState.get_key_path_from_name(keyname)
     self.assertEquals(etc_appscale_key_file_path, actual_key_path)
+
+  def test_generate_xmpp_username(self):
+    # It should generate xmpp username of given length
+    # and use it to append the given username (test) and _
+    username = LocalState.generate_xmpp_username('test', 8)
+    self.assertEquals(13, len(username))

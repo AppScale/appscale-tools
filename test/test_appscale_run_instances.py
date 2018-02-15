@@ -33,6 +33,8 @@ from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
 from appscale.tools.custom_exceptions import BadConfigurationException
 
+from test_ip_layouts import (IP_1, ONE_NODE_CLUSTER)
+
 
 class TestAppScaleRunInstances(unittest.TestCase):
 
@@ -275,7 +277,7 @@ group: {1}
     self.local_state.should_receive('shell').\
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
-                "-o UserKnownHostsFile=/dev/null root@1.2.3.4 ",
+                "-o UserKnownHostsFile=/dev/null root@{} ".format(IP_1),
                 False, 5, stdin="chmod +x /etc/init.d/appcontroller")
     
     self.local_state.should_receive('shell').\
@@ -347,18 +349,18 @@ group: {1}
     self.local_state.should_receive('shell').\
       with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
                 '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
-                '-o UserKnownHostsFile=/dev/null root@1.2.3.4 ',
+                '-o UserKnownHostsFile=/dev/null root@{} '.format(IP_1),
                 False, 5,
                 stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
 
-    self.setup_socket_mocks('1.2.3.4')
-    self.setup_appcontroller_mocks('1.2.3.4', '1.2.3.4')
+    self.setup_socket_mocks(IP_1)
+    self.setup_appcontroller_mocks(IP_1, IP_1)
 
     # mock out reading the locations.json file, and slip in our own json
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip": "1.2.3.4",
-        "private_ip": "1.2.3.4",
+        "public_ip": IP_1,
+        "private_ip": IP_1,
         "jobs": ["shadow", "login"]
       }])))
 
@@ -390,12 +392,7 @@ group: {1}
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
-    ips_layout = yaml.safe_load("""
-master : 1.2.3.4
-database: 1.2.3.4
-zookeeper: 1.2.3.4
-appengine:  1.2.3.4
-    """)
+    ips_layout = ONE_NODE_CLUSTER
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),
@@ -459,7 +456,8 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      False, 5, stdin='ls').and_return(
+      'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
@@ -642,7 +640,8 @@ appengine:  1.2.3.4
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      False, 5, stdin='ls').and_return(
+      'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
@@ -772,8 +771,8 @@ appengine:  1.2.3.4
     self.local_state.should_receive('update_local_metadata').and_return()
     self.local_state.should_receive('get_local_nodes_info').and_return(json.loads(
       json.dumps([{
-        "public_ip" : "1.2.3.4",
-        "private_ip" : "1.2.3.4",
+        "public_ip" : IP_1,
+        "private_ip" : IP_1,
         "jobs" : ["shadow", "login"]
       }])))
     self.local_state.should_receive('get_secret_key').and_return("fookey")
@@ -783,7 +782,7 @@ appengine:  1.2.3.4
     RemoteHelper.should_receive('ensure_machine_is_compatible')\
         .and_return()
     RemoteHelper.should_receive('start_head_node')\
-        .and_return(('1.2.3.4','i-ABCDEFG'))
+        .and_return((IP_1, 'i-ABCDEFG'))
     RemoteHelper.should_receive('sleep_until_port_is_open').and_return()
     RemoteHelper.should_receive('copy_local_metadata').and_return()
     RemoteHelper.should_receive('create_user_accounts').and_return()
@@ -798,12 +797,7 @@ appengine:  1.2.3.4
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
-    ips_layout = yaml.safe_load("""
-master : 1.2.3.4
-database: 1.2.3.4
-zookeeper: 1.2.3.4
-appengine:  1.2.3.4
-    """)
+    ips_layout = ONE_NODE_CLUSTER
 
     argv = [
       "--ips_layout", base64.b64encode(yaml.dump(ips_layout)),

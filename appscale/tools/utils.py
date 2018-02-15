@@ -1,9 +1,12 @@
 """ Miscellaneous utility functions needed by the tools. """
 
+import errno
 import os
 import tarfile
 import zipfile
 from xml.etree import ElementTree
+
+from .custom_exceptions import BadConfigurationException
 
 
 def config_from_tar_gz(file_name, tar_location):
@@ -26,8 +29,11 @@ def config_from_tar_gz(file_name, tar_location):
       if len(candidate.name.split('/')) < len(shortest_path.name.split('/')):
         shortest_path = candidate
 
-    with tar.extractfile(shortest_path) as config_file:
+    config_file = tar.extractfile(shortest_path)
+    try:
       return config_file.read()
+    finally:
+      config_file.close()
 
 
 def config_from_zip(file_name, zip_location):
@@ -54,24 +60,6 @@ def config_from_zip(file_name, zip_location):
       return config_file.read()
 
 
-def path_length(path):
-  """ Gets the length of a file system path.
-
-  Args:
-    path: A string specifying the location of a file.
-  Returns:
-    An integer specifying the length of the path.
-  """
-  path_parts = list(os.path.split(path))
-  if path_parts and path_parts[0] == '.':
-    path_parts.pop(0)
-
-  if path_parts and path_parts[0] == '':
-    path_parts.pop(0)
-
-  return len(path_parts)
-
-
 def config_from_dir(file_name, source_path):
   """ Reads a configuration file from a source directory.
 
@@ -91,11 +79,45 @@ def config_from_dir(file_name, source_path):
 
   shortest_path = candidates[0]
   for candidate in candidates:
-    if path_length(candidate) < path_length(shortest_path):
+    if len(candidate.split(os.sep)) < len(shortest_path.split(os.sep)):
       shortest_path = candidate
 
   with open(shortest_path) as config_file:
     return config_file.read()
+
+
+def cron_from_xml(contents):
+  """ Parses the contents of a cron.xml file.
+
+  Args:
+    contents: An XML string containing cron configuration details.
+  Returns:
+    A dictionary containing cron configuration details.
+  """
+  cron_config = {'cron': []}
+  job_entries = ElementTree.fromstring(contents)
+  for job_entry in job_entries:
+    if job_entry.tag != 'cron':
+      raise BadConfigurationException(
+        'Unrecognized element in cron.xml: {}'.format(job_entry.tag))
+
+    job = {}
+    for element in job_entry:
+      tag = element.tag.replace('-', '_')
+      if tag == 'retry_parameters':
+        params = {child.tag.replace('-', '_'): child.text for child in element}
+        int_elements = ['job_retry_limit', 'min_backoff_seconds',
+                        'max_backoff_seconds', 'max_doublings']
+        for int_element in int_elements:
+          if int_element in params:
+            params[int_element] = int(params[int_element])
+        job[tag] = params
+      else:
+        job[tag] = element.text
+
+    cron_config['cron'].append(job)
+
+  return cron_config
 
 
 def queues_from_xml(contents):
@@ -111,9 +133,11 @@ def queues_from_xml(contents):
   for queue_entry in queue_entries:
     if queue_entry.tag == 'total-storage-limit':
       queues['total_storage_limit'] = queue_entry.text
+      continue
 
     if queue_entry.tag != 'queue':
-      continue
+      raise BadConfigurationException(
+        'Unrecognized element in queue.xml: {}'.format(queue_entry.tag))
 
     queue = {}
     for element in queue_entry:
@@ -138,3 +162,18 @@ def queues_from_xml(contents):
     queues['queue'].append(queue)
 
   return queues
+
+
+def mkdir(dir_path):
+  """ Creates a directory.
+
+  Args:
+    dir_path: The path to create.
+  """
+  try:
+    return os.makedirs(dir_path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(dir_path):
+      pass
+    else:
+      raise

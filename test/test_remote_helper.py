@@ -28,8 +28,11 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.local_state import LocalState
 from appscale.tools.node_layout import NodeLayout
-from appscale.tools.node_layout import SimpleNode
+from appscale.tools.node_layout import Node
 from appscale.tools.remote_helper import RemoteHelper
+
+from test_ip_layouts import (ONE_NODE_CLOUD, THREE_NODE_CLOUD, FOUR_NODE_CLOUD,
+                             IP_1, IP_2, IP_3, IP_4, IP_5, IP_6, IP_7, IP_8)
 
 
 class FakeAgent(object):
@@ -43,8 +46,8 @@ class FakeAgent(object):
   @classmethod
   def describe_instances(self, params):
     return (
-     ['0.0.0.1', '0.0.0.2', '0.0.0.3', '0.0.0.4'],
-     ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4'],
+     [IP_1, IP_2, IP_3, IP_4],
+     [IP_5, IP_6, IP_7, IP_8],
      ['i-APPSCALE1', 'i-APPSCALE2', 'i-APPSCALE3', 'i-APPSCALE4'])
 
 class TestRemoteHelper(unittest.TestCase):
@@ -79,9 +82,7 @@ class TestRemoteHelper(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='400',
-      ips={
-        'zookeeper': 'node-2', 'master': 'node-1',
-        'appengine': 'node-3', 'database': 'node-4'}
+      ips=FOUR_NODE_CLOUD
     )
     self.my_id = "12345"
     self.node_layout = NodeLayout(self.options)
@@ -149,7 +150,7 @@ class TestRemoteHelper(unittest.TestCase):
     fake_pending_reservation = flexmock(instances=fake_pending_instance)
 
     fake_running_instance = flexmock(state='running', key_name='bookey',
-      id='i-12345678', ip_address='1.2.3.4', private_ip_address='1.2.3.4')
+      id='i-12345678', ip_address=IP_1, private_ip_address=IP_1)
     fake_running_reservation = flexmock(instances=fake_running_instance)
 
     fake_ec2.should_receive('get_all_instances').and_return([]) \
@@ -193,7 +194,8 @@ class TestRemoteHelper(unittest.TestCase):
     local_state = flexmock(LocalState)
     local_state.should_receive('shell') \
       .with_args(re.compile('^ssh .*root'), False, 1, stdin='ls') \
-      .and_return(RemoteHelper.LOGIN_AS_UBUNTU_USER)
+      .and_return(
+      'Please login as the user "ubuntu" rather than the user "root"')
 
     # and assume that we can ssh in as ubuntu to enable root login
     local_state = flexmock(LocalState)
@@ -229,7 +231,7 @@ class TestRemoteHelper(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={'master': 'node-1', 'appengine': 'node-1', 'database': 'node-1'}
+      ips=ONE_NODE_CLOUD
     )
 
     self.node_layout = NodeLayout(self.options)
@@ -245,7 +247,7 @@ class TestRemoteHelper(unittest.TestCase):
       and_return('some key path')
 
     flexmock(NodeLayout).should_receive('head_node').\
-      and_return(SimpleNode('some IP', 'cloud'))
+      and_return(Node('some IP', 'cloud'))
 
     fake_agent = FakeAgent()
     flexmock(factory.InfrastructureAgentFactory).\
@@ -520,9 +522,7 @@ class TestRemoteHelper(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'master': 'node-1', 'zookeeper': 'node-2',
-        'appengine': 'node-3', 'database': 'node-4'}
+      ips=FOUR_NODE_CLOUD
     )
 
   reattach_node_info = [{ "public_ip": "0.0.0.0",
@@ -541,7 +541,7 @@ class TestRemoteHelper(unittest.TestCase):
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'memcache', 'db_master'] }
+                          "jobs": ['database', 'db_master'] }
                         ]
 
   def test_start_all_nodes_reattach(self):
@@ -553,7 +553,7 @@ class TestRemoteHelper(unittest.TestCase):
       with_args('euca'). \
       and_return(fake_agent)
 
-    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+    LocalState.should_receive('get_login_host').and_return(IP_1)
 
     LocalState.should_receive('get_local_nodes_info') \
       .and_return(self.reattach_node_info)
@@ -580,9 +580,7 @@ class TestRemoteHelper(unittest.TestCase):
       user_commands=[],
       flower_password='',
       max_memory='X',
-      ips={
-        'zookeeper': 'node-2', 'master': 'node-1',
-        'appengine': 'node-3', 'database': 'node-3'}
+      ips=THREE_NODE_CLOUD
     )
 
     self.node_layout = NodeLayout(self.options)

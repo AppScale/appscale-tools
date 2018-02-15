@@ -48,20 +48,6 @@ class AppScale():
     'templates/AppScalefile')
 
 
-  # The location of the template AppScalefile that should be used when
-  # users execute 'appscale init cloud'.
-  TEMPLATE_CLOUD_APPSCALEFILE = os.path.join(
-    os.path.dirname(sys.modules['appscale.tools'].__file__),
-    'templates/AppScalefile-cloud')
-
-
-  # The location of the template AppScalefile that should be used when
-  # users execute 'appscale init cluster'.
-  TEMPLATE_CLUSTER_APPSCALEFILE = os.path.join(
-    os.path.dirname(sys.modules['appscale.tools'].__file__),
-    'templates/AppScalefile-cluster')
-
-
   APPSCALE_DIRECTORY = os.path.expanduser("~") + os.sep + ".appscale" + os.sep
 
 
@@ -84,7 +70,7 @@ Available commands:
   deploy <app>                      Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree.
-  create-user [--admin]             Creates a new user. If --admin option is specified, 
+  create-user [--admin]             Creates a new user. If --admin option is specified,
                                     it will create the user as an admin.
   down [--clean][--terminate]       Gracefully terminates the currently
                                     running AppScale deployments. If
@@ -107,6 +93,8 @@ Available commands:
   relocate <appid> <http> <https>   Moves the application <appid> to
                                     different <http> and <https> ports.
   remove <appid>                    An alias for 'undeploy'.
+  services                          Commands for services. Run appscale services
+                                    help for usage.
   set <property> <value>            Sets an AppController <property> to the
                                     provided <value>. For developers only.
   ssh [#]                           Logs into the #th node of the current
@@ -124,6 +112,17 @@ Available commands:
                                     THE APPLICATION WILL BE LOST.
   upgrade                           Upgrades AppScale code to its latest version.
 """
+
+
+  # TODO: update these as items in the AppScalefile get deprecated and removed.
+  DEPRECATED_ASF_ARGS = {
+    'n': 'replication',
+    'scp': 'rsync_source',
+    'appengine': 'default_min_appservers',
+    'max_memory': 'default_max_appserver_memory',
+    'min': 'min_machines',
+    'max': 'max_machines'
+  }
 
 
   def __init__(self):
@@ -245,17 +244,8 @@ Available commands:
         " in this directory. Please remove it and run 'appscale init'" +
         " again to generate a new AppScalefile.")
 
-    # next, see if we're making a cloud template file or a cluster
-    # template file
-    if environment == 'cloud':
-      template_file = self.TEMPLATE_CLOUD_APPSCALEFILE
-    elif environment == 'cluster':
-      template_file = self.TEMPLATE_CLUSTER_APPSCALEFILE
-    else:
-      template_file = self.TEMPLATE_APPSCALEFILE
-
     # finally, copy the template AppScalefile there
-    shutil.copy(template_file, appscalefile_location)
+    shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
 
 
   def up(self):
@@ -276,10 +266,16 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
+    deprecated = False
     for key, value in contents_as_yaml.items():
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value
         continue
+      if key in self.DEPRECATED_ASF_ARGS:
+        deprecated = True
+        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"\
+                            .format(key, self.DEPRECATED_ASF_ARGS[key]))
+        key = self.DEPRECATED_ASF_ARGS[key]
 
       if value is True:
         command.append(str("--%s" % key))
@@ -298,6 +294,10 @@ Available commands:
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
+
+    if deprecated:
+      AppScaleLogger.warn("Refer to {} to see the full changes.".format(
+        NodeLayout.APPSCALEFILE_INSTRUCTIONS))
 
     run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 
@@ -565,18 +565,19 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
     login_host, http_port = AppScaleTools.upload_app(options)
+    AppScaleTools.update_cron(options.file, options.keyname)
     AppScaleTools.update_queues(options.file, options.keyname)
     return login_host, http_port
 
 
-  def undeploy(self, appid):
+  def undeploy(self, project_id):
     """ 'undeploy' is a more accessible way to tell an AppScale deployment to
     stop hosting a Google App Engine application than 'appscale-remove-app'. It
     calls that command with the configuration options found in the AppScalefile
     in the current working directory.
 
     Args:
-      appid: The name of the application that we should remove.
+      project_id: The name of the application that we should remove.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -596,8 +597,8 @@ Available commands:
     if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
       command.append('--confirm')
 
-    command.append("--appname")
-    command.append(appid)
+    command.append("--project-id")
+    command.append(project_id)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
@@ -722,13 +723,14 @@ Available commands:
     subprocess.call(command)
 
 
-  def logs(self, location):
+  def logs(self, location, other_args=None):
     """ 'logs' provides a cleaner experience for users than the
     appscale-gather-logs command, by using the configuration options present in
     the AppScalefile found in the current working directory.
 
     Args:
       location: The path on the local filesystem where logs should be copied to.
+      other_args: A list of other args from sys.argv.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current working
       directory.
@@ -744,6 +746,8 @@ Available commands:
 
     command.append("--location")
     command.append(location)
+    if other_args:
+      command += other_args
 
     # and exec it
     options = ParseArgs(command, "appscale-gather-logs").args

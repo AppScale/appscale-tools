@@ -47,7 +47,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     builtins.should_receive('raw_input').and_return('no')
 
     argv = [
-      "--appname", "blargapp"
+      "--project-id", "blargapp"
     ]
     options = ParseArgs(argv, self.function).args
     self.assertRaises(AppScaleException, AppScaleTools.remove_app, options)
@@ -67,7 +67,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
 
-    flexmock(AdminClient).should_receive('delete_version').\
+    flexmock(AdminClient).should_receive('delete_project').\
       and_raise(AdminError)
 
     # mock out reading the locations.json file, and slip in our own json
@@ -89,7 +89,7 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       .and_return(fake_nodes_json)
 
     argv = [
-      "--appname", "blargapp",
+      "--project-id", "blargapp",
       "--keyname", self.keyname
     ]
     options = ParseArgs(argv, self.function).args
@@ -129,13 +129,13 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       .and_return(fake_nodes_json)
 
     operation_id = 'operation-1'
-    flexmock(AdminClient).should_receive('delete_version').\
+    flexmock(AdminClient).should_receive('delete_project').\
       and_return(operation_id)
-    flexmock(AdminClient).should_receive('get_operation').\
-      and_return({'done': True})
+    flexmock(AdminClient).should_receive('list_projects').\
+      and_return({'projects': []})
 
     argv = [
-      "--appname", "blargapp",
+      "--project-id", "blargapp",
       "--keyname", self.keyname
     ]
     options = ParseArgs(argv, self.function).args

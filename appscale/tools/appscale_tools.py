@@ -2,7 +2,6 @@
 
 # General-purpose Python library imports
 import datetime
-import errno
 import getpass
 import json
 import os
@@ -30,7 +29,7 @@ from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
-from cluster_stats import NodeStats, AppInfo
+from cluster_stats import NodeStats, ServiceInfo
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppEngineConfigException
 from custom_exceptions import AppScaleException
@@ -43,6 +42,8 @@ from remote_helper import RemoteHelper
 from version_helper import latest_tools_version
 from . import utils
 from .admin_client import AdminClient
+from .admin_client import DEFAULT_SERVICE
+from .admin_client import DEFAULT_VERSION
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -90,7 +91,7 @@ class AppScaleTools(object):
 
 
   # The number of seconds to wait before giving up on an operation.
-  MAX_OPERATION_TIME = 100
+  MAX_OPERATION_TIME = 200
 
 
   # The location of the expect script, used to interact with ssh-copy-id
@@ -251,7 +252,8 @@ class AppScaleTools(object):
       for ip in all_private_ips
     }
     apps_dict = next((n["apps"] for n in cluster_stats if n["apps"]), {})
-    apps = [AppInfo(name, app_info) for name, app_info in apps_dict.iteritems()]
+    services = [ServiceInfo(key.split('_')[0], key.split('_')[1], app_info)
+                for key, app_info in apps_dict.iteritems()]
     nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
     invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
@@ -262,13 +264,13 @@ class AppScaleTools(object):
     else:
       AppScaleLogger.log("-"*76)
 
-    cls._print_cluster_summary(nodes, invisible_nodes, apps)
-    cls._print_apps(apps)
+    cls._print_cluster_summary(nodes, invisible_nodes, services)
+    cls._print_services(services)
     cls._print_status_alerts(nodes)
 
     dashboard = next(
-      (app for app in apps if app.http == RemoteHelper.APP_DASHBOARD_PORT), None
-    )
+      (service for service in services
+       if service.http == RemoteHelper.APP_DASHBOARD_PORT), None)
     if dashboard and dashboard.appservers > 1:
       AppScaleLogger.success(
         "\nView more about your AppScale deployment at http://{}:{}/status"
@@ -322,16 +324,16 @@ class AppScaleTools(object):
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
   @classmethod
-  def _print_cluster_summary(cls, nodes, invisible_nodes, apps):
+  def _print_cluster_summary(cls, nodes, invisible_nodes, services):
     """ Prints summary about deployment state
     Args:
       nodes: a list of NodeStats
       invisible_nodes: IPs of nodes which didn't report its status yet
-      apps: a list of AppInfo
+      services: a list of ServiceInfo objects
     """
     loaded = sum(1 for node in nodes if node.is_loaded)
     initialized = sum(1 for node in nodes if node.is_initialized)
-    started_apps = sum(1 for app in apps if app.appservers > 0)
+    started_services = sum(1 for service in services if service.appservers > 0)
     total = len(nodes)
 
     if invisible_nodes:
@@ -343,20 +345,21 @@ class AppScaleTools(object):
       if nodes:
         AppScaleLogger.log(
           "Available stats for {n} nodes: {init} are initialized, {loaded} "
-          "are loaded, {started} of {apps} apps are started".format(
-            init=initialized, loaded=loaded, n=total, started=started_apps,
-            apps=len(apps))
+          "are loaded, {started} of {services} services are started".format(
+            init=initialized, loaded=loaded, n=total, started=started_services,
+            services=len(services))
         )
       else:
         AppScaleLogger.log("No stats is available yet.")
       return
 
-    if loaded < total or initialized < total or started_apps < len(apps):
+    if (loaded < total or initialized < total or
+        started_services < len(services)):
       AppScaleLogger.log(
         "\nAppScale is starting: {init} of {n} nodes are initialized, {loaded} "
-        "of {n} nodes are loaded, {started} of {apps} apps are started"
-        .format(init=initialized, loaded=loaded, n=total, started=started_apps,
-                apps=len(apps))
+        "of {n} nodes are loaded, {started} of {services} services are started"
+        .format(init=initialized, loaded=loaded, n=total,
+                started=started_services, services=len(services))
       )
     else:
       AppScaleLogger.success(
@@ -364,21 +367,23 @@ class AppScaleTools(object):
       )
 
   @classmethod
-  def _print_apps(cls, apps):
-    """ Prints main information about deployed apps
+  def _print_services(cls, services):
+    """ Prints information about deployed services.
+
     Args:
-      apps: a list AppInfo
+      services: A list ServiceInfo objects.
     """
     header = (
-      "APP NAME", "HTTP/HTTPS", "APPSERVERS/PENDING",
+      "PROJECT ID", "SERVICE ID", "HTTP/HTTPS", "APPSERVERS/PENDING",
       "REQS. ENQUEUED/TOTAL", "STATE"
     )
     table = (
-      (app.name, "{}/{}".format(app.http, app.https),
-       "{}/{}".format(app.appservers, app.pending_appservers),
-       "{}/{}".format(app.reqs_enqueued, app.total_reqs),
-       "Ready" if app.appservers > 0 else "Starting")
-      for app in apps
+      (service.project_id, service.service_id,
+       "{}/{}".format(service.http, service.https),
+       "{}/{}".format(service.appservers, service.pending_appservers),
+       "{}/{}".format(service.reqs_enqueued, service.total_reqs),
+       "Ready" if service.appservers > 0 else "Starting")
+      for service in services
     )
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
 
@@ -439,14 +444,16 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
+    location = os.path.abspath(options.location)
     # First, make sure that the place we want to store logs doesn't
     # already exist.
-    if os.path.exists(options.location):
+    if os.path.exists(location):
       raise AppScaleException("Can't gather logs, as the location you " + \
-        "specified, {0}, already exists.".format(options.location))
+        "specified, {}, already exists.".format(location))
 
-    acc = AppControllerClient(LocalState.get_login_host(options.keyname),
-      LocalState.get_secret_key(options.keyname))
+    login_host = LocalState.get_login_host(options.keyname)
+    secret = LocalState.get_secret_key(options.keyname)
+    acc = AppControllerClient(login_host, secret)
 
     try:
       all_ips = acc.get_all_public_ips()
@@ -456,9 +463,23 @@ class AppScaleTools(object):
         "info instead.")
       all_ips = LocalState.get_all_public_ips(options.keyname)
 
+    # Get information about roles and public IPs
+    # for creating navigation symlinks in gathered logs
+    try:
+      nodes_info = acc.get_role_info()
+    except socket.error:  # Occurs when the AppController has failed.
+      AppScaleLogger.warn("Couldn't get an up-to-date nodes info. "
+                          "Using our locally cached info instead.")
+      nodes_info = LocalState.get_local_nodes_info(options.keyname)
+    nodes_dict = {node['public_ip']: node for node in nodes_info}
+
     # do the mkdir after we get the secret key, so that a bad keyname will
     # cause the tool to crash and not create this directory
-    os.mkdir(options.location)
+    os.mkdir(location)
+
+    # make dir for private IP navigation links
+    private_ips_dir = os.path.join(location, 'symlinks', 'private-ips')
+    utils.mkdir(private_ips_dir)
 
     # The log paths that we collect logs from.
     log_paths = [
@@ -474,42 +495,48 @@ class AppScaleTools(object):
     ]
 
     failures = False
-    for ip in all_ips:
+    for public_ip in all_ips:
       # Get the logs from each node, and store them in our local directory
-      local_dir = "{0}/{1}".format(options.location, ip)
-      os.mkdir(local_dir)
+      local_dir = os.path.join(location, public_ip)
+      utils.mkdir(local_dir)
+      local_link = os.path.join('..', '..', public_ip)
+
+      # Create symlinks for easier navigation in gathered logs
+      node_info = nodes_dict.get(public_ip)
+      if node_info:
+        private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
+        os.symlink(local_link, private_ip_dir)
+        for role in node_info['jobs']:
+          role_dir = os.path.join(location, 'symlinks', role)
+          utils.mkdir(role_dir)
+          os.symlink(local_link, os.path.join(role_dir, public_ip))
 
       for log_path in log_paths:
         sub_dir = local_dir
 
         if 'local' in log_path:
           sub_dir = os.path.join(local_dir, log_path['local'])
-          try:
-            os.mkdir(sub_dir)
-          except OSError as os_error:
-            if os_error.errno == errno.EEXIST and os.path.isdir(sub_dir):
-              pass
-            else:
-              raise
+          utils.mkdir(sub_dir)
 
         try:
           RemoteHelper.scp_remote_to_local(
-            ip, options.keyname, log_path['remote'], sub_dir, options.verbose)
+            public_ip, options.keyname, log_path['remote'],
+            sub_dir, options.verbose
+          )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
-                              format(log_path['remote'], ip))
+                              format(log_path['remote'], public_ip))
           AppScaleLogger.verbose(
             'Encountered exception: {}'.format(str(shell_exception)),
             options.verbose)
 
     if failures:
-      AppScaleLogger.log("Done copying to {0}. There were "
-        "failures while collecting AppScale logs.".format(
-        options.location))
+      AppScaleLogger.log("Done copying to {}. There were failures while "
+                         "collecting AppScale logs.".format(location))
     else:
       AppScaleLogger.success("Successfully collected all AppScale logs into "
-        "{0}".format(options.location))
+                             "{}".format(location))
 
 
   @classmethod
@@ -549,14 +576,15 @@ class AppScaleTools(object):
     acc = AppControllerClient(login_host, LocalState.get_secret_key(
       options.keyname))
 
+    version_key = '_'.join([options.appname, DEFAULT_SERVICE, DEFAULT_VERSION])
     app_info_map = acc.get_app_info_map()
-    if options.appname not in app_info_map.keys():
+    if version_key not in app_info_map:
       raise AppScaleException("The given application, {0}, is not currently " \
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    relocate_result = acc.relocate_app(options.appname, options.http_port,
-      options.https_port)
+    relocate_result = acc.relocate_version(version_key, options.http_port,
+                                           options.https_port)
     if relocate_result == "OK":
       AppScaleLogger.success("Successfully issued request to move {0} to " \
         "ports {1} and {2}.".format(options.appname, options.http_port,
@@ -589,13 +617,52 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    operation_id = admin_client.delete_version(options.appname)
+    admin_client.delete_project(options.project_id)
+
     deadline = time.time() + cls.MAX_OPERATION_TIME
     while True:
       if time.time() > deadline:
         raise AppScaleException('The undeploy operation took too long.')
+      found_project = False
+      projects = admin_client.list_projects()['projects']
+      for project in projects:
+        if options.project_id == project['projectId']:
+          found_project = True
+          break
 
-      operation = admin_client.get_operation(options.appname, operation_id)
+      if found_project:
+        time.sleep(1)
+        continue
+      else:
+        break
+
+    AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
+
+
+  @classmethod
+  def remove_service(cls, options):
+    """Instructs AppScale to no longer host the named application.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.confirm:
+      response = raw_input(
+        'Are you sure you want to remove this service? (y/N) ')
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled service removal.")
+
+    login_host = LocalState.get_login_host(options.keyname)
+    secret = LocalState.get_secret_key(options.keyname)
+    admin_client = AdminClient(login_host, secret)
+    operation_id = admin_client.delete_service(options.project_id,
+                                                options.service_id)
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The undeploy operation took too long.')
+      operation = admin_client.get_operation(options.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue
@@ -604,7 +671,8 @@ class AppScaleTools(object):
         raise AppScaleException(operation['error']['message'])
       break
 
-    AppScaleLogger.success('Done shutting down {}.'.format(options.appname))
+    AppScaleLogger.success('Done shutting down service {} for {}.'.format(
+      options.project_id, options.service_id))
 
 
   @classmethod
@@ -708,11 +776,11 @@ class AppScaleTools(object):
       head_node.public_ip, options.keyname, options.verbose)
 
     # Use rsync to move custom code into the deployment.
-    if options.scp:
+    if options.rsync_source:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".
-        format(options.scp))
-      RemoteHelper.rsync_files(head_node.public_ip, options.keyname, options.scp,
-        options.verbose)
+        format(options.rsync_source))
+      RemoteHelper.rsync_files(head_node.public_ip, options.keyname,
+                               options.rsync_source, options.verbose)
 
     # Start services on head node.
     RemoteHelper.start_head_node(options, my_id, node_layout)
@@ -903,8 +971,14 @@ class AppScaleTools(object):
       file_location = file_location + os.sep + ".."
       app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
 
+    # Let users know that versions are not supported yet.
+    AppEngineHelper.warn_if_version_defined(file_location, options.test)
+
+    service_id = AppEngineHelper.get_service_id(file_location)
     app_language = AppEngineHelper.get_app_runtime_from_app_config(
       file_location)
+    env_variables = AppEngineHelper.get_env_vars(file_location)
+    inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
     if app_language in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
@@ -924,19 +998,14 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
-    if options.test:
-      username = LocalState.DEFAULT_USER
-    elif options.email:
-      username = options.email
-    else:
-      username = LocalState.get_username_from_stdin(is_admin=False)
-
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
       options.keyname, options.verbose, extras)
 
-    AppScaleLogger.log('Deploying project: {}'.format(app_id))
+    AppScaleLogger.log(
+      'Deploying service {} for {}'.format(service_id, app_id))
     operation_id = admin_client.create_version(
-      app_id, username, remote_file_path, app_language, threadsafe)
+      app_id, service_id, remote_file_path, app_language, env_variables,
+      threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
@@ -964,6 +1033,85 @@ class AppScaleTools(object):
 
     http_port = int(version_url.split(':')[-1])
     return (login_host, http_port)
+
+  @classmethod
+  def project_id_from_source(cls, source_location):
+    """ Retrieves a project ID from a version's configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    Returns:
+      A string specifying the project ID.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    app_config = fetch_function('app.yaml', source_location)
+    if app_config is None:
+      app_config = fetch_function('appengine-web.xml', source_location)
+      if app_config is None:
+        raise BadConfigurationException(
+          'Unable to find app.yaml or appengine-web.xml')
+
+      web_app = ElementTree.fromstring(app_config)
+      try:
+        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
+        project_id = web_app.find(tag_with_namespace).text
+      except AttributeError:
+        raise BadConfigurationException(
+          'appengine-web.xml must specify application')
+    else:
+      try:
+        project_id = yaml.safe_load(app_config)['application']
+      except KeyError:
+        raise BadConfigurationException('app.yaml must specify application')
+
+    return project_id
+
+  @classmethod
+  def update_cron(cls, source_location, keyname):
+    """ Updates a project's cron jobs from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    cron_config = fetch_function('cron.yaml', source_location)
+    if cron_config is None:
+      cron_config = fetch_function('cron.xml', source_location)
+      # If the source does not have a cron configuration file, do nothing.
+      if cron_config is None:
+        return
+
+      cron_jobs = utils.cron_from_xml(cron_config)
+    else:
+      cron_jobs = yaml.safe_load(cron_config)
+
+    project_id = cls.project_id_from_source(source_location)
+
+    AppScaleLogger.log('Updating cron jobs')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_cron(project_id, cron_jobs)
 
   @classmethod
   def update_queues(cls, source_location, keyname):
@@ -994,25 +1142,7 @@ class AppScaleTools(object):
     else:
       queues = yaml.safe_load(queue_config)
 
-    app_config = fetch_function('app.yaml', source_location)
-    if app_config is None:
-      app_config = fetch_function('appengine-web.xml', source_location)
-      if app_config is None:
-        raise BadConfigurationException(
-          'Unable to find app.yaml or appengine-web.xml')
-
-      web_app = ElementTree.fromstring(app_config)
-      try:
-        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
-        project_id = web_app.find(tag_with_namespace).text
-      except AttributeError:
-        raise BadConfigurationException(
-          'appengine-web.xml must specify application')
-    else:
-      try:
-        project_id = yaml.safe_load(app_config)['application']
-      except KeyError:
-        raise BadConfigurationException('app.yaml must specify application')
+    project_id = cls.project_id_from_source(source_location)
 
     AppScaleLogger.log('Updating queues')
     login_host = LocalState.get_login_host(keyname)
@@ -1028,9 +1158,6 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     node_layout = NodeLayout(options)
-    if not node_layout.is_valid():
-      raise BadConfigurationException(
-        'Your ips_layout is invalid:\n{}'.format(node_layout.errors()))
 
     latest_tools = APPSCALE_VERSION
     try:

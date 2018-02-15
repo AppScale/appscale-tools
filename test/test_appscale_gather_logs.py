@@ -18,6 +18,7 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
+from appscale.tools import utils
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.local_state import LocalState
@@ -25,7 +26,6 @@ from appscale.tools.parse_args import ParseArgs
 
 
 class TestAppScaleGatherLogs(unittest.TestCase):
-
 
   def setUp(self):
     self.keyname = "boobazblargfoo"
@@ -71,12 +71,25 @@ class TestAppScaleGatherLogs(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname)).and_return(True)
 
     fake_nodes_json = flexmock(name="fake_nodes_json")
-    fake_nodes_json.should_receive('read').and_return(json.dumps(
-      {"node_info": [{
-        "public_ip": "public1",
-        "private_ip": "private1",
-        "jobs": ["shadow", "login"]
-      }]}))
+    nodes_info = {
+      "node_info": [
+        {
+          "public_ip": "public1",
+          "private_ip": "private1",
+          "jobs": ["load_balancer", "taskqueue_master", "zookeeper",
+                   "db_master", "taskqueue", "shadow", "login"]
+        }, {
+          "public_ip": "public2",
+          "private_ip": "private2",
+          "jobs": ["memcache", "appengine", "zookeeper"]
+        }, {
+          "public_ip": "public3",
+          "private_ip": "private3",
+          "jobs": ["memcache", "appengine"]
+        },
+      ]
+    }
+    fake_nodes_json.should_receive('read').and_return(json.dumps(nodes_info))
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_call('open')
     builtins.should_receive('open').with_args(
@@ -94,18 +107,63 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     # and slip in a fake appcontroller to report on the two IP addrs
     fake_appcontroller = flexmock(name='fake_appcontroller')
     fake_appcontroller.should_receive('get_all_public_ips').with_args(
-      'the secret').and_return(json.dumps(['public1', 'public2']))
+      'the secret').and_return(json.dumps(['public1', 'public2', 'public3']))
+    fake_appcontroller.should_receive('get_role_info').with_args(
+      'the secret').and_return(json.dumps(nodes_info['node_info']))
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
 
     # fake the creation of the log directories locally
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public1').and_return()
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public2').and_return()
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public2/cassandra')
-    os.should_receive('mkdir').with_args('/tmp/foobaz/public2/rabbitmq')
+    flexmock(utils)
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/private-ips')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public1')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/cassandra')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public1/rabbitmq')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public2')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public2/cassandra')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public2/rabbitmq')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public3')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public3/cassandra')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/public3/rabbitmq')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/load_balancer')
+    utils.should_receive('mkdir').with_args(
+      '/tmp/foobaz/symlinks/taskqueue_master')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/zookeeper')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/db_master')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/taskqueue')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/shadow')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/login')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/memcache')
+    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/appengine')
+
+    # fake creation of symlink to for friendly navigation
+    links_mapping = {
+      '../../public1': [
+        '/tmp/foobaz/symlinks/private-ips/private1',
+        '/tmp/foobaz/symlinks/load_balancer/public1',
+        '/tmp/foobaz/symlinks/taskqueue_master/public1',
+        '/tmp/foobaz/symlinks/zookeeper/public1',
+        '/tmp/foobaz/symlinks/db_master/public1',
+        '/tmp/foobaz/symlinks/taskqueue/public1',
+        '/tmp/foobaz/symlinks/shadow/public1',
+        '/tmp/foobaz/symlinks/login/public1',
+      ],
+      '../../public2': [
+        '/tmp/foobaz/symlinks/private-ips/private2',
+        '/tmp/foobaz/symlinks/zookeeper/public2',
+        '/tmp/foobaz/symlinks/appengine/public2',
+        '/tmp/foobaz/symlinks/memcache/public2',
+      ],
+      '../../public3': [
+        '/tmp/foobaz/symlinks/private-ips/private3',
+        '/tmp/foobaz/symlinks/appengine/public3',
+        '/tmp/foobaz/symlinks/memcache/public3',
+      ]
+    }
+    for original_dir, expected_links in links_mapping.iteritems():
+      for expected_link in expected_links:
+        os.should_receive('symlink').with_args(original_dir, expected_link)
 
     # finally, fake the copying of the log files
     flexmock(subprocess)

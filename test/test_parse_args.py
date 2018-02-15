@@ -122,7 +122,7 @@ class TestParseArgs(unittest.TestCase):
     # If max is specified but not min, min should be equal to max
     argv_3 = ['--max', '1']
     actual_3 = ParseArgs(argv_3, self.function)
-    self.assertEquals(actual_3.args.min, actual_3.args.max)
+    self.assertEquals(actual_3.args.min_machines, actual_3.args.max_machines)
 
     # If max is less than min, it should abort
     argv_4 = ['--min', '10', '--max', '1']
@@ -304,7 +304,7 @@ class TestParseArgs(unittest.TestCase):
 
     argv_2 = self.cloud_argv[:] + ['--scp', '/tmp/booscale']
     actual = ParseArgs(argv_2, self.function).args
-    self.assertEquals('/tmp/booscale', actual.scp)
+    self.assertEquals('/tmp/booscale', actual.rsync_source)
 
 
   def test_login_flag(self):
@@ -500,9 +500,10 @@ public1 : vol-ABCDEFG
   def test_no_max_memory_flag_gets_set_to_default(self):
     argv = self.cluster_argv[:]
     actual = ParseArgs(argv, self.function).args
-    self.assertEquals(ParseArgs.DEFAULT_MAX_MEMORY, actual.max_memory)
+    self.assertEquals(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
+                      actual.default_max_appserver_memory)
 
   def test_max_memory_flag_gets_passed_through(self):
     argv = self.cluster_argv[:] + ["--max_memory", "800"]
     actual = ParseArgs(argv, self.function).args
-    self.assertEquals(800, actual.max_memory)
+    self.assertEquals(800, actual.default_max_appserver_memory)

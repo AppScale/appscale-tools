@@ -122,10 +122,10 @@ class TestAppScale(unittest.TestCase):
     # mock out the actual writing of the template file
     flexmock(shutil)
     shutil.should_receive('copy').with_args(
-      appscale.TEMPLATE_CLOUD_APPSCALEFILE, '/boo/' + appscale.APPSCALEFILE) \
+      appscale.TEMPLATE_APPSCALEFILE, '/boo/' + appscale.APPSCALEFILE) \
       .and_return()
 
-    appscale.init('cloud')
+    appscale.init()
 
 
   def testInitWithAppScalefile(self):
@@ -139,7 +139,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(os.path)
     os.path.should_receive('exists').with_args('/boo/' + appscale.APPSCALEFILE).and_return(True)
 
-    self.assertRaises(AppScalefileException, appscale.init, 'cloud')
+    self.assertRaises(AppScalefileException, appscale.init)
 
 
   def testUpWithNoAppScalefile(self):
@@ -498,6 +498,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('upload_app').and_return(
       (fake_host, fake_port))
+    AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
@@ -566,6 +567,7 @@ class TestAppScale(unittest.TestCase):
     flexmock(AppScaleTools)
     AppScaleTools.should_receive('upload_app').and_return(
       (fake_host, fake_port))
+    AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
