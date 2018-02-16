@@ -273,14 +273,14 @@ class ParseArgs(object):
 
       group = self.parser.add_mutually_exclusive_group()
       group.add_argument('--default_min_appservers', '--appengine', type=int,
-        default=1,
         help="the number of application servers to use per app")
-      group.add_argument('--disable-autoscale', dest='autoscale',
-        action='store_false',
-        help="disables autoscaling of AppServers based on traffic")
+      group.add_argument('--autoscale', action='store_true',
+        help="adds/removes application servers based on incoming traffic")
+
       # flags relating to the location where users reach appscale
       self.parser.add_argument('--login_host',
         help="override the provided login host with this one")
+
       # developer flags
       self.parser.add_argument('--flower_password',
         default=self.DEFAULT_FLOWER_PASSWORD,
@@ -741,10 +741,17 @@ class ParseArgs(object):
       BadConfigurationException: If the value for the --appengine flag is
         invalid.
     """
-    # Check that appengine is greater then 1.
-    if self.args.default_min_appservers < 1:
-      raise BadConfigurationException("Number of application servers " + \
-                                      "must exceed zero.")
+    # Check that appengine is greater then 1, and the set defaults for
+    # min_appservers and autoscale in case they are not defined.
+    if self.args.default_min_appservers:
+      if self.args.default_min_appservers < 1:
+        raise BadConfigurationException("Number of application servers " + \
+                                        "must exceed zero.")
+    else:
+      self.rgs.default_min_appservers = 1
+
+    if not self.args.autoscale:
+      self.args.autoscale = True
 
 
   def validate_developer_flags(self):
