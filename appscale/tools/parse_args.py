@@ -748,7 +748,7 @@ class ParseArgs(object):
         raise BadConfigurationException("Number of application servers " + \
                                         "must exceed zero.")
     else:
-      self.rgs.default_min_appservers = 1
+      self.args.default_min_appservers = 1
 
     if not self.args.autoscale:
       self.args.autoscale = True
