@@ -736,16 +736,16 @@ class ParseArgs(object):
       BadConfigurationException: If the value for the --appengine flag is
         invalid.
     """
+    # Check that appengine is greater then 1, and the set defaults for
+    # min_appservers and autoscale in case they are not defined.
     if self.args.default_min_appservers:
       if self.args.default_min_appservers < 1:
         raise BadConfigurationException("Number of application servers " + \
-          "must exceed zero.")
+                                        "must exceed zero.")
+    else:
+      self.args.default_min_appservers = 1
 
-      self.args.autoscale = False
-    elif self.args.autoscale:
-      self.args.default_min_appservers = 1
-    else:  # neither are set
-      self.args.default_min_appservers = 1
+    if not self.args.autoscale:
       self.args.autoscale = True
 
 
