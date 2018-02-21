@@ -233,8 +233,8 @@ class TestAppScale(unittest.TestCase):
       'machine' : 'ami-ABCDEFG',
       'keyname' : 'bookey',
       'group' : 'boogroup',
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'zone' : 'my-zone-1b'
     }
     yaml_dumped_contents = yaml.dump(contents)
@@ -281,8 +281,8 @@ class TestAppScale(unittest.TestCase):
       'instance_type' : 'm3.medium',
       'keyname' : 'bookey',
       'group' : 'boogroup',
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'EC2_ACCESS_KEY' : 'access key',
       'EC2_SECRET_KEY' : 'secret key',
       'zone' : 'my-zone-1b'
@@ -422,8 +422,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -452,8 +452,8 @@ class TestAppScale(unittest.TestCase):
       'keyname': 'bookey',
       'group': 'boogroup',
       'verbose': True,
-      'min': 1,
-      'max': 1
+      'min_machines': 1,
+      'max_machines': 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -486,8 +486,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -529,8 +529,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -554,8 +554,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'test' : True
     }
     yaml_dumped_contents = yaml.dump(contents)
@@ -703,8 +703,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -737,8 +737,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -771,8 +771,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -805,8 +805,8 @@ class TestAppScale(unittest.TestCase):
       'keyname' : 'bookey',
       'group' : 'boogroup',
       'verbose' : True,
-      'min' : 1,
-      'max' : 1
+      'min_machines' : 1,
+      'max_machines' : 1
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -829,8 +829,8 @@ class TestAppScale(unittest.TestCase):
       'machine' : 'ami-ABCDEFG',
       'keyname' : 'bookey',
       'group' : 'boogroup',
-      'min' : 1,
-      'max' : 1,
+      'min_machines' : 1,
+      'max_machines' : 1,
       'EC2_ACCESS_KEY' : 'access key',
       'EC2_SECRET_KEY' : 'secret key'
     }
