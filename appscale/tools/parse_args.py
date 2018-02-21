@@ -401,10 +401,11 @@ class ParseArgs(object):
         help="print nodes with specified role(s)")
       self.parser.add_argument('--order-processes', '-o',
         choices=['cpu', 'mem', 'name'],
-        default='cpu',
+        default='mem',
         help="the field to order process statistics by")
       self.parser.add_argument('--top',
         type=int,
+        default='15',
         help="the number of processes to print")
       self.parser.add_argument('--apps-only',
         action='store_true',

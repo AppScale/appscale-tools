@@ -177,3 +177,80 @@ def mkdir(dir_path):
       pass
     else:
       raise
+
+
+class UnknownStyle(ValueError):
+  pass
+
+
+STYLES_MAP = {
+  # Attributes:
+  "bold": "\x1b[1m",
+  "dim": "\x1b[2m",
+  "underlined": "\x1b[4m",
+  "reverse": "\x1b[7m",
+  # Foreground colors:
+  "black": "\x1b[30m",
+  "red": "\x1b[31m",
+  "green": "\x1b[32m",
+  "yellow": "\x1b[33m",
+  "blue": "\x1b[34m",
+  "magenta": "\x1b[35m",
+  "cyan": "\x1b[36m",
+  "light_gray": "\x1b[37m",
+  "dark_gray": "\x1b[90m",
+  "light_red": "\x1b[91m",
+  "light_green": "\x1b[92m",
+  "light_yellow": "\x1b[93m",
+  "light_blue": "\x1b[94m",
+  "light_magenta": "\x1b[95m",
+  "light_cyan": "\x1b[96m",
+  "white": "\x1b[97m",
+  # Background colors:
+  "back_black": "\x1b[40m",
+  "back_red": "\x1b[41m",
+  "back_green": "\x1b[42m",
+  "back_yellow": "\x1b[43m",
+  "back_blue": "\x1b[44m",
+  "back_magenta": "\x1b[45m",
+  "back_cyan": "\x1b[46m",
+  "back_light_gray": "\x1b[47m",
+  "back_dark_gray": "\x1b[100m",
+  "back_light_red": "\x1b[101m",
+  "back_light_green": "\x1b[102m",
+  "back_light_yellow": "\x1b[103m",
+  "back_light_blue": "\x1b[104m",
+  "back_light_magenta": "\x1b[105m",
+  "back_light_cyan": "\x1b[106m",
+  "back_white": "\x1b[107m",
+}
+
+
+def styled(text, *marks, **conditions):
+  """
+  Applies marks to text.
+
+  Args:
+    text: A text to wrap with xterm codes.
+    marks: args. A list of strings representing styles to apply.
+    conditions: kwargs. Only one allowed key is 'if_'
+      'if_': A boolean showing if mark should be applied.
+
+  Returns:
+    Styled string.
+  """
+  text = unicode(text)
+  if not conditions.get("if_", True):
+    return text
+
+  # Prepare xterm prefix to prepend it to the text
+  try:
+    styles_prefix = u"".join((STYLES_MAP[style] for style in marks))
+  except KeyError as err:
+    raise UnknownStyle("Unknown style ({err}). Allowed are: {styles}"
+                       .format(err=err, styles=STYLES_MAP.keys().sort()))
+
+  # Resolve collisions with styles of wrapped text
+  text = text.replace(u"\x1b[0m", u"\x1b[0m{}".format(styles_prefix))
+
+  return u"{prefix}{text}\x1b[0m".format(prefix=styles_prefix, text=text)

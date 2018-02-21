@@ -1,12 +1,14 @@
+from collections import defaultdict
+
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from tabulate import tabulate
 
 from appcontroller_client import AppControllerClient
-from local_state import LocalState
 
-from tabulate import tabulate
 from appscale_logger import AppScaleLogger
-from termcolor import colored
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from local_state import LocalState
+from utils import styled
 
 
 # Fields needed for node statistics
@@ -29,10 +31,11 @@ INCLUDE_PROCESS_LIST = {
 # Fields needed for proxy statistics
 INCLUDE_PROXY_LIST = {
   'proxy': ['unified_service_name', 'application_id', 'servers_count',
-            'frontend', 'backend'],
+            'servers', 'frontend', 'backend'],
   'proxy.frontend': ['req_rate', 'req_tot', 'hrsp_5xx', 'hrsp_4xx',
                      'bin', 'bout', 'scur'],
-  'proxy.backend': ['qtime', 'rtime', 'qcur']
+  'proxy.backend': ['qtime', 'rtime', 'qcur'],
+  'proxy.server': ['status']
 }
 
 PROCESSES_NAME_COLUMN_NUMBER = 0
@@ -59,14 +62,8 @@ def _get_stats(keyname, stats_kind, include_lists):
   administration_port = "17441"
   stats_path = "/stats/cluster/{stats_kind}".format(stats_kind=stats_kind)
 
-  headers = {
-    'Appscale-Secret': secret
-  }
-
-  data = {
-    'include_lists': include_lists
-  }
-
+  headers = {'Appscale-Secret': secret}
+  data = {'include_lists': include_lists}
   url = "https://{ip}:{port}{path}".format(
     ip=login_host,
     port=administration_port,
@@ -82,16 +79,15 @@ def _get_stats(keyname, stats_kind, include_lists):
       verify=False
     )
     resp.raise_for_status()
-  except requests.HTTPError as e:
+  except requests.HTTPError as err:
     AppScaleLogger.warn(
-      "Failed to get {stats_kind} stats."
-      .format(stats_kind=stats_kind)
+      "Failed to get {stats_kind} stats ({err})"
+      .format(stats_kind=stats_kind, err=err)
     )
     return {}, {}
 
-  resp = resp.json()
-
-  return resp["stats"], resp["failures"]
+  json_body = resp.json()
+  return json_body["stats"], json_body["failures"]
 
 
 def show_stats(options):
@@ -104,14 +100,17 @@ def show_stats(options):
   """
   failures = {}
 
+  # NODES STATS:
   if "nodes" in options.types:
+    # Fetch node stats from Hermes
     raw_node_stats, node_failures = _get_stats(
       keyname=options.keyname,
       stats_kind="nodes",
       include_lists=INCLUDE_NODE_LIST
     )
     all_roles = get_roles(keyname=options.keyname)
-    node_headers, node_stats = get_node_stats(
+    # Prepare and print table
+    node_headers, node_stats = get_node_stats_rows(
       raw_node_stats=raw_node_stats,
       all_roles=all_roles,
       specified_roles=options.roles,
@@ -125,22 +124,23 @@ def show_stats(options):
     if node_failures:
       failures["nodes"] = node_failures
 
+  # PROCESSES STATS:
   if "processes" in options.types:
-    if "name" == options.order_processes:
-      order = (PROCESSES_NAME_COLUMN_NUMBER
-               if not options.verbose
-               else PROCESSES_NAME_COLUMN_VERBOSE_NUMBER)
-    elif "mem" == options.order_processes:
-      order = PROCESSES_MEMORY_COLUMN_NUMBER
-    elif "cpu" == options.order_processes:
-      order = PROCESSES_CPU_COLUMN_NUMBER
+    order_columns_map = {
+      "name": PROCESSES_NAME_COLUMN_NUMBER,
+      "mem": PROCESSES_MEMORY_COLUMN_NUMBER,
+      "cpu": PROCESSES_CPU_COLUMN_NUMBER
+    }
+    order = order_columns_map[options.order_processes]
 
+    # Fetch processes stats from Hermes
     raw_process_stats, process_failures = _get_stats(
       keyname=options.keyname,
       stats_kind="processes",
       include_lists=INCLUDE_PROCESS_LIST
     )
     if "nodes" not in options.types:
+      # Fetch node stats from Hermes if it hasn't been fetched yet
       raw_node_stats, node_failures = _get_stats(
         keyname=options.keyname,
         stats_kind="nodes",
@@ -149,41 +149,63 @@ def show_stats(options):
       if node_failures:
         failures["nodes"] = node_failures
 
-    process_headers, process_stats = (
-      get_process_stats(raw_process_stats=raw_process_stats)
-      if options.verbose
-      else get_summary_process_stats(
-        raw_process_stats=raw_process_stats,
-        raw_node_stats=raw_node_stats
-      )
+    # Prepare and print summarised processes stats
+    process_headers, process_stats = get_summary_process_stats_rows(
+      raw_process_stats=raw_process_stats,
+      raw_node_stats=raw_node_stats
     )
-    process_stats = sort_process_stats(
+    process_stats = sort_process_stats_rows(
       process_stats=process_stats,
       column=order,
-      top=options.top if options.top else None,
+      top=options.top,
       reverse="name" not in options.order_processes
     )
     print_table(
-      table_name="SUMMARY APPSCALE PROCESS STATISTICS"
-      if not options.verbose else "APPSCALE PROCESS STATISTICS",
+      table_name="Summary for top {} APPSCALE PROCESSES".format(options.top),
       headers=process_headers,
       data=process_stats
     )
     if process_failures:
       failures["processes"] = process_failures
 
+    if options.verbose:
+      # Additionally render detailed processes stats table in verbose mode
+      order_columns_map = {
+        "name": PROCESSES_NAME_COLUMN_VERBOSE_NUMBER,
+        "mem": PROCESSES_MEMORY_COLUMN_NUMBER,
+        "cpu": PROCESSES_CPU_COLUMN_NUMBER
+      }
+      order = order_columns_map[options.order_processes]
+      process_headers, process_stats = get_process_stats_rows(
+        raw_process_stats=raw_process_stats
+      )
+      process_stats = sort_process_stats_rows(
+        process_stats=process_stats,
+        column=order,
+        top=options.top,
+        reverse="name" not in options.order_processes
+      )
+      print_table(
+        table_name="Top {} APPSCALE PROCESSES".format(options.top),
+        headers=process_headers,
+        data=process_stats
+      )
+
+  # PROXIES STATS
   if "proxies" in options.types:
+    # Fetch proxies stats
     raw_proxy_stats, proxy_failures = _get_stats(
       keyname=options.keyname,
       stats_kind="proxies",
       include_lists=INCLUDE_PROXY_LIST
     )
-    proxy_headers, proxy_stats = get_proxy_stats(
+    # Prepare proxies stats table
+    proxy_headers, proxy_stats = get_proxy_stats_rows(
       raw_proxy_stats=raw_proxy_stats,
       verbose=options.verbose,
       apps_filter=options.apps_only
     )
-    proxy_stats = sort_proxy_stats(
+    proxy_stats = sort_proxy_stats_rows(
       proxy_stats=proxy_stats,
       column=0
     )
@@ -195,30 +217,9 @@ def show_stats(options):
     if proxy_failures:
       failures["proxies"] = proxy_failures
 
+  # Render failures if there were any
   if failures:
     print_failures(failures=failures)
-
-
-def get_marked(data, mark):
-  """
-  Marks data in a specified mark.
-
-  Args:
-    data: An object to be marked in.
-    mark: A string representing one of the existing marks
-      ('red', 'green' or 'bold').
-
-  Returns:
-    A string marked in.
-  """
-  colors = ["red", "green"]
-  attrs = ["bold"]
-  if mark in colors:
-    return colored(text=str(data), color=mark)
-  elif mark in attrs:
-    return colored(text=str(data), attrs=[mark])
-  else:
-    return str(data)
 
 
 def render_loadavg(loadavg):
@@ -234,15 +235,15 @@ def render_loadavg(loadavg):
     and marked in red if loadavg is more than 2.0.
   """
   limit_value = 2.0
-  last_1 = loadavg["last_1min"]
-  last_5 = loadavg["last_5min"]
-  last_15 = loadavg["last_15min"]
+  last_1 = round(loadavg["last_1min"], 1)
+  last_5 = round(loadavg["last_5min"], 1)
+  last_15 = round(loadavg["last_15min"], 1)
 
-  return "{} | {} | {}".format(
-    last_1 if last_1 < limit_value else get_marked(last_1, "red"),
-    last_5 if last_5 < limit_value else get_marked(last_5, "red"),
-    last_15 if last_15 < limit_value else get_marked(last_15, "red")
-  )
+  return u" ".join([
+    styled(last_1, "red", "bold", if_=last_1>=limit_value),
+    styled(last_5, "red", "bold", if_=last_5>=limit_value),
+    styled(last_15, "red", "bold", if_=last_15>=limit_value)
+  ])
 
 
 def render_partitions(partitions, verbose):
@@ -266,10 +267,9 @@ def render_partitions(partitions, verbose):
   part_list.sort(key=lambda p: p[1], reverse=True)
 
   partitions_info = [
-    "'{part}': {usage}%".format(part=part[0], usage=part[1])
-    if part[1] < 90
-    else get_marked(
-      "'{part}': {usage}%".format(part=part[0], usage=part[1]), "red"
+    styled(
+      "{part}: {usage}".format(part=part[0], usage=part[1]),
+      "red", "bold", if_=part[1]>90
     )
     for part in part_list
   ]
@@ -297,7 +297,7 @@ def render_memory(memory):
   )
 
 
-def sort_process_stats(process_stats, column, top, reverse=True):
+def sort_process_stats_rows(process_stats, column, top, reverse=True):
   """
   Sorts process statistics by specified column.
 
@@ -310,13 +310,13 @@ def sort_process_stats(process_stats, column, top, reverse=True):
   Returns:
     A list of top processes sorted by specified column.
   """
-  if top == None:
+  if not top:
     top = len(process_stats)
 
   return sorted(process_stats, key=lambda p: p[column], reverse=reverse)[:top]
 
 
-def sort_proxy_stats(proxy_stats, column):
+def sort_proxy_stats_rows(proxy_stats, column):
   """
   Sorts proxy statistics by specified column.
 
@@ -355,7 +355,7 @@ def get_roles(keyname):
   return roles_data
 
 
-def get_node_stats(raw_node_stats, all_roles, specified_roles, verbose):
+def get_node_stats_rows(raw_node_stats, all_roles, specified_roles, verbose):
   """
   Obtains useful information from node statistics and returns:
   PRIVATE IP, AVAILABLE MEMORY, LOADAVG, PARTITIONS USAGE, ROLES values.
@@ -374,7 +374,7 @@ def get_node_stats(raw_node_stats, all_roles, specified_roles, verbose):
     A list of node statistics.
   """
   node_stats_headers = [
-    "PRIVATE IP", "AVAILABLE MEMORY", "LOADAVG", "PARTITIONS USAGE", "ROLES"
+    "PRIVATE IP", "AVAILABLE MEM", "LOADAVG", "DISK USAGE%", "ROLES"
   ]
 
   node_stats = []
@@ -386,33 +386,25 @@ def get_node_stats(raw_node_stats, all_roles, specified_roles, verbose):
       if not matches:
         continue
 
-    if "shadow" in ip_roles:
-      node_info = [
-        get_marked(ip, "bold"),
-        get_marked(render_memory(memory=node["memory"]), "bold"),
-        get_marked(render_loadavg(loadavg=node["loadavg"]), "bold"),
-        get_marked(
-          render_partitions(partitions=node["partitions_dict"],
-                            verbose=verbose), "bold"
-        ),
-        get_marked(u", ".join(ip_roles), "bold")
-      ]
-    else:
-      node_info = [
-        ip,
-        render_memory(memory=node["memory"]),
-        render_loadavg(loadavg=node["loadavg"]),
+    is_master = ("master" in ip_roles) or ("shadow" in ip_roles)
+
+    node_stats.append([
+      styled(ip, "bold", if_=is_master),
+      styled(render_memory(memory=node["memory"]), "bold", if_=is_master),
+      styled(render_loadavg(loadavg=node["loadavg"]), "bold", if_=is_master),
+      styled(
         render_partitions(partitions=node["partitions_dict"], verbose=verbose),
-        u", ".join(ip_roles)
-      ]
-    node_stats.append(node_info)
+        "bold", if_=is_master
+      ),
+      styled(u" ".join(ip_roles), "bold", if_=is_master)
+    ])
 
   node_stats.sort(key=lambda n: n[0], reverse=False)
 
   return node_stats_headers, node_stats
 
 
-def get_process_stats(raw_process_stats):
+def get_process_stats_rows(raw_process_stats):
   """
   Obtains useful information from process statistics and returns:
   PRIVATE IP, MONIT NAME, UNIQUE MEMORY (MB), CPU (%) values.
@@ -426,7 +418,7 @@ def get_process_stats(raw_process_stats):
     A list of process statistics.
   """
   process_stats_headers = [
-    "PRIVATE IP", "MONIT NAME", "UNIQUE MEMORY (MB)", "CPU (%)"
+    "PRIVATE IP", "MONIT NAME", "MEM MB", "CPU%"
   ]
 
   process_stats = []
@@ -449,7 +441,7 @@ def get_process_stats(raw_process_stats):
   return process_stats_headers, process_stats
 
 
-def get_summary_process_stats(raw_process_stats, raw_node_stats):
+def get_summary_process_stats_rows(raw_process_stats, raw_node_stats):
   """
   Obtains useful information from summary process statistics and returns:
   SERVICE (ID), INSTANCES, UNIQUE MEMORY SUM (MB),
@@ -463,18 +455,15 @@ def get_summary_process_stats(raw_process_stats, raw_node_stats):
     A list of summary process statistics headers.
     A list of summary process statistics.
   """
-  cpu_count = sum(
-    int(node["cpu"]["count"])
-    for node in raw_node_stats.itervalues()
-  )
+  cpu_count = sum(node["cpu"]["count"] for node in raw_node_stats.itervalues())
 
   process_stats = []
   process_list = []
   unique_processes = set()
 
   process_stats_headers = [
-    "SERVICE (ID)", "INSTANCES", "UNIQUE MEMORY SUM (MB)",
-    "CPU SUM (%)", "CPU PER PROCESS (%)", "CPU PER CORE (%)"
+    "SERVICE (ID)", "INSTANCES", u"\u2211 MEM MB",
+    u"\u2211 CPU%", "CPU% PER PROCESS", "CPU% PER CORE"
   ]
 
   for proc in raw_process_stats.itervalues():
@@ -484,7 +473,8 @@ def get_summary_process_stats(raw_process_stats, raw_node_stats):
     name = proc["unified_service_name"]
     app_id = proc["application_id"]
     name_id = name + (" ({})".format(app_id) if app_id else "")
-    if name_id in unique_processes:  # if calculating with process has been made
+    if name_id in unique_processes:
+      # calculation with process has been made
       continue
 
     process_group = [
@@ -520,7 +510,7 @@ def get_summary_process_stats(raw_process_stats, raw_node_stats):
   return process_stats_headers, process_stats
 
 
-def get_proxy_stats(raw_proxy_stats, verbose, apps_filter):
+def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
   """
   Obtains useful information from proxy statistics and returns:
   SERVICE (ID), UNIQUE MEMORY SUM (MB), CPU PER 1 PROCESS (%),
@@ -536,14 +526,15 @@ def get_proxy_stats(raw_proxy_stats, verbose, apps_filter):
     A list of proxy statistics headers.
     A list of proxy statistics.
   """
-  proxy_stats_headers = [
-    "SERVICE (ID)", "SERVERS", "REQ RATE | REQ TOTAL", "5xx | 4xx", "QUEUE CUR"
-  ]
-
-  proxy_stats_headers_verbose = [
-    "SERVICE (ID)", "SERVERS", "REQ RATE | REQ TOTAL", "5xx | 4xx",
-    "BYTES IN | BYTES OUT", "SESSION CUR | QUEUE CUR", "QTIME | RTIME"
-  ]
+  if verbose:
+    headers = [
+      "SERVICE (ID)", "SERVERS | DOWN", "RATE | REQ TOTAL", "5xx | 4xx",
+      "BYTES IN | BYTES OUT", "SCUR | QCUR", "QTIME | RTIME"
+    ]
+  else:
+    headers = [
+      "SERVICE (ID)", "SERVERS | DOWN", "RATE | REQ TOTAL", "5xx | 4xx", "QCUR"
+    ]
 
   proxy_stats = []
   proxy_groups = []
@@ -553,90 +544,59 @@ def get_proxy_stats(raw_proxy_stats, verbose, apps_filter):
     proxy_groups += node["proxies_stats"]
 
   for node in proxy_groups:
-    if apps_filter and "application" != node["unified_service_name"]:
+    if node["application_id"]:
+      service_name_id = "app ({app_id})".format(app_id=node["application_id"])
+    elif not apps_filter:
+      service_name_id = node["unified_service_name"]
+    else:
       continue
 
-    service_name_id = (
-      node["unified_service_name"]
-      + ((" (" + node["application_id"] + ")")
-         if node["application_id"] else "")
-    )
-
-    summary_proxy = unique_proxies.get(service_name_id)
-    if not service_name_id in unique_proxies:
-      summary_proxy = {}
-      summary_proxy["req_rate"] = 0
-      summary_proxy["req_tot"] = 0
-      summary_proxy["hrsp_5xx"] = 0
-      summary_proxy["hrsp_4xx"] = 0
-
-      if verbose:
-        summary_proxy["bin"] = 0
-        summary_proxy["bout"] = 0
-        summary_proxy["scur"] = 0
-
-      summary_proxy["qcur"] = 0
-
-      if verbose and "qtime" and "rtime" in node["backend"]:
-        summary_proxy["qtime"] = 0
-        summary_proxy["rtime"] = 0
+    if service_name_id not in unique_proxies:
+      summary_proxy = unique_proxies[service_name_id] = defaultdict(int)
+    else:
+      summary_proxy = unique_proxies[service_name_id]
 
     summary_proxy["servers_count"] = node["servers_count"]
-
+    servers_down = sum(1 for s in node["servers"] if s["status"] != "UP")
+    summary_proxy["servers_down_count"] = servers_down
     summary_proxy["req_rate"] += node["frontend"]["req_rate"]
     summary_proxy["req_tot"] += node["frontend"]["req_tot"]
     summary_proxy["hrsp_5xx"] += node["frontend"]["hrsp_5xx"]
     summary_proxy["hrsp_4xx"] += node["frontend"]["hrsp_4xx"]
-
-    if verbose:
-      summary_proxy["bin"] += node["frontend"]["bin"]
-      summary_proxy["bout"] += node["frontend"]["bout"]
-      summary_proxy["scur"] += node["frontend"]["scur"]
-
+    summary_proxy["bin"] += node["frontend"]["bin"]
+    summary_proxy["bout"] += node["frontend"]["bout"]
+    summary_proxy["scur"] += node["frontend"]["scur"]
     summary_proxy["qcur"] += node["backend"]["qcur"]
 
-    if verbose and "qtime" and "rtime" in node["backend"]:
+    if "qtime" in node["backend"]:
+      # HAProxy 1.4 and lower doesn't provide qtime and rtime stats
       summary_proxy["qtime"] += node["backend"]["qtime"]
       summary_proxy["rtime"] += node["backend"]["rtime"]
 
-    unique_proxies[service_name_id] = summary_proxy
-
   for key, value in unique_proxies.iteritems():
-    proxy = []
-    proxy.append(key if not key.startswith("application")
-                else key.replace("application", "app", 1))
-    proxy.append(value["servers_count"])
-    proxy.append(
-      "{r_rate} | {r_tot}"
-        .format(r_rate=value["req_rate"], r_tot=value["req_tot"])
-    )
-    proxy.append("{hrsp_5xx} | {hrsp_4xx}".format(
-      hrsp_5xx=(value["hrsp_5xx"] if not value["hrsp_5xx"]
-      else get_marked(value["hrsp_5xx"], "red")),
-      hrsp_4xx=(value["hrsp_4xx"] if not value["hrsp_4xx"]
-      else get_marked(value["hrsp_4xx"], "red"))
-    ))
+    servers_down = value["servers_down_count"]
+    proxy_row = [
+      key.replace("application", "app", 1),
+      "{} | {}".format(
+        value["servers_count"],
+        styled(servers_down, "red", "bold", if_=servers_down)
+      ),
+      "{req_rate} | {req_tot}".format(**value),
+      "{hrsp_5xx} | {hrsp_4xx}".format(
+        hrsp_5xx=styled(value["hrsp_5xx"], "red", "bold", if_=value["hrsp_5xx"]),
+        hrsp_4xx=styled(value["hrsp_4xx"], "red", "bold", if_=value["hrsp_4xx"])
+      )
+    ]
 
     if verbose:
-      proxy.append(
-        "{bin} | {bout}"
-          .format(bin=value["bin"], bout=value["bout"])
-      )
+      proxy_row.append("{bin} | {bout}".format(**value))
+      proxy_row.append("{qcur} | {scur}".format(**value))
+      if "qtime" in value:
+        proxy_row.append("{qtime} | {rtime}".format(**value))
+    else:
+      proxy_row.append(value["qcur"])
 
-    proxy.append(
-      "{scur}{qcur}"
-        .format(scur=((str(value["scur"]) + " | ") if verbose else ""),
-                qcur=value["qcur"])
-    )
-
-    if verbose and "qtime" and "rtime" in value:
-      proxy.append(
-        "{qtime} | {rtime}".format(qtime=value["qtime"], rtime=value["rtime"])
-      )
-
-    proxy_stats.append(proxy)
-
-  headers = proxy_stats_headers_verbose if verbose else proxy_stats_headers
+    proxy_stats.append(proxy_row)
 
   return headers, proxy_stats
 
@@ -654,16 +614,17 @@ def print_table(table_name, headers, data):
                    floatfmt=".1f", numalign="right", stralign="left")
 
   table_width = len(table.split("\n", 2)[1])
-  left_signs = "=" * ((table_width - len(table_name) - 2) / 2)
+  left_signs = " " * ((table_width - len(table_name) - 2) / 2)
   right_signs = left_signs + (
-    "=" if (table_width - len(table_name)) % 2 == 1 else ""
+    " " if (table_width - len(table_name)) % 2 == 1 else ""
   )
   result_table_name = (
     "{l_signs} {name} {r_signs}"
       .format(l_signs=left_signs, name=table_name, r_signs=right_signs)
   )
 
-  AppScaleLogger.log(get_marked(data=result_table_name, mark="green"))
+  title = styled(result_table_name, "bold", "blue", "reverse")
+  AppScaleLogger.log(title)
   AppScaleLogger.log(table + "\n")
 
 
@@ -686,8 +647,6 @@ def print_failures(failures):
     for ip, failure in fails.iteritems():
       AppScaleLogger.warn(
         "  {stats_kind} stats from {ip}: {failure}".format(
-          stats_kind=stats_kinds[kind],
-          ip=ip,
-          failure=failure
+          stats_kind=stats_kinds[kind], ip=ip, failure=failure
         )
       )
