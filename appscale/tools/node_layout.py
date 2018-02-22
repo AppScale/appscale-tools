@@ -268,9 +268,11 @@ class NodeLayout():
 
       instance_type = node_set.get('instance_type', self.default_instance_type)
 
-      if not instance_type:
-        self.invalid("Must set a default instance type or specify instance "
-                     "type per role.")
+      if self.infrastructure:
+        if not instance_type:
+          self.invalid("Must set a default instance type or specify instance "
+                       "type per role.")
+
       # Check if this is an allowed instance type.
       if instance_type in ParseArgs.DISALLOWED_INSTANCE_TYPES and \
           not (self.force or self.test):
