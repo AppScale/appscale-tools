@@ -67,7 +67,7 @@ class AppScale():
   USAGE = """Usage: appscale command [<args>]
 
 Available commands:
-  deploy --project <id> <app>       Deploys a Google App Engine app to AppScale:
+  deploy [--project <id>] <app>     Deploys a Google App Engine app to AppScale:
                                     <app> can be the top level directory with the
                                     code or a tar.gz of the source tree, and <id>
                                     is the application/project name.
@@ -523,7 +523,7 @@ Available commands:
     AppScaleTools.print_cluster_status(options)
 
 
-  def deploy(self, app, project_id, email=None):
+  def deploy(self, app, project_id=None):
     """ 'deploy' is a more accessible way to tell an AppScale deployment to run a
     Google App Engine application than 'appscale-upload-app'. It calls that
     command with the configuration options found in the AppScalefile in the
@@ -533,7 +533,6 @@ Available commands:
       app: The path (absolute or relative) to the Google App Engine application
         that should be uploaded.
       project_id: Which project ID to use to deploy the application.
-      email: The email of user
     Returns:
       A tuple containing the host and port where the application is serving
         traffic from.
@@ -556,15 +555,12 @@ Available commands:
     if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
       command.append("--verbose")
 
-    if email is not None:
-      command.append("--email")
-      command.append(email)
-
     command.append("--file")
     command.append(app)
 
-    command.append("--project")
-    command.append(project_id)
+    if project_id is not None:
+      command.append("--project")
+      command.append(project_id)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
