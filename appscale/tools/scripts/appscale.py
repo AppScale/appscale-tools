@@ -82,7 +82,7 @@ def main():
       if len(sys.argv) == 3:
         appscale.deploy(sys.argv[2])
       elif len(sys.argv) == 5:
-        if sys.argv[3] != '--project'
+        if sys.argv[2] != '--project':
           cprint("Usage: appscale deploy [--project <id>] <path to your app>", 'red')
           sys.exit(1)
         appscale.deploy(sys.argv[4], sys.argv[3])

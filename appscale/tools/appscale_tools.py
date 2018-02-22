@@ -959,8 +959,8 @@ class AppScaleTools(object):
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
 
-    if options.project_id:
-      app_id = options.project_id
+    if options.project:
+      app_id = options.project
     else:
       try:
         app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
