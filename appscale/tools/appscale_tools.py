@@ -1002,7 +1002,7 @@ class AppScaleTools(object):
     admin_client = AdminClient(login_host, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      options.keyname, options.verbose, extras)
+      app_id, options.keyname, options.verbose, extras)
 
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(service_id, app_id))
