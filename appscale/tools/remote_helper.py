@@ -154,15 +154,13 @@ class RemoteHelper(object):
     agent.configure_instance_security(params)
 
     load_balancer_roles = {}
-
-    instance_type_roles = {'with_disks':{}, 'without_disks': {}}
+    instance_type_roles = {}
 
     for node in node_layout.get_nodes('load_balancer', True):
       load_balancer_roles.setdefault(node.instance_type, []).append(node)
 
     for node in node_layout.get_nodes('load_balancer', False):
-      instance_type = instance_type_roles['with_disks'] if node.disk else \
-        instance_type_roles['without_disks']
+      instance_type = instance_type_roles
       instance_type.setdefault(node.instance_type, []).append(node)
 
     spawned_instance_ids = []
@@ -195,26 +193,23 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    for _, nodes in instance_type_roles.items():
-      for instance_type, other_nodes in nodes.items():
-        if len(other_nodes) <= 0:
-          break
-        # Copy parameters so we can modify the instance type.
-        instance_type_params = params.copy()
-        instance_type_params['instance_type'] = instance_type
+    for instance_type, nodes in instance_type_roles.items():
+      # Copy parameters so we can modify the instance type.
+      instance_type_params = params.copy()
+      instance_type_params['instance_type'] = instance_type
 
-        _instance_ids, _public_ips, _private_ips =\
-          cls.spawn_nodes_in_cloud(options, agent, instance_type_params,
-                                   spawned_instance_ids, count=len(other_nodes))
+      _instance_ids, _public_ips, _private_ips = cls.spawn_nodes_in_cloud(
+        options, agent, instance_type_params, spawned_instance_ids,
+        count=len(nodes))
 
-        # Keep track of instances we have started.
-        spawned_instance_ids.extend(_instance_ids)
+      # Keep track of instances we have started.
+      spawned_instance_ids.extend(_instance_ids)
 
-        for node_index, node in enumerate(other_nodes):
-          index = node_layout.nodes.index(node)
-          node_layout.nodes[index].public_ip = _public_ips[node_index]
-          node_layout.nodes[index].private_ip = _private_ips[node_index]
-          node_layout.nodes[index].instance_id = _instance_ids[node_index]
+      for node_index, node in enumerate(nodes):
+        index = node_layout.nodes.index(node)
+        node_layout.nodes[index].public_ip = _public_ips[node_index]
+        node_layout.nodes[index].private_ip = _private_ips[node_index]
+        node_layout.nodes[index].instance_id = _instance_ids[node_index]
 
     return node_layout
 
