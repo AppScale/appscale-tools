@@ -112,18 +112,8 @@ Available commands:
                                     THE APPLICATION WILL BE LOST.
   upgrade                           Upgrades AppScale code to its latest version.
 """
-
-
-  # TODO: update these as items in the AppScalefile get deprecated and removed.
-  DEPRECATED_ASF_ARGS = {
-    'n': 'replication',
-    'scp': 'rsync_source',
-    'appengine': 'default_min_appservers',
-    'max_memory': 'default_max_appserver_memory',
-    'min': 'min_machines',
-    'max': 'max_machines'
-  }
-
+  # Deprecated AppScaleFile arguments
+  DEPRECATED_ASF_ARGS =  ['n', 'scp', 'appengine', 'max_memory', 'min', 'max']
 
   def __init__(self):
     pass
@@ -272,10 +262,9 @@ Available commands:
         os.environ[key] = value
         continue
       if key in self.DEPRECATED_ASF_ARGS:
-        deprecated = True
-        AppScaleLogger.warn("'{}' is deprecated, please use '{}'"\
-                            .format(key, self.DEPRECATED_ASF_ARGS[key]))
-        key = self.DEPRECATED_ASF_ARGS[key]
+        raise AppScalefileException(
+          "'{0}' has been deprecated. Refer to {1} to see the full changes.".
+            format(key, NodeLayout.APPSCALEFILE_INSTRUCTIONS ))
 
       if value is True:
         command.append(str("--%s" % key))
@@ -294,10 +283,6 @@ Available commands:
         else:
           command.append(str("--%s" % key))
           command.append(str("%s" % value))
-
-    if deprecated:
-      AppScaleLogger.warn("Refer to {} to see the full changes.".format(
-        NodeLayout.APPSCALEFILE_INSTRUCTIONS))
 
     run_instances_opts = ParseArgs(command, "appscale-run-instances").args
 
