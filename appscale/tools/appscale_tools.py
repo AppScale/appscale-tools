@@ -959,7 +959,13 @@ class AppScaleTools(object):
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
 
+    app_language = AppEngineHelper.get_app_runtime_from_app_config(
+      file_location)
     if options.project:
+      if app_language == 'java':
+        raise BadConfigurationException("AppScale doesn't support --project "
+          "for Java yet. Please add 'application:' to appengine-web.xml.")
+
       app_id = options.project
     else:
       try:
@@ -978,8 +984,6 @@ class AppScaleTools(object):
     AppEngineHelper.warn_if_version_defined(file_location, options.test)
 
     service_id = AppEngineHelper.get_service_id(file_location)
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(
-      file_location)
     env_variables = AppEngineHelper.get_env_vars(file_location)
     inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
