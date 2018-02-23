@@ -963,8 +963,8 @@ class AppScaleTools(object):
       file_location)
     if options.project:
       if app_language == 'java':
-        raise BadConfigurationException("AppScale doesn't support --project "
-          "for Java yet. Please add 'application:' to appengine-web.xml.")
+        raise BadConfigurationException("AppScale doesn't support --project for"
+          "Java yet. Please specify the application id in appengine-web.xml.")
 
       app_id = options.project
     else:
