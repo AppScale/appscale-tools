@@ -230,19 +230,23 @@ class TestNodeLayout(unittest.TestCase):
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
                           "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
-                                   'taskqueue_master'] },
+                                   'taskqueue_master'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "jobs": ['memcache', 'appengine'] },
+                          "jobs": ['memcache', 'appengine'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "jobs": ['zookeeper'] },
+                          "jobs": ['zookeeper'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'db_master'] }
+                          "jobs": ['database', 'db_master'],
+                          "instance_type": "instance_type_1"}
                         ]
 
 

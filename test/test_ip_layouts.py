@@ -36,10 +36,10 @@ OPEN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1, 'i
 LOGIN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
                   {'roles': 'login', 'nodes': 1, 'instance_type': INSTANCE_TYPE_2}]
 
-FOUR_NODE_CLOUD = [{'roles': 'master', 'nodes': 1},
-                   {'roles': 'appengine', 'nodes': 1},
-                   {'roles': 'database', 'nodes': 1},
-                   {'roles': 'zookeeper', 'nodes': 1}]
+FOUR_NODE_CLOUD = [{'roles': 'master', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
+                   {'roles': 'appengine', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
+                   {'roles': 'database', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
+                   {'roles': 'zookeeper', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1}]
 
 FOUR_NODE_CLUSTER = [{'roles': 'master', 'nodes': IP_1, 'instance_type': INSTANCE_TYPE_1},
                      {'roles': 'appengine', 'nodes': IP_2, 'instance_type': INSTANCE_TYPE_2},
