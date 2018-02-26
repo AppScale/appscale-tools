@@ -6,6 +6,7 @@ interact with Microsoft Azure.
 
 # General-purpose Python library imports
 import adal
+import json
 import math
 import os.path
 import re
@@ -265,31 +266,77 @@ class AzureAgent(BaseAgent):
     private_ips = []
     instance_ids = []
 
-    public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
-    for public_ip in public_ip_addresses:
-      public_ips.append(public_ip.ip_address)
+    public_ip_addresses, error = self.run_and_return_exception(
+        network_client.public_ip_addresses.list, resource_group)
+    self.raise_if_error(error, "Error calling describe instances")
 
-    network_interfaces = network_client.network_interfaces.list(resource_group)
-    for network_interface in network_interfaces:
-      for ip_config in network_interface.ip_configurations:
-        private_ips.append(ip_config.private_ip_address)
+    public_ips_results = self.convert_to_list(
+        public_ip_addresses, raise_exception=True,
+        err_msg="Error calling describe instances")
 
-    virtual_machines = compute_client.virtual_machines.list(resource_group)
-    for vm in virtual_machines:
-      instance_ids.append(vm.name)
+    public_ips = [x.ip_address for x in public_ips_results]
 
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
-    for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group,
-                                                                  vmss.name)
-      for vm in vm_list:
-        network_interface_list = network_client.network_interfaces. \
-          list_virtual_machine_scale_set_vm_network_interfaces(resource_group,
-                                                               vmss.name,
-                                                               vm.instance_id)
+    network_interfaces, error = self.run_and_return_exception(
+        network_client.network_interfaces.list, resource_group)
+    self.raise_if_error(error, "Error calling describe instances")
+
+    network_interfaces_results = self.convert_to_list(
+        network_interfaces, raise_exception=True,
+        err_msg="Error calling describe instances")
+
+    for network_interface in network_interfaces_results:
+      ip_config_results = self.convert_to_list(
+          network_interface.ip_configurations, raise_exception=True,
+          err_msg="Error calling describe instances")
+
+      private_ips.extend([x.private_ip_address for x in ip_config_results])
+
+    virtual_machines, error = self.run_and_return_exception(
+        compute_client.virtual_machines.list, resource_group)
+    self.raise_if_error(error, "Error calling describe instances")
+
+    virtual_machines_results = self.convert_to_list(virtual_machines,
+        raise_exception=True, err_msg="Error calling describe instances")
+
+    instance_ids = [vm.name for vm in virtual_machines_results]
+
+    vmss_list, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_sets.list,
+        resource_group)
+    self.raise_if_error(error, "Error getting list of Scale Sets")
+
+    vmss_list_results = self.convert_to_list(vmss_list,
+        raise_exception=True, err_msg="Error getting list of Scale Sets")
+
+    for vmss in vmss_list_results:
+      vm_list, error = self.run_and_return_exception(
+          compute_client.virtual_machine_scale_set_vms.list,
+          resource_group, vmss.name)
+      self.raise_if_error(error, "Error getting list of vms in Scale Set "
+                                 "{}".format(vmss.name))
+
+      vm_list_results = self.convert_to_list(vm_list, raise_exception=True,
+          err_msg="Error getting list of vms in Scale Set {}".format(vmss.name))
+      for vm in vm_list_results:
+        network_interface_list, error = \
+          self.run_and_return_exception(network_client.network_interfaces.\
+              list_virtual_machine_scale_set_vm_network_interfaces,
+              resource_group, vmss.name, vm.instance_id)
+        self.raise_if_error(error, "Error getting list of network "
+            "interfaces in Scale Set {} for vm {}".format(
+            vmss.name, vm.instance_id))
+
         ip_config_private_ip = None
-        for network_interface in network_interface_list:
-          for ip_config in network_interface.ip_configurations:
+        network_interface_ip_config_results = self.convert_to_list(
+            network_interface_list, raise_exception=True,
+            err_msg="Error getting private ip for VM {}".format(vm.instance_id))
+
+        for network_interface_result in network_interface_ip_config_results:
+          ip_configs = self.convert_to_list(
+              network_interface_result.ip_configurations, raise_exception=True,
+              err_msg="Error getting private ip for VM {}".format(
+              vm.instance_id))
+          for ip_config in ip_configs:
             ip_config_private_ip = ip_config.private_ip_address
             break
 
@@ -332,15 +379,19 @@ class AzureAgent(BaseAgent):
 
     if public_ip_needed:
       lb_vms_threads = []
-      for _ in range(count):
+      lb_vms_results = [None for _ in range(count)]
+      for x in range(count):
         thread = threading.Thread(target=self.setup_virtual_machine_creation,
                                   args=(credentials, network_client,
-                                        parameters, subnet))
+                                        parameters, subnet, lb_vms_results, x))
         thread.start()
         lb_vms_threads.append(thread)
 
       for vm_thread in lb_vms_threads:
         vm_thread.join()
+      if any(lb_vms_results):
+        raise AgentRuntimeException(
+            json.dumps([x for x in set(lb_vms_results) if x]))
     else:
       self.create_or_update_vm_scale_sets(count, parameters, subnet)
 
@@ -352,7 +403,7 @@ class AzureAgent(BaseAgent):
     return instance_ids, public_ips, private_ips
 
   def setup_virtual_machine_creation(self, credentials, network_client,
-                                     parameters, subnet):
+                                     parameters, subnet, results, index):
     """ Sets up the network interface and creates the virtual machines needed
     with the load balancer roles.
     Args:
@@ -362,6 +413,8 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       subnet: A Subnet instance from the Virtual Network created.
+      results: An array containing the results from all the thread operations.
+      index: The index of results this thread should assign its result to.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     vm_network_name = Haikunator().haikunate()
@@ -369,9 +422,9 @@ class AzureAgent(BaseAgent):
                                   vm_network_name, subnet, parameters)
     network_interface = network_client.network_interfaces.get(
       resource_group, vm_network_name)
-    self.create_virtual_machine(credentials, network_client,
-                                network_interface.id,
-                                parameters, vm_network_name)
+    results[index] = self.create_virtual_machine(credentials, network_client,
+                                                 network_interface.id,
+                                                 parameters, vm_network_name)
 
   def create_virtual_machine(self, credentials, network_client, network_id,
                              parameters, vm_network_name):
@@ -431,17 +484,22 @@ class AzureAgent(BaseAgent):
                      name=vm_network_name, vhd=virtual_hd, image=image_hd)
     storage_profile = StorageProfile(image_reference=image_ref,
                                      os_disk=os_disk)
-    compute_client.virtual_machines.create_or_update(
-      resource_group, vm_network_name, VirtualMachine(location=zone,
-                                                      os_profile=os_profile,
-                                                      hardware_profile=hardware_profile,
-                                                      network_profile=network_profile,
-                                                      storage_profile=storage_profile))
+    try:
+      compute_client.virtual_machines.create_or_update(
+        resource_group, vm_network_name, VirtualMachine(location=zone,
+                                                        os_profile=os_profile,
+                                                        hardware_profile=hardware_profile,
+                                                        network_profile=network_profile,
+                                                        storage_profile=storage_profile))
+    except CloudError as error:
+      return "There was a problem creating the Virtual Machine due to the " \
+             "error: {0}".format(error.message)
 
     # Sleep until an IP address gets associated with the VM.
     while True:
-      public_ip_address = network_client.public_ip_addresses.get(resource_group,
-                                                                 vm_network_name)
+      public_ip_address, error = self.run_and_return_exception(
+        network_client.public_ip_addresses.get, resource_group, vm_network_name)
+      self.raise_if_error(error, "Failed to check if Public IP existed")
       if public_ip_address.ip_address:
         AppScaleLogger.log('Azure load balancer VM is available at {}'.
                            format(public_ip_address.ip_address))
@@ -494,19 +552,35 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     num_instances_added = 0
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
-    for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(
-        resource_group, vmss.name)
-      ss_instance_count = 0
-      for _ in vm_list:
-        ss_instance_count += 1
+    vmss_list, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_sets.list,
+        resource_group)
+    self.raise_if_error(error, "Error adding instances to existing Scale Set")
+
+    vmss_list_results = self.convert_to_list(vmss_list, raise_exception=True,
+        err_msg="Error adding instances to existing Scale Set")
+
+    for vmss in vmss_list_results:
+      scaleset_info = "Scale Set {}".format(vmss.name)
+      vm_list, error = self.run_and_return_exception(
+          compute_client.virtual_machine_scale_set_vms.list,
+          resource_group, vmss.name)
+      self.raise_if_error(error, "Error adding instances to existing {}"
+                          .format(scaleset_info))
+      vm_list_results = self.convert_to_list(vm_list, raise_exception=True,
+           err_msg="Error adding instances to existing {}".format(
+           scaleset_info))
+
+      ss_instance_count = len(vm_list_results)
 
       if ss_instance_count >= self.MAX_VMSS_CAPACITY:
         continue
 
-      scaleset = compute_client.virtual_machine_scale_sets.get(
-        resource_group, vmss.name)
+      scaleset, error = self.run_and_return_exception(
+          compute_client.virtual_machine_scale_sets.get,
+          resource_group, vmss.name)
+      self.raise_if_error(error, "Error adding instances to existing "
+                                 "{}".format(scaleset_info))
       ss_upgrade_policy = scaleset.upgrade_policy
       ss_location = scaleset.location
       ss_profile = scaleset.virtual_machine_profile
@@ -520,8 +594,14 @@ class AzureAgent(BaseAgent):
                                         location=ss_location,
                                         virtual_machine_profile=ss_profile,
                                         over_provision=ss_overprovision)
-      create_update_response = compute_client.virtual_machine_scale_sets.\
-        create_or_update(resource_group, vmss.name, scaleset)
+
+      create_update_response, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_sets.create_or_update,
+        resource_group, vmss.name, scaleset)
+
+      self.raise_if_error(error, "There was a problem while updating the "
+                                 "{0}".format(scaleset_info))
+
       self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
 
       newly_added = new_capacity - ss_instance_count
@@ -574,6 +654,7 @@ class AzureAgent(BaseAgent):
       remaining_vms_count = num_instances_to_add
 
       scalesets_threads = []
+      scalesets_threads_results = [None for _ in range(scale_set_count)]
       for ss_count in range(scale_set_count):
         resource_name = random_resource_name + "-resource-{}".format(ss_count)
         scale_set_name = random_resource_name + "-scaleset-{}".format(ss_count)
@@ -585,24 +666,31 @@ class AzureAgent(BaseAgent):
 
         thread = threading.Thread(target=self.create_scale_set,
                                   args=(capacity, parameters, resource_name,
-                                        scale_set_name, subnet))
+                                        scale_set_name, subnet,
+                                        scalesets_threads_results, ss_count))
         thread.start()
         scalesets_threads.append(thread)
         remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
 
       for ss_thread in scalesets_threads:
         ss_thread.join()
+      if any(scalesets_threads_results):
+        raise AgentRuntimeException(json.dumps(
+            [x for x in set(scalesets_threads_results) if x]))
 
     # Create a scale set using the count of VMs provided.
     else:
       scale_set_name = random_resource_name + "-scaleset-{}vms".format(num_instances_to_add)
       AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VM(s)'.
                              format(scale_set_name, num_instances_to_add), verbose)
+      scalesets_threads_results = [None]
       self.create_scale_set(num_instances_to_add, parameters, random_resource_name,
-                            scale_set_name, subnet)
+                            scale_set_name, subnet, scalesets_threads_results, 0)
+      if scalesets_threads_results[0]:
+        raise AgentRuntimeException(scalesets_threads_results[0])
 
   def create_scale_set(self, count, parameters, resource_name,
-                       scale_set_name, subnet):
+                       scale_set_name, subnet, results, index):
     """ Creates a scale set of 'count' number of virtual machines in the given
     subnet and virtual Network.
     Args:
@@ -613,7 +701,8 @@ class AzureAgent(BaseAgent):
           a virtual machine in a scale set.
         scale_set_name: The name of the scale set to be created.
         subnet: A reference to the subnet ID of the virtual network created.
-
+        results: An array containing the results from all the thread operations.
+        index: The index of results this thread should assign its result to.
     Raises:
         AgentConfigurationException: If the operation to create a virtual
          machine scale set did not succeed.
@@ -656,9 +745,14 @@ class AzureAgent(BaseAgent):
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
       virtual_machine_profile=virtual_machine_profile, over_provision=False)
-
-    create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
-      resource_group, scale_set_name, vm_scale_set)
+    create_update_response, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_sets.create_or_update,
+        resource_group, scale_set_name, vm_scale_set)
+    if error:
+      results[index] = "There was a problem while creating the Scale Set {0} " \
+                        "due to the error: {1}".format(scale_set_name,
+                                                       error.message)
+      return
     self.wait_for_ss_update(count, create_update_response, scale_set_name)
 
   def wait_for_ss_update(self, count, create_update_response, scale_set_name):
@@ -714,44 +808,93 @@ class AzureAgent(BaseAgent):
                            format(instances_to_delete), verbose)
 
     compute_client = ComputeManagementClient(credentials, subscription_id)
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+
+    vmss_list, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_sets.list,
+        resource_group)
+    self.raise_if_error(error, "Error terminating instances")
+
     downscale = parameters['autoscale_agent']
+
+    # Dictionary for nicely printing out exceptions.
+    exception_dictionary = {}
 
     # On downscaling of instances, we need to delete the specific instance
     # from the Scale Set.
     if downscale in ['True', True]:
       # Delete the scale set virtual machines matching the given instance ids.
       vmss_vm_delete_threads = []
-      for vmss in vmss_list:
-        vm_list = compute_client.virtual_machine_scale_set_vms.list(
-          resource_group, vmss.name)
-        for vm in vm_list:
+      vmss_vm_delete_threads_results = [None for _ in range(len(instances_to_delete))]
+      index = 0
+      vmss_list_results = self.convert_to_list(vmss_list,
+          raise_exception=True, err_msg="Error terminating instances")
+
+      for vmss in vmss_list_results:
+        vm_list, error = self.run_and_return_exception(
+            compute_client.virtual_machine_scale_set_vms.list,
+            resource_group, vmss.name)
+        self.raise_if_error(error, "Error terminating instances")
+        vm_list_results = self.convert_to_list(vm_list, raise_exception=True,
+            err_msg="Error terminating instances")
+        for vm in vm_list_results:
           if vm.name in instances_to_delete:
             instances_to_delete.remove(vm.name)
             thread = threading.Thread(target=self.delete_vmss_instance,
                                       args=(compute_client, parameters,
-                                            vmss.name, vm.instance_id))
+                                            vmss.name, vm.instance_id,
+                                            vmss_vm_delete_threads_results,
+                                            index))
+            index += 1
             thread.start()
             vmss_vm_delete_threads.append(thread)
 
       for delete_thread in vmss_vm_delete_threads:
         delete_thread.join()
+      if any(vmss_vm_delete_threads_results):
+        for result in vmss_vm_delete_threads_results:
+          if not result:
+            continue
+          reason, info = result[0], result[1]
+          if exception_dictionary.has_key(reason):
+            exception_dictionary[reason].append(info)
+          else:
+            exception_dictionary[reason] = [info]
+        raise AgentRuntimeException(json.dumps(exception_dictionary))
 
       AppScaleLogger.log("Virtual machine(s) have been successfully downscaled.")
       AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
       vmss_delete_threads = []
-      for vmss in vmss_list:
-        vm_list = compute_client.virtual_machine_scale_set_vms.list(
-          resource_group, vmss.name)
+      vmss_delete_threads_results = []
+      index = 0
+      vmss_list_results = self.convert_to_list(vmss_list,
+          raise_exception=True, err_msg="Error terminating instances")
+      for vmss in vmss_list_results:
+        vm_list, error = self.run_and_return_exception(
+            compute_client.virtual_machine_scale_set_vms.list,
+            resource_group, vmss.name)
+        self.raise_if_error(error, "Error terminating instances")
+
         if not any(True for _ in vm_list):
           thread = threading.Thread(
             target=self.delete_virtual_machine_scale_set, args=(
-              compute_client, parameters, vmss.name))
+              compute_client, parameters, vmss.name,
+              vmss_delete_threads_results, index))
+          index += 1
           thread.start()
           vmss_delete_threads.append(thread)
 
       for delete_thread in vmss_delete_threads:
         delete_thread.join()
+      if any(vmss_delete_threads_results):
+        for result in vmss_delete_threads_results:
+          if not result:
+            continue
+          reason, info = result[0], result[1]
+          if exception_dictionary.has_key(reason):
+            exception_dictionary[reason].append(info)
+          else:
+            exception_dictionary[reason] = [info]
+        raise AgentRuntimeException(json.dumps(exception_dictionary))
       return
 
     # On appscale down --terminate, we delete all the Scale Sets within the
@@ -759,27 +902,54 @@ class AzureAgent(BaseAgent):
     # instances within each Scale Set.
     delete_ss_instances = []
     vmss_delete_threads = []
-    for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(
-        resource_group, vmss.name)
-      for vm in vm_list:
+    vmss_delete_threads_results = []
+    index = 0
+    vmss_list_results = self.convert_to_list(vmss_list,
+        raise_exception=True, err_msg="Error terminating instances")
+
+    for vmss in vmss_list_results:
+      vm_list, error = self.run_and_return_exception(
+          compute_client.virtual_machine_scale_set_vms.list,
+          resource_group, vmss.name)
+      self.raise_if_error(error, "Error terminating instances")
+
+      vm_list_results = self.convert_to_list(vm_list,
+          raise_exception=True, err_msg="Error terminating instances")
+
+      for vm in vm_list_results:
         delete_ss_instances.append(vm.name)
       thread = threading.Thread(target=self.delete_virtual_machine_scale_set,
-                                args=(compute_client, parameters, vmss.name))
+                                args=(compute_client, parameters, vmss.name,
+                                      vmss_delete_threads_results, index))
+      index += 1
       thread.start()
       vmss_delete_threads.append(thread)
 
     # Delete the load balancer virtual machines matching the given instance ids.
     delete_lb_instances = self.diff(instances_to_delete, delete_ss_instances)
     lb_delete_threads = []
+    lb_delete_threads_results = []
+    index = 0
     for vm_name in delete_lb_instances:
       thread = threading.Thread(target=self.delete_virtual_machine,
-                                args=(compute_client, parameters, vm_name))
+                                args=(compute_client, parameters, vm_name,
+                                      lb_delete_threads_results, index))
+      index += 1
       thread.start()
       lb_delete_threads.append(thread)
 
     for delete_thread in vmss_delete_threads:
       delete_thread.join()
+    if any(vmss_delete_threads_results):
+      for result in vmss_delete_threads_results:
+        if not result:
+          continue
+        reason, info = result[0], result[1]
+        if exception_dictionary.has_key(reason):
+          exception_dictionary[reason].append(info)
+        else:
+          exception_dictionary[reason] = [info]
+      raise AgentRuntimeException(json.dumps(exception_dictionary))
 
     AppScaleLogger.log("Virtual machine scale set(s) have been successfully "
       "deleted.")
@@ -787,10 +957,22 @@ class AzureAgent(BaseAgent):
     for delete_thread in lb_delete_threads:
       delete_thread.join()
 
+    if any(lb_delete_threads_results):
+      for result in lb_delete_threads_results:
+        if not result:
+          continue
+        reason, info = result[0], result[1]
+        if exception_dictionary.has_key(reason):
+          exception_dictionary[reason].append(info)
+        else:
+          exception_dictionary[reason] = [info]
+      raise AgentRuntimeException(json.dumps(exception_dictionary))
+
     AppScaleLogger.log("Load balancer virtual machine(s) have been "
        "successfully deleted")
 
-  def delete_virtual_machine_scale_set(self, compute_client, parameters, vmss_name):
+  def delete_virtual_machine_scale_set(self, compute_client, parameters,
+                                       vmss_name, results, index):
     """ Deletes the virtual machine scale set created from the specified
     resource group.
     Args:
@@ -798,24 +980,29 @@ class AzureAgent(BaseAgent):
         parameters: A dict, containing all the parameters necessary to
           authenticate this user with Azure.
         vmss_name: The name of the virtual machine scale set to be deleted.
+        results: An array containing the results from all the thread operations.
+        index: The index of results this thread should assign its result to.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Scale Set {} ...".format(vmss_name), verbose)
-    try:
-      delete_response = compute_client.virtual_machine_scale_sets.delete(
-        resource_group, vmss_name)
-      resource_name = 'Virtual Machine Scale Set' + ":" + vmss_name
-      self.sleep_until_delete_operation_done(delete_response, resource_name,
-                                             self.MAX_VM_UPDATE_TIME, verbose)
-      AppScaleLogger.verbose("Virtual Machine Scale Set {} has been successfully "
-                             "deleted.".format(vmss_name), verbose)
-    except CloudError as error:
-      raise AgentConfigurationException("There was a problem while deleting the "
-                                        "Scale Set {0} due to the error: {1}"
-                                        .format(vmss_name, error.message))
 
-  def delete_vmss_instance(self, compute_client, parameters, vmss_name, instance_id):
+    delete_response, error = self.run_and_return_exception(
+          compute_client.virtual_machine_scale_sets.delete,
+          resource_group, vmss_name)
+    if error:
+      results[index] = (error.message,
+        "There was a problem while deleting the Scale Set {0}".format(vmss_name))
+      return
+
+    resource_name = 'Virtual Machine Scale Set' + ":" + vmss_name
+    self.sleep_until_delete_operation_done(delete_response, resource_name,
+                                           self.MAX_VM_UPDATE_TIME, verbose)
+    AppScaleLogger.verbose("{} has been successfully deleted.".format(
+        resource_name), verbose)
+
+  def delete_vmss_instance(self, compute_client, parameters, vmss_name,
+                           instance_id, results, index):
     """ Deletes the specified virtual machine instance from the given Scale Set.
     Args:
       compute_client: An instance of the Compute Management client.
@@ -823,19 +1010,71 @@ class AzureAgent(BaseAgent):
         authenticate this user with Azure.
       vmss_name: The Scale Set from which the instance needs to be deleted.
       instance_id: The ID of the instance in the Scale Set to be deleted.
+      results: An array containing the results from all the thread operations.
+      index: The index of results this thread should assign its result to.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
-    AppScaleLogger.verbose("Deleting Virtual Machine Instance {0} from Scale "
-      "Set {1} ...".format(instance_id, vmss_name), verbose)
-    result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
-                                                                 vmss_name,
-                                                                 instance_id)
+
+    vm_info = "Virtual Machine {0} from Scale Set {1}".format(instance_id,
+                                                              vmss_name)
+
+    # Check if we succeeded deleting the instance before but timed out.
+    vm_list, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_set_vms.list,
+        resource_group, vmss_name)
+    if error:
+      results[index] = (error.message,
+          "There was a problem while deleting {0}".format(vm_info))
+      return
+
+    already_deleted = True
+    vm_list_results, error = self.convert_to_list(vm_list)
+    if error:
+      results[index] = (error.message,
+          "There was a problem while deleting {0}".format(vm_info))
+      return
+    for vm in vm_list_results:
+      if instance_id == vm.instance_id:
+        already_deleted = False
+        break
+    if already_deleted:
+      AppScaleLogger.verbose("{0} has already been deleted".format(vm_info),
+                             verbose)
+      return
+
+    AppScaleLogger.verbose("Deleting {0} ...".format(vm_info), verbose)
+    result, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_set_vms.delete,
+        resource_group, vmss_name, instance_id)
+    if error:
+      results[index] = (error.message,
+          "There was a problem while deleting {0}".format(vm_info))
+      return
+
     resource_name = 'Virtual Machine Instance ' + instance_id
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
-    AppScaleLogger.verbose("Virtual Machine Instance {0} from Scale Set {1} "
-      "has been successfully deleted".format(instance_id, vmss_name), verbose)
+    # Double check if we succeeded deleting the instance.
+    vm_list, error = self.run_and_return_exception(
+        compute_client.virtual_machine_scale_set_vms.list,
+        resource_group, vmss_name)
+    if error:
+      results[index] = (error.message,
+          "There was a problem while deleting {0}".format(vm_info))
+      return
+    vm_list_results, error = self.convert_to_list(vm_list)
+    if error:
+      results[index] = (error.message,
+          "There was a problem while deleting {0}".format(vm_info))
+      return
+    for vm in vm_list_results:
+      if instance_id == vm.instance_id:
+        results[index] = ("VM still up",
+            "{0} has not been successfully deleted".format(vm_info))
+        return
+    AppScaleLogger.verbose("{0} has been successfully deleted".format(vm_info),
+                           verbose)
 
   def delete_virtual_machine(self, compute_client, parameters, vm_name):
     """ Deletes the virtual machine from the resource_group specified.
@@ -847,11 +1086,54 @@ class AzureAgent(BaseAgent):
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
+
+    # Check if we succeeded deleting the instance before but timed out.
+    virtual_machines, error = self.run_and_return_exception(
+        compute_client.virtual_machines.list, resource_group)
+    if error:
+      return "There was a problem while deleting the Virtual Machine {0} due " \
+             "to the error: {1}".format(vm_name, error.message)
+    already_deleted = True
+    virtual_machines_result, error = self.convert_to_list(virtual_machines)
+
+    if error:
+      return "There was a problem while checking the Virtual Machine {0} due " \
+             "to the error: {1}".format(vm_name, error.message)
+    for vm in virtual_machines_result:
+      if vm_name == vm.name:
+        already_deleted = False
+        break
+    if already_deleted:
+      AppScaleLogger.verbose("Virtual Machine {0} has already been "
+                             "deleted".format(vm_name), verbose)
+      return
+
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
-    result = compute_client.virtual_machines.delete(resource_group, vm_name)
+    result, error = self.run_and_return_exception(
+        compute_client.virtual_machines.delete, resource_group, vm_name)
+    if error:
+      return "There was a problem while deleting the Virtual Machine {0} due " \
+             "to the error: {1}".format(vm_name, error.message)
+
     resource_name = 'Virtual Machine' + ':' + vm_name
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
+
+    # Double check if we succeeded deleting the instance.
+    virtual_machines, error = self.run_and_return_exception(
+        compute_client.virtual_machines.list, resource_group)
+    if error:
+      return "There was a problem while deleting the Virtual Machine {0} due " \
+             "to the error: {1}".format(vm_name, error.message)
+    virtual_machines_result, error = self.convert_to_list(virtual_machines)
+    if error:
+      return "There was a problem while checking the Virtual Machine {0} due " \
+             "to the error: {1}".format(vm_name, error.message)
+    for vm in virtual_machines_result:
+      if vm_name == vm.name:
+        return "Virtual Machine {0} has not been successfully " \
+               "deleted".format(vm_name)
+
     AppScaleLogger.verbose("Virtual Machine {} has been successfully deleted.".
                            format(vm_name), verbose)
 
@@ -1281,3 +1563,60 @@ class AzureAgent(BaseAgent):
     if resource_group_name in resource_group_names:
       return True
     return False
+
+  @classmethod
+  def run_and_return_exception(cls, method, *args):
+    """ Runs a given method with args catching CloudError and returning it.
+    Args:
+      method: The method to call.
+      args: The args to pass.
+    Returns:
+      A tuple containing either (result, None) or (None, Exception).
+    """
+    try:
+      result = method(*args)
+      return (result, None)
+    except CloudError as exception:
+      return (None, exception)
+
+  @classmethod
+  def convert_to_list(cls, page_iterator, raise_exception=False, err_msg=""):
+    """ Gets the given properties of an object and returns it in a
+    dictionary. Either raises or returns an exception based on
+    'raise_exception'.
+    Args:
+      page_iterator: The objects to iterate through.
+      raise_exception: If True, raise exception. Otherwise return exception.
+    Returns:
+      A tuple containing either (result, None) or (None, Exception). Where
+      result is a list of dictionaries with the property name mapped to the
+      value. If raise_exception is set to True then it will raise the
+      exception instead of returning it.
+    Raises:
+      AgentRuntimeException if raises_exception is True and a cloud error
+      occurs.
+    """
+    try:
+      result = list(page_iterator)
+      if raise_exception:
+        return result
+      return (result, None)
+    except CloudError as error:
+      if raise_exception:
+        raise AgentRuntimeException("{} : {}".format(err_msg, error.message))
+      return (None, error)
+
+  @classmethod
+  def raise_if_error(cls, error, message):
+    """Raises an AgentRuntimeException with the given message if error is not
+    None.
+
+    Args:
+      error: An Exception containing a message, or None if there was no
+        exception.
+      message: The additional message to add to the error's message.
+    Raises:
+      AgentRuntimeException if error is not None.
+    """
+    if error:
+      raise AgentRuntimeException("{} : {}".format(message, error.message))
