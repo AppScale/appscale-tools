@@ -335,6 +335,8 @@ class ParseArgs(object):
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
+      self.parser.add_argument('--project',
+        help="the project ID to use to deploy the application")
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
