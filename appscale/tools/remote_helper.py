@@ -900,12 +900,11 @@ class RemoteHelper(object):
     """
     terminate_params = params.copy()
     terminate_params[agent.PARAM_INSTANCE_IDS] = spawned_instance_ids
-    for _ in range(len(spawned_instance_ids)):
-      try:
-        agent.terminate_instances(params)
-      except (AgentRuntimeException, BotoServerError):
-        AppScaleLogger.warn("AppScale failed to terminate instance(s) with "
-                            "id(s): {}".format(spawned_instance_ids))
+    try:
+      agent.terminate_instances(terminate_params)
+    except (AgentRuntimeException, BotoServerError):
+      AppScaleLogger.warn("AppScale failed to terminate instance(s) with "
+                          "id(s): {}".format(spawned_instance_ids))
 
 
   @classmethod
