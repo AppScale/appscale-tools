@@ -105,7 +105,8 @@ class TestLocalState(unittest.TestCase):
       'table' : 'cassandra',
       'infrastructure' : "ec2",
       'min_machines' : 1,
-      'max_machines' : 1
+      'max_machines' : 1,
+      'instance_type': 'm1.large'
     })
 
     flexmock(NodeLayout).should_receive("head_node").and_return(Node(
@@ -247,7 +248,8 @@ class TestLocalState(unittest.TestCase):
       'min_machines' : 1,
       'max_machines' : 1,
       'infrastructure' : 'ec2',
-      'table' : 'cassandra'
+      'table' : 'cassandra',
+      'instance_type': 'm1.large'
     })
     LocalState.update_local_metadata(options, 'public1', 'public1')
 

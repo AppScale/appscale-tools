@@ -92,7 +92,8 @@ class TestNodeLayout(unittest.TestCase):
 
 
   def test_is_database_replication_valid_with_db_slave(self):
-    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1}]
+    input_yaml = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1,
+                   'instance_type': 'm1.large'}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     fake_node = flexmock()
@@ -178,9 +179,9 @@ class TestNodeLayout(unittest.TestCase):
     # suppose that the user has specified two nodes, and two EBS / PD disks
     # with different names. This is the desired user behavior.
     input_yaml = [{'roles': ['master', 'database'], 'nodes': 1,
-                   'disks': self.DISK_ONE},
+                   'instance_type': 'm1.large', 'disks': self.DISK_ONE},
                   {'roles': ['appengine'], 'nodes': 1,
-                   'disks': self.DISK_TWO}]
+                   'instance_type': 'm1.large', 'disks': self.DISK_TWO}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout = NodeLayout(options)
@@ -193,9 +194,9 @@ class TestNodeLayout(unittest.TestCase):
     # suppose that the user has specified two nodes, and two EBS / PD disks
     # with different names. This is the desired user behavior.
     input_yaml = [
-      {'roles': ['master', 'database'], 'nodes': 1},
+      {'roles': ['master', 'database'], 'nodes': 1, 'instance_type': 'm1.large'},
       {'roles': ['appengine'], 'nodes': 2,
-       'disks': [self.DISK_ONE, self.DISK_TWO]}]
+       'instance_type': 'm1.large', 'disks': [self.DISK_ONE, self.DISK_TWO]}]
     options = self.default_options.copy()
     options['ips'] = input_yaml
     layout = NodeLayout(options)
@@ -229,19 +230,23 @@ class TestNodeLayout(unittest.TestCase):
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
                           "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
-                                   'taskqueue_master'] },
+                                   'taskqueue_master'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "jobs": ['memcache', 'appengine'] },
+                          "jobs": ['memcache', 'appengine'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "jobs": ['zookeeper'] },
+                          "jobs": ['zookeeper'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'db_master'] }
+                          "jobs": ['database', 'db_master'],
+                          "instance_type": "instance_type_1"}
                         ]
 
 

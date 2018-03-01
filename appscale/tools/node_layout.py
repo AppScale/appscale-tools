@@ -10,6 +10,8 @@ import yaml
 from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
+from local_state import LocalState
+from parse_args import ParseArgs
 
 
 class NodeLayout():
@@ -134,6 +136,9 @@ class NodeLayout():
     self.replication = options.get('replication')
     self.database_type = options.get('table', 'cassandra')
     self.add_to_existing = options.get('add_to_existing')
+    self.default_instance_type = options.get('instance_type')
+    self.test = options.get('test')
+    self.force = options.get('force')
 
     if 'login_host' in options and options['login_host'] is not None:
       self.login_host = options['login_host']
@@ -261,6 +266,22 @@ class NodeLayout():
         for node, disk in zip(nodes, disks):
           node.disk = disk
 
+      instance_type = node_set.get('instance_type', self.default_instance_type)
+
+      if self.infrastructure:
+        if not instance_type:
+          self.invalid("Must set a default instance type or specify instance "
+                       "type per role.")
+
+      # Check if this is an allowed instance type.
+      if instance_type in ParseArgs.DISALLOWED_INSTANCE_TYPES and \
+          not (self.force or self.test):
+        reason = "the suggested 4GB of RAM"
+        if 'database' in roles:
+          reason += " to run Cassandra"
+        LocalState.confirm_or_abort("The {0} instance type does not have {1}."
+                                    "Please consider using a larger instance "
+                                    "type.".format(instance_type, reason))
       # Assign master.
       if 'master' in roles:
         self.master = nodes[0]
@@ -271,6 +292,7 @@ class NodeLayout():
           node.add_role(role)
           if role == 'login':
             node.public_ip = self.login_host or node.public_ip
+        node.instance_type = instance_type
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
 
@@ -526,8 +548,9 @@ class NodeLayout():
         open_nodes.append(old_node)
         continue
       for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
-        if set(old_node_roles) == set(node.roles):
+        # Match nodes based on jobs/roles and the instance type specified.
+        if set(old_node_roles) == set(node.roles) \
+                and old_node.get('instance_type') == node.instance_type:
           nodes_copy.remove(node)
           node.from_json(old_node)
           if node.is_valid():
@@ -537,19 +560,19 @@ class NodeLayout():
             return None
           break
     for open_node in open_nodes:
-      try:
-        node = nodes_copy.pop()
-      except IndexError:
-        return None
-      # Match nodes based on jobs/roles.
-      roles = node.roles
-      node.from_json(open_node)
-      node.roles = roles
-      if node.is_valid():
-        nodes.append(node)
-      else:
-        # Locations JSON is incorrect if we get here.
-        return None
+      for node in nodes_copy:
+        # Match nodes based on jobs/roles and the instance type specified.
+        if node.instance_type == open_node.get('instance_type'):
+          roles = node.roles
+          node.from_json(open_node)
+          node.roles = roles
+          if node.is_valid():
+            nodes.append(node)
+          else:
+            # Locations JSON is incorrect if we get here.
+            return None
+        else:
+          continue
 
     # If these lengths are equal all nodes were matched.
     if len(nodes) == len(self.nodes):
@@ -572,7 +595,7 @@ class Node():
 
   DUMMY_INSTANCE_ID = "i-APPSCALE"
 
-  def __init__(self, public_ip, cloud, roles=[], disk=None):
+  def __init__(self, public_ip, cloud, roles=[], disk=None, instance_type=None):
     """Creates a new Node, representing the given id in the specified cloud.
 
 
@@ -589,6 +612,7 @@ class Node():
     self.cloud = cloud
     self.roles = roles
     self.disk = disk
+    self.instance_type = instance_type
     self.expand_roles()
 
 
@@ -712,7 +736,8 @@ class Node():
       'private_ip': self.private_ip,
       'instance_id': self.instance_id,
       'jobs': self.roles,
-      'disk': self.disk
+      'disk': self.disk,
+      'instance_type' : self.instance_type
     }
 
 
@@ -735,3 +760,4 @@ class Node():
     self.instance_id = node_dict.get('instance_id')
     self.roles = node_dict.get('jobs')
     self.disk = node_dict.get('disk')
+    self.instance_type = node_dict.get('instance_type')
