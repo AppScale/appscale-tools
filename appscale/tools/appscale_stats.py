@@ -34,7 +34,7 @@ INCLUDE_PROXY_LIST = {
             'servers', 'frontend', 'backend'],
   'proxy.frontend': ['req_rate', 'req_tot', 'hrsp_5xx', 'hrsp_4xx',
                      'bin', 'bout', 'scur'],
-  'proxy.backend': ['qtime', 'rtime', 'qcur'],
+  'proxy.backend': ['qtime', 'ttime', 'qcur'],
   'proxy.server': ['status']
 }
 
@@ -379,10 +379,13 @@ def get_node_stats_rows(raw_node_stats, all_roles, specified_roles, verbose):
 
   node_stats = []
   for ip, node in raw_node_stats.iteritems():
-    ip_roles = all_roles[ip]
+    ip_roles = all_roles.get(ip, ["?"])
 
     if specified_roles:
-      matches = [role for role in specified_roles if role in ip_roles]
+      matches = [
+        role for role in specified_roles
+        if role in ip_roles or ip_roles==["?"]
+      ]
       if not matches:
         continue
 
@@ -529,7 +532,7 @@ def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
   if verbose:
     headers = [
       "SERVICE (ID)", "SERVERS | DOWN", "RATE | REQ TOTAL", "5xx | 4xx",
-      "BYTES IN | BYTES OUT", "SCUR | QCUR", "QTIME | RTIME"
+      "BYTES IN | BYTES OUT", "QCUR | SCUR", "QTIME | RTIME"
     ]
   else:
     headers = [
@@ -571,7 +574,7 @@ def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
     if "qtime" in node["backend"]:
       # HAProxy 1.4 and lower doesn't provide qtime and rtime stats
       summary_proxy["qtime"] += node["backend"]["qtime"]
-      summary_proxy["rtime"] += node["backend"]["rtime"]
+      summary_proxy["ttime"] += node["backend"]["ttime"]
 
   for key, value in unique_proxies.iteritems():
     servers_down = value["servers_down_count"]
@@ -592,7 +595,7 @@ def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
       proxy_row.append("{bin} | {bout}".format(**value))
       proxy_row.append("{qcur} | {scur}".format(**value))
       if "qtime" in value:
-        proxy_row.append("{qtime} | {rtime}".format(**value))
+        proxy_row.append("{qtime} | {ttime}".format(**value))
     else:
       proxy_row.append(value["qcur"])
 
