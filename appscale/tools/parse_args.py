@@ -335,6 +335,8 @@ class ParseArgs(object):
     elif function == "appscale-upload-app":
       self.parser.add_argument('--file',
         help="a directory containing the Google App Engine app to upload")
+      self.parser.add_argument('--project',
+        help="the project ID to use to deploy the application")
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -676,16 +678,11 @@ class ParseArgs(object):
         raise BadConfigurationException("--disks must be a dict, but was a " \
           "{0}".format(type(self.args.disks)))
 
-    if not self.args.instance_type:
-      raise BadConfigurationException("Cannot start a cloud instance without " \
-                                      "the instance type.")
-
     if self.args.instance_type in self.DISALLOWED_INSTANCE_TYPES and \
         not (self.args.force or self.args.test):
-      LocalState.confirm_or_abort("The {0} instance type does not have " \
-        "enough RAM to run Cassandra in a production setting. Please " \
-        "consider using a larger instance type.".format(
-        self.args.instance_type))
+      LocalState.confirm_or_abort("The {0} instance type does not have "
+        "the suggested 4GB of RAM. Please consider using a larger instance "
+        "type.".format(self.args.instance_type))
 
     if self.args.infrastructure == 'azure':
       if not self.args.azure_subscription_id:
