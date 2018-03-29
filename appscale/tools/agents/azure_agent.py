@@ -219,7 +219,7 @@ class AzureAgent(BaseAgent):
 
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+    storage_account = parameters.get(self.PARAM_STORAGE_ACCOUNT)
     zone = parameters[self.PARAM_ZONE]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
 
@@ -498,7 +498,6 @@ class AzureAgent(BaseAgent):
       vm_network_name: The name of the virtual machine to use.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -518,15 +517,13 @@ class AzureAgent(BaseAgent):
     network_profile = NetworkProfile(
       network_interfaces=[NetworkInterfaceReference(id=network_id)])
 
-    virtual_hd = VirtualHardDisk(
-      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
-        format(storage_account, vm_network_name))
 
     os_type = OperatingSystemTypes.linux
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
     image_ref = None
     image_hd = None
+    virtual_hd = None
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if re.search(".*:.*:.*:.*", azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
@@ -536,6 +533,10 @@ class AzureAgent(BaseAgent):
                                  sku=image_ref_params[2],
                                  version=image_ref_params[3])
     else:
+      storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+      virtual_hd = VirtualHardDisk(
+        uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
+          format(storage_account, vm_network_name))
       image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
 
     os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
@@ -1156,8 +1157,8 @@ class AzureAgent(BaseAgent):
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
-    if not args[self.PARAM_STORAGE_ACCOUNT]:
-      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+    #if not args[self.PARAM_STORAGE_ACCOUNT]:
+    #  params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
     return params
 
   def get_cloud_params(self, keyname):
@@ -1345,8 +1346,9 @@ class AzureAgent(BaseAgent):
         resource_client.resource_groups.create_or_update(
           resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
                                  tags={'tag': tag_name}))
-        self.create_storage_account(parameters, storage_client)
-      else:
+        if not parameters.get('disks'):
+          self.create_storage_account(parameters, storage_client)
+      elif parameters.get(self.PARAM_STORAGE_ACCOUNT) and not parameters.get('disks'):
         # If it already exists, check if the specified storage account exists
         # under it and if not, create a new account.
         storage_accounts = storage_client.storage_accounts.\
