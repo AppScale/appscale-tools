@@ -123,7 +123,6 @@ class AzureAgent(BaseAgent):
     PARAM_APP_SECRET,
     PARAM_APP_ID,
     PARAM_IMAGE_ID,
-    PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
     PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
@@ -491,6 +490,7 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    instance_type = parameters[self.PARAM_INSTANCE_TYPE]
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     num_instances_added = 0
@@ -505,6 +505,9 @@ class AzureAgent(BaseAgent):
       if ss_instance_count >= self.MAX_VMSS_CAPACITY:
         continue
 
+      if not vmss.sku.name == instance_type:
+        continue
+          
       scaleset = compute_client.virtual_machine_scale_sets.get(
         resource_group, vmss.name)
       ss_upgrade_policy = scaleset.upgrade_policy

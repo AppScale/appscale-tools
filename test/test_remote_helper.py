@@ -382,7 +382,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # Mock out additional remote calls. 
+    # Mock out additional remote calls.
     local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
 
     local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
@@ -528,20 +528,24 @@ class TestRemoteHelper(unittest.TestCase):
   reattach_node_info = [{ "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
-                          "roles": ['load_balancer', 'taskqueue', 'shadow', 'login',
-                                   'taskqueue_master'] },
+                          "roles": ['load_balancer', 'taskqueue', 'shadow',
+                                    'login', 'taskqueue_master'],
+                          "instance_type" : "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "roles": ['memcache', 'appengine'] },
+                          "roles": ['memcache', 'appengine'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "roles": ['zookeeper'] },
+                          "roles": ['zookeeper'],
+                          "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'db_master'] }
+                          "roles": ['database', 'db_master'],
+                          "instance_type": "instance_type_1"}
                         ]
 
   def test_start_all_nodes_reattach(self):
