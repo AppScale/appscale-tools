@@ -568,6 +568,7 @@ class NodeLayout():
           node.roles = roles
           if node.is_valid():
             nodes.append(node)
+            break
           else:
             # Locations JSON is incorrect if we get here.
             return None
