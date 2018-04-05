@@ -263,6 +263,61 @@ class TestNodeLayout(unittest.TestCase):
           nodes_copy.remove(node)
     self.assertEqual(nodes_copy, [])
 
+  def test_from_locations_json_list_after_clean(self):
+    options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips=FOUR_NODE_CLOUD
+    )
+    cleaned_node_info = [{"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE1",
+                           "jobs": ['load_balancer', 'taskqueue', 'shadow',
+                                    'login',
+                                    'taskqueue_master'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE2",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE3",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE4",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"}
+                          ]
+    node_layout = NodeLayout(options)
+    self.assertNotEqual([], node_layout.nodes)
+    new_layout = node_layout.from_locations_json_list(cleaned_node_info)
+    self.assertNotEqual(new_layout, None)
+    nodes_copy = new_layout[:]
+    for old_node in node_layout.nodes:
+      for _, node in enumerate(nodes_copy):
+        # Match nodes based on jobs/roles.
+        if set(old_node.roles) == set(node.roles):
+          nodes_copy.remove(node)
+    self.assertEqual(nodes_copy, [])
 
   def test_from_locations_json_list_able_to_match(self):
     options = flexmock(
