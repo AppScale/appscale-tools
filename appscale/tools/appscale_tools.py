@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-# General-purpose Python library imports
+import Queue
 import datetime
 import getpass
 import json
 import os
-import Queue
 import re
 import shutil
 import socket
@@ -15,35 +14,29 @@ import time
 import traceback
 import urllib2
 import uuid
-import yaml
-from xml.etree import ElementTree
-
 from collections import Counter
 from itertools import chain
+from xml.etree import ElementTree
 
-# AppScale-specific imports
-from tabulate import tabulate
+import yaml
 from SOAPpy import faultType
+from tabulate import tabulate
 
-from agents.factory import InfrastructureAgentFactory
-from appcontroller_client import AppControllerClient
-from appengine_helper import AppEngineHelper
-from appscale_logger import AppScaleLogger
-from cluster_stats import NodeStats, ServiceInfo
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppEngineConfigException
-from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-from local_state import APPSCALE_VERSION
-from local_state import LocalState
-from node_layout import NodeLayout
-from remote_helper import RemoteHelper
-from version_helper import latest_tools_version
-from . import utils
-from .admin_client import AdminClient
-from .admin_client import DEFAULT_SERVICE
-from .admin_client import DEFAULT_VERSION
+from appscale.tools import utils
+from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
+                                             DEFAULT_VERSION)
+from appscale.tools.agents.factory import InfrastructureAgentFactory
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.appengine_helper import AppEngineHelper
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.cluster_stats import NodeStats, ServiceInfo
+from appscale.tools.custom_exceptions import (
+  AppControllerException, AppEngineConfigException, AppScaleException,
+  BadConfigurationException, ShellException)
+from appscale.tools.local_state import APPSCALE_VERSION, LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.remote_helper import RemoteHelper
+from appscale.tools.version_helper import latest_tools_version
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):

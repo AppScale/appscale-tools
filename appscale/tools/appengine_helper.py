@@ -1,19 +1,16 @@
 #!/usr/bin/env python
 
-
-# General-purpose Python libraries
 import os
-import socket
 import re
-import yaml
+import socket
 from xml.etree import ElementTree
 
+import yaml
 
-# AppScale-specific imports
-from .admin_client import DEFAULT_SERVICE
-from .appscale_logger import AppScaleLogger
-from .custom_exceptions import AppEngineConfigException
-from .custom_exceptions import AppScaleException
+from appscale.tools.admin_api.client import DEFAULT_SERVICE
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.custom_exceptions import AppEngineConfigException
+from appscale.tools.custom_exceptions import AppScaleException
 
 
 class AppEngineHelper(object):

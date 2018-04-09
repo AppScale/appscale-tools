@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-
-# General-purpose Python library imports
 import os
 import shutil
 import sys
@@ -9,16 +7,12 @@ import tempfile
 import time
 import unittest
 import uuid
+
 import yaml
-
-
-# Third party libraries
 from flexmock import flexmock
 
-
-# AppScale import, the library that we're testing here
-from appscale.tools.admin_client import AdminClient
-from appscale.tools.admin_client import AdminError
+from appscale.tools.admin_api.client import AdminClient
+from appscale.tools.admin_api.client import AdminError
 from appscale.tools.appengine_helper import AppEngineHelper
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools

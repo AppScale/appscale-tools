@@ -74,8 +74,8 @@ setup(
     'Topic :: Utilities'
   ],
   namespace_packages=['appscale'],
-  packages=['appscale', 'appscale.tools', 'appscale.tools.agents',
-            'appscale.tools.scripts'],
+  packages=['appscale', 'appscale.admin_api', 'appscale.tools',
+            'appscale.tools.agents', 'appscale.tools.scripts'],
   entry_points={
     'console_scripts': [
       'appscale=appscale.tools.scripts.appscale:main',
