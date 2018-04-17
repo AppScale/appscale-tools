@@ -31,10 +31,6 @@ class AppEngineHelper(object):
   FILE_IS_YAML = re.compile(r'\.yaml\Z')
 
 
-  # A list of language runtimes that App Engine apps can be written in.
-  ALLOWED_RUNTIMES = ("python27", "java", "go", "php")
-
-
   # A list of language runtimes that AppScale no longer supports.
   DEPRECATED_RUNTIMES = ("python")
 
@@ -250,37 +246,6 @@ class AppEngineHelper(object):
         response = raw_input('Continue? (y/N) ')
         if response.lower() not in ['y', 'yes']:
           raise AppScaleException('Cancelled deploy operation')
-
-  @classmethod
-  def get_app_runtime_from_app_config(cls, app_dir):
-    """Checks the configuration file packaged with the given App Engine app to
-    determine what language runtime should be used to deploy this app.
-
-    Currently there are only four runtimes: python (Python 2.5), java (Java),
-    go (Go), and python27 (Python 2.7)
-
-    Args:
-      app_dir: The directory on the local filesystem where the App Engine
-        application can be found.
-    Returns:
-      A str indicating which runtime should be used to run this application.
-    Raises:
-      AppEngineConfigException: If there is no runtime set for this application.
-    """
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      if 'runtime' in yaml_contents and yaml_contents['runtime'] in \
-        cls.ALLOWED_RUNTIMES:
-        return yaml_contents['runtime']
-      elif 'runtime' in yaml_contents and yaml_contents['runtime'] in \
-        cls.DEPRECATED_RUNTIMES:
-        raise AppEngineConfigException("This runtime is deprecated and no " + \
-          "longer supported.")
-      else:
-        raise AppEngineConfigException("No runtime set in your app.yaml")
-    else:
-      return 'java'
 
   @classmethod
   def is_threadsafe(cls, app_dir):

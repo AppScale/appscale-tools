@@ -27,6 +27,7 @@ from tabulate import tabulate
 from appscale.tools import utils
 from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
                                              DEFAULT_VERSION)
+from appscale.tools.admin_api.version import Version
 from appscale.tools.agents.factory import InfrastructureAgentFactory
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appengine_helper import AppEngineHelper
@@ -954,10 +955,10 @@ class AppScaleTools(object):
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
 
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(
-      file_location)
+    version = Version.from_source(options.file)
+
     if options.project:
-      if app_language == 'java':
+      if version.runtime == 'java':
         raise BadConfigurationException("AppScale doesn't support --project for"
           "Java yet. Please specify the application id in appengine-web.xml.")
 
@@ -982,15 +983,15 @@ class AppScaleTools(object):
     env_variables = AppEngineHelper.get_env_vars(file_location)
     inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
-    if app_language in ['python27', 'java']:
+    if version.runtime in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
     AppEngineHelper.validate_app_id(app_id)
 
     extras = {}
-    if app_language == 'go':
+    if version.runtime == 'go':
       extras = LocalState.get_extra_go_dependencies(options.file, options.test)
 
-    if app_language == 'java':
+    if version.runtime == 'java':
       if AppEngineHelper.is_sdk_mismatch(file_location):
         AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
           'versions in your app. The current supported ' +
@@ -1006,7 +1007,7 @@ class AppScaleTools(object):
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(service_id, app_id))
     operation_id = admin_client.create_version(
-      app_id, service_id, remote_file_path, app_language, env_variables,
+      app_id, service_id, remote_file_path, version.runtime, env_variables,
       threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port

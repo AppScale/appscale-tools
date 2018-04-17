@@ -13,6 +13,7 @@ from flexmock import flexmock
 
 from appscale.tools.admin_api.client import AdminClient
 from appscale.tools.admin_api.client import AdminError
+from appscale.tools.admin_api.version import Version
 from appscale.tools.appengine_helper import AppEngineHelper
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
@@ -138,7 +139,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
-    flexmock(AppEngineHelper).should_receive('get_app_runtime_from_app_config').and_return('runtime')
     flexmock(LocalState).should_receive('get_secret_key').and_return()
     flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
     flexmock(AppEngineHelper).should_receive('get_service_id').and_return('default')
@@ -304,8 +304,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
-    flexmock(AppEngineHelper).\
-      should_receive('get_app_runtime_from_app_config').and_return('python27')
+    flexmock(Version).should_receive('from_source').and_return(Version('python27'))
     flexmock(AppEngineHelper).should_receive('is_threadsafe').and_return(True)
     flexmock(AppEngineHelper).should_receive('validate_app_id')
     flexmock(LocalState).should_receive('get_login_host').\
@@ -332,8 +331,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.assertRaises(AdminError, AppScaleTools.upload_app, options)
 
     # An application with the PHP runtime should be deployed successfully.
-    flexmock(AppEngineHelper).\
-      should_receive('get_app_runtime_from_app_config').and_return('php')
+    flexmock(Version).should_receive('from_source').and_return(Version('php'))
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
     given_host, given_port = AppScaleTools.upload_app(options)
