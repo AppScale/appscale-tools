@@ -11,11 +11,14 @@ SIMPLE_APP_YAML = """
 runtime: python27
 """.lstrip()
 
-SIMPLE_AE_WEB_XML = """
+AE_WEB_XML_TEMPLATE = """
 <?xml version="1.0" encoding="utf-8"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+{}
 </appengine-web-app>
 """.lstrip()
+
+SIMPLE_AE_WEB_XML = AE_WEB_XML_TEMPLATE.format('')
 
 
 class TestVersion(unittest.TestCase):
@@ -29,12 +32,26 @@ class TestVersion(unittest.TestCase):
     version = Version.from_yaml(app_yaml)
     self.assertEqual(version.runtime, 'python27')
 
+    # Ensure project is parsed successfully.
+    yaml_with_project = SIMPLE_APP_YAML + 'application: guestbook\n'
+    app_yaml = yaml.safe_load(yaml_with_project)
+    version = Version.from_yaml(app_yaml)
+    self.assertEqual(version.runtime, 'python27')
+    self.assertEqual(version.project_id, 'guestbook')
+
   def test_from_xml(self):
     # Check the default runtime string for Java apps.
     # TODO: This should be updated when the Admin API accepts 'java7'.
     appengine_web_xml = ElementTree.fromstring(SIMPLE_AE_WEB_XML)
     version = Version.from_xml(appengine_web_xml)
     self.assertEqual(version.runtime, 'java')
+
+    xml_with_project = AE_WEB_XML_TEMPLATE.format(
+      '<application>guestbook</application>')
+    appengine_web_xml = ElementTree.fromstring(xml_with_project)
+    version = Version.from_xml(appengine_web_xml)
+    self.assertEqual(version.runtime, 'java')
+    self.assertEqual(version.project_id, 'guestbook')
 
   def test_from_yaml_file(self):
     open_path = 'appscale.tools.admin_api.version.open'

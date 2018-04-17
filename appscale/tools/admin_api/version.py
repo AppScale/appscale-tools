@@ -30,6 +30,8 @@ class Version(object):
 
     self.runtime = runtime
 
+    self.project_id = None
+
   @staticmethod
   def from_yaml(app_yaml):
     """ Constructs a Version from a parsed app.yaml.
@@ -46,7 +48,10 @@ class Version(object):
     except KeyError:
       raise AppEngineConfigException('Missing app.yaml element: runtime')
 
-    return Version(runtime)
+    version = Version(runtime)
+    version.project_id = app_yaml.get('application')
+
+    return version
 
   @staticmethod
   def from_xml(root):
@@ -62,7 +67,13 @@ class Version(object):
     if runtime_element is not None:
       runtime = runtime_element.text
 
-    return Version(runtime)
+    version = Version(runtime)
+
+    application_element = root.find(''.join([XML_NAMESPACE, 'application']))
+    if application_element is not None:
+      version.project_id = application_element.text
+
+    return version
 
   @staticmethod
   def from_yaml_file(yaml_location):

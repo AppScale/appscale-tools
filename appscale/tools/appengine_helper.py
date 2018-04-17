@@ -156,40 +156,6 @@ class AppEngineHelper(object):
     return paths
 
   @classmethod
-  def get_app_id_from_app_config(cls, app_dir):
-    """Checks the configuration file packages with the given App Engine app to
-    determine what the user has set as this application's name.
-
-    Args:
-      app_dir: The directory on the local filesystem where the App Engine
-        application can be found.
-    Returns:
-      A str indicating the application ID for this application.
-    Raises:
-      AppEngineConfigException: If there is no application ID set for this
-        application.
-    """
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      if 'application' in yaml_contents and yaml_contents['application'] != '':
-        project_id = yaml_contents['application']
-      else:
-        raise AppEngineConfigException("No valid application ID found in " +
-          "your app.yaml. " + cls.REGEX_MESSAGE)
-    else:
-      root = ElementTree.parse(app_config_file).getroot()
-      app_element = root.find('{}application'.format(cls.XML_NAMESPACE))
-      if app_element is None:
-        raise AppEngineConfigException(
-          'No application ID found in appengine-web.xml')
-
-      project_id = app_element.text
-
-    cls.validate_app_id(project_id)
-    return project_id
-
-  @classmethod
   def get_service_id(cls, app_dir):
     """ Retrieves the service ID from the application configuration.
 

@@ -104,7 +104,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
     os.path.should_receive('exists').with_args(app_yaml_location) \
       .and_return(True)
-    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -135,7 +134,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       self.app_dir)
     os.path.should_receive('exists').with_args(
       AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
-    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').and_return('app_id')
     flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
@@ -243,8 +241,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
-    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
-      and_return('none')
 
     argv = [
       "--keyname", self.keyname,
@@ -273,8 +269,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     }))
     builtins.should_receive('open').with_args(app_yaml_location, 'r') \
       .and_return(fake_app_yaml)
-    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
-      and_return('baz*')
 
     argv = [
       "--keyname", self.keyname,
@@ -297,14 +291,15 @@ class TestAppScaleUploadApp(unittest.TestCase):
     argv = ['--keyname', self.keyname, '--file', source_path, '--test']
     options = ParseArgs(argv, self.function).args
 
+    version = Version('python27')
+    version.project_id = app_id
+
     flexmock(LocalState).should_receive('extract_tgz_app_to_dir').\
       and_return('/tmp/{}'.format(app_id))
-    flexmock(AppEngineHelper).should_receive('get_app_id_from_app_config').\
-      and_return(app_id)
     flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
-    flexmock(Version).should_receive('from_source').and_return(Version('python27'))
+    flexmock(Version).should_receive('from_source').and_return(version)
     flexmock(AppEngineHelper).should_receive('is_threadsafe').and_return(True)
     flexmock(AppEngineHelper).should_receive('validate_app_id')
     flexmock(LocalState).should_receive('get_login_host').\
@@ -331,7 +326,9 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.assertRaises(AdminError, AppScaleTools.upload_app, options)
 
     # An application with the PHP runtime should be deployed successfully.
-    flexmock(Version).should_receive('from_source').and_return(Version('php'))
+    version = Version('php')
+    version.project_id = app_id
+    flexmock(Version).should_receive('from_source').and_return(version)
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
     given_host, given_port = AppScaleTools.upload_app(options)

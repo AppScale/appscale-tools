@@ -962,19 +962,12 @@ class AppScaleTools(object):
         raise BadConfigurationException("AppScale doesn't support --project for"
           "Java yet. Please specify the application id in appengine-web.xml.")
 
-      app_id = options.project
-    else:
-      try:
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
-      except AppEngineConfigException as config_error:
-        AppScaleLogger.log(config_error)
-        if 'yaml' in str(config_error):
-          raise config_error
+      version.project_id = options.project
 
-        # Java App Engine users may have specified their war directory. In that
-        # case, just move up one level, back to the app's directory.
-        file_location = file_location + os.sep + ".."
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    if version.project_id is None:
+      raise AppEngineConfigException(
+        'Please define "application" in your configuration file or specify '
+        '--project.')
 
     # Let users know that versions are not supported yet.
     AppEngineHelper.warn_if_version_defined(file_location, options.test)
@@ -985,7 +978,7 @@ class AppScaleTools(object):
     threadsafe = None
     if version.runtime in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
-    AppEngineHelper.validate_app_id(app_id)
+    AppEngineHelper.validate_app_id(version.project_id)
 
     extras = {}
     if version.runtime == 'go':
@@ -1002,13 +995,13 @@ class AppScaleTools(object):
     admin_client = AdminClient(login_host, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      app_id, options.keyname, options.verbose, extras)
+      version.project_id, options.keyname, options.verbose, extras)
 
     AppScaleLogger.log(
-      'Deploying service {} for {}'.format(service_id, app_id))
+      'Deploying service {} for {}'.format(service_id, version.project_id))
     operation_id = admin_client.create_version(
-      app_id, service_id, remote_file_path, version.runtime, env_variables,
-      threadsafe, inbound_services)
+      version.project_id, service_id, remote_file_path, version.runtime,
+      env_variables, threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
@@ -1018,7 +1011,7 @@ class AppScaleTools(object):
     while True:
       if time.time() > deadline:
         raise AppScaleException('The deployment operation took too long.')
-      operation = admin_client.get_operation(app_id, operation_id)
+      operation = admin_client.get_operation(version.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue
