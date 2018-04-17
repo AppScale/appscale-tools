@@ -34,6 +34,13 @@ class Version(object):
     self.project_id = None
     self.service_id = None
 
+    # The version ID.
+    # TODO: Allow user to define this property.
+    self.id = None
+
+    # Records whether this was populated from a YAML or XML file.
+    self.configuration_type = None
+
   @staticmethod
   def from_yaml(app_yaml):
     """ Constructs a Version from a parsed app.yaml.
@@ -60,6 +67,8 @@ class Version(object):
 
     version.service_id = (app_yaml.get('service') or app_yaml.get('module')
                           or DEFAULT_SERVICE)
+
+    version.configuration_type = 'app.yaml'
 
     return version
 
@@ -98,6 +107,8 @@ class Version(object):
 
     if not version.service_id:
       version.service_id = DEFAULT_SERVICE
+
+    version.configuration_type = 'appengine-web.xml'
 
     return version
 

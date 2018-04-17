@@ -156,38 +156,19 @@ class AppEngineHelper(object):
     return paths
 
   @classmethod
-  def warn_if_version_defined(cls, app_dir, test=False):
+  def warn_if_version_defined(cls, version, test=False):
     """ Warns the user if version is defined in the application configuration.
 
     Args:
-      app_dir: The directory on the local filesystem where the App Engine
-        application can be found.
+      version: A Version object.
       test: A boolean indicating that the tools are in test mode.
     Raises:
       AppScaleException: If version is defined and user decides to cancel.
     """
-    message = ''
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      if yaml_contents.get('version') is not None:
-        module = yaml_contents.get('module', 'default')
-        message = ('The version element is not supported in app.yaml. '
-                   'Module {} will be overwritten.'.format(module))
-    else:
-      app_config = ElementTree.parse(app_config_file).getroot()
-      if app_config.find('{}version'.format(cls.XML_NAMESPACE)) is not None:
-        module_element = app_config.find('{}module'.format(cls.XML_NAMESPACE))
-        if module_element is None:
-          module = 'default'
-        else:
-          module = module_element.text
-
-        message = ('The version element is not supported in appengine-web.xml.'
-                   ' Module {} will be overwritten.'.format(module))
-
-    if message:
-      AppScaleLogger.log(message)
+    if version.id is not None:
+      AppScaleLogger.log(
+        'The version element is not supported in {}. Module {} will be '
+        'overwritten.'.format(version.configuration_type, version.service_id))
       if not test:
         response = raw_input('Continue? (y/N) ')
         if response.lower() not in ['y', 'yes']:

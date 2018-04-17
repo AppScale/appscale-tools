@@ -965,12 +965,15 @@ class AppScaleTools(object):
       version.project_id = options.project
 
     if version.project_id is None:
-      raise AppEngineConfigException(
-        'Please define "application" in your configuration file or specify '
-        '--project.')
+      if version.configuration_type == 'app.yaml':
+        message = 'Specify --project or define "application" in your app.yaml'
+      else:
+        message = 'Define "application" in your appengine-web.xml'
+
+      raise AppEngineConfigException(message)
 
     # Let users know that versions are not supported yet.
-    AppEngineHelper.warn_if_version_defined(file_location, options.test)
+    AppEngineHelper.warn_if_version_defined(version, options.test)
 
     env_variables = AppEngineHelper.get_env_vars(file_location)
     inbound_services = AppEngineHelper.get_inbound_services(file_location)
