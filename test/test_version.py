@@ -39,6 +39,15 @@ class TestVersion(unittest.TestCase):
     self.assertEqual(version.runtime, 'python27')
     self.assertEqual(version.project_id, 'guestbook')
 
+    # Ensure a default service ID is set.
+    self.assertEqual(version.service_id, 'default')
+
+    # Ensure service ID is parsed correctly.
+    yaml_with_module = SIMPLE_APP_YAML + 'module: service1\n'
+    app_yaml = yaml.safe_load(yaml_with_module)
+    version = Version.from_yaml(app_yaml)
+    self.assertEqual(version.service_id, 'service1')
+
   def test_from_xml(self):
     # Check the default runtime string for Java apps.
     # TODO: This should be updated when the Admin API accepts 'java7'.
@@ -52,6 +61,15 @@ class TestVersion(unittest.TestCase):
     version = Version.from_xml(appengine_web_xml)
     self.assertEqual(version.runtime, 'java')
     self.assertEqual(version.project_id, 'guestbook')
+
+    # Ensure a default service ID is set.
+    self.assertEqual(version.service_id, 'default')
+
+    # Ensure service ID is parsed correctly.
+    xml_with_module = AE_WEB_XML_TEMPLATE.format('<module>service1</module>')
+    appengine_web_xml = ElementTree.fromstring(xml_with_module)
+    version = Version.from_xml(appengine_web_xml)
+    self.assertEqual(version.service_id, 'service1')
 
   def test_from_yaml_file(self):
     open_path = 'appscale.tools.admin_api.version.open'

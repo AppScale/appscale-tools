@@ -156,26 +156,6 @@ class AppEngineHelper(object):
     return paths
 
   @classmethod
-  def get_service_id(cls, app_dir):
-    """ Retrieves the service ID from the application configuration.
-
-    Args:
-      app_dir: The directory on the local filesystem where the App Engine
-        application can be found.
-    """
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      return yaml_contents.get('module', DEFAULT_SERVICE)
-    else:
-      root = ElementTree.parse(app_config_file).getroot()
-      service_element = root.find('{}module'.format(cls.XML_NAMESPACE))
-      if service_element is None:
-        return DEFAULT_SERVICE
-
-      return service_element.text
-
-  @classmethod
   def warn_if_version_defined(cls, app_dir, test=False):
     """ Warns the user if version is defined in the application configuration.
 

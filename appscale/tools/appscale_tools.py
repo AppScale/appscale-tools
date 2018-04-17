@@ -972,7 +972,6 @@ class AppScaleTools(object):
     # Let users know that versions are not supported yet.
     AppEngineHelper.warn_if_version_defined(file_location, options.test)
 
-    service_id = AppEngineHelper.get_service_id(file_location)
     env_variables = AppEngineHelper.get_env_vars(file_location)
     inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
@@ -998,9 +997,10 @@ class AppScaleTools(object):
       version.project_id, options.keyname, options.verbose, extras)
 
     AppScaleLogger.log(
-      'Deploying service {} for {}'.format(service_id, version.project_id))
+      'Deploying service {} for {}'.format(version.service_id,
+                                           version.project_id))
     operation_id = admin_client.create_version(
-      version.project_id, service_id, remote_file_path, version.runtime,
+      version.project_id, version.service_id, remote_file_path, version.runtime,
       env_variables, threadsafe, inbound_services)
 
     # now that we've told the AppController to start our app, find out what port

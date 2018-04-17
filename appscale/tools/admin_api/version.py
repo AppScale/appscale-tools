@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 import yaml
 
+from appscale.tools.admin_api.client import DEFAULT_SERVICE
 from appscale.tools.custom_exceptions import AppEngineConfigException
 from appscale.tools.utils import shortest_directory_path, shortest_path_from_list
 
@@ -31,6 +32,7 @@ class Version(object):
     self.runtime = runtime
 
     self.project_id = None
+    self.service_id = None
 
   @staticmethod
   def from_yaml(app_yaml):
@@ -50,6 +52,14 @@ class Version(object):
 
     version = Version(runtime)
     version.project_id = app_yaml.get('application')
+
+    if 'service' in app_yaml and 'module' in app_yaml:
+      raise AppEngineConfigException(
+        'Invalid app.yaml: If "service" is defined, "module" cannot be '
+        'defined.')
+
+    version.service_id = (app_yaml.get('service') or app_yaml.get('module')
+                          or DEFAULT_SERVICE)
 
     return version
 
@@ -72,6 +82,22 @@ class Version(object):
     application_element = root.find(''.join([XML_NAMESPACE, 'application']))
     if application_element is not None:
       version.project_id = application_element.text
+
+    service_element = root.find(''.join([XML_NAMESPACE, 'service']))
+    module_element = root.find(''.join([XML_NAMESPACE, 'module']))
+    if service_element is not None and module_element is not None:
+      raise AppEngineConfigException(
+        'Invalid appengine-web.xml: If "service" is defined, "module" cannot '
+        'be defined.')
+
+    if module_element is not None:
+      version.service_id = module_element.text
+
+    if service_element is not None:
+      version.service_id = service_element.text
+
+    if not version.service_id:
+      version.service_id = DEFAULT_SERVICE
 
     return version
 
