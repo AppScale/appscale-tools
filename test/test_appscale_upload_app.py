@@ -134,7 +134,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       self.app_dir)
     os.path.should_receive('exists').with_args(
       AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
-    flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
     flexmock(LocalState).should_receive('get_secret_key').and_return()
@@ -295,7 +294,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     flexmock(LocalState).should_receive('extract_tgz_app_to_dir').\
       and_return('/tmp/{}'.format(app_id))
-    flexmock(AppEngineHelper).should_receive('get_env_vars').and_return({})
     flexmock(AppEngineHelper).should_receive('get_inbound_services').\
       and_return([])
     flexmock(Version).should_receive('from_source').and_return(version)

@@ -40,6 +40,8 @@ class TestVersion(unittest.TestCase):
     self.assertEqual(version.project_id, 'guestbook')
 
     # Ensure a default service ID is set.
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML)
+    version = Version.from_yaml(app_yaml)
     self.assertEqual(version.service_id, 'default')
 
     # Ensure service ID is parsed correctly.
@@ -47,6 +49,20 @@ class TestVersion(unittest.TestCase):
     app_yaml = yaml.safe_load(yaml_with_module)
     version = Version.from_yaml(app_yaml)
     self.assertEqual(version.service_id, 'service1')
+
+    # Ensure omitted environment variables are handled correctly.
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML)
+    version = Version.from_yaml(app_yaml)
+    self.assertDictEqual(version.env_variables, {})
+
+    # Ensure environment variables are parsed correctly.
+    env_vars = """
+    env_variables:
+      VAR1: 'foo'
+    """.lstrip()
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML + env_vars)
+    version = Version.from_yaml(app_yaml)
+    self.assertDictEqual(version.env_variables, {'VAR1': 'foo'})
 
   def test_from_xml(self):
     # Check the default runtime string for Java apps.
@@ -63,6 +79,8 @@ class TestVersion(unittest.TestCase):
     self.assertEqual(version.project_id, 'guestbook')
 
     # Ensure a default service ID is set.
+    appengine_web_xml = ElementTree.fromstring(SIMPLE_AE_WEB_XML)
+    version = Version.from_xml(appengine_web_xml)
     self.assertEqual(version.service_id, 'default')
 
     # Ensure service ID is parsed correctly.
@@ -70,6 +88,22 @@ class TestVersion(unittest.TestCase):
     appengine_web_xml = ElementTree.fromstring(xml_with_module)
     version = Version.from_xml(appengine_web_xml)
     self.assertEqual(version.service_id, 'service1')
+
+    # Ensure omitted environment variables are handled correctly.
+    appengine_web_xml = ElementTree.fromstring(SIMPLE_AE_WEB_XML)
+    version = Version.from_xml(appengine_web_xml)
+    self.assertDictEqual(version.env_variables, {})
+
+    # Ensure environment variables are parsed correctly.
+    env_vars = """
+    <env-variables>
+      <env-var name="VAR1" value="foo" />
+    </env-variables>
+    """.lstrip()
+    appengine_web_xml = ElementTree.fromstring(
+      AE_WEB_XML_TEMPLATE.format(env_vars))
+    version = Version.from_xml(appengine_web_xml)
+    self.assertDictEqual(version.env_variables, {'VAR1': 'foo'})
 
   def test_from_yaml_file(self):
     open_path = 'appscale.tools.admin_api.version.open'

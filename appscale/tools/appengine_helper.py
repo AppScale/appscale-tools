@@ -212,27 +212,6 @@ class AppEngineHelper(object):
     return threadsafe
 
   @classmethod
-  def get_env_vars(cls, app_dir):
-    """ Retrieves environment varibles from the version configuration.
-
-    Args:
-      app_dir: The directory containing the version source code.
-    Returns:
-      A dictionary containing environment variables.
-    """
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      return yaml_contents.get('env_variables', {})
-    else:
-      app_config = ElementTree.parse(app_config_file).getroot()
-      env_vars = app_config.find('{}env-variables'.format(cls.XML_NAMESPACE))
-      if env_vars is None:
-        return {}
-
-      return {var.attrib['name']: var.attrib['value'] for var in env_vars}
-
-  @classmethod
   def get_inbound_services(cls, app_dir):
     """ Retrieves inbound services from the version configuration.
 

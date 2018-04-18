@@ -38,6 +38,8 @@ class Version(object):
     # TODO: Allow user to define this property.
     self.id = None
 
+    self.env_variables = {}
+
     # Records whether this was populated from a YAML or XML file.
     self.configuration_type = None
 
@@ -58,6 +60,7 @@ class Version(object):
       raise AppEngineConfigException('Missing app.yaml element: runtime')
 
     version = Version(runtime)
+    version.configuration_type = 'app.yaml'
     version.project_id = app_yaml.get('application')
 
     if 'service' in app_yaml and 'module' in app_yaml:
@@ -68,7 +71,7 @@ class Version(object):
     version.service_id = (app_yaml.get('service') or app_yaml.get('module')
                           or DEFAULT_SERVICE)
 
-    version.configuration_type = 'app.yaml'
+    version.env_variables = app_yaml.get('env_variables', {})
 
     return version
 
@@ -87,6 +90,7 @@ class Version(object):
       runtime = runtime_element.text
 
     version = Version(runtime)
+    version.configuration_type = 'appengine-web.xml'
 
     application_element = root.find(''.join([XML_NAMESPACE, 'application']))
     if application_element is not None:
@@ -108,7 +112,10 @@ class Version(object):
     if not version.service_id:
       version.service_id = DEFAULT_SERVICE
 
-    version.configuration_type = 'appengine-web.xml'
+    env_vars_element = root.find(''.join([XML_NAMESPACE, 'env-variables']))
+    if env_vars_element is not None:
+      version.env_variables = {var.attrib['name']: var.attrib['value']
+                               for var in env_vars_element}
 
     return version
 
