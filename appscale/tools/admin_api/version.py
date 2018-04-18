@@ -39,6 +39,7 @@ class Version(object):
     self.id = None
 
     self.env_variables = {}
+    self.inbound_services = []
 
     # Records whether this was populated from a YAML or XML file.
     self.configuration_type = None
@@ -72,6 +73,7 @@ class Version(object):
                           or DEFAULT_SERVICE)
 
     version.env_variables = app_yaml.get('env_variables', {})
+    version.inbound_services = app_yaml.get('inbound_services', [])
 
     return version
 
@@ -116,6 +118,10 @@ class Version(object):
     if env_vars_element is not None:
       version.env_variables = {var.attrib['name']: var.attrib['value']
                                for var in env_vars_element}
+
+    inbound_services = root.find(''.join([XML_NAMESPACE, 'inbound-services']))
+    if inbound_services is not None:
+      version.inbound_services = [service.text for service in inbound_services]
 
     return version
 

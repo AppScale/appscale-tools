@@ -102,8 +102,9 @@ class AdminClient(object):
     if threadsafe is not None:
       body['threadsafe'] = threadsafe
 
-    if inbound_services is not None:
-      body['inboundServices'] = inbound_services
+    if inbound_services:
+      body['inboundServices'] = ['INBOUND_SERVICE_{}'.format(service).upper()
+                                 for service in inbound_services]
 
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)

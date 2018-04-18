@@ -64,6 +64,21 @@ class TestVersion(unittest.TestCase):
     version = Version.from_yaml(app_yaml)
     self.assertDictEqual(version.env_variables, {'VAR1': 'foo'})
 
+    # Ensure omitted inbound services are handled correctly.
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML)
+    version = Version.from_yaml(app_yaml)
+    self.assertListEqual(version.inbound_services, [])
+
+    # Ensure inbound services are parsed correctly.
+    inbound_services = """
+    inbound_services:
+      - mail
+      - warmup
+    """.lstrip()
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML + inbound_services)
+    version = Version.from_yaml(app_yaml)
+    self.assertListEqual(version.inbound_services, ['mail', 'warmup'])
+
   def test_from_xml(self):
     # Check the default runtime string for Java apps.
     # TODO: This should be updated when the Admin API accepts 'java7'.
@@ -104,6 +119,22 @@ class TestVersion(unittest.TestCase):
       AE_WEB_XML_TEMPLATE.format(env_vars))
     version = Version.from_xml(appengine_web_xml)
     self.assertDictEqual(version.env_variables, {'VAR1': 'foo'})
+
+    # Ensure omitted inbound services are handled correctly.
+    appengine_web_xml = ElementTree.fromstring(SIMPLE_AE_WEB_XML)
+    version = Version.from_xml(appengine_web_xml)
+    self.assertListEqual(version.inbound_services, [])
+
+    # Ensure inbound services are parsed correctly.
+    env_vars = """
+    <inbound-services>
+      <service>mail</service>
+    </inbound-services>
+    """.lstrip()
+    appengine_web_xml = ElementTree.fromstring(
+        AE_WEB_XML_TEMPLATE.format(env_vars))
+    version = Version.from_xml(appengine_web_xml)
+    self.assertListEqual(version.inbound_services, ['mail'])
 
   def test_from_yaml_file(self):
     open_path = 'appscale.tools.admin_api.version.open'

@@ -975,7 +975,6 @@ class AppScaleTools(object):
     # Let users know that versions are not supported yet.
     AppEngineHelper.warn_if_version_defined(version, options.test)
 
-    inbound_services = AppEngineHelper.get_inbound_services(file_location)
     threadsafe = None
     if version.runtime in ['python27', 'java']:
       threadsafe = AppEngineHelper.is_threadsafe(file_location)
@@ -1003,7 +1002,7 @@ class AppScaleTools(object):
                                            version.project_id))
     operation_id = admin_client.create_version(
       version.project_id, version.service_id, remote_file_path, version.runtime,
-      version.env_variables, threadsafe, inbound_services)
+      version.env_variables, threadsafe, version.inbound_services)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
