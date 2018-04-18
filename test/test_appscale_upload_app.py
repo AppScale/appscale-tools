@@ -83,11 +83,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that the config files aren't found
     flexmock(os.path)
     os.path.should_call('exists')
-    os.path.should_receive('exists').with_args(
-      AppEngineHelper.get_app_yaml_location(self.app_dir)).and_return(False)
-    os.path.should_receive('exists').with_args(
-      AppEngineHelper.get_appengine_web_xml_location(self.app_dir)) \
-      .and_return(False)
 
     argv = [
       "--keyname", self.keyname,
@@ -101,9 +96,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
-    os.path.should_receive('exists').with_args(app_yaml_location) \
-      .and_return(True)
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -113,8 +105,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_app_yaml.should_receive('read').and_return(yaml.dump({
       'appid' : ''
     }))
-    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
-      .and_return(fake_app_yaml)
 
     argv = [
       "--keyname", self.keyname,
@@ -128,12 +118,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an appengine-web.xml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    os.path.should_receive('exists').with_args(
-      AppEngineHelper.get_app_yaml_location(self.app_dir)).and_return(False)
-    appengine_web_xml_location = AppEngineHelper.get_appengine_web_xml_location(
-      self.app_dir)
-    os.path.should_receive('exists').with_args(
-      AppEngineHelper.get_appengine_web_xml_location(self.app_dir)).and_return(True)
     flexmock(LocalState).should_receive('get_secret_key').and_return()
     flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
 
@@ -144,8 +128,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     fake_appengine_web_xml = flexmock(name="fake_appengine_web_xml")
     fake_appengine_web_xml.should_receive('read').and_return("<baz></baz>\n" +
       "<application></application>")
-    builtins.should_receive('open').with_args(appengine_web_xml_location, 'r') \
-      .and_return(fake_appengine_web_xml)
 
     argv = [
       "--keyname", self.keyname,
@@ -161,9 +143,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
-    os.path.should_receive('exists').with_args(app_yaml_location) \
-      .and_return(True)
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -174,8 +153,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'application' : 'bazid',
       'runtime' : ''
     }))
-    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
-      .and_return(fake_app_yaml)
 
     argv = [
       "--keyname", self.keyname,
@@ -192,9 +169,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
-    os.path.should_receive('exists').with_args(app_yaml_location) \
-      .and_return(True)
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -205,8 +179,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'application' : 'bazid',
       'runtime' : 'badruntime'
     }))
-    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
-      .and_return(fake_app_yaml)
 
     argv = [
       "--keyname", self.keyname,
@@ -222,9 +194,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
-    os.path.should_receive('exists').with_args(app_yaml_location) \
-      .and_return(True)
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -235,8 +204,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'application' : 'none',  # a reserved appid
       'runtime' : 'python'
     }))
-    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
-      .and_return(fake_app_yaml)
 
     argv = [
       "--keyname", self.keyname,
@@ -250,9 +217,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # add in mocks so that there is an app.yaml, but with no appid set
     flexmock(os.path)
     os.path.should_call('exists')
-    app_yaml_location = AppEngineHelper.get_app_yaml_location(self.app_dir)
-    os.path.should_receive('exists').with_args(app_yaml_location) \
-      .and_return(True)
 
     # mock out reading the app.yaml file
     builtins = flexmock(sys.modules['__builtin__'])
@@ -263,8 +227,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
       'application' : 'baz*',
       'runtime' : 'python'
     }))
-    builtins.should_receive('open').with_args(app_yaml_location, 'r') \
-      .and_return(fake_app_yaml)
 
     argv = [
       "--keyname", self.keyname,

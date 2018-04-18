@@ -981,11 +981,12 @@ class AppScaleTools(object):
     if version.runtime == 'go':
       extras = LocalState.get_extra_go_dependencies(options.file, options.test)
 
-    if version.runtime == 'java':
-      if AppEngineHelper.is_sdk_mismatch(file_location):
-        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
-          'versions in your app. The current supported ' +
-          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
+    if (version.runtime == 'java'
+        and AppEngineHelper.is_sdk_mismatch(file_location)):
+      AppScaleLogger.warn(
+        'AppScale did not find the correct SDK jar versions in your app. The '
+        'current supported SDK version is '
+        '{}.'.format(AppEngineHelper.SUPPORTED_SDK_VERSION))
 
     login_host = LocalState.get_login_host(options.keyname)
     secret_key = LocalState.get_secret_key(options.keyname)
@@ -997,9 +998,7 @@ class AppScaleTools(object):
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(version.service_id,
                                            version.project_id))
-    operation_id = admin_client.create_version(
-      version.project_id, version.service_id, remote_file_path, version.runtime,
-      version.env_variables, version.threadsafe, version.inbound_services)
+    operation_id = admin_client.create_version(version, remote_file_path)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving

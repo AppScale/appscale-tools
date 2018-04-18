@@ -5,11 +5,7 @@ from __future__ import absolute_import
 import os
 import re
 import socket
-from xml.etree import ElementTree
 
-import yaml
-
-from appscale.tools.admin_api.client import DEFAULT_SERVICE
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import AppEngineConfigException
 from appscale.tools.custom_exceptions import AppScaleException
@@ -21,94 +17,25 @@ class AppEngineHelper(object):
   configured in such a way that AppScale can host them.
   """
 
-
   # The version of the App Engine SDK that AppScale currently supports.
   SUPPORTED_SDK_VERSION = '1.8.4'
-
-
-  # A regular expression that can be used to see if the given configuration file
-  # is a YAML File.
-  FILE_IS_YAML = re.compile(r'\.yaml\Z')
-
-
-  # A list of language runtimes that AppScale no longer supports.
-  DEPRECATED_RUNTIMES = ("python")
-
 
   # A list of the appids reserved for internal AppScale use.
   DISALLOWED_APP_IDS = ("none", "apichecker", "appscaledashboard")
 
-
   # A regular expression that matches valid application IDs.
   APP_ID_REGEX = re.compile(r'\A(\d|[a-z]|[A-Z]|-)+\Z')
-
 
   # A message to be displayed to the user, in case the given application ID
   # does not comply with the corresponding regular expression.
   REGEX_MESSAGE = "Valid application IDs contain only letters, numbers " + \
                   "and/or '-'."
 
-
   # The prefix of the GAE Java SDK jar name.
   JAVA_SDK_JAR_PREFIX = 'appengine-api-1.0-sdk'
 
-
-  # The configuration file for Java Apps.
-  APPENGINE_WEB_XML = 'appengine-web.xml'
-
-
   # The directory that contains useful libraries for Java Apps.
   LIB = 'lib'
-
-
-  # The namespace used for appengine-web.xml.
-  XML_NAMESPACE = '{http://appengine.google.com/ns/1.0}'
-
-
-  @classmethod
-  def read_file(cls, path):
-    """Reads the file at the given location, returning its contents.
-
-    Args:
-      path: The location on the filesystem that we should read from.
-    Returns:
-      A str containing the contents of the file.
-    """
-    with open(path, 'r') as file_handle:
-      return file_handle.read()
-
-
-  @classmethod
-  def get_app_yaml_location(cls, app_dir):
-    """Returns the location that we expect an app.yaml file to be found within
-    an App Engine application.
-
-    Args:
-      app_dir: The location on the filesystem where the App Engine application
-        is located.
-    Returns:
-      The location where we can expect to find an app.yaml file for the given
-      application.
-    """
-    return app_dir + os.sep + "app.yaml"
-
-
-  @classmethod
-  def get_appengine_web_xml_location(cls, app_dir):
-    """Returns the location that we expect an appengine-web.xml file to be found
-    within an App Engine application.
-
-    Args:
-      app_dir: The location on the filesystem where the App Engine application
-        is located.
-    Returns:
-      The location of the appengine-web.xml file for the given application.
-    """
-    for root, sub_dirs, files in os.walk(app_dir):
-      for file in files:
-        if file == cls.APPENGINE_WEB_XML:
-          return os.path.abspath(os.path.join(root, file))
-
 
   @classmethod
   def is_sdk_mismatch(cls, app_dir):
@@ -173,30 +100,6 @@ class AppEngineHelper(object):
         response = raw_input('Continue? (y/N) ')
         if response.lower() not in ['y', 'yes']:
           raise AppScaleException('Cancelled deploy operation')
-
-  @classmethod
-  def get_config_file_from_dir(cls, app_dir):
-    """Finds the location of the app.yaml or appengine-web.xml file in the
-    provided App Engine app.
-
-    Args:
-      app_dir: The directory on the local filesystem where the App Engine
-        application can be found.
-    Returns:
-      A str containing the path to the configuration file on the local
-        filesystem.
-    Raises:
-      AppEngineConfigException: If there is no configuration file for this
-      application.
-    """
-    if os.path.exists(cls.get_app_yaml_location(app_dir)):
-      return cls.get_app_yaml_location(app_dir)
-    elif os.path.exists(cls.get_appengine_web_xml_location(app_dir)):
-      return cls.get_appengine_web_xml_location(app_dir)
-    else:
-      raise AppEngineConfigException("Couldn't find an app.yaml or " +
-        "appengine-web.xml file in {0}".format(app_dir))
-
 
   @classmethod
   def validate_app_id(cls, app_id):
