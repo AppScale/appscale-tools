@@ -175,43 +175,6 @@ class AppEngineHelper(object):
           raise AppScaleException('Cancelled deploy operation')
 
   @classmethod
-  def is_threadsafe(cls, app_dir):
-    """ Retrieves threadsafe value from version configuration.
-
-    Args:
-      app_dir: The directory containing the version source code.
-    Returns:
-      A boolean containing the value of threadsafe.
-    Raises:
-      AppEngineConfigException if the version is configured incorrectly.
-    """
-    app_config_file = cls.get_config_file_from_dir(app_dir)
-    if cls.FILE_IS_YAML.search(app_config_file):
-      yaml_contents = yaml.safe_load(cls.read_file(app_config_file))
-      try:
-        threadsafe = yaml_contents['threadsafe']
-      except KeyError:
-        raise AppEngineConfigException(
-          '"threadsafe" must be definined in your app.yaml.')
-    else:
-      root = ElementTree.parse(app_config_file).getroot()
-      threadsafe_element = root.find('{}threadsafe'.format(cls.XML_NAMESPACE))
-      if threadsafe_element is None:
-        raise AppEngineConfigException(
-          '"threadsafe" must be definined in your appengine-web.xml.')
-
-      if threadsafe_element.text.lower() not in ['true', 'false']:
-        raise AppEngineConfigException(
-          'Invalid "threadsafe" value in your app configuration. '
-          'It must be either "true" or "false".')
-
-      threadsafe = threadsafe_element.text.lower() == 'true'
-
-    if not isinstance(threadsafe, bool):
-      raise AppEngineConfigException('"threadsafe" must be a boolean value.')
-    return threadsafe
-
-  @classmethod
   def get_config_file_from_dir(cls, app_dir):
     """Finds the location of the app.yaml or appengine-web.xml file in the
     provided App Engine app.

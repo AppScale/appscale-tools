@@ -40,6 +40,7 @@ class Version(object):
 
     self.env_variables = {}
     self.inbound_services = []
+    self.threadsafe = None
 
     # Records whether this was populated from a YAML or XML file.
     self.configuration_type = None
@@ -74,6 +75,18 @@ class Version(object):
 
     version.env_variables = app_yaml.get('env_variables', {})
     version.inbound_services = app_yaml.get('inbound_services', [])
+
+    if version.runtime in ('python27', 'java'):
+      try:
+        version.threadsafe = app_yaml['threadsafe']
+      except KeyError:
+        raise AppEngineConfigException(
+          'Invalid app.yaml: {} applications require the "threadsafe" '
+          'element'.format(version.runtime))
+
+      if not isinstance(version.threadsafe, bool):
+        raise AppEngineConfigException(
+          'Invalid app.yaml: "threadsafe" must be a boolean')
 
     return version
 
@@ -122,6 +135,18 @@ class Version(object):
     inbound_services = root.find(''.join([XML_NAMESPACE, 'inbound-services']))
     if inbound_services is not None:
       version.inbound_services = [service.text for service in inbound_services]
+
+    threadsafe_element = root.find(''.join([XML_NAMESPACE, 'threadsafe']))
+    if threadsafe_element is None:
+      raise AppEngineConfigException(
+        'Invalid appengine-web.xml: missing "threadsafe" element')
+
+    if threadsafe_element.text.lower() not in ('true', 'false'):
+      raise AppEngineConfigException(
+        'Invalid appengine-web.xml: Invalid "threadsafe" value. '
+        'It must be either "true" or "false".')
+
+    version.threadsafe = threadsafe_element.text.lower() == 'true'
 
     return version
 

@@ -293,7 +293,6 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(LocalState).should_receive('extract_tgz_app_to_dir').\
       and_return('/tmp/{}'.format(app_id))
     flexmock(Version).should_receive('from_source').and_return(version)
-    flexmock(AppEngineHelper).should_receive('is_threadsafe').and_return(True)
     flexmock(AppEngineHelper).should_receive('validate_app_id')
     flexmock(LocalState).should_receive('get_login_host').\
       and_return(login_host)

@@ -9,12 +9,14 @@ from appscale.tools.custom_exceptions import AppEngineConfigException
 
 SIMPLE_APP_YAML = """
 runtime: python27
+threadsafe: true
 """.lstrip()
 
 AE_WEB_XML_TEMPLATE = """
 <?xml version="1.0" encoding="utf-8"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
-{}
+  <threadsafe>true</threadsafe>
+  {}
 </appengine-web-app>
 """.lstrip()
 
@@ -79,6 +81,21 @@ class TestVersion(unittest.TestCase):
     version = Version.from_yaml(app_yaml)
     self.assertListEqual(version.inbound_services, ['mail', 'warmup'])
 
+    # Check empty threadsafe value for non-applicable runtime.
+    app_yaml = yaml.safe_load('runtime: go\n')
+    version = Version.from_yaml(app_yaml)
+    self.assertIsNone(version.threadsafe)
+
+    # Check empty threadsafe value for applicable runtime.
+    app_yaml = yaml.safe_load('runtime: python27\n')
+    with self.assertRaises(AppEngineConfigException):
+      Version.from_yaml(app_yaml)
+
+    # Ensure threadsafe value is parsed correctly.
+    app_yaml = yaml.safe_load(SIMPLE_APP_YAML)
+    version = Version.from_yaml(app_yaml)
+    self.assertEqual(version.threadsafe, True)
+
   def test_from_xml(self):
     # Check the default runtime string for Java apps.
     # TODO: This should be updated when the Admin API accepts 'java7'.
@@ -135,6 +152,19 @@ class TestVersion(unittest.TestCase):
         AE_WEB_XML_TEMPLATE.format(env_vars))
     version = Version.from_xml(appengine_web_xml)
     self.assertListEqual(version.inbound_services, ['mail'])
+
+    # Check empty threadsafe value.
+    appengine_web_xml = ElementTree.fromstring(
+      '<?xml version="1.0" encoding="utf-8"?>'
+      '<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">'
+      '</appengine-web-app>')
+    with self.assertRaises(AppEngineConfigException):
+      Version.from_xml(appengine_web_xml)
+
+    # Ensure threadsafe value is parsed correctly.
+    appengine_web_xml = ElementTree.fromstring(SIMPLE_AE_WEB_XML)
+    version = Version.from_xml(appengine_web_xml)
+    self.assertEqual(version.threadsafe, True)
 
   def test_from_yaml_file(self):
     open_path = 'appscale.tools.admin_api.version.open'
