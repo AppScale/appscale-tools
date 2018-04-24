@@ -57,6 +57,7 @@ setup(
     'PyYAML',
     'requests[security]>=2.7.0,<2.15',
     'retrying==1.3.3',
+    'SecretStorage<3',
     'setuptools>=11.3,<34',
     'SOAPpy',
     'tabulate==0.7.7',
