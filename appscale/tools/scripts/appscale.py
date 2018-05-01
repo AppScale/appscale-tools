@@ -75,14 +75,17 @@ def main():
       sys.exit(1)
   elif command == "deploy":
     try:
-      if len(sys.argv) < 3:
-        cprint("Usage: appscale deploy <path to your app>", 'red')
+      if len(sys.argv) < 3 or len(sys.argv) > 5:
+        cprint("Usage: appscale deploy [--project <id>] <path to your app>", 'red')
         sys.exit(1)
 
       if len(sys.argv) == 3:
         appscale.deploy(sys.argv[2])
-      else:
-        appscale.deploy(sys.argv[2], sys.argv[3])
+      elif len(sys.argv) == 5:
+        if sys.argv[2] != '--project':
+          cprint("Usage: appscale deploy [--project <id>] <path to your app>", 'red')
+          sys.exit(1)
+        appscale.deploy(sys.argv[4], sys.argv[3])
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)

@@ -19,7 +19,7 @@ fi
 
 # Some dependencies require a newer Pip than the repositories provide.
 case ${DIST} in
-    precise|trusty)
+    trusty)
         pip install -U pip
         hash -r
         ;;
@@ -38,7 +38,7 @@ pip install "setuptools>=8.0,<34"
 # These system packages are too old for google-api-python-client>=1.5.0.
 # The latest azure package needs to be installed with a --pre flag.
 case ${DIST} in
-    precise|trusty)
+    trusty)
         pip install --upgrade httplib2 six
         ;;
 esac
