@@ -523,15 +523,34 @@ class AzureAgent(BaseAgent):
 
     image_ref = None
     image_hd = None
+    plan = None
     virtual_hd = None
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if re.search(".*:.*:.*:.*", azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
-      image_ref_params = azure_image_id.split(":")
-      image_ref = ImageReference(publisher=image_ref_params[0],
-                                 offer=image_ref_params[1],
-                                 sku=image_ref_params[2],
-                                 version=image_ref_params[3])
+      publisher, offer, sku, version = azure_image_id.split(":")
+      if version.lower() == 'latest':
+        top_one = compute_client.virtual_machine_images.list(zone,
+                                                             publisher,
+                                                             offer,
+                                                             sku,
+                                                             top=1,
+                                                             orderby='name desc')
+        if len(top_one) == 0:
+            raise CLIError("Can't resolve the vesion of '{}'".format(namespace.image))
+
+        version = top_one[0].name
+
+      image = compute_client.virtual_machine_images.get(zone.lower().replace(" ", ""),
+                                                        publisher,
+                                                        offer,
+                                                        sku,
+                                                        version)
+      image_ref = ImageReference(publisher=publisher,
+                                 offer=offer,
+                                 sku=sku,
+                                 version=version)
+      plan = image.plan
     else:
       storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
       virtual_hd = VirtualHardDisk(
@@ -546,6 +565,7 @@ class AzureAgent(BaseAgent):
                                      os_disk=os_disk)
     compute_client.virtual_machines.create_or_update(
       resource_group, vm_network_name, VirtualMachine(location=zone,
+                                                      plan=plan,
                                                       os_profile=os_profile,
                                                       hardware_profile=hardware_profile,
                                                       network_profile=network_profile,
