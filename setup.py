@@ -81,6 +81,7 @@ setup(
       'appscale=appscale.tools.scripts.appscale:main',
       'appscale-add-instances=appscale.tools.scripts.add_instances:main',
       'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
+      'appscale-show-stats=appscale.tools.scripts.show_stats:main',
       'appscale-describe-instances='
         'appscale.tools.scripts.describe_instances:main',
       'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
