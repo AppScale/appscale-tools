@@ -339,7 +339,7 @@ class AzureAgent(BaseAgent):
                          credentials, network_client, parameters, subnet)
                          for _ in range(count)]
         for future in concurrent.futures.as_completed(lb_vms_futures):
-          exception = future.exception
+          exception = future.exception()
           if exception:
             lb_vms_exceptions.add(exception)
 
@@ -604,7 +604,7 @@ class AzureAgent(BaseAgent):
               capacity, parameters, resource_name, scale_set_name, subnet))
         remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
         for future in concurrent.futures.as_completed(scalesets_futures):
-          exception = future.exception
+          exception = future.exception()
           if exception:
             scalesets_exceptions.add(exception)
 
@@ -757,7 +757,7 @@ class AzureAgent(BaseAgent):
               vmss.name, vm.instance_id))
 
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
-          exception = future.exception
+          exception = future.exception()
           if exception:
             vmss_vm_delete_exceptions.add(exception)
 
@@ -782,7 +782,7 @@ class AzureAgent(BaseAgent):
                 self.delete_virtual_machine_scale_set, compute_client,
                 parameters, vmss.name))
         for future in concurrent.futures.as_completed(vmss_delete_futures):
-          exception = future.exception
+          exception = future.exception()
           if exception:
             vmss_delete_exceptions.add(exception)
 
@@ -810,7 +810,7 @@ class AzureAgent(BaseAgent):
             self.delete_virtual_machine_scale_set, compute_client,
             parameters, vmss.name))
       for future in concurrent.futures.as_completed(vmss_delete_futures):
-        exception = future.exception
+        exception = future.exception()
         if exception:
           vmss_delete_exceptions.add(exception)
 
@@ -832,7 +832,7 @@ class AzureAgent(BaseAgent):
            compute_client, parameters, vm_name))
 
       for future in concurrent.futures.as_completed(lb_delete_futures):
-        exception = future.exception
+        exception = future.exception()
         if exception:
           lb_delete_exceptions.add(exception)
 
