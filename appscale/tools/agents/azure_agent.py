@@ -347,7 +347,8 @@ class AzureAgent(BaseAgent):
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if lb_vms_exceptions:
-        raise AgentRuntimeException(json.dumps(lb_vms_exceptions))
+        raise AgentRuntimeException(json.dumps([str(
+            exception) for exception in lb_vms_exceptions]))
     else:
       self.create_or_update_vm_scale_sets(count, parameters, subnet)
 
@@ -515,7 +516,7 @@ class AzureAgent(BaseAgent):
 
       if not vmss.sku.name == instance_type:
         continue
-          
+
       scaleset = compute_client.virtual_machine_scale_sets.get(
         resource_group, vmss.name)
       ss_upgrade_policy = scaleset.upgrade_policy
@@ -611,7 +612,8 @@ class AzureAgent(BaseAgent):
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if scalesets_exceptions:
-        raise AgentRuntimeException(json.dumps(scalesets_exceptions))
+        raise AgentRuntimeException(json.dumps([str(
+            exception) for exception in scalesets_exceptions]))
 
     # Create a scale set using the count of VMs provided.
     else:
@@ -763,7 +765,8 @@ class AzureAgent(BaseAgent):
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if vmss_vm_delete_exceptions:
-        raise AgentRuntimeException(json.dumps(vmss_vm_delete_exceptions))
+        raise AgentRuntimeException(json.dumps([str(
+            exception) for exception in vmss_vm_delete_exceptions]))
 
       AppScaleLogger.log("Virtual machine(s) have been successfully downscaled.")
       AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
@@ -787,7 +790,8 @@ class AzureAgent(BaseAgent):
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if vmss_delete_exceptions:
-        raise AgentRuntimeException(json.dumps(vmss_delete_exceptions))
+        raise AgentRuntimeException(json.dumps([str(
+            exception) for exception in vmss_delete_exceptions]))
       return
 
     # On appscale down --terminate, we delete all the Scale Sets within the
@@ -836,7 +840,8 @@ class AzureAgent(BaseAgent):
       if not isinstance(exception, (CloudError, AgentRuntimeException)):
         logging.exception(exception)
     if lb_delete_exceptions:
-      raise AgentRuntimeException(json.dumps(lb_delete_exceptions))
+      raise AgentRuntimeException(json.dumps([str(
+            exception) for exception in lb_delete_exceptions]))
 
     AppScaleLogger.log("Load balancer virtual machine(s) have been "
        "successfully deleted")
