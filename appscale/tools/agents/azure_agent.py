@@ -928,7 +928,7 @@ class AzureAgent(BaseAgent):
 
     already_deleted = True
     for vm in virtual_machines:
-      if vm_name == vm.instance_id:
+      if vm_name == vm.name:
         already_deleted = False
         break
     if already_deleted:
@@ -945,7 +945,7 @@ class AzureAgent(BaseAgent):
     # Double check if we succeeded deleting the instance.
     virtual_machines = compute_client.virtual_machines.list(resource_group)
     for vm in virtual_machines:
-      if vm_name == vm.instance_id:
+      if vm_name == vm.name:
         raise AgentRuntimeException("Virtual Machine {0} has not "
                                     "been successfully deleted".format(vm_name))
 
