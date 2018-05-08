@@ -599,7 +599,7 @@ class AzureAgent(BaseAgent):
           AppScaleLogger.verbose('Creating a Scale Set {0} with {1} VM(s)'.
                                  format(scale_set_name, capacity), verbose)
 
-          # Start the load operations and mark each future with its URL
+          # Start creating scalesets.
           scalesets_futures.append(executor.submit(self.create_scale_set,
               capacity, parameters, resource_name, scale_set_name, subnet))
         remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
@@ -751,7 +751,7 @@ class AzureAgent(BaseAgent):
           for vm in vm_list:
             if vm.name in instances_to_delete:
               instances_to_delete.remove(vm.name)
-          # Start the load operations and mark each future with its URL
+          # Start deleting scaleset vms.
           vmss_vm_delete_futures.append(executor.submit(
               self.delete_vmss_instance, compute_client, parameters,
               vmss.name, vm.instance_id))
@@ -777,7 +777,7 @@ class AzureAgent(BaseAgent):
           vm_list = compute_client.virtual_machine_scale_set_vms.list(
             resource_group, vmss.name)
           if not any(True for _ in vm_list):
-            # Start the load operations and mark each future with its URL
+            # Start deleting scaleset vm instances.
             vmss_delete_futures.append(executor.submit(
                 self.delete_virtual_machine_scale_set, compute_client,
                 parameters, vmss.name))
