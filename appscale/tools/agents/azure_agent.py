@@ -751,10 +751,10 @@ class AzureAgent(BaseAgent):
           for vm in vm_list:
             if vm.name in instances_to_delete:
               instances_to_delete.remove(vm.name)
-          # Start deleting scaleset vms.
-          vmss_vm_delete_futures.append(executor.submit(
-              self.delete_vmss_instance, compute_client, parameters,
-              vmss.name, vm.instance_id))
+              # Start deleting scaleset vms.
+              vmss_vm_delete_futures.append(executor.submit(
+                  self.delete_vmss_instance, compute_client, parameters,
+                  vmss.name, vm.name))
 
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
           exception = future.exception()
