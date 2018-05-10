@@ -735,7 +735,13 @@ class AzureAgent(BaseAgent):
                            format(instances_to_delete), verbose)
 
     compute_client = ComputeManagementClient(credentials, subscription_id)
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    try:
+      vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+    except CloudError as e:
+      raise AgentRuntimeException(e.message)
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
     downscale = parameters['autoscale_agent']
 
     # On downscaling of instances, we need to delete the specific instance
@@ -746,16 +752,21 @@ class AzureAgent(BaseAgent):
       vmss_vm_delete_exceptions = set()
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for vmss in vmss_list:
-          vm_list = compute_client.virtual_machine_scale_set_vms.list(
-              resource_group, vmss.name)
-          for vm in vm_list:
-            if vm.name in instances_to_delete:
-              instances_to_delete.remove(vm.name)
-              # Start deleting scaleset vms.
-              vmss_vm_delete_futures.append(executor.submit(
-                  self.delete_vmss_instance, compute_client, parameters,
-                  vmss.name, vm.name))
-
+          try:
+            vm_list = compute_client.virtual_machine_scale_set_vms.list(
+                resource_group, vmss.name)
+            for vm in vm_list:
+              if vm.name in instances_to_delete:
+                instances_to_delete.remove(vm.name)
+                # Start deleting scaleset vms.
+                vmss_vm_delete_futures.append(executor.submit(
+                    self.delete_vmss_instance, compute_client, parameters,
+                    vmss.name, vm.name))
+          except CloudError as e:
+            raise AgentRuntimeException(e.message)
+          except Exception as e:
+            logging.exception("Azure agent received unexpected exception!")
+            raise AgentRuntimeException(e.message)
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
           exception = future.exception()
           if exception:
@@ -774,13 +785,19 @@ class AzureAgent(BaseAgent):
       vmss_delete_exceptions = set()
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for vmss in vmss_list:
-          vm_list = compute_client.virtual_machine_scale_set_vms.list(
-            resource_group, vmss.name)
-          if not any(True for _ in vm_list):
-            # Start deleting scaleset vm instances.
-            vmss_delete_futures.append(executor.submit(
-                self.delete_virtual_machine_scale_set, compute_client,
-                parameters, vmss.name))
+          try:
+            vm_list = compute_client.virtual_machine_scale_set_vms.list(
+              resource_group, vmss.name)
+            if not any(True for _ in vm_list):
+              # Start deleting scaleset vm instances.
+              vmss_delete_futures.append(executor.submit(
+                  self.delete_virtual_machine_scale_set, compute_client,
+                  parameters, vmss.name))
+          except CloudError as e:
+            raise AgentRuntimeException(e.message)
+          except Exception as e:
+            logging.exception("Azure agent received unexpected exception!")
+            raise AgentRuntimeException(e.message)
         for future in concurrent.futures.as_completed(vmss_delete_futures):
           exception = future.exception()
           if exception:
