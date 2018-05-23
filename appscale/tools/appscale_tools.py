@@ -939,6 +939,7 @@ class AppScaleTools(object):
       A tuple containing the host and port where the application is serving
         traffic from.
     """
+    custom_service_yaml = None
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_tgz_app_to_dir(options.file,
         options.verbose)
@@ -953,6 +954,11 @@ class AppScaleTools(object):
       file_location = options.file
       created_dir = False
       version = Version.from_directory(options.file)
+    elif options.file.endswith('.yaml'):
+      file_location = os.path.dirname(options.file)
+      created_dir = False
+      version = Version.from_yaml_file(options.file)
+      custom_service_yaml = options.file
     else:
       raise AppEngineConfigException('{0} is not a tar.gz file, a zip file, ' \
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
@@ -993,8 +999,9 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
-    remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      version.project_id, options.keyname, options.verbose, extras)
+    remote_file_path = RemoteHelper.copy_app_to_host(
+      file_location, version.project_id, options.keyname, options.verbose,
+      extras, custom_service_yaml)
 
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(version.service_id,

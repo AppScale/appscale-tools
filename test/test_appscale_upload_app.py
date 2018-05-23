@@ -260,7 +260,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
       and_return(login_host)
     flexmock(LocalState).should_receive('get_secret_key').and_return(secret)
     flexmock(RemoteHelper).should_receive('copy_app_to_host').\
-      with_args(extracted_dir, app_id, self.keyname, False, {}).\
+      with_args(extracted_dir, app_id, self.keyname, False, {}, None).\
       and_return(source_path)
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
