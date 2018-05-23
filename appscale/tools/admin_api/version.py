@@ -300,28 +300,3 @@ class Version(object):
         contents = config_file.read()
 
       return Version.from_contents(contents, file_name)
-
-  @staticmethod
-  def from_source(source_location):
-    """ Constructs a Version from a path.
-
-    Args:
-      source_location: A string specifying the location to a directory, tarball,
-        or zip file containing a config file.
-    Returns:
-      A Version object.
-    Raises:
-      AppengineConfigException if the config is invalid or missing.
-    """
-    if os.path.isdir(source_location):
-      return Version.from_directory(source_location)
-
-    if source_location.endswith('.tar.gz'):
-      return Version.from_tar_gz(source_location)
-
-    if source_location.endswith('.zip'):
-      return Version.from_zip(source_location)
-
-    raise AppEngineConfigException(
-      'Invalid source location: {}. Please specify a directory, a tar.gz file, '
-      'or a zip file.'.format(source_location))

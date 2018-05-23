@@ -943,19 +943,20 @@ class AppScaleTools(object):
       file_location = LocalState.extract_tgz_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_tar_gz(options.file)
     elif cls.ZIP_REGEX.search(options.file):
       file_location = LocalState.extract_zip_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_zip(options.file)
     elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+      version = Version.from_directory(options.file)
     else:
       raise AppEngineConfigException('{0} is not a tar.gz file, a zip file, ' \
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
-
-    version = Version.from_source(options.file)
 
     if options.project:
       if version.runtime == 'java':
