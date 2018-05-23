@@ -1,22 +1,15 @@
 #!/usr/bin/env python
 
-
-# General-purpose Python library imports
 import json
 import os
 import sys
 import time
 import unittest
 
-
-# Third party libraries
 from flexmock import flexmock
-import SOAPpy
 
-
-# AppScale import, the library that we're testing here
-from appscale.tools.admin_client import AdminClient
-from appscale.tools.admin_client import AdminError
+from appscale.tools.admin_api.client import AdminClient
+from appscale.tools.admin_api.client import AdminError
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import AppScaleException
