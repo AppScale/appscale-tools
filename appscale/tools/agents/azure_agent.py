@@ -11,6 +11,7 @@ import os.path
 import re
 import threading
 import time
+from itertools import count, ifilterfalse
 
 # Azure specific imports
 from azure.mgmt.compute import ComputeManagementClient
@@ -269,21 +270,16 @@ class AzureAgent(BaseAgent):
     storage_profile = virtual_machine.storage_profile
 
     # pick the LUN (this must be unique)
-    existing_luns = []
+    existing_luns = set()
     for disk in storage_profile.data_disks:
       # While we're looping check if disk is already attached and return the
       # symlink if it is.
       if disk.name == disk_name:
         return '/dev/disk/azure/scsi1/lun{}'.format(disk.lun)
-      existing_luns.append(disk.lun)
+      existing_luns.add(disk.lun)
 
-    # Choose 500 arbitrarily to give up on, why would someone have 500 disks.
-    the_chosen_lun = 0
-    for lun in range(500):
-      if lun in existing_luns:
-        continue
-      the_chosen_lun = lun
-      break
+    # Get the first number not being used as a LUN.
+    the_chosen_lun = next(ifilterfalse(existing_luns.__contains__, count(1)))
 
     disk = compute_client.disks.get(resource_group, disk_name)
     managed_disk_params = ManagedDiskParameters(id=disk.id)
