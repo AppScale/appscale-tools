@@ -1,17 +1,16 @@
-# First-party Python libraries
+from __future__ import absolute_import
+
 import sys
 import traceback
 
-# Third-party Python libraries
 from termcolor import cprint
 
-import services
-
-from .. import version_helper
-from ..appscale import AppScale
-from ..local_state import APPSCALE_VERSION
-from ..local_state import LocalState
-from ..registration_helper import RegistrationHelper
+from appscale.tools import version_helper
+from appscale.tools.appscale import AppScale
+from appscale.tools.local_state import APPSCALE_VERSION
+from appscale.tools.local_state import LocalState
+from appscale.tools.registration_helper import RegistrationHelper
+from appscale.tools.scripts import services
 
 version_helper.ensure_valid_python_is_used()
 

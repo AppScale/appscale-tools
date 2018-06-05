@@ -9,6 +9,27 @@ from xml.etree import ElementTree
 from .custom_exceptions import BadConfigurationException
 
 
+def shortest_path_from_list(file_name, name_list):
+  """ Determines the shortest path to a file in a list of candidates.
+
+  Args:
+    file_name: A string specifying the name of the matching candidates.
+    name_list: A list of strings specifying paths.
+  Returns:
+    A string specifying the candidate with the shortest path or None.
+  """
+  candidates = [path for path in name_list if path.split('/')[-1] == file_name]
+  if not candidates:
+    return None
+
+  shortest_path = candidates[0]
+  for candidate in candidates:
+    if len(candidate.split('/')) < len(shortest_path.split('/')):
+      shortest_path = candidate
+
+  return shortest_path
+
+
 def config_from_tar_gz(file_name, tar_location):
   """ Reads a configuration file from a source tarball.
 
@@ -19,15 +40,10 @@ def config_from_tar_gz(file_name, tar_location):
     The contents of the configuration file.
   """
   with tarfile.open(tar_location, 'r:gz') as tar:
-    candidates = [member for member in tar.getmembers()
-                  if member.name.split('/')[-1] == file_name]
-    if not candidates:
+    paths = [member.name for member in tar.getmembers()]
+    shortest_path = shortest_path_from_list(file_name, paths)
+    if shortest_path is None:
       return None
-
-    shortest_path = candidates[0]
-    for candidate in candidates:
-      if len(candidate.name.split('/')) < len(shortest_path.name.split('/')):
-        shortest_path = candidate
 
     config_file = tar.extractfile(shortest_path)
     try:
@@ -43,31 +59,25 @@ def config_from_zip(file_name, zip_location):
     file_name: A string specifying the configuration file.
     zip_location: A string specifying the location of the zip file.
   Returns:
-    The contents of the configuration file.
+    The contents of the configuration file or None.
   """
   with zipfile.ZipFile(zip_location) as zip_file:
-    candidates = [member for member in zip_file.namelist()
-                  if member.split('/')[-1] == file_name]
-    if not candidates:
+    shortest_path = shortest_path_from_list(file_name, zip_file.namelist())
+    if shortest_path is None:
       return None
-
-    shortest_path = candidates[0]
-    for candidate in candidates:
-      if len(candidate.split('/')) < len(shortest_path.split('/')):
-        shortest_path = candidate
 
     with zip_file.extract(shortest_path) as config_file:
       return config_file.read()
 
 
-def config_from_dir(file_name, source_path):
-  """ Reads a configuration file from a source directory.
+def shortest_directory_path(file_name, source_path):
+  """ Determines the shortest path to a given file name in a directory.
 
   Args:
-    file_name: A string specifying the configuration file.
-    source_path: A string specifying the location of the source directory.
+    file_name: A string specifying the name of the candidate files.
+    source_path: A string specifying the location of the directory.
   Returns:
-    The contents of the configuration file.
+    A string specifying the candidate with the shortest path or None.
   """
   candidates = []
   for root, _, files in os.walk(source_path):
@@ -81,6 +91,22 @@ def config_from_dir(file_name, source_path):
   for candidate in candidates:
     if len(candidate.split(os.sep)) < len(shortest_path.split(os.sep)):
       shortest_path = candidate
+
+  return shortest_path
+
+
+def config_from_dir(file_name, source_path):
+  """ Reads a configuration file from a source directory.
+
+  Args:
+    file_name: A string specifying the configuration file.
+    source_path: A string specifying the location of the source directory.
+  Returns:
+    The contents of the configuration file or None.
+  """
+  shortest_path = shortest_directory_path(file_name, source_path)
+  if shortest_path is None:
+    return None
 
   with open(shortest_path) as config_file:
     return config_file.read()

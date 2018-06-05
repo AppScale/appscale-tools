@@ -63,6 +63,7 @@ setup(
     'termcolor',
     'wstools==0.4.3'
   ],
+  extras_require={'testing': ['mock']},
   classifiers=[
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
@@ -74,8 +75,8 @@ setup(
     'Topic :: Utilities'
   ],
   namespace_packages=['appscale'],
-  packages=['appscale', 'appscale.tools', 'appscale.tools.agents',
-            'appscale.tools.scripts'],
+  packages=['appscale', 'appscale.tools', 'appscale.tools.admin_api',
+            'appscale.tools.agents', 'appscale.tools.scripts'],
   entry_points={
     'console_scripts': [
       'appscale=appscale.tools.scripts.appscale:main',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
-# First party Python libraries
 import base64
 import json
 import os
@@ -9,28 +9,20 @@ import shutil
 import subprocess
 import sys
 
-
-# Third-party Python libraries
 import yaml
 
-
-# Custom exceptions that can be thrown by Python AppScale code
-from appscale_logger import AppScaleLogger
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-
-
-# AppScale-specific imports
-from appengine_helper import AppEngineHelper
-from appscale_tools import AppScaleTools
-from appscale_stats import show_stats
-from local_state import LocalState
-from node_layout import NodeLayout
-from parse_args import ParseArgs
-from remote_helper import RemoteHelper
-from registration_helper import RegistrationHelper
+from appscale.tools.appengine_helper import AppEngineHelper
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_stats import show_stats
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.custom_exceptions import (
+  AppScaleException, AppScalefileException, BadConfigurationException,
+  ShellException)
+from appscale.tools.local_state import LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.parse_args import ParseArgs
+from appscale.tools.registration_helper import RegistrationHelper
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class AppScale():
