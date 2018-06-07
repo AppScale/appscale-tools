@@ -133,6 +133,9 @@ class AzureAgent(BaseAgent):
     PARAM_ZONE
   )
 
+  # The regex for Azure Marketplace images.
+  MARKETPLACE_IMAGE = re.compile(".*:.*:.*:.*")
+
   # The admin username needed to create an Azure VM instance.
   ADMIN_USERNAME = 'azureuser'
 
@@ -434,7 +437,7 @@ class AzureAgent(BaseAgent):
       self.describe_instances(parameters)
     using_disks = parameters.has_key(self.PARAM_DISKS)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
-    if using_disks and not re.search(".*:.*:.*:.*", azure_image_id):
+    if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
       raise AgentConfigurationException("Managed Disks require use of a "
                                         "publisher image.")
 
@@ -522,7 +525,7 @@ class AzureAgent(BaseAgent):
     plan = None
     virtual_hd = None
     # Publisher images are formatted Publisher:Offer:Sku:Tag
-    if re.search(".*:.*:.*:.*", azure_image_id):
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       publisher, offer, sku, version = azure_image_id.split(":")
       if version.lower() == 'latest':
@@ -778,7 +781,7 @@ class AzureAgent(BaseAgent):
     image_ref = None
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
     # Publisher images are formatted Publisher:Offer:Sku:Tag
-    if re.search(".*:.*:.*:.*", azure_image_id):
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       image_ref_params = azure_image_id.split(":")
       image_ref = ImageReference(publisher=image_ref_params[0],
