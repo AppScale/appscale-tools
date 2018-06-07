@@ -524,27 +524,23 @@ class AzureAgent(BaseAgent):
     image_hd = None
     plan = None
     virtual_hd = None
+
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if self.MARKETPLACE_IMAGE.match(azure_image_id):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       publisher, offer, sku, version = azure_image_id.split(":")
+      compatible_zone = zone.lower().replace(" ", "")
       if version.lower() == 'latest':
-        top_one = compute_client.virtual_machine_images.list(zone,
-                                                             publisher,
-                                                             offer,
-                                                             sku,
-                                                             top=1,
-                                                             orderby='name desc')
+        top_one = compute_client.virtual_machine_images.list(
+            compatible_zone, publisher, offer, sku, top=1, orderby='name desc')
         if len(top_one) == 0:
-            raise CLIError("Can't resolve the vesion of '{}'".format(namespace.image))
+          raise AgentRuntimeException("Can't resolve the vesion of '{}'"
+                                      .format(azure_image_id))
 
         version = top_one[0].name
 
-      image = compute_client.virtual_machine_images.get(zone.lower().replace(" ", ""),
-                                                        publisher,
-                                                        offer,
-                                                        sku,
-                                                        version)
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
       image_ref = ImageReference(publisher=publisher,
                                  offer=offer,
                                  sku=sku,
