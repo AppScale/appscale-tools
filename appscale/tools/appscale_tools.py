@@ -267,7 +267,7 @@ class AppScaleTools(object):
     dashboard = next(
       (service for service in services
        if service.http == RemoteHelper.APP_DASHBOARD_PORT), None)
-    if dashboard and dashboard.appservers > 1:
+    if dashboard and dashboard.appservers >= 1:
       AppScaleLogger.success(
         "\nView more about your AppScale deployment at http://{}:{}/status"
         .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
