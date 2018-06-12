@@ -51,7 +51,7 @@ setup(
     'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
-    'msrest',
+    'msrest<0.5',
     'msrestazure<0.4.20',
     'oauth2client==4.0.0',
     'PyYAML',
