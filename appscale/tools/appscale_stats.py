@@ -1,14 +1,15 @@
+from __future__ import absolute_import
+
 from collections import defaultdict
 
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from tabulate import tabulate
 
-from appcontroller_client import AppControllerClient
-
-from appscale_logger import AppScaleLogger
-from local_state import LocalState
-from utils import styled
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.local_state import LocalState
+from appscale.tools.utils import styled
 
 
 # Fields needed for node statistics
@@ -560,8 +561,8 @@ def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
       summary_proxy = unique_proxies[service_name_id]
 
     summary_proxy["servers_count"] = node["servers_count"]
-    servers_down = sum(1 for s in node["servers"] if s["status"] != "UP")
-    summary_proxy["servers_down_count"] = servers_down
+    summary_proxy["servers_down_count"] = sum(1 for s in node["servers"]
+                                              if s["status"] != "UP")
     summary_proxy["req_rate"] += node["frontend"]["req_rate"]
     summary_proxy["req_tot"] += node["frontend"]["req_tot"]
     summary_proxy["hrsp_5xx"] += node["frontend"]["hrsp_5xx"]
