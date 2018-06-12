@@ -13,6 +13,7 @@ import yaml
 
 from appscale.tools.appengine_helper import AppEngineHelper
 from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_stats import show_stats
 from appscale.tools.appscale_tools import AppScaleTools
 from appscale.tools.custom_exceptions import (
   AppScaleException, AppScalefileException, BadConfigurationException,
@@ -94,6 +95,15 @@ Available commands:
                                     AppScale deployment or a valid role.
                                     Default is headnode. Machines
                                     must have public ips to use this command.
+  stats                             Prints statistics of nodes and proxies.
+    [--types
+    [nodes] [processes] [proxies]]  Determines which stats should be printed.
+    [--roles, -r <roles>]           Filters nodes by roles.
+    [--order-processes, -o
+    [cpu/mem/name]]                 Sorts processes by cpu/memory/name.
+    [--top <number>]                Limits a number of printed processes.
+    [--verbose, -v]                 Prints verbose stats.
+    [--apps-only]                   Prints only application proxy stats.
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
@@ -474,6 +484,33 @@ Available commands:
                               "has a public ip, or that the role is in use by "
                               "the deployment.".format(ip))
 
+
+  def stats(self, params_list=None):
+    """
+    'stats' is a more accessible way to get statistics about nodes, processes
+    and/or proxies. It could be shown in verbose or not verbose mode,
+    it could be sorted by some characteristic and filter to application only
+    for proxies statistics. If no options are given it will show full
+    statistics about nodes, processes and proxies without filter and
+    sorted by default characteristic.
+
+    Args:
+      options: A list of additional options about what statistics and how it
+        should be shown.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current
+      directory.
+    """
+    contents = self.read_appscalefile()
+    command = params_list or []
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    options = ParseArgs(command, "appscale-show-stats").args
+    show_stats(options)
 
 
   def status(self, extra_options_list=None):

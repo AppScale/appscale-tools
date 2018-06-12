@@ -66,6 +66,14 @@ def main():
     except KeyboardInterrupt:
       # don't print the stack trace on a Control-C
       pass
+
+  elif command == "stats":
+    try:
+      appscale.stats(sys.argv[2:])
+    except Exception as exception:
+      LocalState.generate_crash_log(exception, traceback.format_exc())
+      sys.exit(1)
+
   elif command == "status":
     try:
       appscale.status(sys.argv[2:])
