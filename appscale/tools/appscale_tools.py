@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-# General-purpose Python library imports
+from __future__ import absolute_import
+
+import Queue
 import datetime
 import getpass
 import json
 import os
-import Queue
 import re
 import shutil
 import socket
@@ -15,35 +16,30 @@ import time
 import traceback
 import urllib2
 import uuid
-import yaml
-from xml.etree import ElementTree
-
 from collections import Counter
 from itertools import chain
+from xml.etree import ElementTree
 
-# AppScale-specific imports
-from tabulate import tabulate
+import yaml
 from SOAPpy import faultType
+from tabulate import tabulate
 
-from agents.factory import InfrastructureAgentFactory
-from appcontroller_client import AppControllerClient
-from appengine_helper import AppEngineHelper
-from appscale_logger import AppScaleLogger
-from cluster_stats import NodeStats, ServiceInfo
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppEngineConfigException
-from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-from local_state import APPSCALE_VERSION
-from local_state import LocalState
-from node_layout import NodeLayout
-from remote_helper import RemoteHelper
-from version_helper import latest_tools_version
-from . import utils
-from .admin_client import AdminClient
-from .admin_client import DEFAULT_SERVICE
-from .admin_client import DEFAULT_VERSION
+from appscale.tools import utils
+from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
+                                             DEFAULT_VERSION)
+from appscale.tools.admin_api.version import Version
+from appscale.tools.agents.factory import InfrastructureAgentFactory
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.appengine_helper import AppEngineHelper
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.cluster_stats import NodeStats, ServiceInfo
+from appscale.tools.custom_exceptions import (
+  AppControllerException, AppEngineConfigException, AppScaleException,
+  BadConfigurationException, ShellException)
+from appscale.tools.local_state import APPSCALE_VERSION, LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.remote_helper import RemoteHelper
+from appscale.tools.version_helper import latest_tools_version
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -271,7 +267,7 @@ class AppScaleTools(object):
     dashboard = next(
       (service for service in services
        if service.http == RemoteHelper.APP_DASHBOARD_PORT), None)
-    if dashboard and dashboard.appservers > 1:
+    if dashboard and dashboard.appservers >= 1:
       AppScaleLogger.success(
         "\nView more about your AppScale deployment at http://{}:{}/status"
         .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
@@ -959,60 +955,50 @@ class AppScaleTools(object):
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
 
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(
-      file_location)
+    version = Version.from_source(options.file)
+
     if options.project:
-      if app_language == 'java':
+      if version.runtime == 'java':
         raise BadConfigurationException("AppScale doesn't support --project for"
           "Java yet. Please specify the application id in appengine-web.xml.")
 
-      app_id = options.project
-    else:
-      try:
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
-      except AppEngineConfigException as config_error:
-        AppScaleLogger.log(config_error)
-        if 'yaml' in str(config_error):
-          raise config_error
+      version.project_id = options.project
 
-        # Java App Engine users may have specified their war directory. In that
-        # case, just move up one level, back to the app's directory.
-        file_location = file_location + os.sep + ".."
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    if version.project_id is None:
+      if version.configuration_type == 'app.yaml':
+        message = 'Specify --project or define "application" in your app.yaml'
+      else:
+        message = 'Define "application" in your appengine-web.xml'
+
+      raise AppEngineConfigException(message)
 
     # Let users know that versions are not supported yet.
-    AppEngineHelper.warn_if_version_defined(file_location, options.test)
+    AppEngineHelper.warn_if_version_defined(version, options.test)
 
-    service_id = AppEngineHelper.get_service_id(file_location)
-    env_variables = AppEngineHelper.get_env_vars(file_location)
-    inbound_services = AppEngineHelper.get_inbound_services(file_location)
-    threadsafe = None
-    if app_language in ['python27', 'java']:
-      threadsafe = AppEngineHelper.is_threadsafe(file_location)
-    AppEngineHelper.validate_app_id(app_id)
+    AppEngineHelper.validate_app_id(version.project_id)
 
     extras = {}
-    if app_language == 'go':
+    if version.runtime == 'go':
       extras = LocalState.get_extra_go_dependencies(options.file, options.test)
 
-    if app_language == 'java':
-      if AppEngineHelper.is_sdk_mismatch(file_location):
-        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
-          'versions in your app. The current supported ' +
-          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
+    if (version.runtime == 'java'
+        and AppEngineHelper.is_sdk_mismatch(file_location)):
+      AppScaleLogger.warn(
+        'AppScale did not find the correct SDK jar versions in your app. The '
+        'current supported SDK version is '
+        '{}.'.format(AppEngineHelper.SUPPORTED_SDK_VERSION))
 
     login_host = LocalState.get_login_host(options.keyname)
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      app_id, options.keyname, options.verbose, extras)
+      version.project_id, options.keyname, options.verbose, extras)
 
     AppScaleLogger.log(
-      'Deploying service {} for {}'.format(service_id, app_id))
-    operation_id = admin_client.create_version(
-      app_id, service_id, remote_file_path, app_language, env_variables,
-      threadsafe, inbound_services)
+      'Deploying service {} for {}'.format(version.service_id,
+                                           version.project_id))
+    operation_id = admin_client.create_version(version, remote_file_path)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
@@ -1022,7 +1008,7 @@ class AppScaleTools(object):
     while True:
       if time.time() > deadline:
         raise AppScaleException('The deployment operation took too long.')
-      operation = admin_client.get_operation(app_id, operation_id)
+      operation = admin_client.get_operation(version.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue

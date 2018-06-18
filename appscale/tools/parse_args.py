@@ -388,6 +388,31 @@ class ParseArgs(object):
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-show-stats":
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--types',
+        nargs='+',
+        choices=['nodes', 'processes', 'proxies'],
+        default=['nodes', 'proxies'],
+        help="the type(s) of statistics to print")
+      self.parser.add_argument('--roles', '-r',
+        nargs='*',
+        default=[],
+        help="print nodes with specified role(s)")
+      self.parser.add_argument('--order-processes', '-o',
+        choices=['cpu', 'mem', 'name'],
+        default='mem',
+        help="the field to order process statistics by")
+      self.parser.add_argument('--top',
+        type=int,
+        default='15',
+        help="the number of processes to print")
+      self.parser.add_argument('--apps-only',
+        action='store_true',
+        default=False,
+        help="print only application proxy statistics")
     elif function == "appscale-create-user":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
@@ -473,6 +498,8 @@ class ParseArgs(object):
       if not self.args.service_id:
         raise SystemExit("Must specify service-id")
     elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-show-stats":
       pass
     elif function == "appscale-create-user":
       pass
