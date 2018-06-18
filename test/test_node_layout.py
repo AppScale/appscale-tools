@@ -254,7 +254,6 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(self.reattach_options)
     self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
@@ -310,7 +309,6 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(cleaned_node_info)
-    self.assertNotEqual(new_layout, None)
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
@@ -344,7 +342,6 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
     nodes_copy = new_layout[:]
     for old_node in node_layout.nodes:
       for _, node in enumerate(nodes_copy):
@@ -376,8 +373,8 @@ class TestNodeLayout(unittest.TestCase):
                    "jobs": ['database', 'db_master', 'zookeeper'] }
                  ]
 
-    new_layout = node_layout.from_locations_json_list(node_info)
-    self.assertEqual(new_layout, None)
+    with self.assertRaises(AssertionError):
+      node_layout.from_locations_json_list(node_info)
 
 
   def test_from_locations_json_list_invalid_asf(self):
@@ -405,5 +402,5 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
 
-    new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertEqual(new_layout, None)
+    with self.assertRaises(AssertionError):
+      node_layout.from_locations_json_list(self.reattach_node_info)

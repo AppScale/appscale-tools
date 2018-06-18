@@ -128,10 +128,11 @@ class RemoteHelper(object):
       # Get the node_info from the locations JSON.
       node_info = LocalState.get_local_nodes_info(keyname=options.keyname)
 
-      previous_node_list = node_layout.from_locations_json_list(node_info)
-      # If this is None, the AppScalefile has been changed or the nodes could
-      # not be matched up by roles/jobs.
-      if previous_node_list is None:
+      try:
+        previous_node_list = node_layout.from_locations_json_list(node_info)
+      except AssertionError:
+        # The AppScalefile has been changed or the nodes could not be matched
+        # up by roles/jobs.
         raise BadConfigurationException("AppScale does not currently support "
                                         "changes to AppScalefile or locations "
                                         "JSON between a down and an up. If "
