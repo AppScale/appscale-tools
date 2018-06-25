@@ -522,7 +522,7 @@ class AppControllerClient():
     Args:
       username: The email address registered as username for the user's application.
     """
-    while True:
+    for _ in range(self.DEFAULT_NUM_RETRIES):
       try:
         user_exists = self.run_with_timeout(
           self.DEFAULT_TIMEOUT, self.DEFAULT_NUM_RETRIES,
@@ -555,20 +555,20 @@ class AppControllerClient():
       AppControllerException if unable to create user.
     """
     AppScaleLogger.log("Creating new user account {0}".format(username))
-    while 1:
+    for _ in range(self.DEFAULT_NUM_RETRIES):
       try:
         result = self.run_with_timeout(
           self.LONGER_TIMEOUT, self.DEFAULT_NUM_RETRIES,
           self.server.create_user, username, password, account_type,
           self.secret)
-        break
+        if result != 'true':
+          raise AppControllerException(result)
+
+        return
       except Exception as exception:
         AppScaleLogger.log("Exception when creating user: {0}".format(exception))
         AppScaleLogger.log("Backing off and trying again")
         time.sleep(10)
-
-    if result != 'true':
-      raise AppControllerException(result)
 
   def set_admin_role(self, username, is_cloud_admin, capabilities):
     """ Grants the given user the ability to perform any administrative action.
