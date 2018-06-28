@@ -262,45 +262,42 @@ class AzureAgent(BaseAgent):
     network_client = NetworkManagementClient(credentials, subscription_id,
                                              api_version=self.NETWORK_MGMT_API_VERSION)
     compute_client = ComputeManagementClient(credentials, subscription_id)
-    public_ips = []
-    private_ips = []
-    instance_ids = []
 
-    public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
-    for public_ip in public_ip_addresses:
-      public_ips.append(public_ip.ip_address)
+    try:
+      public_ips = [public_ip.ip_address for public_ip in
+                    network_client.public_ip_addresses.list(resource_group)]
 
-    network_interfaces = network_client.network_interfaces.list(resource_group)
-    for network_interface in network_interfaces:
-      for ip_config in network_interface.ip_configurations:
-        private_ips.append(ip_config.private_ip_address)
+      private_ips = [ip_config.private_ip_address
+                     for network_interface in
+                     network_client.network_interfaces.list(resource_group)
+                     for ip_config in network_interface.ip_configurations]
 
-    virtual_machines = compute_client.virtual_machines.list(resource_group)
-    for vm in virtual_machines:
-      instance_ids.append(vm.name)
+      instance_ids = [vm.name for vm in
+                      compute_client.virtual_machines.list(resource_group)]
+      vm_vmss_list = [(vm, vmss.name)
+         for vmss in compute_client.virtual_machine_scale_sets.list(
+            resource_group)
+         for vm in compute_client.virtual_machine_scale_set_vms.list(
+            resource_group, vmss.name)]
 
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
-    for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(resource_group,
-                                                                  vmss.name)
-      for vm in vm_list:
+      for vm, vmss_name in vm_vmss_list:
         network_interface_list = network_client.network_interfaces. \
-          list_virtual_machine_scale_set_vm_network_interfaces(resource_group,
-                                                               vmss.name,
-                                                               vm.instance_id)
-        ip_config_private_ip = None
-        for network_interface in network_interface_list:
-          for ip_config in network_interface.ip_configurations:
-            ip_config_private_ip = ip_config.private_ip_address
-            break
-
-          if ip_config_private_ip:
-            break
-
-        if ip_config_private_ip:
-          public_ips.append(ip_config_private_ip)
-          private_ips.append(ip_config_private_ip)
-          instance_ids.append(vm.name)
+          list_virtual_machine_scale_set_vm_network_interfaces(
+            resource_group, vmss_name, vm.instance_id)
+        private_ip = next(ip_config.private_ip_address
+                          for network_interface in network_interface_list
+                          for ip_config in network_interface.ip_configurations
+                          if ip_config.private_ip_address)
+        public_ips.append(private_ip)
+        private_ips.append(private_ip)
+        instance_ids.append(vm.name)
+    except CloudError as e:
+      logging.exception("CloudError received while trying to describe "
+                        "instances.")
+      raise AgentRuntimeException(e.message)
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
     return public_ips, private_ips, instance_ids
 
