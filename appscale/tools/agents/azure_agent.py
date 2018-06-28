@@ -175,25 +175,24 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
-    Returns:
-      True, if the credentials were valid.
-      A list, of resource group names under the subscription.
     Raises:
       AgentConfigurationException: If an error is encountered during
         authentication.
+      AgentRuntimeException: If an unexpected Azure Error has been encountered.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     try:
       resource_client = ResourceManagementClient(credentials, subscription_id)
-      resource_groups = resource_client.resource_groups.list()
-      rg_names = []
-      for rg in resource_groups:
-        rg_names.append(rg.name)
-      return True, rg_names
+      # Try listing resource groups to make sure we can, a CloudError will be
+      # raised if the credentials are invalid.
+      resource_client.resource_groups.list()
     except CloudError as error:
       raise AgentConfigurationException("Unable to authenticate using the "
         "credentials provided. Reason: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
   def configure_instance_security(self, parameters):
     """ Configure the resource group and storage account needed to create the
@@ -240,8 +239,16 @@ class AzureAgent(BaseAgent):
     self.create_resource_group(parameters, credentials)
 
     resource_client = ResourceManagementClient(credentials, subscription_id)
-    resource_client.providers.register(self.MICROSOFT_COMPUTE_RESOURCE)
-    resource_client.providers.register(self.MICROSOFT_NETWORK_RESOURCE)
+    try:
+      resource_client.providers.register(self.MICROSOFT_COMPUTE_RESOURCE)
+      resource_client.providers.register(self.MICROSOFT_NETWORK_RESOURCE)
+    except CloudError as error:
+      logging.exception("Encountered an error while registering provider.")
+      raise AgentRuntimeException("Unable to register provider. Reason: {}"
+                                  .format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Microsoft Azure to see which instances are currently
@@ -1053,16 +1060,28 @@ class AzureAgent(BaseAgent):
         existence.
     Returns:
       True if the zone exists, and False otherwise.
+    Raises:
+      AgentConfigurationException: If an error is encountered during
+        checking for the zone.
+      AgentRuntimeException: If an unexpected Azure Error has been encountered.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     zone = parameters[self.PARAM_ZONE]
     resource_client = ResourceManagementClient(credentials, subscription_id)
-    resource_providers = resource_client.providers.list()
-    for provider in resource_providers:
-      for resource_type in provider.resource_types:
-        if zone in resource_type.locations:
-          return True
+    try:
+      resource_providers = resource_client.providers.list()
+      for provider in resource_providers:
+        for resource_type in provider.resource_types:
+          if zone in resource_type.locations:
+            return True
+    except CloudError as error:
+      logging.exception("Unable to check if zone exists.")
+      raise AgentConfigurationException("Unable to check if zone exists. "
+                                        "Reason: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
     return False
 
   def cleanup_state(self, parameters):
@@ -1071,6 +1090,9 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict that includes keys indicating the remote state
         that should be deleted.
+    Raises:
+      AgentConfigurationException: If an error is encountered during
+        trying to clean up the state in Azure.
     """
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
@@ -1080,36 +1102,57 @@ class AzureAgent(BaseAgent):
 
     AppScaleLogger.log("Cleaning up the network configuration created for this "
                        "deployment ...")
-    network_interfaces = network_client.network_interfaces.list(resource_group)
-    for interface in network_interfaces:
-      result = network_client.network_interfaces.delete(resource_group, interface.name)
-      resource_name = 'Network Interface' + ':' + interface.name
-      self.sleep_until_delete_operation_done(result, resource_name,
-                                             self.MAX_SLEEP_TIME, verbose)
-      AppScaleLogger.verbose("Network Interface {} has been successfully deleted.".
-                             format(interface.name), verbose)
+    try:
+      network_interfaces = network_client.network_interfaces.list(resource_group)
+      for interface in network_interfaces:
+        result = network_client.network_interfaces.delete(resource_group, interface.name)
+        resource_name = 'Network Interface' + ':' + interface.name
+        self.sleep_until_delete_operation_done(result, resource_name,
+                                               self.MAX_SLEEP_TIME, verbose)
+        AppScaleLogger.verbose("Network Interface {} has been successfully deleted.".
+                               format(interface.name), verbose)
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to clean up network interfaces. "
+                                  "Reason: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Network Interface(s) have been successfully deleted.")
 
-    public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
-    for public_ip in public_ip_addresses:
-      result = network_client.public_ip_addresses.delete(resource_group, public_ip.name)
-      resource_name = 'Public IP Address' + ':' + public_ip.name
-      self.sleep_until_delete_operation_done(result, resource_name,
-                                             self.MAX_SLEEP_TIME, verbose)
-      AppScaleLogger.verbose("Public IP Address {} has been successfully deleted.".
-                             format(public_ip.name), verbose)
+    try:
+      public_ip_addresses = network_client.public_ip_addresses.list(resource_group)
+      for public_ip in public_ip_addresses:
+        result = network_client.public_ip_addresses.delete(resource_group, public_ip.name)
+        resource_name = 'Public IP Address' + ':' + public_ip.name
+        self.sleep_until_delete_operation_done(result, resource_name,
+                                               self.MAX_SLEEP_TIME, verbose)
+        AppScaleLogger.verbose("Public IP Address {} has been successfully deleted.".
+                               format(public_ip.name), verbose)
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to clean up public ips. "
+                                  "Reason: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Public IP Address(s) have been successfully deleted.")
 
-    virtual_networks = network_client.virtual_networks.list(resource_group)
-    for network in virtual_networks:
-      result = network_client.virtual_networks.delete(resource_group, network.name)
-      resource_name = 'Virtual Network' + ':' + network.name
-      self.sleep_until_delete_operation_done(result, resource_name,
-                                             self.MAX_SLEEP_TIME, verbose)
-      AppScaleLogger.verbose("Virtual Network {} has been successfully deleted.".
-                             format(network.name), verbose)
+    try:
+      virtual_networks = network_client.virtual_networks.list(resource_group)
+      for network in virtual_networks:
+        result = network_client.virtual_networks.delete(resource_group, network.name)
+        resource_name = 'Virtual Network' + ':' + network.name
+        self.sleep_until_delete_operation_done(result, resource_name,
+                                               self.MAX_SLEEP_TIME, verbose)
+        AppScaleLogger.verbose("Virtual Network {} has been successfully deleted.".
+                               format(network.name), verbose)
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to clean up virtual networks. "
+                                  "Reason: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
 
@@ -1146,10 +1189,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_ZONE : args[self.PARAM_ZONE],
       'autoscale_agent': False
     }
-    is_valid, rg_names = self.assert_credentials_are_valid(params)
-    if not is_valid:
-      raise AgentConfigurationException("Unable to authenticate using the "
-                                        "credentials provided.")
+    self.assert_credentials_are_valid(params)
 
     # In case no resource group is passed, pass a default group.
     if not args[self.PARAM_RESOURCE_GROUP]:
@@ -1324,6 +1364,7 @@ class AzureAgent(BaseAgent):
     Raises:
       AgentConfigurationException: If there was a problem creating or accessing
         a resource group with the given subscription.
+      AgentRuntimeException: If an unexpected Azure Error has been encountered.
     """
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_client = ResourceManagementClient(credentials, subscription_id)
@@ -1334,8 +1375,8 @@ class AzureAgent(BaseAgent):
       tag_name = parameters[self.PARAM_TAG]
 
     storage_client = StorageManagementClient(credentials, subscription_id)
-    resource_client.providers.register(self.MICROSOFT_STORAGE_RESOURCE)
     try:
+      resource_client.providers.register(self.MICROSOFT_STORAGE_RESOURCE)
       # If the resource group does not already exist, create a new one with the
       # specified storage account.
       if not self.does_resource_group_exist(resource_group_name, resource_client):
@@ -1363,6 +1404,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a resource group "
         "using the credentials provided: {}".format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
   def create_storage_account(self, parameters, storage_client):
     """ Creates a Storage Account under the Resource Group, if it does not
