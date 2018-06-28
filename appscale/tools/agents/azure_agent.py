@@ -323,6 +323,8 @@ class AzureAgent(BaseAgent):
       instance_ids: A list of unique Azure VM names.
       public_ips: A list of public IP addresses.
       private_ips: A list of private IP addresses.
+    Raises:
+      AgentRuntimeException: If an error has occurred talking to Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -499,6 +501,8 @@ class AzureAgent(BaseAgent):
           authenticate this user with Azure.
     Returns:
         The number of instances created and added to the existing scale sets.
+    Raises:
+        AgentRuntimeException: If an error has occurred talking to Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -507,26 +511,33 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     num_instances_added = 0
-    vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
-    for vmss in vmss_list:
-      vm_list = compute_client.virtual_machine_scale_set_vms.list(
-        resource_group, vmss.name)
-      ss_instance_count = 0
-      for _ in vm_list:
-        ss_instance_count += 1
+    try:
+      scalesets_and_counts = []
+      for vmss in compute_client.virtual_machine_scale_sets.list(
+          resource_group):
+        ss_instance_count = sum(1 for _ in
+          compute_client.virtual_machine_scale_set_vms.list(resource_group, vmss.name))
 
-      if ss_instance_count >= self.MAX_VMSS_CAPACITY:
-        continue
+        if ss_instance_count >= self.MAX_VMSS_CAPACITY:
+          continue
 
-      if not vmss.sku.name == instance_type:
-        continue
+        if not vmss.sku.name == instance_type:
+          continue
+        vmss = compute_client.virtual_machine_scale_sets.get(resource_group,
+                                                             vmss.name)
+        scalesets_and_counts.append((vmss, ss_instance_count))
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to add to Scale Sets due to: {}"
+                                  .format(error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
-      scaleset = compute_client.virtual_machine_scale_sets.get(
-        resource_group, vmss.name)
-      ss_upgrade_policy = scaleset.upgrade_policy
-      ss_location = scaleset.location
-      ss_profile = scaleset.virtual_machine_profile
-      ss_overprovision = scaleset.over_provision
+    for vmss, ss_instance_count in scalesets_and_counts:
+      ss_upgrade_policy = vmss.upgrade_policy
+      ss_location = vmss.location
+      ss_profile = vmss.virtual_machine_profile
+      ss_overprovision = vmss.over_provision
 
       new_capacity = min(ss_instance_count + count, self.MAX_VMSS_CAPACITY)
       sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
@@ -714,6 +725,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a Scale Set of {0} "
                                         "VM(s): {1}".format(count, error.message))
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
