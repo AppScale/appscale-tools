@@ -33,7 +33,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='3.5.2',
+  version='3.5.3',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
@@ -51,7 +51,7 @@ setup(
     'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
-    'msrest',
+    'msrest<0.5',
     'msrestazure<0.4.20',
     'oauth2client==4.0.0',
     'PyYAML',
