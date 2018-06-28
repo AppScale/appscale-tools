@@ -754,7 +754,8 @@ class AzureAgent(BaseAgent):
 
     compute_client = ComputeManagementClient(credentials, subscription_id)
     try:
-      vmss_list = compute_client.virtual_machine_scale_sets.list(resource_group)
+      vmss_list = list(compute_client.virtual_machine_scale_sets.list(
+          resource_group))
     except CloudError as e:
       raise AgentRuntimeException(e.message)
     except Exception as e:
