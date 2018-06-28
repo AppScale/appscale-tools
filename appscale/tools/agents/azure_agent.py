@@ -750,23 +750,27 @@ class AzureAgent(BaseAgent):
       # Delete the scale set virtual machines matching the given instance ids.
       vmss_vm_delete_futures = []
       vmss_vm_delete_exceptions = set()
+
+      try:
+        vmss_vms_to_delete = [(vm.name, vmss.name) for vmss in vmss_list
+            for vm in compute_client.virtual_machine_scale_set_vms.list(
+            resource_group, vmss.name)
+            if vm.name in instances_to_delete]
+      except CloudError as e:
+        logging.exception("CloudError received while trying to terminate "
+                          "instances.")
+        raise AgentRuntimeException(e.message)
+      except Exception as e:
+        logging.exception("Azure agent received unexpected exception!")
+        raise AgentRuntimeException(e.message)
+
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        for vmss in vmss_list:
-          try:
-            vm_list = compute_client.virtual_machine_scale_set_vms.list(
-                resource_group, vmss.name)
-            for vm in vm_list:
-              if vm.name in instances_to_delete:
-                instances_to_delete.remove(vm.name)
-                # Start deleting scaleset vms.
-                vmss_vm_delete_futures.append(executor.submit(
-                    self.delete_vmss_instance, compute_client, parameters,
-                    vmss.name, vm.name))
-          except CloudError as e:
-            raise AgentRuntimeException(e.message)
-          except Exception as e:
-            logging.exception("Azure agent received unexpected exception!")
-            raise AgentRuntimeException(e.message)
+        for vm_name, vmss_name in vmss_vms_to_delete:
+          vmss_vm_delete_futures.append(executor.submit(
+              self.delete_vmss_instance, compute_client, parameters,
+              vmss_name, vm_name))
+          instances_to_delete.remove(vm_name)
+
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
           exception = future.exception()
           if exception:
@@ -783,21 +787,26 @@ class AzureAgent(BaseAgent):
       AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
       vmss_delete_futures = []
       vmss_delete_exceptions = set()
+
+      try:
+        ss_to_delete = [vmss.name for vmss in vmss_list if
+                       sum(1 for _ in
+                           compute_client.virtual_machine_scale_set_vms.list(
+                                resource_group, vmss.name)) == 0]
+      except CloudError as e:
+        logging.exception("CloudError received while trying to terminate "
+                          "instances.")
+        raise AgentRuntimeException(e.message)
+      except Exception as e:
+        logging.exception("Azure agent received unexpected exception!")
+        raise AgentRuntimeException(e.message)
+
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        for vmss in vmss_list:
-          try:
-            vm_list = compute_client.virtual_machine_scale_set_vms.list(
-              resource_group, vmss.name)
-            if not any(True for _ in vm_list):
-              # Start deleting scaleset vm instances.
-              vmss_delete_futures.append(executor.submit(
-                  self.delete_virtual_machine_scale_set, compute_client,
-                  parameters, vmss.name))
-          except CloudError as e:
-            raise AgentRuntimeException(e.message)
-          except Exception as e:
-            logging.exception("Azure agent received unexpected exception!")
-            raise AgentRuntimeException(e.message)
+        for vmss_name in ss_to_delete:
+          vmss_delete_futures.append(executor.submit(
+                self.delete_virtual_machine_scale_set, compute_client,
+                parameters, vmss_name))
+
         for future in concurrent.futures.as_completed(vmss_delete_futures):
           exception = future.exception()
           if exception:
@@ -814,15 +823,25 @@ class AzureAgent(BaseAgent):
     # On appscale down --terminate, we delete all the Scale Sets within the
     # resource group specified, as it is faster than deleting the individual
     # instances within each Scale Set.
-    delete_ss_instances = []
+
+    # Get the list of all ScaleSet Instance Ids before deleting ScaleSets.
+    try:
+      delete_ss_instances = [vm.name for vmss in vmss_list
+       for vm in compute_client.virtual_machine_scale_set_vms.list(
+       resource_group, vmss.name)]
+    except CloudError as e:
+      logging.exception("CloudError received while trying to terminate "
+                        "instances.")
+      raise AgentRuntimeException(e.message)
+    except Exception as e:
+      logging.exception("Azure agent received unexpected exception!")
+      raise AgentRuntimeException(e.message)
+
+    # Delete ScaleSets.
     vmss_delete_futures = []
     vmss_delete_exceptions = set()
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
       for vmss in vmss_list:
-        vm_list = compute_client.virtual_machine_scale_set_vms.list(
-            resource_group, vmss.name)
-        for vm in vm_list:
-          delete_ss_instances.append(vm.name)
         vmss_delete_futures.append(executor.submit(
             self.delete_virtual_machine_scale_set, compute_client,
             parameters, vmss.name))
