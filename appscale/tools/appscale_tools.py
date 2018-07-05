@@ -579,20 +579,18 @@ class AppScaleTools(object):
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    relocate_result = acc.relocate_version(version_key, options.http_port,
-                                           options.https_port)
-    if relocate_result == "OK":
-      AppScaleLogger.success("Successfully issued request to move {0} to " \
-        "ports {1} and {2}.".format(options.appname, options.http_port,
-        options.https_port))
-      RemoteHelper.sleep_until_port_is_open(login_host, options.http_port,
-        options.verbose)
-      AppScaleLogger.success("Your app serves unencrypted traffic at: " +
-        "http://{0}:{1}".format(login_host, options.http_port))
-      AppScaleLogger.success("Your app serves encrypted traffic at: " +
-        "https://{0}:{1}".format(login_host, options.https_port))
-    else:
-      raise AppScaleException(relocate_result)
+    acc.relocate_version(version_key, options.http_port, options.https_port)
+    AppScaleLogger.success(
+      'Successfully issued request to move {0} to ports {1} and {2}'.format(
+        options.appname, options.http_port, options.https_port))
+    RemoteHelper.sleep_until_port_is_open(
+      login_host, options.http_port, options.verbose)
+    AppScaleLogger.success(
+      'Your app serves unencrypted traffic at: http://{0}:{1}'.format(
+        login_host, options.http_port))
+    AppScaleLogger.success(
+      'Your app serves encrypted traffic at: https://{0}:{1}'.format(
+        login_host, options.https_port))
 
 
   @classmethod
@@ -853,12 +851,8 @@ class AppScaleTools(object):
     shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
       options.keyname))
-    result = acc.set_property(options.property_name, options.property_value)
-    if result == 'OK':
-      AppScaleLogger.success("Successfully updated the given property.")
-    else:
-      raise AppControllerException("Unable to update the given property " +
-        "because: {0}".format(result))
+    acc.set_property(options.property_name, options.property_value)
+    AppScaleLogger.success('Successfully updated the given property.')
 
 
   @classmethod

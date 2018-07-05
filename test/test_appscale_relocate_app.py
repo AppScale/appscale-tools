@@ -126,7 +126,7 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     }))
     version_key = '{}_default_v1'.format(self.appid)
     fake_appcontroller.should_receive('relocate_version').with_args(
-      version_key, 80, 443, 'the secret').and_return("OK")
+      version_key, 80, 443, 'the secret').and_return('OK')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
