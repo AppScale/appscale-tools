@@ -53,7 +53,7 @@ if [ "$(pip freeze | grep azure==2.0.0)" = "azure==2.0.0rc6" ]; then
 
     echo "In order to upgrade AppScale Tools to use a new version we must
       uninstall the following azure packages $AZURE_PACKAGES"
-    for package in "$AZURE_PACKAGES"; do
+    for package in $AZURE_PACKAGES; do
         pip uninstall -y "$package"
     done
 fi
