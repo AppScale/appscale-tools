@@ -188,11 +188,9 @@ class AzureAgent(BaseAgent):
       # raised if the credentials are invalid.
       resource_client.resource_groups.list()
     except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
       raise AgentConfigurationException("Unable to authenticate using the "
         "credentials provided. Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
   def configure_instance_security(self, parameters):
     """ Configure the resource group and storage account needed to create the
@@ -246,9 +244,6 @@ class AzureAgent(BaseAgent):
       logging.exception("Encountered an error while registering provider.")
       raise AgentRuntimeException("Unable to register provider. Reason: {}"
                                   .format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Microsoft Azure to see which instances are currently
@@ -301,9 +296,6 @@ class AzureAgent(BaseAgent):
     except CloudError as e:
       logging.exception("CloudError received while trying to describe "
                         "instances.")
-      raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
       raise AgentRuntimeException(e.message)
 
     return public_ips, private_ips, instance_ids
@@ -527,11 +519,10 @@ class AzureAgent(BaseAgent):
                                                              vmss.name)
         scalesets_and_counts.append((vmss, ss_instance_count))
     except CloudError as error:
+      logging.exception("Azure agent received a CloudError trying to add "
+                        "to Scale Sets.")
       raise AgentRuntimeException("Unable to add to Scale Sets due to: {}"
                                   .format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
     for vmss, ss_instance_count in scalesets_and_counts:
       ss_upgrade_policy = vmss.upgrade_policy
@@ -723,11 +714,9 @@ class AzureAgent(BaseAgent):
                            .format(count, result.provisioning_state))
 
     except CloudError as error:
+      logging.exception("CloudError during creation of Scale Set.")
       raise AgentConfigurationException("Unable to create a Scale Set of {0} "
                                         "VM(s): {1}".format(count, error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
@@ -757,10 +746,9 @@ class AzureAgent(BaseAgent):
       vmss_list = list(compute_client.virtual_machine_scale_sets.list(
           resource_group))
     except CloudError as e:
+      logging.exception("CloudError received trying to list Scale Sets.")
       raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
+
     downscale = parameters['autoscale_agent']
 
     # On downscaling of instances, we need to delete the specific instance
@@ -778,9 +766,6 @@ class AzureAgent(BaseAgent):
       except CloudError as e:
         logging.exception("CloudError received while trying to terminate "
                           "instances.")
-        raise AgentRuntimeException(e.message)
-      except Exception as e:
-        logging.exception("Azure agent received unexpected exception!")
         raise AgentRuntimeException(e.message)
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -816,9 +801,6 @@ class AzureAgent(BaseAgent):
         logging.exception("CloudError received while trying to terminate "
                           "instances.")
         raise AgentRuntimeException(e.message)
-      except Exception as e:
-        logging.exception("Azure agent received unexpected exception!")
-        raise AgentRuntimeException(e.message)
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for vmss_name in ss_to_delete:
@@ -851,9 +833,6 @@ class AzureAgent(BaseAgent):
     except CloudError as e:
       logging.exception("CloudError received while trying to terminate "
                         "instances.")
-      raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
       raise AgentRuntimeException(e.message)
 
     # Delete ScaleSets.
@@ -1094,9 +1073,6 @@ class AzureAgent(BaseAgent):
       logging.exception("Unable to check if zone exists.")
       raise AgentConfigurationException("Unable to check if zone exists. "
                                         "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
     return False
 
   def cleanup_state(self, parameters):
@@ -1127,11 +1103,9 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Network Interface {} has been successfully deleted.".
                                format(interface.name), verbose)
     except CloudError as error:
+      logging.exception("CloudError received trying to clean up network interfaces.")
       raise AgentRuntimeException("Unable to clean up network interfaces. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Network Interface(s) have been successfully deleted.")
 
@@ -1145,11 +1119,9 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Public IP Address {} has been successfully deleted.".
                                format(public_ip.name), verbose)
     except CloudError as error:
+      logging.exception("Unable to clean up public ips.")
       raise AgentRuntimeException("Unable to clean up public ips. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Public IP Address(s) have been successfully deleted.")
 
@@ -1163,11 +1135,9 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Virtual Network {} has been successfully deleted.".
                                format(network.name), verbose)
     except CloudError as error:
+      logging.exception("Unable to clean up virtual networks.")
       raise AgentRuntimeException("Unable to clean up virtual networks. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
 
@@ -1417,11 +1387,9 @@ class AzureAgent(BaseAgent):
         else:
           self.create_storage_account(parameters, storage_client)
     except CloudError as error:
+      logging.exception("Unable to create resource group.")
       raise AgentConfigurationException("Unable to create a resource group "
         "using the credentials provided: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
 
   def create_storage_account(self, parameters, storage_client):
     """ Creates a Storage Account under the Resource Group, if it does not
@@ -1450,6 +1418,7 @@ class AzureAgent(BaseAgent):
       # wait() insures polling the underlying async operation until it's done.
       result.wait()
     except CloudError as error:
+      logging.exception("Unable to create storage account.")
       raise AgentConfigurationException("Unable to create a storage account "
         "using the credentials provided: {}".format(error.message))
 
