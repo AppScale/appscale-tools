@@ -46,7 +46,7 @@ esac
 # Uninstall old version of azure because of packaging issues during upgrades.
 if [ "$(pip freeze | grep azure==2.0.0)" = "azure==2.0.0rc6" ]; then
     AZURE_PACKAGES='azure azure-batch azure-common azure-mgmt
-        azure-mgmt-compute azure-mgmt-keyvault azure-mgmt-logic
+        azure-mgmt-batch azure-mgmt-compute azure-mgmt-keyvault azure-mgmt-logic
         azure-mgmt-network azure-mgmt-nspkg azure-mgmt-redis azure-mgmt-resource
         azure-mgmt-scheduler azure-mgmt-storage azure-nspkg azure-servicebus
         azure-servicemanagement-legacy azure-storage'
