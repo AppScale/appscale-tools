@@ -521,6 +521,8 @@ class AppControllerClient():
 
     Args:
       username: The email address registered as username for the user's application.
+    Raises:
+      AppControllerException if unable to check if user exists.
     """
     for _ in range(self.DEFAULT_NUM_RETRIES):
       try:
@@ -532,7 +534,8 @@ class AppControllerClient():
         elif user_exists == 'false':
           return False
         else:
-          raise Exception(user_exists)
+          raise AppControllerException(
+            'Invalid return value: {}'.format(user_exists))
       except BadSecretException as exception:
         raise AppControllerException(
           "Exception when checking if a user exists: {0}".format(exception))
@@ -542,6 +545,9 @@ class AppControllerClient():
                              format(acc_error))
           AppScaleLogger.log("Backing off and trying again.")
         time.sleep(10)
+
+    raise AppControllerException(
+      'Exceeded retries when checking if user exists')
 
   def create_user(self, username, password, account_type='xmpp_user'):
     """ Creates a new user account, with the given username and hashed password.
@@ -562,13 +568,16 @@ class AppControllerClient():
           self.server.create_user, username, password, account_type,
           self.secret)
         if result != 'true':
-          raise AppControllerException(result)
+          raise AppControllerException(
+            'Invalid return value: {}'.format(result))
 
         return
       except Exception as exception:
         AppScaleLogger.log("Exception when creating user: {0}".format(exception))
         AppScaleLogger.log("Backing off and trying again")
         time.sleep(10)
+
+    raise AppControllerException('Exceeded retries when creating user')
 
   def set_admin_role(self, username, is_cloud_admin, capabilities):
     """ Grants the given user the ability to perform any administrative action.
