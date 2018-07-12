@@ -26,7 +26,11 @@ class Handler(object):
               'required': 'LOGIN_REQUIRED',
               'admin': 'LOGIN_ADMIN'},
     'authFailAction': {'redirect': 'AUTH_FAIL_ACTION_REDIRECT',
-                       'unauthorized': 'AUTH_FAIL_ACTION_UNAUTHORIZED'}
+                       'unauthorized': 'AUTH_FAIL_ACTION_UNAUTHORIZED'},
+    'redirectHttpResponseCode': {301: 'REDIRECT_HTTP_RESPONSE_CODE_301',
+                                 302: 'REDIRECT_HTTP_RESPONSE_CODE_302',
+                                 303: 'REDIRECT_HTTP_RESPONSE_CODE_303',
+                                 307: 'REDIRECT_HTTP_RESPONSE_CODE_307'}
   }
 
   FIELD_RULES = {
