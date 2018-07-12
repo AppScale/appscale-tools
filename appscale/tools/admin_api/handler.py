@@ -6,7 +6,7 @@ from appscale.tools.custom_exceptions import AppEngineConfigException
 
 DELTA_REGEX = r'([0-9]+)([DdHhMm]|[sS]?)'
 
-EXPIRATION_RE = r'\s*({})(\s+{})*\s*'.format(DELTA_REGEX, DELTA_REGEX)
+EXPIRATION_RE = r'^\s*({})(\s+{})*\s*$'.format(DELTA_REGEX, DELTA_REGEX)
 
 
 class Handler(object):
