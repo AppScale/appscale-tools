@@ -154,14 +154,14 @@ class RemoteHelper(object):
     agent.configure_instance_security(params)
 
     load_balancer_roles = {}
-    instance_type_roles = {'with_disks':{},'without_disks':{}}
+    instance_type_disks_roles = {'with_disks':{},'without_disks':{}}
 
     for node in node_layout.nodes:
       if node.is_role('load_balancer'):
         load_balancer_roles.setdefault(node.instance_type, []).append(node)
         continue
-      instance_type = instance_type_roles['with_disks'] if node.disk else \
-        instance_type_roles['without_disks']
+      instance_type = instance_type_disks_roles['with_disks'] if node.disk else \
+        instance_type_disks_roles['without_disks']
       instance_type.setdefault(node.instance_type, []).append(node)
 
     spawned_instance_ids = []
@@ -206,9 +206,9 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    for disks_needed, nodes in instance_type_roles.items():
-      for instance_type, other_nodes in nodes.items():
-        if len(other_nodes) <= 0:
+    for disks_needed, instance_type_nodes in instance_type_disks_roles.items():
+      for instance_type, nodes in instance_type_nodes.items():
+        if len(nodes) <= 0:
           break
         # Copy parameters so we can modify the instance type.
         params['instance_type'] = instance_type
@@ -233,7 +233,7 @@ class RemoteHelper(object):
         # Keep track of instances we have started.
         spawned_instance_ids.extend(_instance_ids)
 
-        for node_index, node in enumerate(other_nodes):
+        for node_index, node in enumerate(nodes):
           index = node_layout.nodes.index(node)
           node_layout.nodes[index].public_ip = _public_ips[node_index]
           node_layout.nodes[index].private_ip = _private_ips[node_index]
