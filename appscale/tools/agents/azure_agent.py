@@ -62,6 +62,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
 from azure.mgmt.storage.models import Sku as StorageSku
 
+from msrest.exceptions import ClientException
 from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
 
@@ -190,8 +191,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to authenticate using the "
         "credentials provided. Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
   def configure_instance_security(self, parameters):
@@ -246,8 +248,9 @@ class AzureAgent(BaseAgent):
       logging.exception("Encountered an error while registering provider.")
       raise AgentRuntimeException("Unable to register provider. Reason: {}"
                                   .format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
   def describe_instances(self, parameters, pending=False):
@@ -302,8 +305,9 @@ class AzureAgent(BaseAgent):
       logging.exception("CloudError received while trying to describe "
                         "instances.")
       raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
     return public_ips, private_ips, instance_ids
@@ -529,8 +533,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentRuntimeException("Unable to add to Scale Sets due to: {}"
                                   .format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
     for vmss, ss_instance_count in scalesets_and_counts:
@@ -725,9 +730,11 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a Scale Set of {0} "
                                         "VM(s): {1}".format(count, error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
-      raise AgentRuntimeException(e.message)
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to "
+                        "contact Azure.")
+      raise AgentRuntimeException("Unable to create a Scale Set due to: "
+                                  "{0}".format(e.message))
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
@@ -758,8 +765,9 @@ class AzureAgent(BaseAgent):
           resource_group))
     except CloudError as e:
       raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
     downscale = parameters['autoscale_agent']
 
@@ -779,8 +787,9 @@ class AzureAgent(BaseAgent):
         logging.exception("CloudError received while trying to terminate "
                           "instances.")
         raise AgentRuntimeException(e.message)
-      except Exception as e:
-        logging.exception("Azure agent received unexpected exception!")
+      except ClientException as e:
+        logging.exception("ClientException received while attempting to "
+                          "contact Azure.")
         raise AgentRuntimeException(e.message)
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -816,8 +825,9 @@ class AzureAgent(BaseAgent):
         logging.exception("CloudError received while trying to terminate "
                           "instances.")
         raise AgentRuntimeException(e.message)
-      except Exception as e:
-        logging.exception("Azure agent received unexpected exception!")
+      except ClientException as e:
+        logging.exception("ClientException received while attempting to "
+                          "contact Azure.")
         raise AgentRuntimeException(e.message)
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -852,8 +862,9 @@ class AzureAgent(BaseAgent):
       logging.exception("CloudError received while trying to terminate "
                         "instances.")
       raise AgentRuntimeException(e.message)
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
     # Delete ScaleSets.
@@ -1094,8 +1105,9 @@ class AzureAgent(BaseAgent):
       logging.exception("Unable to check if zone exists.")
       raise AgentConfigurationException("Unable to check if zone exists. "
                                         "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
     return False
 
@@ -1129,8 +1141,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentRuntimeException("Unable to clean up network interfaces. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Network Interface(s) have been successfully deleted.")
@@ -1147,8 +1160,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentRuntimeException("Unable to clean up public ips. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Public IP Address(s) have been successfully deleted.")
@@ -1165,8 +1179,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentRuntimeException("Unable to clean up virtual networks. "
                                   "Reason: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to "
+                        "contact Azure.")
       raise AgentRuntimeException(e.message)
 
     AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
@@ -1419,8 +1434,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       raise AgentConfigurationException("Unable to create a resource group "
         "using the credentials provided: {}".format(error.message))
-    except Exception as e:
-      logging.exception("Azure agent received unexpected exception!")
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
       raise AgentRuntimeException(e.message)
 
   def create_storage_account(self, parameters, storage_client):
