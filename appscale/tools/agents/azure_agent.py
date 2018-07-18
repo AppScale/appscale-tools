@@ -1172,8 +1172,10 @@ class AzureAgent(BaseAgent):
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
-    #if not args[self.PARAM_STORAGE_ACCOUNT]:
-    #  params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+    # If we are using a Marketplace Image we do not need a storage account.
+    if not self.MARKETPLACE_IMAGE.match(args[self.PARAM_IMAGE_ID]) and not \
+        args[self.PARAM_STORAGE_ACCOUNT]:
+     params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
     return params
 
   def get_cloud_params(self, keyname):
@@ -1361,9 +1363,9 @@ class AzureAgent(BaseAgent):
         resource_client.resource_groups.create_or_update(
           resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
                                  tags={'tag': tag_name}))
-        if not parameters.get('disks'):
-          self.create_storage_account(parameters, storage_client)
-      elif parameters.get(self.PARAM_STORAGE_ACCOUNT) and not parameters.get('disks'):
+
+      if not self.MARKETPLACE_IMAGE.match(parameters[self.PARAM_IMAGE_ID]) \
+          and parameters.get(self.PARAM_STORAGE_ACCOUNT):
         # If it already exists, check if the specified storage account exists
         # under it and if not, create a new account.
         storage_accounts = storage_client.storage_accounts.\
