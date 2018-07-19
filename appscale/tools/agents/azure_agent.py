@@ -189,6 +189,7 @@ class AzureAgent(BaseAgent):
       # raised if the credentials are invalid.
       resource_client.resource_groups.list()
     except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
       raise AgentConfigurationException("Unable to authenticate using the "
         "credentials provided. Reason: {}".format(error.message))
     except ClientException as e:
@@ -531,6 +532,8 @@ class AzureAgent(BaseAgent):
                                                              vmss.name)
         scalesets_and_counts.append((vmss, ss_instance_count))
     except CloudError as error:
+      logging.exception("Azure agent received a CloudError trying to add "
+                        "to Scale Sets.")
       raise AgentRuntimeException("Unable to add to Scale Sets due to: {}"
                                   .format(error.message))
     except ClientException as e:
@@ -728,6 +731,7 @@ class AzureAgent(BaseAgent):
                            .format(count, result.provisioning_state))
 
     except CloudError as error:
+      logging.exception("CloudError during creation of Scale Set.")
       raise AgentConfigurationException("Unable to create a Scale Set of {0} "
                                         "VM(s): {1}".format(count, error.message))
     except ClientException as e:
@@ -764,11 +768,13 @@ class AzureAgent(BaseAgent):
       vmss_list = list(compute_client.virtual_machine_scale_sets.list(
           resource_group))
     except CloudError as e:
+      logging.exception("CloudError received trying to list Scale Sets.")
       raise AgentRuntimeException(e.message)
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
       raise AgentRuntimeException(e.message)
+
     downscale = parameters['autoscale_agent']
 
     # On downscaling of instances, we need to delete the specific instance
@@ -1139,6 +1145,7 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Network Interface {} has been successfully deleted.".
                                format(interface.name), verbose)
     except CloudError as error:
+      logging.exception("CloudError received trying to clean up network interfaces.")
       raise AgentRuntimeException("Unable to clean up network interfaces. "
                                   "Reason: {}".format(error.message))
     except ClientException as e:
@@ -1158,6 +1165,7 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Public IP Address {} has been successfully deleted.".
                                format(public_ip.name), verbose)
     except CloudError as error:
+      logging.exception("Unable to clean up public ips.")
       raise AgentRuntimeException("Unable to clean up public ips. "
                                   "Reason: {}".format(error.message))
     except ClientException as e:
@@ -1177,6 +1185,7 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.verbose("Virtual Network {} has been successfully deleted.".
                                format(network.name), verbose)
     except CloudError as error:
+      logging.exception("Unable to clean up virtual networks.")
       raise AgentRuntimeException("Unable to clean up virtual networks. "
                                   "Reason: {}".format(error.message))
     except ClientException as e:
@@ -1432,6 +1441,7 @@ class AzureAgent(BaseAgent):
         else:
           self.create_storage_account(parameters, storage_client)
     except CloudError as error:
+      logging.exception("Unable to create resource group.")
       raise AgentConfigurationException("Unable to create a resource group "
         "using the credentials provided: {}".format(error.message))
     except ClientException as e:
@@ -1466,6 +1476,7 @@ class AzureAgent(BaseAgent):
       # wait() insures polling the underlying async operation until it's done.
       result.wait()
     except CloudError as error:
+      logging.exception("Unable to create storage account.")
       raise AgentConfigurationException("Unable to create a storage account "
         "using the credentials provided: {}".format(error.message))
 
