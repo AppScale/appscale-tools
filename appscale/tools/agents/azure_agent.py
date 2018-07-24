@@ -1173,7 +1173,7 @@ class AzureAgent(BaseAgent):
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
     # If we are using a Marketplace Image we do not need a storage account.
-    if not self.MARKETPLACE_IMAGE.match(args[self.PARAM_IMAGE_ID]) and not \
+    if not self.MARKETPLACE_IMAGE.match(params[self.PARAM_IMAGE_ID]) and not \
         args[self.PARAM_STORAGE_ACCOUNT]:
      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
     return params
