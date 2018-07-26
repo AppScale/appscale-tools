@@ -532,14 +532,19 @@ class NodeLayout():
       locations_nodes_list: A list of nodes in dictionary form loaded from
         the locations json.
     Raises:
-      AssertionError if the locations json nodes cannot be matched with the
-        AppScalefile nodes.
+      BadConfigurationException if the locations json nodes cannot be matched
+        with the AppScalefile nodes.
     """
 
     # If the length does not match up the user has added or removed a node in
     # the AppScalefile.
-    assert len(locations_nodes_list) == len(self.nodes), (
-      'AppScalefile node count does not match locations.json')
+    if len(locations_nodes_list) != len(self.nodes):
+      raise BadConfigurationException("AppScale does not currently support "
+                                      "changes to AppScalefile or locations "
+                                      "JSON between a down and an up. If "
+                                      "you would like to "
+                                      "change the node layout use "
+                                      "down --terminate before an up.")
 
     # Place defined nodes first so they will be matched before open nodes.
     old_nodes = [node for node in locations_nodes_list if
@@ -557,7 +562,6 @@ class NodeLayout():
 
       old_roles = {self.DEPRECATED_ROLES.get(role, role)
                    for role in old_node.get('jobs', [])}
-      print("Old roles: {}".format(old_roles))
       return old_roles == set(new_node.roles)
 
     # Ensure each node has a matching locations.json entry.
