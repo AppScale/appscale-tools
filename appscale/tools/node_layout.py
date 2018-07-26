@@ -569,11 +569,13 @@ class NodeLayout():
       index = next((index for index, old_node in enumerate(old_nodes)
                     if nodes_match(old_node, new_node)), -1)
 
-      assert index != -1, (
-      'Unable to find a match for {} in locations.json'.format(new_node))
+      if index == -1:
+        raise BadConfigurationException('Unable to find a match for {}'
+                                        'in locations.json'.format(new_node))
       old_node = old_nodes.pop(index)
       new_node.from_json(old_node)
-      assert new_node.is_valid(), 'Node is invalid: {}'.format(new_node)
+      if not new_node.is_valid():
+        raise BadConfigurationException('Node is invalid: {}'.format(new_node))
 
     return self.nodes
 
