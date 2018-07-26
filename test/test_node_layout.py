@@ -373,7 +373,7 @@ class TestNodeLayout(unittest.TestCase):
                    "jobs": ['database', 'db_master', 'zookeeper'] }
                  ]
 
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(BadConfigurationException):
       node_layout.from_locations_json_list(node_info)
 
 
@@ -402,5 +402,5 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
 
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(BadConfigurationException):
       node_layout.from_locations_json_list(self.reattach_node_info)
