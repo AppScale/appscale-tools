@@ -572,8 +572,11 @@ class NodeLayout():
       if index == -1:
         raise BadConfigurationException('Unable to find a match for {}'
                                         'in locations.json'.format(new_node))
+      roles = new_node.roles
       old_node = old_nodes.pop(index)
       new_node.from_json(old_node)
+      new_node.roles = roles
+
       if not new_node.is_valid():
         raise BadConfigurationException('Node is invalid: {}'.format(new_node))
 

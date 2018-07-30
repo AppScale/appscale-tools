@@ -341,14 +341,16 @@ class TestNodeLayout(unittest.TestCase):
 
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
+    old_nodes = node_layout.nodes[:]
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    nodes_copy = new_layout[:]
-    for old_node in node_layout.nodes:
-      for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+    for node in new_layout:
+      # Match nodes based on jobs/roles.
+      for index, old_node in enumerate(old_nodes):
         if set(old_node.roles) == set(node.roles):
-          nodes_copy.remove(node)
-    self.assertEqual(nodes_copy, [])
+          old_nodes.pop(index)
+          break
+  
+    self.assertEqual(old_nodes, [])
 
   def test_from_locations_json_list_invalid_locations(self):
     node_layout = NodeLayout(self.reattach_options)
