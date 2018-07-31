@@ -253,16 +253,73 @@ class TestNodeLayout(unittest.TestCase):
   def test_from_locations_json_list_valid(self):
     node_layout = NodeLayout(self.reattach_options)
     self.assertNotEqual([], node_layout.nodes)
+    old_nodes = node_layout.nodes[:]
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
-    nodes_copy = new_layout[:]
-    for old_node in node_layout.nodes:
-      for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+    for node in new_layout:
+      # Match nodes based on jobs/roles.
+      for index, old_node in enumerate(old_nodes):
         if set(old_node.roles) == set(node.roles):
-          nodes_copy.remove(node)
-    self.assertEqual(nodes_copy, [])
+          old_nodes.pop(index)
+          break
 
+    self.assertEqual(old_nodes, [])
+
+  def test_from_locations_json_list_after_clean(self):
+    options = flexmock(
+      infrastructure='euca',
+      group='group',
+      machine='vm image',
+      instance_type='instance type',
+      keyname='keyname',
+      table='cassandra',
+      verbose=False,
+      test=False,
+      use_spot_instances=False,
+      zone='zone',
+      static_ip=None,
+      replication=None,
+      appengine=None,
+      autoscale=None,
+      user_commands=[],
+      flower_password='',
+      max_memory='X',
+      ips=FOUR_NODE_CLOUD
+    )
+    cleaned_node_info = [{"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE1",
+                           "jobs": ['load_balancer', 'taskqueue', 'shadow',
+                                    'login',
+                                    'taskqueue_master'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE2",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE3",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"},
+                          {"public_ip": "0.0.0.0",
+                           "private_ip": "0.0.0.0",
+                           "instance_id": "i-APPSCALE4",
+                           "jobs": ['open'],
+                           "instance_type": "instance_type_1"}
+                          ]
+    node_layout = NodeLayout(options)
+    self.assertNotEqual([], node_layout.nodes)
+    old_nodes = node_layout.nodes[:]
+    new_layout = node_layout.from_locations_json_list(cleaned_node_info)
+    for node in new_layout:
+      # Match nodes based on jobs/roles.
+      for index, old_node in enumerate(old_nodes):
+        if set(old_node.roles) == set(node.roles):
+          old_nodes.pop(index)
+          break
+
+    self.assertEqual(old_nodes, [])
 
   def test_from_locations_json_list_able_to_match(self):
     options = flexmock(
@@ -288,15 +345,16 @@ class TestNodeLayout(unittest.TestCase):
 
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
+    old_nodes = node_layout.nodes[:]
     new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertNotEqual(new_layout, None)
-    nodes_copy = new_layout[:]
-    for old_node in node_layout.nodes:
-      for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles.
+    for node in new_layout:
+      # Match nodes based on jobs/roles.
+      for index, old_node in enumerate(old_nodes):
         if set(old_node.roles) == set(node.roles):
-          nodes_copy.remove(node)
-    self.assertEqual(nodes_copy, [])
+          old_nodes.pop(index)
+          break
+  
+    self.assertEqual(old_nodes, [])
 
   def test_from_locations_json_list_invalid_locations(self):
     node_layout = NodeLayout(self.reattach_options)
@@ -321,8 +379,8 @@ class TestNodeLayout(unittest.TestCase):
                    "jobs": ['database', 'db_master', 'zookeeper'] }
                  ]
 
-    new_layout = node_layout.from_locations_json_list(node_info)
-    self.assertEqual(new_layout, None)
+    with self.assertRaises(BadConfigurationException):
+      node_layout.from_locations_json_list(node_info)
 
 
   def test_from_locations_json_list_invalid_asf(self):
@@ -350,5 +408,5 @@ class TestNodeLayout(unittest.TestCase):
     node_layout = NodeLayout(options)
     self.assertNotEqual([], node_layout.nodes)
 
-    new_layout = node_layout.from_locations_json_list(self.reattach_node_info)
-    self.assertEqual(new_layout, None)
+    with self.assertRaises(BadConfigurationException):
+      node_layout.from_locations_json_list(self.reattach_node_info)
