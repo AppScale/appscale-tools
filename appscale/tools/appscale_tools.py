@@ -1101,6 +1101,43 @@ class AppScaleTools(object):
     admin_client.update_cron(project_id, cron_jobs)
 
   @classmethod
+  def update_indexes(cls, source_location, keyname):
+    """ Updates a project's composite indexes from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    index_config = fetch_function('index.yaml', source_location)
+    if index_config is None:
+      index_config = fetch_function('datastore-indexes.xml', source_location)
+      # If the source does not have an index configuration file, do nothing.
+      if index_config is None:
+        return
+
+      indexes = utils.indexes_from_xml(index_config)
+    else:
+      indexes = yaml.safe_load(index_config)
+
+    project_id = cls.project_id_from_source(source_location)
+
+    AppScaleLogger.log('Updating indexes')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_indexes(project_id, indexes)
+
+  @classmethod
   def update_queues(cls, source_location, keyname):
     """ Updates a project's queues from the configuration file.
 
