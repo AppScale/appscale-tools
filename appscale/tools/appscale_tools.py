@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-# General-purpose Python library imports
+from __future__ import absolute_import
+
+import Queue
 import datetime
 import getpass
 import json
 import os
-import Queue
 import re
 import shutil
 import socket
@@ -15,35 +16,30 @@ import time
 import traceback
 import urllib2
 import uuid
-import yaml
-from xml.etree import ElementTree
-
 from collections import Counter
 from itertools import chain
+from xml.etree import ElementTree
 
-# AppScale-specific imports
-from tabulate import tabulate
+import yaml
 from SOAPpy import faultType
+from tabulate import tabulate
 
-from agents.factory import InfrastructureAgentFactory
-from appcontroller_client import AppControllerClient
-from appengine_helper import AppEngineHelper
-from appscale_logger import AppScaleLogger
-from cluster_stats import NodeStats, ServiceInfo
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppEngineConfigException
-from custom_exceptions import AppScaleException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-from local_state import APPSCALE_VERSION
-from local_state import LocalState
-from node_layout import NodeLayout
-from remote_helper import RemoteHelper
-from version_helper import latest_tools_version
-from . import utils
-from .admin_client import AdminClient
-from .admin_client import DEFAULT_SERVICE
-from .admin_client import DEFAULT_VERSION
+from appscale.tools import utils
+from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
+                                             DEFAULT_VERSION)
+from appscale.tools.admin_api.version import Version
+from appscale.tools.agents.factory import InfrastructureAgentFactory
+from appscale.tools.appcontroller_client import AppControllerClient
+from appscale.tools.appengine_helper import AppEngineHelper
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.cluster_stats import NodeStats, ServiceInfo
+from appscale.tools.custom_exceptions import (
+  AppControllerException, AppEngineConfigException, AppScaleException,
+  BadConfigurationException, ShellException)
+from appscale.tools.local_state import APPSCALE_VERSION, LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.remote_helper import RemoteHelper
+from appscale.tools.version_helper import latest_tools_version
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
@@ -271,7 +267,7 @@ class AppScaleTools(object):
     dashboard = next(
       (service for service in services
        if service.http == RemoteHelper.APP_DASHBOARD_PORT), None)
-    if dashboard and dashboard.appservers > 1:
+    if dashboard and dashboard.appservers >= 1:
       AppScaleLogger.success(
         "\nView more about your AppScale deployment at http://{}:{}/status"
         .format(login_host, RemoteHelper.APP_DASHBOARD_PORT)
@@ -583,20 +579,18 @@ class AppScaleTools(object):
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
 
-    relocate_result = acc.relocate_version(version_key, options.http_port,
-                                           options.https_port)
-    if relocate_result == "OK":
-      AppScaleLogger.success("Successfully issued request to move {0} to " \
-        "ports {1} and {2}.".format(options.appname, options.http_port,
-        options.https_port))
-      RemoteHelper.sleep_until_port_is_open(login_host, options.http_port,
-        options.verbose)
-      AppScaleLogger.success("Your app serves unencrypted traffic at: " +
-        "http://{0}:{1}".format(login_host, options.http_port))
-      AppScaleLogger.success("Your app serves encrypted traffic at: " +
-        "https://{0}:{1}".format(login_host, options.https_port))
-    else:
-      raise AppScaleException(relocate_result)
+    acc.relocate_version(version_key, options.http_port, options.https_port)
+    AppScaleLogger.success(
+      'Successfully issued request to move {0} to ports {1} and {2}'.format(
+        options.appname, options.http_port, options.https_port))
+    RemoteHelper.sleep_until_port_is_open(
+      login_host, options.http_port, options.verbose)
+    AppScaleLogger.success(
+      'Your app serves unencrypted traffic at: http://{0}:{1}'.format(
+        login_host, options.http_port))
+    AppScaleLogger.success(
+      'Your app serves encrypted traffic at: https://{0}:{1}'.format(
+        login_host, options.https_port))
 
 
   @classmethod
@@ -857,12 +851,8 @@ class AppScaleTools(object):
     shadow_host = LocalState.get_host_with_role(options.keyname, 'shadow')
     acc = AppControllerClient(shadow_host, LocalState.get_secret_key(
       options.keyname))
-    result = acc.set_property(options.property_name, options.property_value)
-    if result == 'OK':
-      AppScaleLogger.success("Successfully updated the given property.")
-    else:
-      raise AppControllerException("Unable to update the given property " +
-        "because: {0}".format(result))
+    acc.set_property(options.property_name, options.property_value)
+    AppScaleLogger.success('Successfully updated the given property.')
 
 
   @classmethod
@@ -943,76 +933,74 @@ class AppScaleTools(object):
       A tuple containing the host and port where the application is serving
         traffic from.
     """
+    custom_service_yaml = None
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_tgz_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_tar_gz(options.file)
     elif cls.ZIP_REGEX.search(options.file):
       file_location = LocalState.extract_zip_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_zip(options.file)
     elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+      version = Version.from_directory(options.file)
+    elif options.file.endswith('.yaml'):
+      file_location = os.path.dirname(options.file)
+      created_dir = False
+      version = Version.from_yaml_file(options.file)
+      custom_service_yaml = options.file
     else:
       raise AppEngineConfigException('{0} is not a tar.gz file, a zip file, ' \
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
 
-    app_language = AppEngineHelper.get_app_runtime_from_app_config(
-      file_location)
     if options.project:
-      if app_language == 'java':
+      if version.runtime == 'java':
         raise BadConfigurationException("AppScale doesn't support --project for"
           "Java yet. Please specify the application id in appengine-web.xml.")
 
-      app_id = options.project
-    else:
-      try:
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
-      except AppEngineConfigException as config_error:
-        AppScaleLogger.log(config_error)
-        if 'yaml' in str(config_error):
-          raise config_error
+      version.project_id = options.project
 
-        # Java App Engine users may have specified their war directory. In that
-        # case, just move up one level, back to the app's directory.
-        file_location = file_location + os.sep + ".."
-        app_id = AppEngineHelper.get_app_id_from_app_config(file_location)
+    if version.project_id is None:
+      if version.configuration_type == 'app.yaml':
+        message = 'Specify --project or define "application" in your app.yaml'
+      else:
+        message = 'Define "application" in your appengine-web.xml'
+
+      raise AppEngineConfigException(message)
 
     # Let users know that versions are not supported yet.
-    AppEngineHelper.warn_if_version_defined(file_location, options.test)
+    AppEngineHelper.warn_if_version_defined(version, options.test)
 
-    service_id = AppEngineHelper.get_service_id(file_location)
-    env_variables = AppEngineHelper.get_env_vars(file_location)
-    inbound_services = AppEngineHelper.get_inbound_services(file_location)
-    threadsafe = None
-    if app_language in ['python27', 'java']:
-      threadsafe = AppEngineHelper.is_threadsafe(file_location)
-    AppEngineHelper.validate_app_id(app_id)
+    AppEngineHelper.validate_app_id(version.project_id)
 
     extras = {}
-    if app_language == 'go':
+    if version.runtime == 'go':
       extras = LocalState.get_extra_go_dependencies(options.file, options.test)
 
-    if app_language == 'java':
-      if AppEngineHelper.is_sdk_mismatch(file_location):
-        AppScaleLogger.warn('AppScale did not find the correct SDK jar ' +
-          'versions in your app. The current supported ' +
-          'SDK version is ' + AppEngineHelper.SUPPORTED_SDK_VERSION + '.')
+    if (version.runtime == 'java'
+        and AppEngineHelper.is_sdk_mismatch(file_location)):
+      AppScaleLogger.warn(
+        'AppScale did not find the correct SDK jar versions in your app. The '
+        'current supported SDK version is '
+        '{}.'.format(AppEngineHelper.SUPPORTED_SDK_VERSION))
 
     login_host = LocalState.get_login_host(options.keyname)
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
-    remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      app_id, options.keyname, options.verbose, extras)
+    remote_file_path = RemoteHelper.copy_app_to_host(
+      file_location, version.project_id, options.keyname, options.verbose,
+      extras, custom_service_yaml)
 
     AppScaleLogger.log(
-      'Deploying service {} for {}'.format(service_id, app_id))
-    operation_id = admin_client.create_version(
-      app_id, service_id, remote_file_path, app_language, env_variables,
-      threadsafe, inbound_services)
+      'Deploying service {} for {}'.format(version.service_id,
+                                           version.project_id))
+    operation_id = admin_client.create_version(version, remote_file_path)
 
     # now that we've told the AppController to start our app, find out what port
     # the app is running on and wait for it to start serving
@@ -1022,7 +1010,7 @@ class AppScaleTools(object):
     while True:
       if time.time() > deadline:
         raise AppScaleException('The deployment operation took too long.')
-      operation = admin_client.get_operation(app_id, operation_id)
+      operation = admin_client.get_operation(version.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue
@@ -1042,64 +1030,33 @@ class AppScaleTools(object):
     return (login_host, http_port)
 
   @classmethod
-  def project_id_from_source(cls, source_location):
-    """ Retrieves a project ID from a version's configuration file.
-
-    Args:
-      source_location: A string specifying the location of the source code.
-      keyname: A string specifying the key name.
-    Returns:
-      A string specifying the project ID.
-    """
-    if cls.TAR_GZ_REGEX.search(source_location):
-      fetch_function = utils.config_from_tar_gz
-    elif cls.ZIP_REGEX.search(source_location):
-      fetch_function = utils.config_from_zip
-    elif os.path.isdir(source_location):
-      fetch_function = utils.config_from_dir
-    else:
-      raise BadConfigurationException(
-        '{} must be a directory, tar.gz, or zip'.format(source_location))
-
-    app_config = fetch_function('app.yaml', source_location)
-    if app_config is None:
-      app_config = fetch_function('appengine-web.xml', source_location)
-      if app_config is None:
-        raise BadConfigurationException(
-          'Unable to find app.yaml or appengine-web.xml')
-
-      web_app = ElementTree.fromstring(app_config)
-      try:
-        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
-        project_id = web_app.find(tag_with_namespace).text
-      except AttributeError:
-        raise BadConfigurationException(
-          'appengine-web.xml must specify application')
-    else:
-      try:
-        project_id = yaml.safe_load(app_config)['application']
-      except KeyError:
-        raise BadConfigurationException('app.yaml must specify application')
-
-    return project_id
-
-  @classmethod
-  def update_cron(cls, source_location, keyname):
+  def update_cron(cls, source_location, keyname, project_id):
     """ Updates a project's cron jobs from the configuration file.
 
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
     elif cls.ZIP_REGEX.search(source_location):
       fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
     elif os.path.isdir(source_location):
       fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
     else:
       raise BadConfigurationException(
         '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
 
     cron_config = fetch_function('cron.yaml', source_location)
     if cron_config is None:
@@ -1112,31 +1069,40 @@ class AppScaleTools(object):
     else:
       cron_jobs = yaml.safe_load(cron_config)
 
-    project_id = cls.project_id_from_source(source_location)
-
     AppScaleLogger.log('Updating cron jobs')
     login_host = LocalState.get_login_host(keyname)
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
-    admin_client.update_cron(project_id, cron_jobs)
+    admin_client.update_cron(version.project_id, cron_jobs)
 
   @classmethod
-  def update_queues(cls, source_location, keyname):
+  def update_queues(cls, source_location, keyname, project_id):
     """ Updates a project's queues from the configuration file.
 
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
     elif cls.ZIP_REGEX.search(source_location):
       fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
     elif os.path.isdir(source_location):
       fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
     else:
       raise BadConfigurationException(
         '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
 
     queue_config = fetch_function('queue.yaml', source_location)
     if queue_config is None:
@@ -1149,13 +1115,11 @@ class AppScaleTools(object):
     else:
       queues = yaml.safe_load(queue_config)
 
-    project_id = cls.project_id_from_source(source_location)
-
     AppScaleLogger.log('Updating queues')
     login_host = LocalState.get_login_host(keyname)
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
-    admin_client.update_queues(project_id, queues)
+    admin_client.update_queues(version.project_id, queues)
 
   @classmethod
   def upgrade(cls, options):

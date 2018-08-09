@@ -71,39 +71,34 @@ class AdminClient(object):
     return content
 
   @retry(**RETRY_POLICY)
-  def create_version(self, project_id, service_id, source_path, runtime,
-                     env_variables, threadsafe=None, inbound_services=None):
+  def create_version(self, version, source_path):
     """ Creates or updates a version.
 
     Args:
-      project_id: A string specifying the project ID.
-      service_id: A string specifying the service ID.
+      version: A Version object.
       source_path: A string specifying the location of the source code.
-      runtime: A string specifying the version's language.
-      env_variables: A dictionary containing environment variables.
-      threadsafe: Indicates that the version is threadsafe.
-      inbound_services: A list of strings specifying service types for XMPP.
     Returns:
       A dictionary containing the deployment operation details.
     Raises:
-      AdminError if the response is formatted incorrectly.
+      AdminError if the Admin API call was not successful.
     """
     versions_url = '{prefix}/{project}/services/{service}/versions'.format(
-      prefix=self.prefix, project=project_id, service=service_id)
+      prefix=self.prefix, project=version.project_id, service=version.service_id)
     headers = {'AppScale-Secret': self.secret}
     body = {
       'deployment': {'zip': {'sourceUrl': source_path}},
       'id': DEFAULT_VERSION,
-      'runtime': runtime
+      'runtime': version.runtime
     }
-    if env_variables:
-      body['envVariables'] = env_variables
+    if version.env_variables:
+      body['envVariables'] = version.env_variables
 
-    if threadsafe is not None:
-      body['threadsafe'] = threadsafe
+    if version.threadsafe is not None:
+      body['threadsafe'] = version.threadsafe
 
-    if inbound_services is not None:
-      body['inboundServices'] = inbound_services
+    if version.inbound_services:
+      body['inboundServices'] = ['INBOUND_SERVICE_{}'.format(service).upper()
+                                 for service in version.inbound_services]
 
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)

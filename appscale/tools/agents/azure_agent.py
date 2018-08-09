@@ -15,7 +15,6 @@ import re
 import time
 
 # Azure specific imports
-from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
@@ -62,6 +61,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, SkuName, Kind
 from azure.mgmt.storage.models import Sku as StorageSku
 
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from msrest.exceptions import ClientException
 from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
@@ -545,7 +545,7 @@ class AzureAgent(BaseAgent):
       ss_upgrade_policy = vmss.upgrade_policy
       ss_location = vmss.location
       ss_profile = vmss.virtual_machine_profile
-      ss_overprovision = vmss.over_provision
+      ss_overprovision = vmss.overprovision
 
       new_capacity = min(ss_instance_count + count, self.MAX_VMSS_CAPACITY)
       sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE],
@@ -554,7 +554,7 @@ class AzureAgent(BaseAgent):
                                         upgrade_policy=ss_upgrade_policy,
                                         location=ss_location,
                                         virtual_machine_profile=ss_profile,
-                                        over_provision=ss_overprovision)
+                                        overprovision=ss_overprovision)
       create_update_response = compute_client.virtual_machine_scale_sets.\
         create_or_update(resource_group, vmss.name, scaleset)
       self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
@@ -700,7 +700,7 @@ class AzureAgent(BaseAgent):
     upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
-      virtual_machine_profile=virtual_machine_profile, over_provision=False)
+      virtual_machine_profile=virtual_machine_profile, overprovision=False)
     create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
       resource_group, scale_set_name, vm_scale_set)
     self.wait_for_ss_update(count, create_update_response, scale_set_name)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
-# First party Python libraries
 import base64
 import json
 import os
@@ -9,27 +9,20 @@ import shutil
 import subprocess
 import sys
 
-
-# Third-party Python libraries
 import yaml
 
-
-# Custom exceptions that can be thrown by Python AppScale code
-from appscale_logger import AppScaleLogger
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
-
-
-# AppScale-specific imports
-from appengine_helper import AppEngineHelper
-from appscale_tools import AppScaleTools
-from local_state import LocalState
-from node_layout import NodeLayout
-from parse_args import ParseArgs
-from remote_helper import RemoteHelper
-from registration_helper import RegistrationHelper
+from appscale.tools.appengine_helper import AppEngineHelper
+from appscale.tools.appscale_logger import AppScaleLogger
+from appscale.tools.appscale_stats import show_stats
+from appscale.tools.appscale_tools import AppScaleTools
+from appscale.tools.custom_exceptions import (
+  AppScaleException, AppScalefileException, BadConfigurationException,
+  ShellException)
+from appscale.tools.local_state import LocalState
+from appscale.tools.node_layout import NodeLayout
+from appscale.tools.parse_args import ParseArgs
+from appscale.tools.registration_helper import RegistrationHelper
+from appscale.tools.remote_helper import RemoteHelper
 
 
 class AppScale():
@@ -102,6 +95,15 @@ Available commands:
                                     AppScale deployment or a valid role.
                                     Default is headnode. Machines
                                     must have public ips to use this command.
+  stats                             Prints statistics of nodes and proxies.
+    [--types
+    [nodes] [processes] [proxies]]  Determines which stats should be printed.
+    [--roles, -r <roles>]           Filters nodes by roles.
+    [--order-processes, -o
+    [cpu/mem/name]]                 Sorts processes by cpu/memory/name.
+    [--top <number>]                Limits a number of printed processes.
+    [--verbose, -v]                 Prints verbose stats.
+    [--apps-only]                   Prints only application proxy stats.
   status                            Reports on the state of a currently
                                     running AppScale deployment.
   tail                              Follows the output of log files of an
@@ -483,6 +485,33 @@ Available commands:
                               "the deployment.".format(ip))
 
 
+  def stats(self, params_list=None):
+    """
+    'stats' is a more accessible way to get statistics about nodes, processes
+    and/or proxies. It could be shown in verbose or not verbose mode,
+    it could be sorted by some characteristic and filter to application only
+    for proxies statistics. If no options are given it will show full
+    statistics about nodes, processes and proxies without filter and
+    sorted by default characteristic.
+
+    Args:
+      options: A list of additional options about what statistics and how it
+        should be shown.
+
+    Raises:
+      AppScalefileException: If there is no AppScalefile in the current
+      directory.
+    """
+    contents = self.read_appscalefile()
+    command = params_list or []
+    contents_as_yaml = yaml.safe_load(contents)
+    if 'keyname' in contents_as_yaml:
+      command.append("--keyname")
+      command.append(contents_as_yaml['keyname'])
+
+    options = ParseArgs(command, "appscale-show-stats").args
+    show_stats(options)
+
 
   def status(self, extra_options_list=None):
     """ 'status' is a more accessible way to query the state of the AppScale
@@ -551,8 +580,8 @@ Available commands:
     # appscale-upload-app will do that for us.
     options = ParseArgs(command, "appscale-upload-app").args
     login_host, http_port = AppScaleTools.upload_app(options)
-    AppScaleTools.update_cron(options.file, options.keyname)
-    AppScaleTools.update_queues(options.file, options.keyname)
+    AppScaleTools.update_cron(options.file, options.keyname, options.project)
+    AppScaleTools.update_queues(options.file, options.keyname, options.project)
     return login_host, http_port
 
 

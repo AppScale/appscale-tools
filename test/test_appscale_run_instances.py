@@ -232,7 +232,7 @@ group: {1}
       .and_return(True)
     fake_appcontroller.should_receive('is_initialized').and_return(True)
     fake_appcontroller.should_receive('does_user_exist').and_return(False)
-    fake_appcontroller.should_receive('set_admin_role').and_return()
+    fake_appcontroller.should_receive('set_admin_role').and_return('true')
     fake_appcontroller.should_receive('create_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
@@ -793,7 +793,7 @@ group: {1}
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
     AppControllerClient.should_receive('is_initialized').and_return(True)
-    AppControllerClient.should_receive('set_admin_role').and_return()
+    AppControllerClient.should_receive('set_admin_role').and_return('true')
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
