@@ -981,8 +981,8 @@ class AzureAgent(BaseAgent):
       if instance_id == vm.instance_id:
         raise AgentRuntimeException("{0} has not been successfully "
                                     "deleted".format(vm_info))
-    AppScaleLogger.verbose("{0} has been successfully deleted".format(
-        instance_id, vmss_name), verbose)
+    AppScaleLogger.verbose("{0} from scaleset {1} has been successfully "
+                           "deleted".format(instance_id, vmss_name), verbose)
 
   def delete_virtual_machine(self, compute_client, parameters, vm_name):
     """ Deletes the virtual machine from the resource_group specified.
