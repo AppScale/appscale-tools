@@ -450,24 +450,31 @@ class AzureAgent(BaseAgent):
                      name=vm_network_name, vhd=virtual_hd, image=image_hd)
     storage_profile = StorageProfile(image_reference=image_ref,
                                      os_disk=os_disk)
-
-    compute_client.virtual_machines.create_or_update(
-      resource_group, vm_network_name, VirtualMachine(location=zone,
-                                                      os_profile=os_profile,
-                                                      hardware_profile=hardware_profile,
-                                                      network_profile=network_profile,
-                                                      storage_profile=storage_profile))
-    # Sleep until an IP address gets associated with the VM.
-    while True:
-      public_ip_address = network_client.public_ip_addresses.get(resource_group,
-                                                                 vm_network_name)
-      if public_ip_address.ip_address:
-        AppScaleLogger.log('Azure load balancer VM is available at {}'.
-                           format(public_ip_address.ip_address))
-        break
-      AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
-                             "available".format(self.SLEEP_TIME), verbose)
-      time.sleep(self.SLEEP_TIME)
+    try:
+      compute_client.virtual_machines.create_or_update(
+          resource_group, vm_network_name, VirtualMachine(location=zone,
+              os_profile=os_profile, hardware_profile=hardware_profile,
+              network_profile=network_profile, storage_profile=storage_profile))
+      # Sleep until an IP address gets associated with the VM.
+      while True:
+        public_ip_address = network_client.public_ip_addresses.get(
+          resource_group,
+          vm_network_name)
+        if public_ip_address.ip_address:
+          AppScaleLogger.log('Azure load balancer VM is available at {}'.
+                             format(public_ip_address.ip_address))
+          break
+        AppScaleLogger.verbose("Waiting {} second(s) for IP address to be "
+                               "available".format(self.SLEEP_TIME), verbose)
+        time.sleep(self.SLEEP_TIME)
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
+      raise AgentRuntimeException("Unable to create virtual machine. "
+                                  "Reason: {}".format(error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentRuntimeException(e.message)
 
   def create_linux_configuration(self, parameters):
     """ Creates a Linux Configuration to pass in to the virtual machine
@@ -555,9 +562,19 @@ class AzureAgent(BaseAgent):
                                         location=ss_location,
                                         virtual_machine_profile=ss_profile,
                                         overprovision=ss_overprovision)
-      create_update_response = compute_client.virtual_machine_scale_sets.\
-        create_or_update(resource_group, vmss.name, scaleset)
-      self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
+      try:
+        create_update_response = compute_client.virtual_machine_scale_sets. \
+          create_or_update(resource_group, vmss.name, scaleset)
+
+        self.wait_for_ss_update(new_capacity, create_update_response, vmss.name)
+      except CloudError as error:
+        logging.exception("Azure agent received a CloudError.")
+        raise AgentRuntimeException("Unable to create/update ScaleSet. "
+                                    "Reason: {}".format(error.message))
+      except ClientException as e:
+        logging.exception("ClientException received while attempting to contact"
+          " Azure.")
+        raise AgentRuntimeException(e.message)
 
       newly_added = new_capacity - ss_instance_count
       num_instances_added += newly_added
@@ -701,9 +718,21 @@ class AzureAgent(BaseAgent):
     vm_scale_set = VirtualMachineScaleSet(
       sku=sku, upgrade_policy=upgrade_policy, location=zone,
       virtual_machine_profile=virtual_machine_profile, overprovision=False)
-    create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
-      resource_group, scale_set_name, vm_scale_set)
-    self.wait_for_ss_update(count, create_update_response, scale_set_name)
+
+    try:
+      create_update_response = \
+        compute_client.virtual_machine_scale_sets.create_or_update(
+          resource_group, scale_set_name, vm_scale_set)
+
+      self.wait_for_ss_update(count, create_update_response, scale_set_name)
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
+      raise AgentRuntimeException("Unable to create network interface. "
+                                  "Reason: {}".format(error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentRuntimeException(e.message)
 
   def wait_for_ss_update(self, count, create_update_response, scale_set_name):
     """ Waits until the scale set has been successfully updated and all the
@@ -1329,10 +1358,20 @@ class AzureAgent(BaseAgent):
                            format(network_name), verbose)
     address_space = AddressSpace(address_prefixes=['10.1.0.0/16'])
     subnet1 = Subnet(name=subnet_name, address_prefix='10.1.0.0/24')
-    result = network_client.virtual_networks.create_or_update(group_name, network_name,
-      VirtualNetwork(location=region, address_space=address_space,
-                     subnets=[subnet1]))
-    self.sleep_until_update_operation_done(result, network_name, verbose)
+    try:
+      result = network_client.virtual_networks.create_or_update(
+          group_name, network_name,
+          VirtualNetwork(location=region, address_space=address_space, subnets=[subnet1]))
+      self.sleep_until_update_operation_done(result, network_name, verbose)
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
+      raise AgentRuntimeException("Unable to create virtual network.. Reason: "
+                                  "{}".format(error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentRuntimeException(e.message)
+
     subnet = network_client.subnets.get(group_name, network_name, subnet_name)
     return subnet
 
@@ -1356,9 +1395,19 @@ class AzureAgent(BaseAgent):
     ip_address = PublicIPAddress(
       location=region, public_ip_allocation_method=IPAllocationMethod.dynamic,
       idle_timeout_in_minutes=4)
-    result = network_client.public_ip_addresses.create_or_update(
-      group_name, ip_name, ip_address)
-    self.sleep_until_update_operation_done(result, ip_name, verbose)
+    try:
+      result = network_client.public_ip_addresses.create_or_update(
+          group_name, ip_name, ip_address)
+      self.sleep_until_update_operation_done(result, ip_name, verbose)
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
+      raise AgentRuntimeException("Unable to create public ip address. "
+                                  "Reason: {}".format(error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentRuntimeException(e.message)
+
     public_ip_address = network_client.public_ip_addresses.get(group_name, ip_name)
 
     AppScaleLogger.verbose("Creating/Updating the Network Interface '{}'".
@@ -1367,10 +1416,19 @@ class AzureAgent(BaseAgent):
       name=interface_name, private_ip_allocation_method=IPAllocationMethod.dynamic,
       subnet=subnet, public_ip_address=PublicIPAddress(id=(public_ip_address.id)))
 
-    result = network_client.network_interfaces.create_or_update(group_name,
-      interface_name, NetworkInterface(location=region,
-                                       ip_configurations=[network_interface_ip_conf]))
-    self.sleep_until_update_operation_done(result, interface_name, verbose)
+    try:
+      result = network_client.network_interfaces.create_or_update(group_name,
+        interface_name, NetworkInterface(location=region,
+                                         ip_configurations=[network_interface_ip_conf]))
+      self.sleep_until_update_operation_done(result, interface_name, verbose)
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError.")
+      raise AgentRuntimeException("Unable to create network interface. "
+                                  "Reason: {}".format(error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentRuntimeException(e.message)
 
   def sleep_until_update_operation_done(self, result, resource_name, verbose):
     """ Sleeps until the create/update operation for the resource is completed
@@ -1490,10 +1548,7 @@ class AzureAgent(BaseAgent):
       False, otherwise.
     """
     resource_groups = resource_client.resource_groups.list()
-    resource_group_names = []
-    for rg in resource_groups:
-      resource_group_names.append(rg.name)
-
-    if resource_group_name in resource_group_names:
-      return True
+    for resource_group in resource_groups:
+      if resource_group_name == resource_group.name:
+        return True
     return False
