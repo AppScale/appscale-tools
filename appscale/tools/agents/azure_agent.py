@@ -45,6 +45,8 @@ from azure.mgmt.compute.models import VirtualMachineScaleSetOSProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetStorageProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetVMProfile
 
+from azure.mgmt.marketplaceordering.marketplace_ordering_agreements import MarketplaceOrderingAgreements
+
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.network.models import AddressSpace
 from azure.mgmt.network.models import IPAllocationMethod
@@ -437,6 +439,7 @@ class AzureAgent(BaseAgent):
       self.describe_instances(parameters)
     using_disks = parameters.has_key(self.PARAM_DISKS)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
+
     if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
       raise AgentConfigurationException("Managed Disks require use of a "
                                         "publisher image.")
@@ -530,14 +533,6 @@ class AzureAgent(BaseAgent):
       AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       publisher, offer, sku, version = azure_image_id.split(":")
       compatible_zone = zone.lower().replace(" ", "")
-      if version.lower() == 'latest':
-        top_one = compute_client.virtual_machine_images.list(
-            compatible_zone, publisher, offer, sku, top=1, orderby='name desc')
-        if len(top_one) == 0:
-          raise AgentRuntimeException("Can't resolve the vesion of '{}'"
-                                      .format(azure_image_id))
-
-        version = top_one[0].name
 
       image = compute_client.virtual_machine_images.get(
           compatible_zone, publisher, offer, sku, version)
@@ -1172,11 +1167,104 @@ class AzureAgent(BaseAgent):
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
-    # If we are using a Marketplace Image we do not need a storage account.
-    if not self.MARKETPLACE_IMAGE.match(args[self.PARAM_IMAGE_ID]) and not \
-        args[self.PARAM_STORAGE_ACCOUNT]:
+    # Perform Marketplace Image checks.
+    if self.MARKETPLACE_IMAGE.match(params[self.PARAM_IMAGE_ID]):
+      params[self.PARAM_IMAGE_ID] = self.get_marketplace_image_version(params)
+      self.check_marketplace_image(params)
+    # Only assign default storage account if we are not using a Marketplace
+    # Image.
+    elif not args[self.PARAM_STORAGE_ACCOUNT]:
      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+
     return params
+
+  def get_marketplace_image_version(self, parameters):
+    """ Check if the marketplace image specified exists and it's correct
+    version if 'latest' was specified.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        Azure.
+    Returns:
+      A string indicating the given or corrected marketplace image formatted
+        "publisher:offer:sku:version". For example if
+        "appscale-marketplace:appscale:3:latest" was received at this time would
+        return "appscale-marketplace:appscale:3:3.5.2"
+    Raises:
+      AgentConfigurationException: If we cannot find the image.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    zone = parameters[self.PARAM_ZONE]
+
+    AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+    publisher, offer, sku, version = azure_image_id.split(":")
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    compatible_zone = zone.lower().replace(" ", "")
+
+    if version.lower() != 'latest':
+      try:
+        compute_client.virtual_machine_images.get(compatible_zone, publisher,
+                                                  offer, sku, version)
+        return azure_image_id
+      except CloudError as e:
+        raise AgentConfigurationException("Received CloudError trying to "
+            "request specified image. Please ensure your image is valid in "
+            "the AppScalefile. Reason: {}".format(e))
+
+    try:
+      top_one = compute_client.virtual_machine_images.list(
+          compatible_zone, publisher, offer, sku, top=1, orderby='name desc')
+    except CloudError as e:
+      raise AgentConfigurationException("Received CloudError trying to "
+          "request specified image. Please ensure your image is valid in "
+          "the AppScalefile. Reason: {}".format(e))
+
+    if len(top_one) == 0:
+      raise AgentConfigurationException("Can't resolve the vesion of '{}'"
+                                  .format(azure_image_id))
+
+    version = top_one[0].name
+
+    return ":".join([publisher, offer, sku, version])
+
+  def check_marketplace_image(self, parameters):
+    """ Check if the marketplace image specified has its terms accepted.
+    Otherwise we will not be able to use this image.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        Azure.
+    Raises:
+      AgentRuntimeException: If we cannot complete the calls to Azure.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    zone = parameters[self.PARAM_ZONE]
+
+    publisher, offer, sku, version = azure_image_id.split(":")
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    compatible_zone = zone.lower().replace(" ", "")
+
+    try:
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
+
+      market_place_client = MarketplaceOrderingAgreements(credentials,
+                                                          subscription_id)
+      term = market_place_client.marketplace_agreements.get(
+          image.plan.name.publisher, image.plan.product, image.plan.name)
+      if not term.accepted:
+        AppScaleLogger.log("Marketplace image {}'s license agreement was not "
+                           "accepted, accepting it now.")
+        term.accepted = True
+        market_place_client.marketplace_agreements.create(publisher, offer,
+                                                          version, term)
+    except CloudError as e:
+      raise AgentRuntimeException("Received CloudError trying to check and "
+        "accept terms for specified image. Reason: {}".format(e))
 
   def get_cloud_params(self, keyname):
     """ Searches through the locations.json file with key
