@@ -44,6 +44,7 @@ setup(
   install_requires=[
     'adal>=0.4.7',
     'azure==2.0.0',
+    'azure-mgmt-marketplaceordering',
     'cryptography',
     'argparse',
     'boto',
