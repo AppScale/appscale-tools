@@ -1255,7 +1255,7 @@ class AzureAgent(BaseAgent):
       market_place_client = MarketplaceOrderingAgreements(credentials,
                                                           subscription_id)
       term = market_place_client.marketplace_agreements.get(
-          image.plan.name.publisher, image.plan.product, image.plan.name)
+          image.plan.publisher, image.plan.product, image.plan.name)
       if not term.accepted:
         AppScaleLogger.log("Marketplace image {}'s license agreement was not "
                            "accepted, accepting it now.")
