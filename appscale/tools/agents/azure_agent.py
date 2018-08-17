@@ -1260,8 +1260,8 @@ class AzureAgent(BaseAgent):
         AppScaleLogger.log("Marketplace image {}'s license agreement was not "
                            "accepted, accepting it now.")
         term.accepted = True
-        market_place_client.marketplace_agreements.create(publisher, offer,
-                                                          version, term)
+        market_place_client.marketplace_agreements.create(
+            image.plan.publisher, image.plan.product, image.plan.name, term)
     except CloudError as e:
       raise AgentRuntimeException("Received CloudError trying to check and "
         "accept terms for specified image. Reason: {}".format(e))
