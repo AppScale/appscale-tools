@@ -129,16 +129,8 @@ class RemoteHelper(object):
       node_info = LocalState.get_local_nodes_info(keyname=options.keyname)
 
       previous_node_list = node_layout.from_locations_json_list(node_info)
-      # If this is None, the AppScalefile has been changed or the nodes could
-      # not be matched up by roles/jobs.
-      if previous_node_list is None:
-        raise BadConfigurationException("AppScale does not currently support "
-                                        "changes to AppScalefile or locations "
-                                        "JSON between a down and an up. If "
-                                        "you would like to "
-                                        "change the node layout use "
-                                        "down --terminate before an up.")
       node_layout.nodes = previous_node_list
+
       for node_index, node in enumerate(node_layout.nodes):
         try:
           index = instance_ids.index(node.instance_id)
@@ -1085,7 +1077,8 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose, extras=None):
+  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose,
+                       extras=None, custom_service_yaml=None):
     """Copies the given application to a machine running the Login service
     within an AppScale deployment.
 
@@ -1098,6 +1091,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands we exec
         to copy the app to the remote host to stdout.
       extras: A dictionary containing a list of files to include in the upload.
+      custom_service_yaml: A string specifying the location of the service
+        yaml being deployed.
 
     Returns:
       A str corresponding to the location on the remote filesystem where the
@@ -1123,9 +1118,15 @@ class RemoteHelper(object):
       app_files.update(extras)
 
     with tarfile.open(local_tarred_app, 'w:gz') as app_tar:
-      for tarball_path in app_files:
-        local_path = app_files[tarball_path]
+      for tarball_path, local_path in app_files.items():
+        # Replace app.yaml with the service yaml being deployed.
+        if custom_service_yaml and os.path.normpath(tarball_path) == 'app.yaml':
+          continue
+
         app_tar.add(local_path, tarball_path)
+
+      if custom_service_yaml:
+        app_tar.add(custom_service_yaml, 'app.yaml')
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)

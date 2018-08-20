@@ -933,23 +933,30 @@ class AppScaleTools(object):
       A tuple containing the host and port where the application is serving
         traffic from.
     """
+    custom_service_yaml = None
     if cls.TAR_GZ_REGEX.search(options.file):
       file_location = LocalState.extract_tgz_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_tar_gz(options.file)
     elif cls.ZIP_REGEX.search(options.file):
       file_location = LocalState.extract_zip_app_to_dir(options.file,
         options.verbose)
       created_dir = True
+      version = Version.from_zip(options.file)
     elif os.path.isdir(options.file):
       file_location = options.file
       created_dir = False
+      version = Version.from_directory(options.file)
+    elif options.file.endswith('.yaml'):
+      file_location = os.path.dirname(options.file)
+      created_dir = False
+      version = Version.from_yaml_file(options.file)
+      custom_service_yaml = options.file
     else:
       raise AppEngineConfigException('{0} is not a tar.gz file, a zip file, ' \
         'or a directory. Please try uploading either a tar.gz file, a zip ' \
         'file, or a directory.'.format(options.file))
-
-    version = Version.from_source(options.file)
 
     if options.project:
       if version.runtime == 'java':
@@ -986,8 +993,9 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret_key)
 
-    remote_file_path = RemoteHelper.copy_app_to_host(file_location,
-      version.project_id, options.keyname, options.verbose, extras)
+    remote_file_path = RemoteHelper.copy_app_to_host(
+      file_location, version.project_id, options.keyname, options.verbose,
+      extras, custom_service_yaml)
 
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(version.service_id,
@@ -1022,64 +1030,33 @@ class AppScaleTools(object):
     return (login_host, http_port)
 
   @classmethod
-  def project_id_from_source(cls, source_location):
-    """ Retrieves a project ID from a version's configuration file.
-
-    Args:
-      source_location: A string specifying the location of the source code.
-      keyname: A string specifying the key name.
-    Returns:
-      A string specifying the project ID.
-    """
-    if cls.TAR_GZ_REGEX.search(source_location):
-      fetch_function = utils.config_from_tar_gz
-    elif cls.ZIP_REGEX.search(source_location):
-      fetch_function = utils.config_from_zip
-    elif os.path.isdir(source_location):
-      fetch_function = utils.config_from_dir
-    else:
-      raise BadConfigurationException(
-        '{} must be a directory, tar.gz, or zip'.format(source_location))
-
-    app_config = fetch_function('app.yaml', source_location)
-    if app_config is None:
-      app_config = fetch_function('appengine-web.xml', source_location)
-      if app_config is None:
-        raise BadConfigurationException(
-          'Unable to find app.yaml or appengine-web.xml')
-
-      web_app = ElementTree.fromstring(app_config)
-      try:
-        tag_with_namespace = '{http://appengine.google.com/ns/1.0}application'
-        project_id = web_app.find(tag_with_namespace).text
-      except AttributeError:
-        raise BadConfigurationException(
-          'appengine-web.xml must specify application')
-    else:
-      try:
-        project_id = yaml.safe_load(app_config)['application']
-      except KeyError:
-        raise BadConfigurationException('app.yaml must specify application')
-
-    return project_id
-
-  @classmethod
-  def update_cron(cls, source_location, keyname):
+  def update_cron(cls, source_location, keyname, project_id):
     """ Updates a project's cron jobs from the configuration file.
 
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
     elif cls.ZIP_REGEX.search(source_location):
       fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
     elif os.path.isdir(source_location):
       fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
     else:
       raise BadConfigurationException(
         '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
 
     cron_config = fetch_function('cron.yaml', source_location)
     if cron_config is None:
@@ -1092,31 +1069,40 @@ class AppScaleTools(object):
     else:
       cron_jobs = yaml.safe_load(cron_config)
 
-    project_id = cls.project_id_from_source(source_location)
-
     AppScaleLogger.log('Updating cron jobs')
     login_host = LocalState.get_login_host(keyname)
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
-    admin_client.update_cron(project_id, cron_jobs)
+    admin_client.update_cron(version.project_id, cron_jobs)
 
   @classmethod
-  def update_indexes(cls, source_location, keyname):
+  def update_indexes(cls, source_location, keyname, project_id):
     """ Updates a project's composite indexes from the configuration file.
 
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
     elif cls.ZIP_REGEX.search(source_location):
       fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
     elif os.path.isdir(source_location):
       fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
     else:
       raise BadConfigurationException(
         '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
 
     index_config = fetch_function('index.yaml', source_location)
     if index_config is None:
@@ -1129,31 +1115,40 @@ class AppScaleTools(object):
     else:
       indexes = yaml.safe_load(index_config)
 
-    project_id = cls.project_id_from_source(source_location)
-
     AppScaleLogger.log('Updating indexes')
     login_host = LocalState.get_login_host(keyname)
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
-    admin_client.update_indexes(project_id, indexes)
+    admin_client.update_indexes(version.project_id, indexes)
 
   @classmethod
-  def update_queues(cls, source_location, keyname):
+  def update_queues(cls, source_location, keyname, project_id):
     """ Updates a project's queues from the configuration file.
 
     Args:
       source_location: A string specifying the location of the source code.
       keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
     """
     if cls.TAR_GZ_REGEX.search(source_location):
       fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
     elif cls.ZIP_REGEX.search(source_location):
       fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
     elif os.path.isdir(source_location):
       fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
     else:
       raise BadConfigurationException(
         '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
 
     queue_config = fetch_function('queue.yaml', source_location)
     if queue_config is None:
@@ -1166,13 +1161,11 @@ class AppScaleTools(object):
     else:
       queues = yaml.safe_load(queue_config)
 
-    project_id = cls.project_id_from_source(source_location)
-
     AppScaleLogger.log('Updating queues')
     login_host = LocalState.get_login_host(keyname)
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
-    admin_client.update_queues(project_id, queues)
+    admin_client.update_queues(version.project_id, queues)
 
   @classmethod
   def upgrade(cls, options):

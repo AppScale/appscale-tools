@@ -254,13 +254,13 @@ class TestAppScaleUploadApp(unittest.TestCase):
 
     flexmock(LocalState).should_receive('extract_tgz_app_to_dir').\
       and_return('/tmp/{}'.format(app_id))
-    flexmock(Version).should_receive('from_source').and_return(version)
+    flexmock(Version).should_receive('from_tar_gz').and_return(version)
     flexmock(AppEngineHelper).should_receive('validate_app_id')
     flexmock(LocalState).should_receive('get_login_host').\
       and_return(login_host)
     flexmock(LocalState).should_receive('get_secret_key').and_return(secret)
     flexmock(RemoteHelper).should_receive('copy_app_to_host').\
-      with_args(extracted_dir, app_id, self.keyname, False, {}).\
+      with_args(extracted_dir, app_id, self.keyname, False, {}, None).\
       and_return(source_path)
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
@@ -281,7 +281,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     # An application with the PHP runtime should be deployed successfully.
     version = Version('php')
     version.project_id = app_id
-    flexmock(Version).should_receive('from_source').and_return(version)
+    flexmock(Version).should_receive('from_tar_gz').and_return(version)
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
     given_host, given_port = AppScaleTools.upload_app(options)
