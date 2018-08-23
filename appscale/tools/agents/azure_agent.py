@@ -530,7 +530,6 @@ class AzureAgent(BaseAgent):
 
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if self.MARKETPLACE_IMAGE.match(azure_image_id):
-      AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       publisher, offer, sku, version = azure_image_id.split(":")
       compatible_zone = zone.lower().replace(" ", "")
 
@@ -773,7 +772,6 @@ class AzureAgent(BaseAgent):
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if self.MARKETPLACE_IMAGE.match(azure_image_id):
-      AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
       image_ref_params = azure_image_id.split(":")
       image_ref = ImageReference(publisher=image_ref_params[0],
                                  offer=image_ref_params[1],
@@ -1198,7 +1196,8 @@ class AzureAgent(BaseAgent):
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
     zone = parameters[self.PARAM_ZONE]
 
-    AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+    AppScaleLogger.log("Checking publisher image version for {}".format(
+        azure_image_id))
     publisher, offer, sku, version = azure_image_id.split(":")
     compute_client = ComputeManagementClient(credentials, subscription_id)
     compatible_zone = zone.lower().replace(" ", "")
@@ -1248,6 +1247,8 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
     compatible_zone = zone.lower().replace(" ", "")
 
+    AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+
     try:
       image = compute_client.virtual_machine_images.get(
           compatible_zone, publisher, offer, sku, version)
@@ -1258,7 +1259,7 @@ class AzureAgent(BaseAgent):
           image.plan.publisher, image.plan.product, image.plan.name)
       if not term.accepted:
         AppScaleLogger.log("Marketplace image {}'s license agreement was not "
-                           "accepted, accepting it now.")
+                           "accepted, accepting it now.".format(azure_image_id))
         term.accepted = True
         market_place_client.marketplace_agreements.create(
             image.plan.publisher, image.plan.product, image.plan.name, term)
