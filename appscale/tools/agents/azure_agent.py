@@ -280,7 +280,7 @@ class AzureAgent(BaseAgent):
       # While we're looping check if disk is already attached and return the
       # symlink if it is.
       if disk.name == disk_name:
-        return '/dev/disk/azure/scsi1/lun{}'.format(disk.lun)
+        return os.path.realpath('/dev/disk/azure/scsi1/lun{}'.format(disk.lun))
       existing_luns.add(disk.lun)
 
     # Get the first number not being used as a LUN.
@@ -298,7 +298,8 @@ class AzureAgent(BaseAgent):
       disk_response.wait(timeout=self.MAX_VM_UPDATE_TIME)
       result = disk_response.result()
       if result.provisioning_state == 'Succeeded':
-        return '/dev/disk/azure/scsi1/lun{}'.format(the_chosen_lun)
+        return os.path.realpath('/dev/disk/azure/scsi1/lun{}'.format(
+            the_chosen_lun))
       else:
         raise AgentRuntimeException("Unable to attach disk {0} to "
                                     "VM {1}".format(disk_name, instance_id))
