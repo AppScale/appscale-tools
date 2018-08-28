@@ -11,7 +11,7 @@ import os.path
 import re
 import threading
 import time
-from itertools import count, ifilterfalse
+from itertools import count, ifilter
 
 # Azure specific imports
 from azure.mgmt.compute import ComputeManagementClient
@@ -284,7 +284,7 @@ class AzureAgent(BaseAgent):
       existing_luns.add(disk.lun)
 
     # Get the first number not being used as a LUN.
-    the_chosen_lun = next(ifilterfalse(existing_luns.__contains__, count(1)))
+    the_chosen_lun = next(ifilter(lambda lun: lun not in existing_luns, count(1)))
 
     disk = compute_client.disks.get(resource_group, disk_name)
     managed_disk_params = ManagedDiskParameters(id=disk.id)
