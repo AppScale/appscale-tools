@@ -768,23 +768,29 @@ class AzureAgent(BaseAgent):
     network_profile = VirtualMachineScaleSetNetworkProfile(
       network_interface_configurations=[network_interface_config])
 
-    image_hd = None
+    os_disk = None
+    plan = None
     image_ref = None
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
     # Publisher images are formatted Publisher:Offer:Sku:Tag
     if self.MARKETPLACE_IMAGE.match(azure_image_id):
-      image_ref_params = azure_image_id.split(":")
-      image_ref = ImageReference(publisher=image_ref_params[0],
-                                 offer=image_ref_params[1],
-                                 sku=image_ref_params[2],
-                                 version=image_ref_params[3])
+      publisher, offer, sku, version = azure_image_id.split(":")
+      compatible_zone = zone.lower().replace(" ", "")
+
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
+      image_ref = ImageReference(publisher=publisher,
+                                 offer=offer,
+                                 sku=sku,
+                                 version=version)
+      plan = image.plan
     else:
       image_hd = VirtualHardDisk(uri=azure_image_id)
 
-    os_disk = VirtualMachineScaleSetOSDisk(
-        name=resource_name, caching=CachingTypes.read_write,
-        create_option=DiskCreateOptionTypes.from_image,
-        os_type=OperatingSystemTypes.linux, image=image_hd)
+      os_disk = VirtualMachineScaleSetOSDisk(
+          name=resource_name, caching=CachingTypes.read_write,
+          create_option=DiskCreateOptionTypes.from_image,
+          os_type=OperatingSystemTypes.linux, image=image_hd)
 
     storage_profile = VirtualMachineScaleSetStorageProfile(
         os_disk=os_disk, image_reference=image_ref)
@@ -795,7 +801,7 @@ class AzureAgent(BaseAgent):
     sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
     upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     vm_scale_set = VirtualMachineScaleSet(
-      sku=sku, upgrade_policy=upgrade_policy, location=zone,
+      sku=sku, upgrade_policy=upgrade_policy, location=zone, plan=plan,
       virtual_machine_profile=virtual_machine_profile, overprovision=False)
 
     create_update_response = compute_client.virtual_machine_scale_sets.create_or_update(
