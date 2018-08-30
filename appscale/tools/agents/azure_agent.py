@@ -438,7 +438,7 @@ class AzureAgent(BaseAgent):
 
     active_public_ips, active_private_ips, active_instances = \
       self.describe_instances(parameters)
-    using_disks = parameters.has_key(self.PARAM_DISKS)
+    using_disks = parameters.get(self.PARAM_DISKS, False)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
     if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
