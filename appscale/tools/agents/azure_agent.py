@@ -343,7 +343,7 @@ class AzureAgent(BaseAgent):
       self.describe_instances(parameters)
 
     if public_ip_needed:
-      lb_vms_exceptions = set()
+      lb_vms_exceptions = []
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         lb_vms_futures = [executor.submit(self.setup_virtual_machine_creation,
@@ -352,14 +352,13 @@ class AzureAgent(BaseAgent):
         for future in concurrent.futures.as_completed(lb_vms_futures):
           exception = future.exception()
           if exception:
-            lb_vms_exceptions.add(exception)
+            lb_vms_exceptions.append(exception)
 
       for exception in lb_vms_exceptions:
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if lb_vms_exceptions:
-        raise AgentRuntimeException(json.dumps([str(
-            exception) for exception in lb_vms_exceptions]))
+        raise AgentRuntimeException(str(lb_vms_exceptions))
     else:
       self.create_or_update_vm_scale_sets(count, parameters, subnet)
 
@@ -626,7 +625,7 @@ class AzureAgent(BaseAgent):
       remaining_vms_count = num_instances_to_add
 
       scalesets_futures = []
-      scalesets_exceptions = set()
+      scalesets_exceptions = []
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for ss_count in range(scale_set_count):
@@ -646,14 +645,13 @@ class AzureAgent(BaseAgent):
         for future in concurrent.futures.as_completed(scalesets_futures):
           exception = future.exception()
           if exception:
-            scalesets_exceptions.add(exception)
+            scalesets_exceptions.append(exception)
 
       for exception in scalesets_exceptions:
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if scalesets_exceptions:
-        raise AgentRuntimeException(json.dumps([str(
-            exception) for exception in scalesets_exceptions]))
+        raise AgentRuntimeException(str(scalesets_exceptions))
 
     # Create a scale set using the count of VMs provided.
     else:
@@ -811,7 +809,7 @@ class AzureAgent(BaseAgent):
     if downscale in ['True', True]:
       # Delete the scale set virtual machines matching the given instance ids.
       vmss_vm_delete_futures = []
-      vmss_vm_delete_exceptions = set()
+      vmss_vm_delete_exceptions = []
 
       try:
         vmss_vms_to_delete = [(vm.name, vmss.name) for vmss in vmss_list
@@ -837,19 +835,18 @@ class AzureAgent(BaseAgent):
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
           exception = future.exception()
           if exception:
-            vmss_vm_delete_exceptions.add(exception)
+            vmss_vm_delete_exceptions.append(exception)
 
       for exception in vmss_vm_delete_exceptions:
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if vmss_vm_delete_exceptions:
-        raise AgentRuntimeException(json.dumps([str(
-            exception) for exception in vmss_vm_delete_exceptions]))
+        raise AgentRuntimeException(str(vmss_vm_delete_exceptions))
 
       AppScaleLogger.log("Virtual machine(s) have been successfully downscaled.")
       AppScaleLogger.log("Cleaning up any Scale Sets, if needed ...")
       vmss_delete_futures = []
-      vmss_delete_exceptions = set()
+      vmss_delete_exceptions = []
 
       try:
         ss_to_delete = [vmss.name for vmss in vmss_list if
@@ -874,14 +871,13 @@ class AzureAgent(BaseAgent):
         for future in concurrent.futures.as_completed(vmss_delete_futures):
           exception = future.exception()
           if exception:
-            vmss_delete_exceptions.add(exception)
+            vmss_delete_exceptions.append(exception)
 
       for exception in vmss_delete_exceptions:
         if not isinstance(exception, (CloudError, AgentRuntimeException)):
           logging.exception(exception)
       if vmss_delete_exceptions:
-        raise AgentRuntimeException(json.dumps([str(
-            exception) for exception in vmss_delete_exceptions]))
+        raise AgentRuntimeException(str(vmss_delete_exceptions))
       return
 
     # On appscale down --terminate, we delete all the Scale Sets within the
@@ -904,7 +900,7 @@ class AzureAgent(BaseAgent):
 
     # Delete ScaleSets.
     vmss_delete_futures = []
-    vmss_delete_exceptions = set()
+    vmss_delete_exceptions = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
       for vmss in vmss_list:
         vmss_delete_futures.append(executor.submit(
@@ -913,20 +909,20 @@ class AzureAgent(BaseAgent):
       for future in concurrent.futures.as_completed(vmss_delete_futures):
         exception = future.exception()
         if exception:
-          vmss_delete_exceptions.add(exception)
+          vmss_delete_exceptions.append(exception)
 
     for exception in vmss_delete_exceptions:
       if not isinstance(exception, (CloudError, AgentRuntimeException)):
         logging.exception(exception)
     if vmss_delete_exceptions:
-      raise AgentRuntimeException(json.dumps(vmss_delete_exceptions))
+      raise AgentRuntimeException(str(vmss_delete_exceptions))
 
     AppScaleLogger.log("Virtual machine scale set(s) have been successfully "
                        "deleted.")
     # Delete the load balancer virtual machines matching the given instance ids.
     delete_lb_instances = self.diff(instances_to_delete, delete_ss_instances)
     lb_delete_futures = []
-    lb_delete_exceptions = set()
+    lb_delete_exceptions = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
       for vm_name in delete_lb_instances:
         lb_delete_futures.append(executor.submit(self.delete_virtual_machine,
@@ -935,14 +931,13 @@ class AzureAgent(BaseAgent):
       for future in concurrent.futures.as_completed(lb_delete_futures):
         exception = future.exception()
         if exception:
-          lb_delete_exceptions.add(exception)
+          lb_delete_exceptions.append(exception)
 
     for exception in lb_delete_exceptions:
       if not isinstance(exception, (CloudError, AgentRuntimeException)):
         logging.exception(exception)
     if lb_delete_exceptions:
-      raise AgentRuntimeException(json.dumps([str(
-            exception) for exception in lb_delete_exceptions]))
+      raise AgentRuntimeException(str(lb_delete_exceptions))
 
     AppScaleLogger.log("Load balancer virtual machine(s) have been "
        "successfully deleted")
