@@ -1,6 +1,8 @@
 # AppScale Tools
 [![GitHub version](https://badge.fury.io/gh/AppScale%2Fappscale-tools.svg)](http://badge.fury.io/gh/AppScale%2Fappscale-tools)
 [![AppScale license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/AppScale/appscale-tools/blob/master/LICENSE)
+[![Code Quality: Python](https://img.shields.io/lgtm/grade/python/g/AppScale/appscale-tools.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/AppScale/appscale-tools/context:python)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/AppScale/appscale-tools.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/AppScale/appscale-tools/alerts)
 
 A set of command-line tools for interacting with AppScale.
 
