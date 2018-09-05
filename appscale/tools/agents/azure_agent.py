@@ -1121,14 +1121,7 @@ class AzureAgent(BaseAgent):
     resource_name = 'Virtual Machine Instance ' + instance_id
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
-    # Double check if we succeeded deleting the instance.
-    vm_list = compute_client.virtual_machine_scale_set_vms.list(
-        resource_group, vmss_name)
 
-    for vm in vm_list:
-      if instance_id == vm.name:
-        raise AgentRuntimeException("{0} has not been successfully "
-                                    "deleted".format(vm_info))
     AppScaleLogger.verbose("{0} from scaleset {1} has been successfully "
                            "deleted".format(instance_id, vmss_name), verbose)
 
@@ -1183,6 +1176,8 @@ class AzureAgent(BaseAgent):
       max_sleep: The maximum number of seconds to sleep for the resources to
         be deleted.
       verbose: A boolean indicating whether or not in verbose mode.
+    Raises:
+      AgentRuntimeException if we time out waiting for the operation to finish.
     """
     time_start = time.time()
     while not result.done():
@@ -1191,9 +1186,10 @@ class AzureAgent(BaseAgent):
       time.sleep(self.SLEEP_TIME)
       total_sleep_time = time.time() - time_start
       if total_sleep_time > max_sleep:
-        AppScaleLogger.log("Waited {0} second(s) for {1} to be deleted. "
-          "Operation has timed out.".format(total_sleep_time, resource_name))
-        break
+        err_msg = "Waited {0} second(s) for {1} to be deleted. Operation has " \
+                  "timed out.".format(total_sleep_time, resource_name)
+        AppScaleLogger.log(err_msg)
+        raise AgentRuntimeException(err_msg)
 
   def does_address_exist(self, parameters):
     """ Verifies that the specified static IP address has been allocated, and
