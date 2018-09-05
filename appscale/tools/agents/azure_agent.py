@@ -13,15 +13,18 @@ import math
 import os.path
 import re
 import time
+from itertools import count, ifilter
 
 # Azure specific imports
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
 from azure.mgmt.compute.models import CachingTypes
+from azure.mgmt.compute.models import DataDisk
 from azure.mgmt.compute.models import DiskCreateOptionTypes
 from azure.mgmt.compute.models import HardwareProfile
 from azure.mgmt.compute.models import ImageReference
 from azure.mgmt.compute.models import LinuxConfiguration
+from azure.mgmt.compute.models import ManagedDiskParameters
 from azure.mgmt.compute.models import NetworkProfile
 from azure.mgmt.compute.models import NetworkInterfaceReference
 from azure.mgmt.compute.models import OperatingSystemTypes
@@ -43,7 +46,8 @@ from azure.mgmt.compute.models import VirtualMachineScaleSetOSDisk
 from azure.mgmt.compute.models import VirtualMachineScaleSetOSProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetStorageProfile
 from azure.mgmt.compute.models import VirtualMachineScaleSetVMProfile
-from azure.mgmt.compute.models import VirtualMachineSizeTypes
+
+from azure.mgmt.marketplaceordering.marketplace_ordering_agreements import MarketplaceOrderingAgreements
 
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.network.models import AddressSpace
@@ -105,6 +109,7 @@ class AzureAgent(BaseAgent):
   PARAM_APP_ID = 'azure_app_id'
   PARAM_APP_SECRET = 'azure_app_secret_key'
   PARAM_CREDENTIALS = 'credentials'
+  PARAM_DISKS = 'disks'
   PARAM_EXISTING_RG = 'does_exist'
   PARAM_GROUP = 'group'
   PARAM_INSTANCE_IDS = 'instance_ids'
@@ -126,11 +131,15 @@ class AzureAgent(BaseAgent):
     PARAM_APP_SECRET,
     PARAM_APP_ID,
     PARAM_IMAGE_ID,
+    PARAM_INSTANCE_TYPE,
     PARAM_KEYNAME,
     PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
     PARAM_ZONE
   )
+
+  # The regex for Azure Marketplace images.
+  MARKETPLACE_IMAGE = re.compile(".*:.*:.*:.*")
 
   # The admin username needed to create an Azure VM instance.
   ADMIN_USERNAME = 'azureuser'
@@ -220,7 +229,7 @@ class AzureAgent(BaseAgent):
 
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+    storage_account = parameters.get(self.PARAM_STORAGE_ACCOUNT)
     zone = parameters[self.PARAM_ZONE]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
 
@@ -253,6 +262,107 @@ class AzureAgent(BaseAgent):
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
       raise AgentRuntimeException(e.message)
+
+  def attach_disk(self, parameters, disk_name, instance_id):
+    """ Attaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud.
+      disk_name: A str naming the managed disk to attach to this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        attached to.
+    Returns:
+      A str indicating a symlink to where the persistent disk has been
+      attached to.
+    Raises:
+      AgentRuntimeException if the disk cannot be attached due to a
+      CloudError or does not have a successful provisioning state.
+    """
+    credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    virtual_machine = compute_client.virtual_machines.get(resource_group,
+                                                          instance_id)
+    storage_profile = virtual_machine.storage_profile
+
+    # pick the LUN (this must be unique)
+    existing_luns = set()
+    for disk in storage_profile.data_disks:
+      # While we're looping check if disk is already attached and return the
+      # symlink if it is.
+      if disk.name == disk_name:
+        return os.path.realpath('/dev/disk/azure/scsi1/lun{}'.format(disk.lun))
+      existing_luns.add(disk.lun)
+
+    # Get the first number not being used as a LUN.
+    the_chosen_lun = next(ifilter(lambda lun: lun not in existing_luns, count(1)))
+
+    disk = compute_client.disks.get(resource_group, disk_name)
+    managed_disk_params = ManagedDiskParameters(id=disk.id)
+    data_disk = DataDisk(lun=the_chosen_lun, name=disk.name,
+                         create_option=DiskCreateOptionTypes.attach,
+                         managed_disk=managed_disk_params)
+    storage_profile.data_disks.append(data_disk)
+    disk_response = compute_client.virtual_machines.create_or_update(
+        resource_group, instance_id, virtual_machine)
+    try:
+      disk_response.wait(timeout=self.MAX_VM_UPDATE_TIME)
+      result = disk_response.result()
+      if result.provisioning_state == 'Succeeded':
+        return os.path.realpath('/dev/disk/azure/scsi1/lun{}'.format(
+            the_chosen_lun))
+      else:
+        raise AgentRuntimeException("Unable to attach disk {0} to "
+                                    "VM {1}".format(disk_name, instance_id))
+    except CloudError as error:
+      raise AgentRuntimeException("Unable to attach disk {0} to "
+          "VM {1}: {2}".format(disk_name, instance_id, error.message))
+
+  def detach_disk(self, parameters, disk_name, instance_id):
+    """ Detaches the persistent disk specified in 'disk_name' to this virtual
+    machine.
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        underlying cloud.
+      disk_name: A str naming the managed disk to detach from this machine.
+      instance_id: A str naming the id of the instance that the disk should be
+        detached from.
+    Returns:
+      True if the disk was detached, and False otherwise.
+    """
+    credentials = self.open_connection(parameters)
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    virtual_machine = compute_client.virtual_machines.get(resource_group,
+                                                          instance_id)
+    storage_profile = virtual_machine.storage_profile
+    disks_to_keep = []
+
+    for disk in storage_profile.data_disks:
+      if disk.name != disk_name:
+        disks_to_keep.append(disk)
+      else:
+        return True
+
+    storage_profile.data_disks = disks_to_keep
+    disk_response = compute_client.virtual_machines.create_or_update(
+        resource_group, instance_id, virtual_machine)
+    try:
+      disk_response.wait(timeout=self.MAX_VM_UPDATE_TIME)
+      result = disk_response.result()
+      if result.provisioning_state == 'Succeeded':
+        return True
+      else:
+        AppScaleLogger.log("Unable to detach Disk {} from VM {}".format(
+            disk_name, instance_id))
+        return False
+    except CloudError as error:
+      AppScaleLogger.log("Unable to detach Disk {} from VM {}: {}".format(
+          disk_name, instance_id, error.message))
+      return False
 
   def describe_instances(self, parameters, pending=False):
     """ Queries Microsoft Azure to see which instances are currently
@@ -341,8 +451,13 @@ class AzureAgent(BaseAgent):
 
     active_public_ips, active_private_ips, active_instances = \
       self.describe_instances(parameters)
+    using_disks = parameters.get(self.PARAM_DISKS, False)
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
-    if public_ip_needed:
+    if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
+      raise AgentConfigurationException("Managed Disks require use of a "
+                                        "publisher image.")
+    if public_ip_needed or using_disks:
       lb_vms_exceptions = []
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -404,7 +519,6 @@ class AzureAgent(BaseAgent):
       vm_network_name: The name of the virtual machine to use.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
-    storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
     zone = parameters[self.PARAM_ZONE]
     verbose = parameters[self.PARAM_VERBOSE]
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -424,24 +538,31 @@ class AzureAgent(BaseAgent):
     network_profile = NetworkProfile(
       network_interfaces=[NetworkInterfaceReference(id=network_id)])
 
-    virtual_hd = VirtualHardDisk(
-      uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
-        format(storage_account, vm_network_name))
-
     os_type = OperatingSystemTypes.linux
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
     image_ref = None
     image_hd = None
+    plan = None
+    virtual_hd = None
+
     # Publisher images are formatted Publisher:Offer:Sku:Tag
-    if re.search(".*:.*:.*:.*", azure_image_id):
-      AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
-      image_ref_params = azure_image_id.split(":")
-      image_ref = ImageReference(publisher=image_ref_params[0],
-                                 offer=image_ref_params[1],
-                                 sku=image_ref_params[2],
-                                 version=image_ref_params[3])
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
+      publisher, offer, sku, version = azure_image_id.split(":")
+      compatible_zone = zone.lower().replace(" ", "")
+
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
+      image_ref = ImageReference(publisher=publisher,
+                                 offer=offer,
+                                 sku=sku,
+                                 version=version)
+      plan = image.plan
     else:
+      storage_account = parameters[self.PARAM_STORAGE_ACCOUNT]
+      virtual_hd = VirtualHardDisk(
+        uri='https://{0}.blob.core.windows.net/vhds/{1}.vhd'.
+          format(storage_account, vm_network_name))
       image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
 
     os_disk = OSDisk(os_type=os_type, caching=CachingTypes.read_write,
@@ -452,13 +573,12 @@ class AzureAgent(BaseAgent):
     try:
       compute_client.virtual_machines.create_or_update(
           resource_group, vm_network_name, VirtualMachine(location=zone,
-              os_profile=os_profile, hardware_profile=hardware_profile,
-              network_profile=network_profile, storage_profile=storage_profile))
+            plan=plan, os_profile=os_profile, hardware_profile=hardware_profile,
+            network_profile=network_profile, storage_profile=storage_profile))
       # Sleep until an IP address gets associated with the VM.
       while True:
         public_ip_address = network_client.public_ip_addresses.get(
-          resource_group,
-          vm_network_name)
+          resource_group, vm_network_name)
         if public_ip_address.ip_address:
           AppScaleLogger.log('Azure load balancer VM is available at {}'.
                              format(public_ip_address.ip_address))
@@ -690,11 +810,6 @@ class AzureAgent(BaseAgent):
       computer_name_prefix=resource_name, admin_username=self.ADMIN_USERNAME,
       linux_configuration=linux_configuration)
 
-    image_hd = VirtualHardDisk(uri=parameters[self.PARAM_IMAGE_ID])
-    os_disk = VirtualMachineScaleSetOSDisk(
-      name=resource_name, caching=CachingTypes.read_write,
-      create_option=DiskCreateOptionTypes.from_image,
-      os_type=OperatingSystemTypes.linux, image=image_hd)
 
     subnet_reference = ApiEntityReference(id=subnet.id)
     ip_config = VirtualMachineScaleSetIPConfiguration(name=resource_name,
@@ -706,7 +821,32 @@ class AzureAgent(BaseAgent):
     network_profile = VirtualMachineScaleSetNetworkProfile(
       network_interface_configurations=[network_interface_config])
 
-    storage_profile = VirtualMachineScaleSetStorageProfile(os_disk=os_disk)
+    os_disk = None
+    plan = None
+    image_ref = None
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    # Publisher images are formatted Publisher:Offer:Sku:Tag
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
+      publisher, offer, sku, version = azure_image_id.split(":")
+      compatible_zone = zone.lower().replace(" ", "")
+
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
+      image_ref = ImageReference(publisher=publisher,
+                                 offer=offer,
+                                 sku=sku,
+                                 version=version)
+      plan = image.plan
+    else:
+      image_hd = VirtualHardDisk(uri=azure_image_id)
+
+      os_disk = VirtualMachineScaleSetOSDisk(
+          name=resource_name, caching=CachingTypes.read_write,
+          create_option=DiskCreateOptionTypes.from_image,
+          os_type=OperatingSystemTypes.linux, image=image_hd)
+
+    storage_profile = VirtualMachineScaleSetStorageProfile(
+        os_disk=os_disk, image_reference=image_ref)
     virtual_machine_profile = VirtualMachineScaleSetVMProfile(
       os_profile=os_profile, storage_profile=storage_profile,
       network_profile=network_profile)
@@ -714,7 +854,7 @@ class AzureAgent(BaseAgent):
     sku = ComputeSku(name=parameters[self.PARAM_INSTANCE_TYPE], capacity=long(count))
     upgrade_policy = UpgradePolicy(mode=UpgradeMode.manual)
     vm_scale_set = VirtualMachineScaleSet(
-      sku=sku, upgrade_policy=upgrade_policy, location=zone,
+      sku=sku, upgrade_policy=upgrade_policy, location=zone, plan=plan,
       virtual_machine_profile=virtual_machine_profile, overprovision=False)
 
     try:
@@ -1256,9 +1396,107 @@ class AzureAgent(BaseAgent):
     if not args[self.PARAM_RESOURCE_GROUP]:
       params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
-    if not args[self.PARAM_STORAGE_ACCOUNT]:
-      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+    # Perform Marketplace Image checks.
+    if self.MARKETPLACE_IMAGE.match(params[self.PARAM_IMAGE_ID]):
+      params[self.PARAM_IMAGE_ID] = self.get_marketplace_image_version(params)
+      self.check_marketplace_image(params)
+    # Only assign default storage account if we are not using a Marketplace
+    # Image.
+    elif not args[self.PARAM_STORAGE_ACCOUNT]:
+     params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
+
     return params
+
+  def get_marketplace_image_version(self, parameters):
+    """ Check if the marketplace image specified exists and it's correct
+    version if 'latest' was specified.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        Azure.
+    Returns:
+      A string indicating the given or corrected marketplace image formatted
+        "publisher:offer:sku:version". For example if
+        "appscale-marketplace:appscale:3:latest" was received at this time would
+        return "appscale-marketplace:appscale:3:3.5.2"
+    Raises:
+      AgentConfigurationException: If we cannot find the image.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    zone = parameters[self.PARAM_ZONE]
+
+    AppScaleLogger.log("Checking publisher image version for {}".format(
+        azure_image_id))
+    publisher, offer, sku, version = azure_image_id.split(":")
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    compatible_zone = zone.lower().replace(" ", "")
+
+    if version.lower() != 'latest':
+      try:
+        compute_client.virtual_machine_images.get(compatible_zone, publisher,
+                                                  offer, sku, version)
+        return azure_image_id
+      except CloudError as e:
+        raise AgentConfigurationException("Received CloudError trying to "
+            "request specified image. Please ensure your image is valid in "
+            "the AppScalefile. Reason: {}".format(e))
+
+    try:
+      top_one = compute_client.virtual_machine_images.list(
+          compatible_zone, publisher, offer, sku, top=1, orderby='name desc')
+    except CloudError as e:
+      raise AgentConfigurationException("Received CloudError trying to "
+          "request specified image. Please ensure your image is valid in "
+          "the AppScalefile. Reason: {}".format(e))
+
+    if len(top_one) == 0:
+      raise AgentConfigurationException("Can't resolve the vesion of '{}'"
+                                  .format(azure_image_id))
+
+    version = top_one[0].name
+
+    return ":".join([publisher, offer, sku, version])
+
+  def check_marketplace_image(self, parameters):
+    """ Check if the marketplace image specified has its terms accepted.
+    Otherwise we will not be able to use this image.
+
+    Args:
+      parameters: A dict containing values necessary to authenticate with the
+        Azure.
+    Raises:
+      AgentRuntimeException: If we cannot complete the calls to Azure.
+    """
+    credentials = self.open_connection(parameters)
+    subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    zone = parameters[self.PARAM_ZONE]
+
+    publisher, offer, sku, version = azure_image_id.split(":")
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+    compatible_zone = zone.lower().replace(" ", "")
+
+    AppScaleLogger.log("Using publisher image {}".format(azure_image_id))
+
+    try:
+      image = compute_client.virtual_machine_images.get(
+          compatible_zone, publisher, offer, sku, version)
+
+      market_place_client = MarketplaceOrderingAgreements(credentials,
+                                                          subscription_id)
+      term = market_place_client.marketplace_agreements.get(
+          image.plan.publisher, image.plan.product, image.plan.name)
+      if not term.accepted:
+        AppScaleLogger.log("Marketplace image {}'s license agreement was not "
+                           "accepted, accepting it now.".format(azure_image_id))
+        term.accepted = True
+        market_place_client.marketplace_agreements.create(
+            image.plan.publisher, image.plan.product, image.plan.name, term)
+    except CloudError as e:
+      raise AgentRuntimeException("Received CloudError trying to check and "
+        "accept terms for specified image. Reason: {}".format(e))
 
   def get_cloud_params(self, keyname):
     """ Searches through the locations.json file with key
@@ -1475,8 +1713,9 @@ class AzureAgent(BaseAgent):
         resource_client.resource_groups.create_or_update(
           resource_group_name, ResourceGroup(location=parameters[self.PARAM_ZONE],
                                  tags={'tag': tag_name}))
-        self.create_storage_account(parameters, storage_client)
-      else:
+
+      if not self.MARKETPLACE_IMAGE.match(parameters[self.PARAM_IMAGE_ID]) \
+          and parameters.get(self.PARAM_STORAGE_ACCOUNT):
         # If it already exists, check if the specified storage account exists
         # under it and if not, create a new account.
         storage_accounts = storage_client.storage_accounts.\

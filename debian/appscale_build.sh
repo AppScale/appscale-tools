@@ -20,12 +20,12 @@ fi
 # Some dependencies require a newer Pip than the repositories provide.
 case ${DIST} in
     trusty)
-        pip install -U pip
+        pip install -U 'pip<10'
         hash -r
         ;;
     jessie)
         # The system's pip does not allow updating itself.
-        easy_install pip
+        easy_install --upgrade 'pip<10.0.0b1'
         hash -r
         ;;
 esac
