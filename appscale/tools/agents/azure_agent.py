@@ -7,7 +7,6 @@ interact with Microsoft Azure.
 # General-purpose Python library imports
 import adal
 import concurrent.futures
-import json
 import logging
 import math
 import os.path
