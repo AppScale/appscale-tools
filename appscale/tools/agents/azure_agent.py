@@ -850,9 +850,7 @@ class AzureAgent(BaseAgent):
 
       try:
         ss_to_delete = [vmss.name for vmss in vmss_list if
-                       sum(1 for _ in
-                           compute_client.virtual_machine_scale_set_vms.list(
-                                resource_group, vmss.name)) == 0]
+          any(compute_client.virtual_machine_scale_set_vms.list(resource_group, vmss.name))]
       except CloudError as e:
         logging.exception("CloudError received while trying to terminate "
                           "instances.")
