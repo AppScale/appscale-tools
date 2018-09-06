@@ -1585,8 +1585,13 @@ class AzureAgent(BaseAgent):
 
     # Get an Authentication token using ADAL.
     context = adal.AuthenticationContext(self.AZURE_AUTH_ENDPOINT + tenant_id)
-    token_response = context.acquire_token_with_client_credentials(
-      self.AZURE_RESOURCE_URL, app_id, app_secret_key)
+    try:
+      token_response = context.acquire_token_with_client_credentials(
+        self.AZURE_RESOURCE_URL, app_id, app_secret_key)
+    except adal.adal_error.AdalError as e:
+      raise AgentConfigurationException(
+          "Unable to communicate with Azure! Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
     token_response.get('accessToken')
 
     # To access Azure resources for an application, we need a Service Principal
