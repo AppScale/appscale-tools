@@ -976,7 +976,8 @@ class AzureAgent(BaseAgent):
       vmss_vm_delete_exceptions = []
 
       try:
-        vmss_vms_to_delete = [(vm.name, vmss.name) for vmss in vmss_list
+        # Get the instance_ids for the Scale Set VMs.
+        vmss_vms_to_delete = [(vm.instance_id, vmss.name) for vmss in vmss_list
             for vm in compute_client.virtual_machine_scale_set_vms.list(
             resource_group, vmss.name)
             if vm.name in instances_to_delete]
@@ -1050,7 +1051,9 @@ class AzureAgent(BaseAgent):
     # resource group specified, as it is faster than deleting the individual
     # instances within each Scale Set.
 
-    # Get the list of all ScaleSet Instance Ids before deleting ScaleSets.
+    # Get the list of all ScaleSet Instance "Names" before deleting
+    # ScaleSets. We refer to the Scale Set VM instances by name rather than
+    # instance id.
     try:
       delete_ss_instances = [vm.name for vmss in vmss_list
        for vm in compute_client.virtual_machine_scale_set_vms.list(
