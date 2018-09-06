@@ -1128,8 +1128,19 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Scale Set {} ...".format(vmss_name), verbose)
-    delete_response = compute_client.virtual_machine_scale_sets.delete(
-      resource_group, vmss_name)
+    try:
+      delete_response = compute_client.virtual_machine_scale_sets.delete(
+          resource_group, vmss_name)
+    except CloudError as error:
+      logging.exception("CloudError received trying to clean up Scale Set.")
+      raise AgentRuntimeException("Unable to clean up Scale Set {}. "
+                                  "Reason: {}".format(vmss_name, error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up Scale Set {}. Please check your "
+          "cloud configuration. Reason: {}".format(vmss_name, e.message))
     resource_name = 'Virtual Machine Scale Set' + ":" + vmss_name
     self.sleep_until_delete_operation_done(delete_response, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
@@ -1152,9 +1163,21 @@ class AzureAgent(BaseAgent):
                                                               vmss_name)
 
     AppScaleLogger.verbose("Deleting {0} ...".format(vm_info), verbose)
-    result = compute_client.virtual_machine_scale_set_vms.delete(resource_group,
-                                                                 vmss_name,
-                                                                 instance_id)
+    try:
+      result = compute_client.virtual_machine_scale_set_vms.delete(
+          resource_group, vmss_name, instance_id)
+    except CloudError as error:
+      logging.exception("CloudError received trying to clean up scale set.")
+      raise AgentRuntimeException("Unable to clean up VM {} from Scale Set {}. "
+                                  "Reason: {}".format(instance_id, vmss_name,
+                                                      error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up VM {} from Scale Set {}. Please check your "
+          "cloud configuration. Reason: {}".format(instance_id, vmss_name,
+                                                   e.message))
     resource_name = 'Virtual Machine Instance ' + instance_id
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
@@ -1173,7 +1196,18 @@ class AzureAgent(BaseAgent):
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
-    result = compute_client.virtual_machines.delete(resource_group, vm_name)
+    try:
+      result = compute_client.virtual_machines.delete(resource_group, vm_name)
+    except CloudError as error:
+      logging.exception("CloudError received trying to clean up scale set.")
+      raise AgentRuntimeException("Unable to clean up Virtual Machine {}. "
+                                  "Reason: {}".format(vm_name, error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact "
+                        "Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up Virtual Machine {}. Please check your "
+          "cloud configuration. Reason: {}".format(vm_name, e.message))
     resource_name = 'Virtual Machine' + ':' + vm_name
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
