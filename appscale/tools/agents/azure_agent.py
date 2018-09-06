@@ -880,7 +880,7 @@ class AzureAgent(BaseAgent):
       self.wait_for_ss_update(count, create_update_response, scale_set_name)
     except CloudError as error:
       logging.exception("Azure agent received a CloudError.")
-      raise AgentRuntimeException("Unable to create network interface. "
+      raise AgentRuntimeException("Unable to create or update Scale Set. "
                                   "Reason: {}".format(error.message))
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
