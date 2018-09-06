@@ -1259,7 +1259,9 @@ class AzureAgent(BaseAgent):
     try:
       image = compute_client.virtual_machine_images.get(
           compatible_zone, publisher, offer, sku, version)
-
+      if not image.plan:
+        AppScaleLogger.warn("It is not recommended to use a non-AppScale image")
+        return
       market_place_client = MarketplaceOrderingAgreements(credentials,
                                                           subscription_id)
       term = market_place_client.marketplace_agreements.get(
