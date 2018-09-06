@@ -1172,33 +1172,11 @@ class AzureAgent(BaseAgent):
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
-
-    # Check if we succeeded deleting the instance before but timed out.
-    virtual_machines = compute_client.virtual_machines.list(resource_group)
-
-    already_deleted = True
-    for vm in virtual_machines:
-      if vm_name == vm.name:
-        already_deleted = False
-        break
-    if already_deleted:
-      AppScaleLogger.verbose("Virtual Machine {0} has already been "
-                             "deleted".format(vm_name), verbose)
-      return
-
     AppScaleLogger.verbose("Deleting Virtual Machine {} ...".format(vm_name), verbose)
     result = compute_client.virtual_machines.delete(resource_group, vm_name)
     resource_name = 'Virtual Machine' + ':' + vm_name
     self.sleep_until_delete_operation_done(result, resource_name,
                                            self.MAX_VM_UPDATE_TIME, verbose)
-
-    # Double check if we succeeded deleting the instance.
-    virtual_machines = compute_client.virtual_machines.list(resource_group)
-    for vm in virtual_machines:
-      if vm_name == vm.name:
-        raise AgentRuntimeException("Virtual Machine {0} has not "
-                                    "been successfully deleted".format(vm_name))
-
     AppScaleLogger.verbose("Virtual Machine {} has been successfully deleted.".
                            format(vm_name), verbose)
 
