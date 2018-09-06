@@ -185,9 +185,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
     Raises:
-      AgentConfigurationException: If an error is encountered during
-        authentication.
-      AgentRuntimeException: If an unexpected Azure Error has been encountered.
+      AgentConfigurationException: if we are unable to authenticate with Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -196,14 +194,10 @@ class AzureAgent(BaseAgent):
       # Try listing resource groups to make sure we can, a CloudError will be
       # raised if the credentials are invalid.
       resource_client.resource_groups.list()
-    except CloudError as error:
-      logging.exception("Azure agent received a CloudError.")
+    except ClientException as error:
+      logging.exception("Error authenticating with provided credentials.")
       raise AgentConfigurationException("Unable to authenticate using the "
         "credentials provided. Reason: {}".format(error.message))
-    except ClientException as e:
-      logging.exception("ClientException received while attempting to contact "
-                        "Azure.")
-      raise AgentRuntimeException(e.message)
 
   def configure_instance_security(self, parameters):
     """ Configure the resource group and storage account needed to create the
@@ -218,6 +212,7 @@ class AzureAgent(BaseAgent):
     Raises:
       AgentRuntimeException: If security features could not be successfully
         configured in the underlying cloud.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     is_autoscale = parameters['autoscale_agent']
 
@@ -260,7 +255,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to register provider. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def attach_disk(self, parameters, disk_name, instance_id):
     """ Attaches the persistent disk specified in 'disk_name' to this virtual
@@ -374,6 +371,10 @@ class AzureAgent(BaseAgent):
       public_ips: A list of public IP addresses.
       private_ips: A list of private IP addresses.
       instance_ids: A list of unique Azure VM names.
+    Raises:
+      AgentRuntimeException: If we are unable to list instances in the
+        cloud.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -418,7 +419,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to describe instances. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     return public_ips, private_ips, instance_ids
 
@@ -516,6 +519,10 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       vm_network_name: The name of the virtual machine to use.
+    Raises:
+      AgentRuntimeException: If a virtual machine could not be successfully
+        created.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     zone = parameters[self.PARAM_ZONE]
@@ -592,7 +599,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create virtual machine. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def create_linux_configuration(self, parameters):
     """ Creates a Linux Configuration to pass in to the virtual machine
@@ -632,7 +641,10 @@ class AzureAgent(BaseAgent):
     Returns:
         The number of instances created and added to the existing scale sets.
     Raises:
-        AgentRuntimeException: If an error has occurred talking to Azure.
+    Raises:
+      AgentRuntimeException: If instances could not successfully be added to
+        a Scale Set.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -664,7 +676,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to add to Scale Sets. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     for vmss, ss_instance_count in scalesets_and_counts:
       ss_upgrade_policy = vmss.upgrade_policy
@@ -692,7 +706,9 @@ class AzureAgent(BaseAgent):
       except ClientException as e:
         logging.exception("ClientException received while attempting to contact"
           " Azure.")
-        raise AgentRuntimeException(e.message)
+        raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create/update ScaleSet. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
       newly_added = new_capacity - ss_instance_count
       num_instances_added += newly_added
@@ -794,8 +810,8 @@ class AzureAgent(BaseAgent):
         subnet: A reference to the subnet ID of the virtual network created.
 
     Raises:
-        AgentConfigurationException: If the operation to create a virtual
-         machine scale set did not succeed.
+      AgentRuntimeException: If a scale set could not be successfully created.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -869,7 +885,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create a scale set. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def wait_for_ss_update(self, count, create_update_response, scale_set_name):
     """ Waits until the scale set has been successfully updated and all the
@@ -882,8 +900,9 @@ class AzureAgent(BaseAgent):
         scale_set_name: The name of the scale set being updated.
 
     Raises:
-        AgentConfigurationException: If it encounters a problem updating
-          the virtual machine scale set.
+      AgentRuntimeException: If there is a problem updating the virtual
+        machine scale set.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     try:
       create_update_response.wait(timeout=self.MAX_VMSS_WAIT_TIME)
@@ -898,13 +917,14 @@ class AzureAgent(BaseAgent):
 
     except CloudError as error:
       logging.exception("CloudError during creation of Scale Set.")
-      raise AgentConfigurationException("Unable to create a Scale Set of {0} "
-                                        "VM(s): {1}".format(count, error.message))
+      raise AgentRuntimeException("Unable to create a Scale Set of {0} "
+                                  "VM(s): {1}".format(count, error.message))
     except ClientException as e:
       logging.exception("ClientException received while attempting to "
                         "contact Azure.")
-      raise AgentRuntimeException("Unable to create a Scale Set due to: "
-                                  "{0}".format(e.message))
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create Scale Set. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def associate_static_ip(self, instance_id, static_ip):
     """ Associates the given static IP address with the given instance ID.
@@ -920,6 +940,9 @@ class AzureAgent(BaseAgent):
     Args:
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
+    Raises:
+      AgentRuntimeException: If instances could not successfully be terminated.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
     """
     credentials = self.open_connection(parameters)
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
@@ -939,7 +962,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to list Scale Sets. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     downscale = parameters['autoscale_agent']
 
@@ -962,7 +987,9 @@ class AzureAgent(BaseAgent):
       except ClientException as e:
         logging.exception("ClientException received while attempting to "
                           "contact Azure.")
-        raise AgentRuntimeException(e.message)
+        raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to terminate instances. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for vm_name, vmss_name in vmss_vms_to_delete:
@@ -997,7 +1024,9 @@ class AzureAgent(BaseAgent):
       except ClientException as e:
         logging.exception("ClientException received while attempting to "
                           "contact Azure.")
-        raise AgentRuntimeException(e.message)
+        raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to terminate instances. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         for vmss_name in ss_to_delete:
@@ -1033,7 +1062,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to terminate instances. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     # Delete ScaleSets.
     vmss_delete_futures = []
@@ -1087,6 +1118,9 @@ class AzureAgent(BaseAgent):
         parameters: A dict, containing all the parameters necessary to
           authenticate this user with Azure.
         vmss_name: The name of the virtual machine scale set to be deleted.
+    Raises:
+      AgentConfigurationException: If we are unable to authenticate with Azure.
+      AgentRuntimeException: If a scale set could not be successfully deleted.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     verbose = parameters[self.PARAM_VERBOSE]
@@ -1238,8 +1272,8 @@ class AzureAgent(BaseAgent):
       True if the zone exists, and False otherwise.
     Raises:
       AgentConfigurationException: If an error is encountered during
-        checking for the zone.
-      AgentRuntimeException: If an unexpected Azure Error has been encountered.
+        checking for the zone due to configuration errors (zone does not
+        exist or authentication issues).
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -1251,14 +1285,12 @@ class AzureAgent(BaseAgent):
         for resource_type in provider.resource_types:
           if zone in resource_type.locations:
             return True
-    except CloudError as error:
+    except ClientException as error:
       logging.exception("Unable to check if zone exists.")
       raise AgentConfigurationException("Unable to check if zone exists. "
-                                        "Reason: {}".format(error.message))
-    except ClientException as e:
-      logging.exception("ClientException received while attempting to contact "
-                        "Azure.")
-      raise AgentRuntimeException(e.message)
+                                        "Please check your cloud "
+                                        "configuration. Reason: {}".format(
+                                        error.message))
     return False
 
   def cleanup_state(self, parameters):
@@ -1268,8 +1300,9 @@ class AzureAgent(BaseAgent):
       parameters: A dict that includes keys indicating the remote state
         that should be deleted.
     Raises:
-      AgentConfigurationException: If an error is encountered during
-        trying to clean up the state in Azure.
+      AgentConfigurationException: If we are unable to authenticate with Azure.
+      AgentRuntimeException: If an error is encountered trying to clean up
+        the state in Azure.
     """
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
@@ -1295,7 +1328,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up network interfaces. Please check your "
+          "cloud configuration. Reason: {}".format(e.message))
 
     AppScaleLogger.log("Network Interface(s) have been successfully deleted.")
 
@@ -1315,7 +1350,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up public ips. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     AppScaleLogger.log("Public IP Address(s) have been successfully deleted.")
 
@@ -1335,7 +1372,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to "
                         "contact Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to clean up virtual networks. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     AppScaleLogger.log("Virtual Network(s) have been successfully deleted.")
 
@@ -1402,7 +1441,8 @@ class AzureAgent(BaseAgent):
         "appscale-marketplace:appscale:3:latest" was received at this time would
         return "appscale-marketplace:appscale:3:3.5.2"
     Raises:
-      AgentConfigurationException: If we cannot find the image.
+      AgentConfigurationException: If the image is invalid or there was an
+        authentication issue trying to contact Azure.
     """
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
@@ -1420,19 +1460,24 @@ class AzureAgent(BaseAgent):
         compute_client.virtual_machine_images.get(compatible_zone, publisher,
                                                   offer, sku, version)
         return azure_image_id
-      except CloudError as e:
+      except ClientException as e:
         raise AgentConfigurationException("Received CloudError trying to "
-            "request specified image. Please ensure your image is valid in "
-            "the AppScalefile. Reason: {}".format(e))
+                                          "request specified image. Please "
+                                          "ensure your image is valid in "
+                                          "the AppScalefile and that your "
+                                          "cloud configuration is correct. "
+                                          "Reason: {}".format(e.message))
 
     try:
       top_one = compute_client.virtual_machine_images.list(
           compatible_zone, publisher, offer, sku, top=1, orderby='name desc')
-    except CloudError as e:
+    except ClientException as e:
       raise AgentConfigurationException("Received CloudError trying to "
-          "request specified image. Please ensure your image is valid in "
-          "the AppScalefile. Reason: {}".format(e))
-
+                                        "request specified image. Please "
+                                        "ensure your image is valid in "
+                                        "the AppScalefile and that your cloud "
+                                        "configuration is correct. "
+                                        "Reason: {}".format(e.message))
     if len(top_one) == 0:
       raise AgentConfigurationException("Can't resolve the vesion of '{}'"
                                   .format(azure_image_id))
@@ -1563,6 +1608,10 @@ class AzureAgent(BaseAgent):
       subnet_name: The name to use for the Subnet resource.
     Returns:
       A Subnet instance from the Virtual Network created.
+    Raises:
+      AgentConfigurationException: If we are unable to authenticate with Azure.
+      AgentRuntimeException: If an error is encountered trying to create a
+        virtual network in Azure.
     """
     group_name = parameters[self.PARAM_RESOURCE_GROUP]
     region = parameters[self.PARAM_ZONE]
@@ -1578,12 +1627,14 @@ class AzureAgent(BaseAgent):
       self.sleep_until_update_operation_done(result, network_name, verbose)
     except CloudError as error:
       logging.exception("Azure agent received a CloudError.")
-      raise AgentRuntimeException("Unable to create virtual network.. Reason: "
+      raise AgentRuntimeException("Unable to create virtual network. Reason: "
                                   "{}".format(error.message))
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+        "while trying to create virtual network. Please check your cloud "
+        "configuration. Reason: {}".format(e.message))
 
     subnet = network_client.subnets.get(group_name, network_name, subnet_name)
     return subnet
@@ -1599,6 +1650,10 @@ class AzureAgent(BaseAgent):
       subnet: The Subnet resource from the Virtual Network created.
       parameters:  A dict, containing all the parameters necessary to
         authenticate this user with Azure.
+    Raises:
+      AgentConfigurationException: If we are unable to authenticate with Azure.
+      AgentRuntimeException: If an error is encountered trying to create a
+        network interface in Azure.
     """
     group_name = parameters[self.PARAM_RESOURCE_GROUP]
     region = parameters[self.PARAM_ZONE]
@@ -1619,7 +1674,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create a public ip address. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
     public_ip_address = network_client.public_ip_addresses.get(group_name, ip_name)
 
@@ -1641,7 +1698,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create network interface. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def sleep_until_update_operation_done(self, result, resource_name, verbose):
     """ Sleeps until the create/update operation for the resource is completed
@@ -1672,9 +1731,9 @@ class AzureAgent(BaseAgent):
       credentials: A ServicePrincipalCredentials instance, that can be used to
         access or create any resources.
     Raises:
-      AgentConfigurationException: If there was a problem creating or accessing
+      AgentConfigurationException: If we are unable to authenticate with Azure.
+      AgentRuntimeException: If there was a problem creating or accessing
         a resource group with the given subscription.
-      AgentRuntimeException: If an unexpected Azure Error has been encountered.
     """
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     resource_client = ResourceManagementClient(credentials, subscription_id)
@@ -1719,7 +1778,9 @@ class AzureAgent(BaseAgent):
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact "
                         "Azure.")
-      raise AgentRuntimeException(e.message)
+      raise AgentConfigurationException("Unable to communicate with Azure "
+          "while trying to create resource group. Please check your cloud "
+          "configuration. Reason: {}".format(e.message))
 
   def create_storage_account(self, parameters, storage_client):
     """ Creates a Storage Account under the Resource Group, if it does not
