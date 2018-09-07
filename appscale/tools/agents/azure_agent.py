@@ -95,7 +95,7 @@ class AzureAgent(BaseAgent):
   # recommended by Cassandra. AppScale will still run on these instance types,
   # but is likely to crash after a day or two of use (as Cassandra will attempt
   # to malloc ~800MB of memory, which will fail on these instance types).
-  DISALLOWED_INSTANCE_TYPES = ["Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3"
+  DISALLOWED_INSTANCE_TYPES = ["Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
                                "Basic_A4", "Standard_A0", "Standard_A1",
                                "Standard_A2", "Standard_D1", "Standard_D1_v2",
                                "Standard_DS1", "Standard_DS1_v2"]
