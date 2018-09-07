@@ -993,11 +993,10 @@ class AzureAgent(BaseAgent):
           "configuration. Reason: {}".format(e.message))
 
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        for vm_name, vmss_name in vmss_vms_to_delete:
+        for vm_instance_id, vmss_name in vmss_vms_to_delete:
           vmss_vm_delete_futures.append(executor.submit(
               self.delete_vmss_instance, compute_client, parameters,
-              vmss_name, vm_name))
-          instances_to_delete.remove(vm_name)
+              vmss_name, vm_instance_id))
 
         for future in concurrent.futures.as_completed(vmss_vm_delete_futures):
           exception = future.exception()
