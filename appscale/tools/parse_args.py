@@ -563,13 +563,16 @@ class ParseArgs(object):
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
       if self.args.min_machines < 1:
-        raise BadConfigurationException("Min cannot be less than 1.")
+        raise BadConfigurationException(
+          "If ips_layout is not defined, min_machines cannot be less than 1.")
 
       if self.args.max_machines < 1:
-        raise BadConfigurationException("Max cannot be less than 1.")
+        raise BadConfigurationException(
+          "If ips_layout is not defined, max_machines cannot be less than 1.")
 
       if self.args.min_machines > self.args.max_machines:
-        raise BadConfigurationException("Min cannot exceed max.")
+        raise BadConfigurationException(
+          "min_machines cannot exceed max_machines")
 
 
   def validate_ips_flags(self):
