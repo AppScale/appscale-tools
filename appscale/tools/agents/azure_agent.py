@@ -387,12 +387,13 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     try:
-      public_ips = []
-      for public_ip in network_client.public_ip_addresses.list(resource_group):
-        # We create Static IPs for Azure load balancers which we would retain
-        # even on a terminate and reuse.
-        if not public_ip.public_ip_allocation_method == "Static":
-          public_ips.append(public_ip.ip_address)
+      # Static IPs are not listed because AppScale does not create them.
+      # They are used for creating Azure load balancers from the Portal,
+      # which we would retain even on terminating the deployment and reuse
+      # across multiple deployments.
+      public_ips = [public_ip.ip_address for public_ip in
+                    network_client.public_ip_addresses.list(resource_group)
+                    if not public_ip.public_ip_allocation_method == 'Static']
 
       private_ips = [ip_config.private_ip_address
                      for network_interface in
