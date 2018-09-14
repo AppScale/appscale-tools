@@ -527,8 +527,17 @@ class AzureAgent(BaseAgent):
         parameters[self.PARAM_RESOURCE_GROUP], lb_avail_set_name,
         AvailabilitySet(location=parameters[self.PARAM_ZONE]))
     except CloudError as error:
-      raise AgentConfigurationException("Unable to create an Availability Set {0}: {1}"
-                                        .format(lb_avail_set_name, error.message))
+      logging.exception("Azure agent received a CloudError while creating an "
+                        "availability set.")
+      raise AgentConfigurationException("Unable to create an Availability Set "
+                                        "{0}: {1}".format(lb_avail_set_name,
+                                                          error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+                                        "while trying to create an availability set. "
+                                        "Please check your cloud configuration. "
+                                        "Reason: {}".format(e.message))
 
   def setup_virtual_machine_creation(self, credentials, network_client,
                                      parameters, subnet, availability_set):
