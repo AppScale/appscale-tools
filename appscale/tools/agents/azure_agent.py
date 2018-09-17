@@ -453,6 +453,7 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     virtual_network = parameters[self.PARAM_GROUP]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id)
     compute_client = ComputeManagementClient(credentials, subscription_id)
@@ -465,17 +466,20 @@ class AzureAgent(BaseAgent):
 
     # Create an Availability Set for Load Balancer VMs
     lb_avail_set_name = "lb-availability-set"
-    lb_avail_set = self.create_lb_availability_set(compute_client,
-                                                   lb_avail_set_name,
-                                                   parameters)
-    if lb_avail_set:
-      availability_set = SubResource(lb_avail_set.id)
+    availability_set_names = [availability_set.name for availability_set in
+                              compute_client.availability_sets.list(resource_group)]
+    if lb_avail_set_name not in availability_set_names:
+        lb_avail_set = self.create_lb_availability_set(compute_client,
+                                                       lb_avail_set_name,
+                                                       parameters)
+        if lb_avail_set:
+            availability_set = SubResource(lb_avail_set.id)
 
-    else:
-      availability_set = None
-      AppScaleLogger.log("Unable to create an Availability Set '{0}'."
-                         "Check the Azure Portal for more details."
-                         .format(lb_avail_set_name))
+        else:
+            availability_set = None
+            AppScaleLogger.log("Unable to create an Availability Set '{0}'."
+                               "Check the Azure Portal for more details."
+                               .format(lb_avail_set_name))
 
     using_disks = parameters.get(self.PARAM_DISKS, False)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
@@ -519,7 +523,7 @@ class AzureAgent(BaseAgent):
         parameters: A dict, containing all the parameters necessary to
           authenticate this user with Azure.
     Raises:
-        AgentConfigurationException: If the operation to create an availability 
+        AgentConfigurationException: If the operation to create an availability
           set did not succeed.
     """
     try:
