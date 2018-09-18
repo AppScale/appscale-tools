@@ -424,7 +424,7 @@ class EC2Agent(BaseAgent):
       if (i.state == 'running' or (pending and i.state == 'pending'))\
            and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
-        public_ips.append(i.ip_address)
+        public_ips.append(i.ip_address or i.private_ip_address)
         private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
@@ -443,6 +443,8 @@ class EC2Agent(BaseAgent):
         'keyname', 'group', 'image_id' and 'instance_type' parameters.
       security_configured: Uses this boolean value as an heuristic to
         detect brand new AppScale deployments.
+      public_ip_needed: A boolean, specifies whether to launch with a public
+        ip or not.
     Returns:
       A tuple of the form (instances, public_ips, private_ips)
     """
@@ -537,6 +539,12 @@ class EC2Agent(BaseAgent):
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
+
+        # If we need a public ip, make sure we actually get one.
+        if public_ip_needed and not self.diff(public_ips, private_ips):
+          time.sleep(self.SLEEP_TIME)
+          now = datetime.datetime.now()
+          continue
 
         public_ips = self.diff(public_ips, active_public_ips)
         private_ips = self.diff(private_ips, active_private_ips)
