@@ -8,12 +8,17 @@ import glob
 import os
 import time
 
+# EC2 specific imports.
+from boto.ec2.networkinterface import NetworkInterfaceSpecification
+from boto.ec2.networkinterface import NetworkInterfaceCollection
+from boto.exception import EC2ResponseError
+from boto.vpc import VPCConnection
+
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.local_state import LocalState
 from base_agent import AgentConfigurationException
 from base_agent import AgentRuntimeException
 from base_agent import BaseAgent
-from boto.exception import EC2ResponseError
 
 
 # pylint: disable-msg=W0511
@@ -50,6 +55,8 @@ class EC2Agent(BaseAgent):
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
   PARAM_STATIC_IP = 'static_ip'
+  PARAM_SUBNET_ID = 'aws_subnet_id'
+  PARAM_VPC_ID = 'aws_vpc_id'
   PARAM_ZONE = 'zone'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
@@ -161,12 +168,16 @@ class EC2Agent(BaseAgent):
     LocalState.write_key_file(ssh_key, key_pair.material)
 
     self.create_security_group(parameters, group)
-    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
-      ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
-      ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    self.authorize_security_group(parameters, group, from_port=-1, to_port=-1,
-      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    sg = next(g for g in conn.get_all_security_groups() if g.name == group)
+    self.authorize_security_group(parameters, sg.id, from_port=1,
+                                  to_port=65535, ip_protocol='udp',
+                                  cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, sg.id, from_port=1,
+                                  to_port=65535, ip_protocol='tcp',
+                                  cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, sg.id, from_port=-1,
+                                  to_port=-1, ip_protocol='icmp',
+                                  cidr_ip='0.0.0.0/0')
     return True
 
 
@@ -182,15 +193,18 @@ class EC2Agent(BaseAgent):
     """
     AppScaleLogger.log('Creating security group: {0}'.format(group))
     conn = self.open_connection(parameters)
+    specified_vpc = parameters[self.PARAM_VPC_ID]
+
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.create_security_group(group, 'AppScale security group')
+        conn.create_security_group(group, 'AppScale security group',
+                                   specified_vpc)
       except EC2ResponseError:
         pass
       try:
-        conn.get_all_security_groups(group)
-        return
+        if any(sg.name == group for sg in conn.get_all_security_groups()):
+          return
       except EC2ResponseError:
         pass
       time.sleep(self.SLEEP_TIME)
@@ -200,14 +214,15 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def authorize_security_group(self, parameters, group, from_port, to_port,
+  def authorize_security_group(self, parameters, group_id, from_port, to_port,
     ip_protocol, cidr_ip):
     """Opens up traffic on the given port range for traffic of the named type.
 
     Args:
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
-      group: A str that names the group whose ports should be opened.
+      group_id: A str that contains the id of the group whose ports should be
+        opened.
       from_port: An int that names the first port that access should be allowed
         on.
       to_port: An int that names the last port that access should be allowed on.
@@ -220,17 +235,18 @@ class EC2Agent(BaseAgent):
       group.
     """
     AppScaleLogger.log('Authorizing security group {0} for {1} traffic from ' \
-      'port {2} to port {3}'.format(group, ip_protocol, from_port, to_port))
+      'port {2} to port {3}'.format(group_id, ip_protocol, from_port, to_port))
     conn = self.open_connection(parameters)
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.authorize_security_group(group, from_port=from_port,
+        conn.authorize_security_group(group_id=group_id, from_port=from_port,
           to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
       except EC2ResponseError:
         pass
       try:
-        group_info = conn.get_all_security_groups(group)[0]
+        group_info = next(g for g in conn.get_all_security_groups()
+                          if g.id == group_id)
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
@@ -297,6 +313,35 @@ class EC2Agent(BaseAgent):
           self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
           params[self.PARAM_ZONE])
 
+    # VPC must be specified.
+    if not args.get(self.PARAM_VPC_ID):
+      raise AgentConfigurationException('VPC id is a required parameter for '
+                                        'launching in EC2.')
+    # VPC must exist.
+    credentials = params[self.PARAM_CREDENTIALS]
+    vpc_conn = boto.vpc.connect_to_region(params[self.PARAM_REGION],
+        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
+        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
+
+    params[self.PARAM_VPC_ID] = args[self.PARAM_VPC_ID]
+    try:
+      vpc_conn.get_all_vpcs(params[self.PARAM_VPC_ID])
+    except EC2ResponseError:
+      raise AgentConfigurationException('Specified vpc {} does not '
+                                        'exist!'.format(params[self.PARAM_VPC_ID]))
+    # Subnet must be specified.
+    if not args.get(self.PARAM_SUBNET_ID):
+      raise AgentConfigurationException('Subnet id is a required parameter for '
+                                        'launching in EC2.')
+
+    # Subnet must exist.
+    all_subnets = vpc_conn.get_all_subnets(filters={'vpcId': params[self.PARAM_VPC_ID]})
+    params[self.PARAM_SUBNET_ID] = args[self.PARAM_SUBNET_ID]
+
+    if not any(subnet.id == params[self.PARAM_SUBNET_ID] for subnet in all_subnets):
+      raise AgentConfigurationException('Specified subnet {} does not exist '
+                                        'in vpc {}!'.format(params[self.PARAM_SUBNET_ID],
+                                                            params[self.PARAM_VPC_ID]))
     return params
 
 
@@ -455,16 +500,31 @@ class EC2Agent(BaseAgent):
         attempts += 1
 
       conn = self.open_connection(parameters)
+      try:
+        sg = next(sg for sg in conn.get_all_security_groups()
+                  if sg.name == group)
+      except StopIteration:
+        raise AgentRuntimeException('Could not find security group with name '
+                                    '{}!'.format(group))
+      subnet_id = parameters[self.PARAM_SUBNET_ID]
+
+      network_interface = NetworkInterfaceSpecification(
+        associate_public_ip_address=public_ip_needed,
+        groups=[sg.id], subnet_id=subnet_id)
+      network_interfaces = NetworkInterfaceCollection(network_interface)
+
       if spot:
         price = parameters[self.PARAM_SPOT_PRICE] or \
           self.get_optimal_spot_price(conn, instance_type, zone)
 
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, count=count,
-          placement=zone)
+                                    instance_type=instance_type, count=count,
+                                    placement=zone,
+                                    network_interfaces=network_interfaces)
       else:
         conn.run_instances(image_id, count, count, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, placement=zone)
+                           instance_type=instance_type, placement=zone,
+                           network_interfaces=network_interfaces)
 
       instance_ids = []
       public_ips = []
@@ -477,6 +537,7 @@ class EC2Agent(BaseAgent):
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
+
         public_ips = self.diff(public_ips, active_public_ips)
         private_ips = self.diff(private_ips, active_private_ips)
         instance_ids = self.diff(instance_ids, active_instances)

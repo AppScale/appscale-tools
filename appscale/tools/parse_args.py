@@ -225,6 +225,10 @@ class ParseArgs(object):
           " service")
       self.parser.add_argument('--EC2_URL',
         help="a URL that identifies where an EC2-compatible service runs")
+      self.parser.add_argument('--aws_vpc_id',
+        help="the id for the vpc in the aws region to spawn instances in.")
+      self.parser.add_argument('--aws_subnet_id',
+        help="the id for the subnet in the aws region to spawn instances in.")
 
       # Google Compute Engine-specific flags
       gce_group = self.parser.add_mutually_exclusive_group()
