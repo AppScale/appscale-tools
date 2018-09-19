@@ -91,6 +91,8 @@ class EC2Agent(BaseAgent):
 
   DESCRIBE_INSTANCES_RETRY_COUNT = 3
 
+  # AppScale resource tag.
+  RESOURCE_TAG = 'appscale-deployment'
 
   # The region that instances should be started in and terminated from, if the
   # user does not specify a zone.
@@ -167,6 +169,13 @@ class EC2Agent(BaseAgent):
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     LocalState.write_key_file(ssh_key, key_pair.material)
 
+    subnet_id = parameters[self.PARAM_SUBNET_ID]
+    AppScaleLogger.log('Tagging subnet for future use: {0}'.format(subnet_id))
+    conn.create_tags(subnet_id, tags={self.RESOURCE_TAG: keyname})
+
+    # Test retrieving subnet by tag.
+    self.get_subnet_by_tag(parameters, test=True)
+
     self.create_security_group(parameters, group)
     sg = next(g for g in conn.get_all_security_groups() if g.name == group)
     self.authorize_security_group(parameters, sg.id, from_port=1,
@@ -179,6 +188,50 @@ class EC2Agent(BaseAgent):
                                   to_port=-1, ip_protocol='icmp',
                                   cidr_ip='0.0.0.0/0')
     return True
+
+
+  def get_subnet_by_tag(self, parameters, test=False):
+    """Retrieves a subnet with a deployment specific tag.
+
+    Args:
+      parameters: A dict that contains the credentials necessary to authenticate
+        with AWS.
+      test: A boolean indicating we are testing if the subnet was
+        successfully tagged. When this is True parameters[self.PARAM_SUBNET_ID]
+        should be defined.
+    Raises:
+      AgentConfigurationException: If the subnet was not successfully tagged.
+      AgentRuntimeException: If the subnet could not be found by the tag.
+    """
+    credentials = parameters[self.PARAM_CREDENTIALS]
+    keyname = parameters[self.PARAM_KEYNAME]
+
+    vpc_conn = boto.vpc.connect_to_region(parameters[self.PARAM_REGION],
+        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
+        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
+
+    tag_filter = {'tag:{}'.format(self.RESOURCE_TAG): keyname}
+    subnet = vpc_conn.get_all_subnets(filters=tag_filter)
+    subnet_id = parameters.get(self.PARAM_SUBNET_ID)
+
+    if test:
+      # For testing, make additional checks for conditions that would make
+      # the agent behave strangely.
+      if not subnet:
+        raise AgentConfigurationException('Failed to tag subnet {} with tag '
+                                          '{}'.format(subnet_id, tag_filter))
+      elif len(subnet) > 1:
+        raise AgentConfigurationException('Found multiple subnets with tag '
+                                          '{}'.format(tag_filter))
+      elif subnet[0].id != subnet_id:
+        raise AgentConfigurationException('Found a different subnet with '
+                                          'tag {}'.format(tag_filter))
+    else:
+      # Since the testing was already run at the beginning, perform less checks.
+      if not subnet:
+        raise AgentRuntimeException('Failed to retrieve subnet with tag '
+                                    '{}'.format(tag_filter))
+    return subnet[0]
 
 
   def create_security_group(self, parameters, group):
@@ -501,6 +554,7 @@ class EC2Agent(BaseAgent):
           self.handle_failure('Failed to invoke describe_instances')
         attempts += 1
 
+      # Get security group.
       conn = self.open_connection(parameters)
       try:
         sg = next(sg for sg in conn.get_all_security_groups()
@@ -508,11 +562,14 @@ class EC2Agent(BaseAgent):
       except StopIteration:
         raise AgentRuntimeException('Could not find security group with name '
                                     '{}!'.format(group))
-      subnet_id = parameters[self.PARAM_SUBNET_ID]
 
+      # Get subnet by tag.
+      subnet = self.get_subnet_by_tag(parameters)
+
+      # Create network interface specification.
       network_interface = NetworkInterfaceSpecification(
         associate_public_ip_address=public_ip_needed,
-        groups=[sg.id], subnet_id=subnet_id)
+        groups=[sg.id], subnet_id=subnet.id)
       network_interfaces = NetworkInterfaceCollection(network_interface)
 
       if spot:
