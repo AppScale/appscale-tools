@@ -469,18 +469,12 @@ class AzureAgent(BaseAgent):
     availability_set_names = [availability_set.name for availability_set in
                               compute_client.availability_sets.list(resource_group)]
     if lb_avail_set_name not in availability_set_names:
-        lb_avail_set = self.create_lb_availability_set(compute_client,
-                                                       lb_avail_set_name,
-                                                       parameters)
-        if lb_avail_set:
-            availability_set = SubResource(lb_avail_set.id)
+        lb_avail_set = self.create_lb_availability_set(
+            compute_client, lb_avail_set_name, parameters)
+    else:
+        lb_avail_set = compute_client.availability_sets.get(resource_group, lb_avail_set_name)
 
-        else:
-            availability_set = None
-            AppScaleLogger.log("Unable to create an Availability Set '{0}'."
-                               "Check the Azure Portal for more details."
-                               .format(lb_avail_set_name))
-
+    availability_set = SubResource(lb_avail_set.id)
     using_disks = parameters.get(self.PARAM_DISKS, False)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
