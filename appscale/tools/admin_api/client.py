@@ -100,6 +100,11 @@ class AdminClient(object):
       body['inboundServices'] = ['INBOUND_SERVICE_{}'.format(service).upper()
                                  for service in version.inbound_services]
 
+    if version.manual_scaling:
+      body['manualScaling'] = version.manual_scaling
+    elif version.automatic_scaling:
+      body['automaticScaling'] = version.automatic_scaling
+
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)
     operation = self.extract_response(response)

@@ -41,6 +41,8 @@ class Version(object):
     self.env_variables = {}
     self.inbound_services = []
     self.threadsafe = None
+    self.manual_scaling = None
+    self.automatic_scaling = None
 
     # Records whether this was populated from a YAML or XML file.
     self.configuration_type = None
@@ -76,6 +78,22 @@ class Version(object):
     version.env_variables = app_yaml.get('env_variables', {})
     version.inbound_services = app_yaml.get('inbound_services', [])
 
+    automatic_scaling = app_yaml.get('automatic_scaling', None)
+    manual_scaling = app_yaml.get('manual_scaling', None)
+    if manual_scaling:
+      try:
+        version.manual_scaling = {'instances': int(manual_scaling['instances'])}
+      except StandardError:
+        raise AppEngineConfigException('Invalid app.yaml: manual_scaling invalid.')
+    elif automatic_scaling:
+        try:
+            version.automatic_scaling = {'standardSchedulerSettings': {
+                'minInstances': int(automatic_scaling['min_instances']),
+                'maxInstances': int(automatic_scaling['max_instances'])
+            }}
+        except StandardError:
+            raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
+
     if version.runtime in ('python27', 'java'):
       try:
         version.threadsafe = app_yaml['threadsafe']
@@ -99,7 +117,8 @@ class Version(object):
     Returns:
       A Version object.
     """
-    runtime_element = root.find(''.join([XML_NAMESPACE, 'runtime']))
+    qname = lambda name: ''.join([XML_NAMESPACE, name])
+    runtime_element = root.find(qname('runtime'))
     runtime = 'java7'
     if runtime_element is not None:
       runtime = runtime_element.text
@@ -107,12 +126,12 @@ class Version(object):
     version = Version(runtime)
     version.configuration_type = 'appengine-web.xml'
 
-    application_element = root.find(''.join([XML_NAMESPACE, 'application']))
+    application_element = root.find(qname('application'))
     if application_element is not None:
       version.project_id = application_element.text
 
-    service_element = root.find(''.join([XML_NAMESPACE, 'service']))
-    module_element = root.find(''.join([XML_NAMESPACE, 'module']))
+    service_element = root.find(qname('service'))
+    module_element = root.find(qname('module'))
     if service_element is not None and module_element is not None:
       raise AppEngineConfigException(
         'Invalid appengine-web.xml: If "service" is defined, "module" cannot '
@@ -127,16 +146,32 @@ class Version(object):
     if not version.service_id:
       version.service_id = DEFAULT_SERVICE
 
-    env_vars_element = root.find(''.join([XML_NAMESPACE, 'env-variables']))
+    env_vars_element = root.find(qname('env-variables'))
     if env_vars_element is not None:
       version.env_variables = {var.attrib['name']: var.attrib['value']
                                for var in env_vars_element}
 
-    inbound_services = root.find(''.join([XML_NAMESPACE, 'inbound-services']))
+    inbound_services = root.find(qname('inbound-services'))
     if inbound_services is not None:
       version.inbound_services = [service.text for service in inbound_services]
 
-    threadsafe_element = root.find(''.join([XML_NAMESPACE, 'threadsafe']))
+    automatic_scaling = root.find(qname('automatic-scaling'))
+    manual_scaling = root.find(qname('manual-scaling'))
+    if manual_scaling:
+        try:
+            version.manual_scaling = {
+                'instances': int(manual_scaling.findtext(qname('instances')))}
+        except StandardError:
+            raise AppEngineConfigException('Invalid app.yaml: manual_scaling invalid.')
+    elif automatic_scaling:
+        try:
+            version.automatic_scaling = {'standardSchedulerSettings': {
+                'minInstances': int(automatic_scaling.findtext(qname('min-instances'))),
+                'maxInstances': int(automatic_scaling.findtext(qname('max-instances')))}}
+        except StandardError:
+            raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
+
+    threadsafe_element = root.find(qname('threadsafe'))
     if threadsafe_element is None:
       raise AppEngineConfigException(
         'Invalid appengine-web.xml: missing "threadsafe" element')
