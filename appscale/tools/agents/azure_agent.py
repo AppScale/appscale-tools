@@ -527,9 +527,9 @@ class AzureAgent(BaseAgent):
     except CloudError as error:
       logging.exception("Azure agent received a CloudError while creating an "
                         "availability set.")
-      raise AgentConfigurationException("Unable to create an Availability Set "
-                                        "{0}: {1}".format(lb_avail_set_name,
-                                                          error.message))
+      raise AgentRuntimeException("Unable to create an Availability Set "
+                                  "{0}: {1}".format(lb_avail_set_name,
+                                                    error.message))
     except ClientException as e:
       logging.exception("ClientException received while attempting to contact Azure.")
       raise AgentConfigurationException("Unable to communicate with Azure "
