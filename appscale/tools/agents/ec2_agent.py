@@ -156,13 +156,16 @@ class EC2Agent(BaseAgent):
         "value, or erase it to have one automatically generated for you." \
         .format(keyname))
 
-    security_groups = conn.get_all_security_groups()
-    for security_group in security_groups:
-      if security_group.name == group:
-        self.handle_failure("Security group {0} is already registered. Please" \
-          " change the 'group' specified in your AppScalefile to a different " \
-          "value, or erase it to have one automatically generated for you." \
-          .format(group))
+    try:
+      self.get_security_group_by_name(parameters, group)
+      self.handle_failure("Security group {0} is already registered. Please "
+                          "change the 'group' specified in your AppScalefile "
+                          "to a different value, or erase it to have one "
+                          "automatically generated for you.".format(group))
+    except AgentRuntimeException:
+      # If this is raised, the group does not exist.
+      pass
+
 
     AppScaleLogger.log("Creating key pair: {0}".format(keyname))
     key_pair = conn.create_key_pair(keyname)
@@ -176,8 +179,8 @@ class EC2Agent(BaseAgent):
     # Test retrieving subnet by tag.
     self.get_subnet_by_tag(parameters, test=True)
 
-    self.create_security_group(parameters, group)
-    sg = next(g for g in conn.get_all_security_groups() if g.name == group)
+    sg = self.create_security_group(parameters, group)
+
     self.authorize_security_group(parameters, sg.id, from_port=1,
                                   to_port=65535, ip_protocol='udp',
                                   cidr_ip='0.0.0.0/0')
@@ -241,6 +244,8 @@ class EC2Agent(BaseAgent):
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
       group: A str that names the group that should be created.
+    Returns:
+      The 'boto.ec2.securitygroup.SecurityGroup' that was just created.
     Raises:
       AgentRuntimeException: If the security group could not be created.
     """
@@ -256,15 +261,40 @@ class EC2Agent(BaseAgent):
       except EC2ResponseError:
         pass
       try:
-        if any(sg.name == group for sg in conn.get_all_security_groups()):
-          return
-      except EC2ResponseError:
+        return self.get_security_group_by_name(parameters, group)
+      except (EC2ResponseError, AgentRuntimeException):
         pass
       time.sleep(self.SLEEP_TIME)
       retries_left -= 1
 
     raise AgentRuntimeException("Couldn't create security group with " \
       "name {0}".format(group))
+
+
+  def get_security_group_by_name(self, parameters, group=None):
+    """Gets a security group in AWS with the given name.
+
+    Args:
+      parameters: A dict that contains the credentials necessary to authenticate
+        with AWS.
+      group: A str that names the group that should be found. Or None to
+        use the group in parameters.
+    Returns:
+      The 'boto.ec2.securitygroup.SecurityGroup' that has the correct group
+      name.
+    Raises:
+      AgentRuntimeException: If the security group could not be found.
+    """
+    # Get security group.
+    if not group:
+      group = parameters[self.PARAM_GROUP]
+    conn = self.open_connection(parameters)
+    try:
+      return next(sg for sg in conn.get_all_security_groups()
+                  if sg.name == group)
+    except (EC2ResponseError, StopIteration):
+      raise AgentRuntimeException('Could not find security group with name '
+                                  '{}!'.format(group))
 
 
   def authorize_security_group(self, parameters, group_id, from_port, to_port,
@@ -298,8 +328,7 @@ class EC2Agent(BaseAgent):
       except EC2ResponseError:
         pass
       try:
-        group_info = next(g for g in conn.get_all_security_groups()
-                          if g.id == group_id)
+        group_info = self.get_security_group_by_name(parameters)
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
@@ -554,14 +583,8 @@ class EC2Agent(BaseAgent):
           self.handle_failure('Failed to invoke describe_instances')
         attempts += 1
 
-      # Get security group.
-      conn = self.open_connection(parameters)
-      try:
-        sg = next(sg for sg in conn.get_all_security_groups()
-                  if sg.name == group)
-      except StopIteration:
-        raise AgentRuntimeException('Could not find security group with name '
-                                    '{}!'.format(group))
+      # Get security group by name.
+      sg = self.get_security_group_by_name(parameters, group)
 
       # Get subnet by tag.
       subnet = self.get_subnet_by_tag(parameters)
@@ -571,6 +594,8 @@ class EC2Agent(BaseAgent):
         associate_public_ip_address=public_ip_needed,
         groups=[sg.id], subnet_id=subnet.id)
       network_interfaces = NetworkInterfaceCollection(network_interface)
+
+      conn = self.open_connection(parameters)
 
       if spot:
         price = parameters[self.PARAM_SPOT_PRICE] or \
@@ -922,12 +947,20 @@ class EC2Agent(BaseAgent):
 
     AppScaleLogger.log("Deleting security group {0}".format(
       parameters[self.PARAM_GROUP]))
-    while True:
+
+    retries_left = self.SECURITY_GROUP_RETRY_COUNT
+    while retries_left:
       try:
-        conn.delete_security_group(parameters[self.PARAM_GROUP])
+        sg = self.get_security_group_by_name(parameters)
+        conn.delete_security_group(group_id=sg.id)
         return
       except EC2ResponseError:
-        time.sleep(5)
+        time.sleep(self.SLEEP_TIME)
+        retries_left -= 1
+      except AgentRuntimeException:
+        AppScaleLogger.log('Could not find security group {}, delete '
+                           'successful.'.format(parameters[self.PARAM_GROUP]))
+        return
 
 
   def get_optimal_spot_price(self, conn, instance_type, zone):
