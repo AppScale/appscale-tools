@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-class BaseAgent:
+class BaseAgent(object):
   """BaseAgent class defines the interface that must be implemented by
   each cloud agent."""
 

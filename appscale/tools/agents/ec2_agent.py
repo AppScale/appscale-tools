@@ -172,13 +172,6 @@ class EC2Agent(BaseAgent):
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     LocalState.write_key_file(ssh_key, key_pair.material)
 
-    subnet_id = parameters[self.PARAM_SUBNET_ID]
-    AppScaleLogger.log('Tagging subnet for future use: {0}'.format(subnet_id))
-    conn.create_tags(subnet_id, tags={self.RESOURCE_TAG: keyname})
-
-    # Test retrieving subnet by tag.
-    self.get_subnet_by_tag(parameters, test=True)
-
     sg = self.create_security_group(parameters, group)
 
     self.authorize_security_group(parameters, sg.id, from_port=1,
@@ -191,50 +184,6 @@ class EC2Agent(BaseAgent):
                                   to_port=-1, ip_protocol='icmp',
                                   cidr_ip='0.0.0.0/0')
     return True
-
-
-  def get_subnet_by_tag(self, parameters, test=False):
-    """Retrieves a subnet with a deployment specific tag.
-
-    Args:
-      parameters: A dict that contains the credentials necessary to authenticate
-        with AWS.
-      test: A boolean indicating we are testing if the subnet was
-        successfully tagged. When this is True parameters[self.PARAM_SUBNET_ID]
-        should be defined.
-    Raises:
-      AgentConfigurationException: If the subnet was not successfully tagged.
-      AgentRuntimeException: If the subnet could not be found by the tag.
-    """
-    credentials = parameters[self.PARAM_CREDENTIALS]
-    keyname = parameters[self.PARAM_KEYNAME]
-
-    vpc_conn = boto.vpc.connect_to_region(parameters[self.PARAM_REGION],
-        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
-        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
-
-    tag_filter = {'tag:{}'.format(self.RESOURCE_TAG): keyname}
-    subnet = vpc_conn.get_all_subnets(filters=tag_filter)
-    subnet_id = parameters.get(self.PARAM_SUBNET_ID)
-
-    if test:
-      # For testing, make additional checks for conditions that would make
-      # the agent behave strangely.
-      if not subnet:
-        raise AgentConfigurationException('Failed to tag subnet {} with tag '
-                                          '{}'.format(subnet_id, tag_filter))
-      elif len(subnet) > 1:
-        raise AgentConfigurationException('Found multiple subnets with tag '
-                                          '{}'.format(tag_filter))
-      elif subnet[0].id != subnet_id:
-        raise AgentConfigurationException('Found a different subnet with '
-                                          'tag {}'.format(tag_filter))
-    else:
-      # Since the testing was already run at the beginning, perform less checks.
-      if not subnet:
-        raise AgentRuntimeException('Failed to retrieve subnet with tag '
-                                    '{}'.format(tag_filter))
-    return subnet[0]
 
 
   def create_security_group(self, parameters, group):
@@ -251,7 +200,7 @@ class EC2Agent(BaseAgent):
     """
     AppScaleLogger.log('Creating security group: {0}'.format(group))
     conn = self.open_connection(parameters)
-    specified_vpc = parameters[self.PARAM_VPC_ID]
+    specified_vpc = parameters.get(self.PARAM_VPC_ID)
 
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
@@ -297,8 +246,8 @@ class EC2Agent(BaseAgent):
                                   '{}!'.format(group))
 
 
-  def authorize_security_group(self, parameters, group_id, from_port, to_port,
-    ip_protocol, cidr_ip):
+  def authorize_security_group(self, parameters, group_id, from_port,
+                               to_port, ip_protocol, cidr_ip, group_name=None):
     """Opens up traffic on the given port range for traffic of the named type.
 
     Args:
@@ -313,6 +262,10 @@ class EC2Agent(BaseAgent):
         allowed.
       cidr_ip: A str that names the IP range that traffic should be allowed
         from.
+      group_name: A str that contains the name of the group whose ports
+        should be opened. Default is None since EC2 can just use group_id but
+        Euca will override to the group name in the parameters. EC2 cannot
+        use both group_id and group_name.
     Raises:
       AgentRuntimeException: If the ports could not be opened on the security
       group.
@@ -323,8 +276,9 @@ class EC2Agent(BaseAgent):
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.authorize_security_group(group_id=group_id, from_port=from_port,
-          to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
+        conn.authorize_security_group(group_name=group_name, group_id=group_id,
+                                      from_port=from_port, to_port=to_port,
+                                      ip_protocol=ip_protocol, cidr_ip=cidr_ip)
       except EC2ResponseError:
         pass
       try:
@@ -395,35 +349,36 @@ class EC2Agent(BaseAgent):
           self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
           params[self.PARAM_ZONE])
 
-    # VPC must be specified.
-    if not args.get(self.PARAM_VPC_ID):
-      raise AgentConfigurationException('VPC id is a required parameter for '
-                                        'launching in EC2.')
-    # VPC must exist.
-    credentials = params[self.PARAM_CREDENTIALS]
-    vpc_conn = boto.vpc.connect_to_region(params[self.PARAM_REGION],
-        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
-        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
+    # If VPC id and Subnet id are not set assume classic networking should be
+    # used.
+    vpc_id = args.get(self.PARAM_VPC_ID)
+    subnet_id = args.get(self.PARAM_SUBNET_ID)
+    if not vpc_id and not subnet_id:
+      AppScaleLogger.log('Using Classic Networking since subnet and vpc were '
+                         'not specified.')
+    # All further checks are for VPC Networking.
+    elif (vpc_id or subnet_id) and not (vpc_id and subnet_id):
+      raise AgentConfigurationException('Both VPC id and Subnet id must be '
+                                        'specified to use VPC Networking.')
+    else:
+      # VPC must exist.
+      vpc_conn = self.open_vpc_connection(params)
 
-    params[self.PARAM_VPC_ID] = args[self.PARAM_VPC_ID]
-    try:
-      vpc_conn.get_all_vpcs(params[self.PARAM_VPC_ID])
-    except EC2ResponseError:
-      raise AgentConfigurationException('Specified vpc {} does not '
-                                        'exist!'.format(params[self.PARAM_VPC_ID]))
-    # Subnet must be specified.
-    if not args.get(self.PARAM_SUBNET_ID):
-      raise AgentConfigurationException('Subnet id is a required parameter for '
-                                        'launching in EC2.')
+      params[self.PARAM_VPC_ID] = args[self.PARAM_VPC_ID]
+      try:
+        vpc_conn.get_all_vpcs(params[self.PARAM_VPC_ID])
+      except EC2ResponseError:
+        raise AgentConfigurationException('Specified vpc {} does not '
+                                          'exist!'.format(params[self.PARAM_VPC_ID]))
 
-    # Subnet must exist.
-    all_subnets = vpc_conn.get_all_subnets(filters={'vpcId': params[self.PARAM_VPC_ID]})
-    params[self.PARAM_SUBNET_ID] = args[self.PARAM_SUBNET_ID]
+      # Subnet must exist.
+      all_subnets = vpc_conn.get_all_subnets(filters={'vpcId': params[self.PARAM_VPC_ID]})
+      params[self.PARAM_SUBNET_ID] = args[self.PARAM_SUBNET_ID]
 
-    if not any(subnet.id == params[self.PARAM_SUBNET_ID] for subnet in all_subnets):
-      raise AgentConfigurationException('Specified subnet {} does not exist '
-                                        'in vpc {}!'.format(params[self.PARAM_SUBNET_ID],
-                                                            params[self.PARAM_VPC_ID]))
+      if not any(subnet.id == params[self.PARAM_SUBNET_ID] for subnet in all_subnets):
+        raise AgentConfigurationException('Specified subnet {} does not exist '
+                                          'in vpc {}!'.format(params[self.PARAM_SUBNET_ID],
+                                                              params[self.PARAM_VPC_ID]))
     return params
 
 
@@ -583,18 +538,23 @@ class EC2Agent(BaseAgent):
           self.handle_failure('Failed to invoke describe_instances')
         attempts += 1
 
-      # Get security group by name.
-      sg = self.get_security_group_by_name(parameters, group)
+      # Get subnet from parameters.
+      subnet = parameters.get(self.PARAM_SUBNET_ID)
 
-      # Get subnet by tag.
-      subnet = self.get_subnet_by_tag(parameters)
+      network_interfaces = None
+      groups = None
 
-      # Create network interface specification.
-      network_interface = NetworkInterfaceSpecification(
-        associate_public_ip_address=public_ip_needed,
-        groups=[sg.id], subnet_id=subnet.id)
-      network_interfaces = NetworkInterfaceCollection(network_interface)
-
+      # A subnet indicates we're using VPC Networking.
+      if subnet:
+        # Get security group by name.
+        sg = self.get_security_group_by_name(parameters, group)
+        # Create network interface specification.
+        network_interface = NetworkInterfaceSpecification(
+          associate_public_ip_address=public_ip_needed,
+          groups=[sg.id], subnet_id=subnet.id)
+        network_interfaces = NetworkInterfaceCollection(network_interface)
+      else:
+        groups = [group]
       conn = self.open_connection(parameters)
 
       if spot:
@@ -603,11 +563,12 @@ class EC2Agent(BaseAgent):
 
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
                                     instance_type=instance_type, count=count,
-                                    placement=zone,
+                                    placement=zone, security_groups=groups,
                                     network_interfaces=network_interfaces)
       else:
         conn.run_instances(image_id, count, count, key_name=keyname,
                            instance_type=instance_type, placement=zone,
+                           security_groups=groups,
                            network_interfaces=network_interfaces)
 
       instance_ids = []
@@ -947,7 +908,6 @@ class EC2Agent(BaseAgent):
 
     AppScaleLogger.log("Deleting security group {0}".format(
       parameters[self.PARAM_GROUP]))
-
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
@@ -1007,6 +967,20 @@ class EC2Agent(BaseAgent):
     return boto.ec2.connect_to_region(parameters[self.PARAM_REGION],
       aws_access_key_id=credentials['EC2_ACCESS_KEY'],
       aws_secret_access_key=credentials['EC2_SECRET_KEY'])
+
+  def open_vpc_connection(self, parameters):
+    """
+    Initialize a connection to the back-end VPC APIs.
+
+    Args:
+      parameters: A dictionary containing the 'credentials' parameter.
+    Returns:
+      An instance of Boto VPCConnection
+    """
+    credentials = parameters[self.PARAM_CREDENTIALS]
+    return boto.vpc.connect_to_region(parameters[self.PARAM_REGION],
+        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
+        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
 
   def handle_failure(self, msg):
     """ Log the specified error message and raise an AgentRuntimeException

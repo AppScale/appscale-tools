@@ -4,9 +4,6 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from ec2_agent import EC2Agent
 from urlparse import urlparse
 
-__author__ = 'hiranya'
-__email__ = 'hiranya@appscale.com'
-
 class EucalyptusAgent(EC2Agent):
   """
   Eucalyptus infrastructure agent which can be used to spawn and terminate
@@ -67,6 +64,33 @@ class EucalyptusAgent(EC2Agent):
       is_secure=(result.scheme == 'https'),
       api_version=self.EUCA_API_VERSION, debug=debug_level)
 
+  def authorize_security_group(self, parameters, group_id, from_port,
+                               to_port, ip_protocol, cidr_ip, group_name=None):
+    """Opens up traffic on the given port range for traffic of the named type.
+
+    Args:
+      parameters: A dict that contains the credentials necessary to authenticate
+        with Euca.
+      group_id: A str that contains the id of the group whose ports should be
+        opened.
+      from_port: An int that names the first port that access should be allowed
+        on.
+      to_port: An int that names the last port that access should be allowed on.
+      ip_protocol: A str that indicates if TCP, UDP, or ICMP traffic should be
+        allowed.
+      cidr_ip: A str that names the IP range that traffic should be allowed
+        from.
+      group_name: A str that contains the name of the group whose ports
+        should be opened. Default is None since EC2 can just use group_id but
+        Euca will override to the group name in the parameters. EC2 cannot
+        use both group_id and group_name.
+    Raises:
+      AgentRuntimeException: If the ports could not be opened on the security
+      group.
+    """
+    super(EucalyptusAgent, self).authorize_security_group(
+        parameters, group_id, from_port, to_port, ip_protocol, cidr_ip,
+        group_name=parameters[self.PARAM_GROUP])
 
   def does_zone_exist(self, parameters):
     """
