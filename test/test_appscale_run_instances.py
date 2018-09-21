@@ -23,6 +23,7 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
+from appscale.tools.agents.base_agent import AgentRuntimeException
 from appscale.tools.agents.ec2_agent import EC2Agent
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
@@ -146,9 +147,10 @@ group: {1}
     udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
     tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
     icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
-    group = flexmock(name=self.group, rules=[tcp_rule, udp_rule, icmp_rule])
+    group = flexmock(name=self.group, id='sg-id',
+                     rules=[tcp_rule, udp_rule, icmp_rule])
     self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args(self.group).and_return([group])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([group])
 
 
     # mock out creating the keypair
@@ -159,14 +161,17 @@ group: {1}
       .and_return(fake_key)
 
     # and the same for the security group
-    self.fake_ec2.should_receive('create_security_group').with_args(self.group,
-      str).and_return()
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=-1, to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('create_security_group').with_args(
+        self.group, str, None).and_return()
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='udp',
+        cidr_ip='0.0.0.0/0', group_name=None)
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='tcp',
+        cidr_ip='0.0.0.0/0', group_name=None)
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=-1, to_port=-1, ip_protocol='icmp',
+        cidr_ip='0.0.0.0/0', group_name=None)
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
@@ -279,7 +284,7 @@ group: {1}
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
                 "-o UserKnownHostsFile=/dev/null root@{} ".format(IP_1),
                 False, 5, stdin="chmod +x /etc/init.d/appcontroller")
-    
+
     self.local_state.should_receive('shell').\
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
@@ -447,9 +452,10 @@ group: {1}
       availability_zone='my-zone-1b').and_return([fake_entry])
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.1', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
 
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
@@ -631,10 +637,10 @@ group: {1}
     self.setup_ec2_mocks()
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
-
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.23', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
 
