@@ -80,7 +80,11 @@ class Version(object):
 
     automatic_scaling = app_yaml.get('automatic_scaling', None)
     manual_scaling = app_yaml.get('manual_scaling', None)
-    if manual_scaling:
+    if automatic_scaling and manual_scaling:
+      raise AppEngineConfigException(
+        'Invalid app.yaml: If "automatic_scaling" is defined, "manual_scaling" '
+        'cannot be defined.')
+    elif manual_scaling:
       try:
         version.manual_scaling = {'instances': int(manual_scaling['instances'])}
       except StandardError:
@@ -157,7 +161,11 @@ class Version(object):
 
     automatic_scaling = root.find(qname('automatic-scaling'))
     manual_scaling = root.find(qname('manual-scaling'))
-    if manual_scaling:
+    if automatic_scaling and manual_scaling:
+      raise AppEngineConfigException(
+        'Invalid appengine-web.xml: If "automatic-scaling" is defined, '
+        '"manual-scaling" cannot be defined.')
+    elif manual_scaling:
         try:
             version.manual_scaling = {
                 'instances': int(manual_scaling.findtext(qname('instances')))}
