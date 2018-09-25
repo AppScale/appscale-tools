@@ -551,7 +551,7 @@ class EC2Agent(BaseAgent):
         # Create network interface specification.
         network_interface = NetworkInterfaceSpecification(
           associate_public_ip_address=public_ip_needed,
-          groups=[sg.id], subnet_id=subnet.id)
+          groups=[sg.id], subnet_id=subnet)
         network_interfaces = NetworkInterfaceCollection(network_interface)
       else:
         groups = [group]
