@@ -354,7 +354,6 @@ class GCEAgent(BaseAgent):
       all_ssh_keys: A str that contains all of the SSH keys that are
         currently passed in to GCE instances.
     """
-    our_public_ssh_key = None
     public_ssh_key_location = LocalState.LOCAL_APPSCALE_PATH + \
       parameters[self.PARAM_KEYNAME] + ".pub"
     with open(public_ssh_key_location) as file_handle:
@@ -366,7 +365,7 @@ class GCEAgent(BaseAgent):
     if all_ssh_keys:
       new_all_ssh_keys = our_public_ssh_keys + "\n" + all_ssh_keys
     else:
-      new_all_ssh_keys = our_public_ssh_key
+      new_all_ssh_keys = our_public_ssh_keys
 
     gce_service, credentials = self.open_connection(parameters)
     http = httplib2.Http()
