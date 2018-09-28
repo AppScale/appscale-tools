@@ -10,6 +10,9 @@ from appscale.tools.custom_exceptions import AppEngineConfigException
 SIMPLE_APP_YAML = """
 runtime: python27
 threadsafe: true
+handlers:
+- url: .*
+  script: main.app
 """.lstrip()
 
 AE_WEB_XML_TEMPLATE = """
@@ -82,7 +85,8 @@ class TestVersion(unittest.TestCase):
     self.assertListEqual(version.inbound_services, ['mail', 'warmup'])
 
     # Check empty threadsafe value for non-applicable runtime.
-    app_yaml = yaml.safe_load('runtime: go\n')
+    app_yaml = yaml.safe_load(
+      'runtime: go\nhandlers:\n- url: .*\n  script: _go_app\n')
     version = Version.from_yaml(app_yaml)
     self.assertIsNone(version.threadsafe)
 
