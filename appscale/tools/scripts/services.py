@@ -20,7 +20,7 @@ version_helper.ensure_valid_python_is_used()
 class AppScaleServices(object):
   # The usage that should be displayed to users if they call 'appscale services'
   # with a bad directive or ask for help.
-  headers = ["\nUsage: appscale services command [<args>]\n\n"
+  headers = ["\nUsage: appscale services command [<args>]\n\n" +
              "Available commands:\n", "\n"]
   table = [["delete <project_id> <service_id>",
             "Removes <project_id> <service_id> from the current deployment."]]

@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import
 
-import os
 import tarfile
 import zipfile
 from xml.etree import ElementTree

@@ -126,8 +126,8 @@ class OpenStackAgent(EC2Agent):
          i.key_name.startswith(parameters[self.PARAM_KEYNAME]):
           if i.id not in instances_in_state.keys():
             instances_in_state[i.id] = 1 # mark instance done
-    if len(instances_in_state.keys()) >= len(instance_ids):
-      return True
-    if time.time() - time_start > max_wait_time:
-      return False
+      if len(instances_in_state.keys()) >= len(instance_ids):
+        return True
+      if time.time() - time_start > max_wait_time:
+        return False
 

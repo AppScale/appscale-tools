@@ -82,7 +82,7 @@ setup(
       'appscale-add-instances=appscale.tools.scripts.add_instances:main',
       'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
       'appscale-show-stats=appscale.tools.scripts.show_stats:main',
-      'appscale-describe-instances='
+      'appscale-describe-instances=' +
         'appscale.tools.scripts.describe_instances:main',
       'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
       'appscale-get-property=appscale.tools.scripts.get_property:main',
@@ -91,7 +91,7 @@ setup(
       'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
       'appscale-run-instances=appscale.tools.scripts.run_instances:main',
       'appscale-set-property=appscale.tools.scripts.set_property:main',
-      'appscale-terminate-instances='
+      'appscale-terminate-instances=' +
         'appscale.tools.scripts.terminate_instances:main',
       'appscale-upgrade=appscale.tools.scripts.upgrade:main',
       'appscale-upload-app=appscale.tools.scripts.upload_app:main'

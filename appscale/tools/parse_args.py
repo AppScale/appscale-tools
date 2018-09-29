@@ -96,7 +96,7 @@ class ParseArgs(object):
     "Standard_DS14", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
     "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
     "Standard_DS14_v2", "Standard_DS15_v2", "Standard_F4", "Standard_F8",
-    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s"
+    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s",
     "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
     "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"]
 

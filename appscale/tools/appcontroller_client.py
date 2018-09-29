@@ -105,6 +105,12 @@ class AppControllerClient():
     signal.alarm(timeout_time)  # trigger alarm in timeout_time seconds
     try:
       retval = function(*args)
+
+    except ssl.SSLError:
+      # these are intermittent, so don't decrement our retry count for this
+      signal.alarm(0)  # turn off the alarm before we retry
+      return self.run_with_timeout(timeout_time, num_retries, function, *args)
+
     except socket.error as exception:
       signal.alarm(0)  # turn off the alarm before we retry
       if num_retries > 0:
@@ -115,10 +121,6 @@ class AppControllerClient():
         raise AppControllerException("Got exception from socket: {}".format(
           exception))
 
-    except ssl.SSLError:
-      # these are intermittent, so don't decrement our retry count for this
-      signal.alarm(0)  # turn off the alarm before we retry
-      return self.run_with_timeout(timeout_time, num_retries, function, *args)
     finally:
       signal.alarm(0)  # turn off the alarm
 
