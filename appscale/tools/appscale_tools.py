@@ -964,7 +964,7 @@ class AppScaleTools(object):
       version.project_id = options.project
 
     if version.project_id is None:
-      if version.configuration_type == 'app.yaml':
+      if version.config_type == 'app.yaml':
         message = 'Specify --project or define "application" in your app.yaml'
       else:
         message = 'Define "application" in your appengine-web.xml'
