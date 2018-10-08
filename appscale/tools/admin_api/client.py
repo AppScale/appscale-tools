@@ -100,6 +100,10 @@ class AdminClient(object):
       body['inboundServices'] = ['INBOUND_SERVICE_{}'.format(service).upper()
                                  for service in version.inbound_services]
 
+    if version.handlers is not None:
+      body['handlers'] = [handler.to_api_dict()
+                          for handler in version.handlers]
+
     if version.manual_scaling:
       body['manualScaling'] = version.manual_scaling
     elif version.automatic_scaling:

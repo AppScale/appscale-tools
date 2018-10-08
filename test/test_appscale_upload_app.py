@@ -249,7 +249,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     argv = ['--keyname', self.keyname, '--file', source_path, '--test']
     options = ParseArgs(argv, self.function).args
 
-    version = Version('python27')
+    version = Version('python27', 'app.yaml')
     version.project_id = app_id
 
     flexmock(LocalState).should_receive('extract_tgz_app_to_dir').\
@@ -279,7 +279,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     self.assertRaises(AdminError, AppScaleTools.upload_app, options)
 
     # An application with the PHP runtime should be deployed successfully.
-    version = Version('php')
+    version = Version('php', 'app.yaml')
     version.project_id = app_id
     flexmock(Version).should_receive('from_tar_gz').and_return(version)
     flexmock(AdminClient).should_receive('create_version').\

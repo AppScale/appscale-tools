@@ -18,7 +18,6 @@ import urllib2
 import uuid
 from collections import Counter
 from itertools import chain
-from xml.etree import ElementTree
 
 import yaml
 from SOAPpy import faultType
@@ -183,10 +182,9 @@ class AppScaleTools(object):
 
     path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
     if options.add_to_existing:
-      public_key = path + ".pub"
       private_key = path
     else:
-      public_key, private_key = LocalState.generate_rsa_key(options.keyname,
+      _, private_key = LocalState.generate_rsa_key(options.keyname,
         options.verbose)
 
     if options.auto:
@@ -966,7 +964,7 @@ class AppScaleTools(object):
       version.project_id = options.project
 
     if version.project_id is None:
-      if version.configuration_type == 'app.yaml':
+      if version.config_type == 'app.yaml':
         message = 'Specify --project or define "application" in your app.yaml'
       else:
         message = 'Define "application" in your appengine-web.xml'
@@ -1135,7 +1133,7 @@ class AppScaleTools(object):
       AppScaleLogger.log(
         'Checking if an update is available for appscale-tools')
       latest_tools = latest_tools_version()
-    except:
+    except (URLError, ValueError):
       # Prompt the user if version metadata can't be fetched.
       if not options.test:
         response = raw_input(
