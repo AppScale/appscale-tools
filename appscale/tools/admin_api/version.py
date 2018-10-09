@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import
 
-import os
 import tarfile
 import zipfile
 from xml.etree import ElementTree
@@ -10,6 +9,7 @@ from xml.etree import ElementTree
 import yaml
 
 from appscale.tools.admin_api.client import DEFAULT_SERVICE
+from appscale.tools.admin_api.handler import Handler
 from appscale.tools.custom_exceptions import AppEngineConfigException
 from appscale.tools.utils import shortest_directory_path, shortest_path_from_list
 
@@ -19,17 +19,19 @@ XML_NAMESPACE = '{http://appengine.google.com/ns/1.0}'
 
 class Version(object):
   """ Represents an Admin API Version resource. """
-  def __init__(self, runtime):
+  def __init__(self, runtime, config_type):
     """ Creates a new Version.
 
     Args:
       runtime: A string specifying the runtime.
+      config_type: A string specifying what type of config file was used.
     """
     # TODO: Pass runtime unmodified when backend recognizes 'java7'.
     if runtime == 'java7':
       runtime = 'java'
 
     self.runtime = runtime
+    self.config_type = config_type
 
     self.project_id = None
     self.service_id = None
@@ -41,9 +43,7 @@ class Version(object):
     self.env_variables = {}
     self.inbound_services = []
     self.threadsafe = None
-
-    # Records whether this was populated from a YAML or XML file.
-    self.configuration_type = None
+    self.handlers = None
 
   @staticmethod
   def from_yaml(app_yaml):
@@ -61,9 +61,14 @@ class Version(object):
     except KeyError:
       raise AppEngineConfigException('Missing app.yaml element: runtime')
 
-    version = Version(runtime)
-    version.configuration_type = 'app.yaml'
+    try:
+      handlers = app_yaml['handlers']
+    except KeyError:
+      raise AppEngineConfigException('Missing app.yaml element: handlers')
+
+    version = Version(runtime, 'app.yaml')
     version.project_id = app_yaml.get('application')
+    version.handlers = [Handler.from_yaml(handler) for handler in handlers]
 
     if 'service' in app_yaml and 'module' in app_yaml:
       raise AppEngineConfigException(
@@ -104,8 +109,7 @@ class Version(object):
     if runtime_element is not None:
       runtime = runtime_element.text
 
-    version = Version(runtime)
-    version.configuration_type = 'appengine-web.xml'
+    version = Version(runtime, 'appengine-web.xml')
 
     application_element = root.find(''.join([XML_NAMESPACE, 'application']))
     if application_element is not None:

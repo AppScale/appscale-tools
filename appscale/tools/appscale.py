@@ -259,7 +259,6 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
-    deprecated = False
     for key, value in contents_as_yaml.items():
       if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
         os.environ[key] = value

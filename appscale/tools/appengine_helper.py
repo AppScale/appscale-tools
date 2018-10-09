@@ -95,7 +95,7 @@ class AppEngineHelper(object):
     if version.id is not None:
       AppScaleLogger.log(
         'The version element is not supported in {}. Module {} will be '
-        'overwritten.'.format(version.configuration_type, version.service_id))
+        'overwritten.'.format(version.config_type, version.service_id))
       if not test:
         response = raw_input('Continue? (y/N) ')
         if response.lower() not in ['y', 'yes']:
