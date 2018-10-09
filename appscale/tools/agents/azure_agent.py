@@ -17,6 +17,7 @@ from itertools import count, ifilter
 # Azure specific imports
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
+from azure.mgmt.compute.models import AvailabilitySet
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DataDisk
 from azure.mgmt.compute.models import DiskCreateOptionTypes
@@ -33,6 +34,7 @@ from azure.mgmt.compute.models import Sku as ComputeSku
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import SubResource
 from azure.mgmt.compute.models import UpgradePolicy
 from azure.mgmt.compute.models import UpgradeMode
 from azure.mgmt.compute.models import VirtualHardDisk
@@ -385,8 +387,13 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     try:
+      # Static IPs are not listed because AppScale does not create them.
+      # They are used for creating Azure load balancers from the Portal,
+      # which we would retain even on terminating the deployment and reuse
+      # across multiple deployments.
       public_ips = [public_ip.ip_address for public_ip in
-                    network_client.public_ip_addresses.list(resource_group)]
+                    network_client.public_ip_addresses.list(resource_group)
+                    if not public_ip.public_ip_allocation_method == 'Static']
 
       private_ips = [ip_config.private_ip_address
                      for network_interface in
@@ -446,13 +453,28 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     virtual_network = parameters[self.PARAM_GROUP]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id)
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
 
     active_public_ips, active_private_ips, active_instances = \
       self.describe_instances(parameters)
+
+    # Create an Availability Set for Load Balancer VMs
+    lb_avail_set_name = "lb-availability-set"
+    availability_set_names = [availability_set.name for availability_set in
+                              compute_client.availability_sets.list(resource_group)]
+    if lb_avail_set_name not in availability_set_names:
+        lb_avail_set = self.create_lb_availability_set(
+            compute_client, lb_avail_set_name, parameters)
+    else:
+        lb_avail_set = compute_client.availability_sets.get(resource_group, lb_avail_set_name)
+
+    availability_set = SubResource(lb_avail_set.id)
     using_disks = parameters.get(self.PARAM_DISKS, False)
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
@@ -464,8 +486,9 @@ class AzureAgent(BaseAgent):
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         lb_vms_futures = [executor.submit(self.setup_virtual_machine_creation,
-                         credentials, network_client, parameters, subnet)
-                         for _ in range(count)]
+                                          credentials, network_client, parameters,
+                                          subnet, availability_set)
+                                          for _ in range(count)]
         for future in concurrent.futures.as_completed(lb_vms_futures):
           exception = future.exception()
           if exception:
@@ -486,8 +509,36 @@ class AzureAgent(BaseAgent):
 
     return instance_ids, public_ips, private_ips
 
+  def create_lb_availability_set(self, compute_client, lb_avail_set_name, parameters):
+    """ Creates an Availability Set for the load balancer VMs.
+    Args:
+        compute_client: A ComputeManagementClient instance
+        lb_avail_set_name: The name to use for the availability set.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+    Raises:
+        AgentConfigurationException: If the operation to create an availability
+          set did not succeed.
+    """
+    try:
+      return compute_client.availability_sets.create_or_update(
+        parameters[self.PARAM_RESOURCE_GROUP], lb_avail_set_name,
+        AvailabilitySet(location=parameters[self.PARAM_ZONE]))
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError while creating an "
+                        "availability set.")
+      raise AgentRuntimeException("Unable to create an Availability Set "
+                                  "{0}: {1}".format(lb_avail_set_name,
+                                                    error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+                                        "while trying to create an availability set. "
+                                        "Please check your cloud configuration. "
+                                        "Reason: {}".format(e.message))
+
   def setup_virtual_machine_creation(self, credentials, network_client,
-                                     parameters, subnet):
+                                     parameters, subnet, availability_set):
     """ Sets up the network interface and creates the virtual machines needed
     with the load balancer roles.
     Args:
@@ -497,6 +548,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       subnet: A Subnet instance from the Virtual Network created.
+      availability_set: An Availability Set instance for the load balancer VMs.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     vm_network_name = Haikunator().haikunate()
@@ -506,10 +558,11 @@ class AzureAgent(BaseAgent):
       resource_group, vm_network_name)
     self.create_virtual_machine(credentials, network_client,
                                 network_interface.id,
-                                parameters, vm_network_name)
+                                parameters, vm_network_name,
+                                availability_set)
 
   def create_virtual_machine(self, credentials, network_client, network_id,
-                             parameters, vm_network_name):
+                             parameters, vm_network_name, availability_set):
     """ Creates an Azure virtual machine using the network interface created.
     Args:
       credentials: A ServicePrincipalCredentials instance, that can be used to
@@ -519,6 +572,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       vm_network_name: The name of the virtual machine to use.
+      availability_set: An Availability Set instance for the load balancer VMs.
     Raises:
       AgentRuntimeException: If a virtual machine could not be successfully
         created.
@@ -580,7 +634,8 @@ class AzureAgent(BaseAgent):
       compute_client.virtual_machines.create_or_update(
           resource_group, vm_network_name, VirtualMachine(location=zone,
             plan=plan, os_profile=os_profile, hardware_profile=hardware_profile,
-            network_profile=network_profile, storage_profile=storage_profile))
+            network_profile=network_profile, storage_profile=storage_profile,
+            availability_set=availability_set))
       # Sleep until an IP address gets associated with the VM.
       while True:
         public_ip_address = network_client.public_ip_addresses.get(
