@@ -257,7 +257,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
-      'IS_VERBOSE' : args.get('verbose', False),
+      self.PARAM_VERBOSE : args.get('verbose', False),
       self.PARAM_AUTOSCALE_AGENT : False
     }
 
