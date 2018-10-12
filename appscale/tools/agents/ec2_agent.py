@@ -40,29 +40,20 @@ class EC2Agent(BaseAgent):
   # requests as replay attacks.
   SLEEP_TIME = 20
 
-  PARAM_CREDENTIALS = 'credentials'
-  PARAM_GROUP = 'group'
-  PARAM_IMAGE_ID = 'image_id'
-  PARAM_INSTANCE_TYPE = 'instance_type'
-  PARAM_KEYNAME = 'keyname'
-  PARAM_INSTANCE_IDS = 'instance_ids'
-  PARAM_REGION = 'region'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
-  PARAM_STATIC_IP = 'static_ip'
-  PARAM_ZONE = 'zone'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
-    PARAM_CREDENTIALS,
-    PARAM_GROUP,
-    PARAM_IMAGE_ID,
-    PARAM_KEYNAME,
+    BaseAgent.PARAM_CREDENTIALS,
+    BaseAgent.PARAM_GROUP,
+    BaseAgent.PARAM_IMAGE_ID,
+    BaseAgent.PARAM_KEYNAME,
     PARAM_SPOT
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
-    PARAM_CREDENTIALS,
-    PARAM_INSTANCE_IDS
+    BaseAgent.PARAM_CREDENTIALS,
+    BaseAgent.PARAM_INSTANCE_IDS
   )
 
   # A list of the environment variables that must be provided
@@ -130,7 +121,7 @@ class EC2Agent(BaseAgent):
     """
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
       " is not already registered.")
@@ -267,7 +258,7 @@ class EC2Agent(BaseAgent):
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
       'IS_VERBOSE' : args.get('verbose', False),
-      'autoscale_agent' : False
+      self.PARAM_AUTOSCALE_AGENT : False
     }
 
     if params[self.PARAM_ZONE]:
@@ -584,7 +575,7 @@ class EC2Agent(BaseAgent):
 
 
   def wait_for_status_change(self, parameters, conn, state_requested, \
-                              max_wait_time=60,poll_interval=10):
+                             max_wait_time=60,poll_interval=10):
     """ After we have sent a signal to the cloud infrastructure to change the state
       of the instances (unsually from runnning to either stoppped or
       terminated), wait for the status to change.  If all the instances change
