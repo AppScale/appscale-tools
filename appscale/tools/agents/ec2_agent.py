@@ -574,7 +574,7 @@ class EC2Agent(BaseAgent):
     conn.terminate_instances(instance_ids)
 
 
-  def wait_for_status_change(self, parameters, conn, state_requested, \
+  def wait_for_status_change(self, parameters, conn, state_requested,
                              max_wait_time=60,poll_interval=10):
     """ After we have sent a signal to the cloud infrastructure to change the state
       of the instances (unsually from runnning to either stoppped or
@@ -584,7 +584,7 @@ class EC2Agent(BaseAgent):
     Args:
       parameters: A dictionary of parameters.
       conn: A connection object returned from self.open_connection().
-      state_requrested: String of the requested final state of the instances.
+      state_requested: String of the requested final state of the instances.
       max_wait_time: int of maximum amount of time (in seconds)  to wait for the
         state change.
       poll_interval: int of the number of seconds to wait between checking of
@@ -618,9 +618,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the given Elastic IP has been allocated, and False otherwise.
     """
+    elastic_ip = parameters[self.PARAM_STATIC_IP]
     try:
       conn = self.open_connection(parameters)
-      elastic_ip = parameters[self.PARAM_STATIC_IP]
       conn.get_all_addresses(elastic_ip)
       AppScaleLogger.log('Elastic IP {0} can be used for this AppScale ' \
         'deployment.'.format(elastic_ip))
@@ -638,9 +638,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the machine ID exists, False otherwise.
     """
+    image_id = parameters[self.PARAM_IMAGE_ID]
     try:
       conn = self.open_connection(parameters)
-      image_id = parameters[self.PARAM_IMAGE_ID]
       conn.get_image(image_id)
       AppScaleLogger.log('Machine image {0} does exist'.format(image_id))
       return True
@@ -762,9 +762,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the availability zone exists, and False otherwise.
     """
+    zone = parameters[self.PARAM_ZONE]
     try:
       conn = self.open_connection(parameters)
-      zone = parameters[self.PARAM_ZONE]
       conn.get_all_zones(zone)
       AppScaleLogger.log('Availability zone {0} does exist'.format(zone))
       return True
