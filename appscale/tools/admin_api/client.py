@@ -104,6 +104,11 @@ class AdminClient(object):
       body['handlers'] = [handler.to_api_dict()
                           for handler in version.handlers]
 
+    if version.manual_scaling:
+      body['manualScaling'] = version.manual_scaling
+    elif version.automatic_scaling:
+      body['automaticScaling'] = version.automatic_scaling
+
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)
     operation = self.extract_response(response)
