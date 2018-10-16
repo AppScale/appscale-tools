@@ -488,7 +488,8 @@ class AzureAgent(BaseAgent):
     if public_ip_needed or using_disks:
       lb_vms_exceptions = []
       # Only load balancer VMs with public IPs are added to the availability set and
-      # not database nodes with managed disks created as regular VMs outside of scaleset.
+      # all other nodes with disks created as regular VMs outside of scaleset
+      # should not be added.
       if using_disks and not public_ip_needed:
         availability_set = None
       # We can use a with statement to ensure threads are cleaned up promptly
@@ -529,11 +530,11 @@ class AzureAgent(BaseAgent):
           set did not succeed.
     """
     try:
+      # The max number of available platform update and fault domains is 3.
       return compute_client.availability_sets.create_or_update(
         parameters[self.PARAM_RESOURCE_GROUP], lb_avail_set_name,
         AvailabilitySet(location=parameters[self.PARAM_ZONE],
-                        sku=avail_set_sku,
-                        platform_update_domain_count=3,
+                        sku=avail_set_sku, platform_update_domain_count=3,
                         platform_fault_domain_count=3))
 
     except CloudError as error:
