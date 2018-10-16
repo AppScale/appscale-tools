@@ -8,9 +8,8 @@ import glob
 import os
 import time
 
-# EC2 specific imports.
-from boto.ec2.networkinterface import NetworkInterfaceSpecification
 from boto.ec2.networkinterface import NetworkInterfaceCollection
+from boto.ec2.networkinterface import NetworkInterfaceSpecification
 from boto.exception import EC2ResponseError
 from boto.vpc import VPCConnection
 
@@ -158,13 +157,14 @@ class EC2Agent(BaseAgent):
 
     try:
       self.get_security_group_by_name(parameters, group)
+    except AgentRuntimeException:
+      # If this is raised, the group does not exist.
+      pass
+    else:
       self.handle_failure("Security group {0} is already registered. Please "
                           "change the 'group' specified in your AppScalefile "
                           "to a different value, or erase it to have one "
                           "automatically generated for you.".format(group))
-    except AgentRuntimeException:
-      # If this is raised, the group does not exist.
-      pass
 
 
     AppScaleLogger.log("Creating key pair: {0}".format(keyname))
@@ -220,23 +220,19 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def get_security_group_by_name(self, parameters, group=None):
+  def get_security_group_by_name(self, parameters, group):
     """Gets a security group in AWS with the given name.
 
     Args:
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
-      group: A str that names the group that should be found. Or None to
-        use the group in parameters.
+      group: A str that names the group that should be found.
     Returns:
       The 'boto.ec2.securitygroup.SecurityGroup' that has the correct group
       name.
     Raises:
       AgentRuntimeException: If the security group could not be found.
     """
-    # Get security group.
-    if not group:
-      group = parameters[self.PARAM_GROUP]
     conn = self.open_connection(parameters)
     try:
       return next(sg for sg in conn.get_all_security_groups()
@@ -282,7 +278,8 @@ class EC2Agent(BaseAgent):
       except EC2ResponseError:
         pass
       try:
-        group_info = self.get_security_group_by_name(parameters)
+        group_info = self.get_security_group_by_name(
+            parameters, parameters[self.PARAM_GROUP])
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
@@ -909,9 +906,10 @@ class EC2Agent(BaseAgent):
     AppScaleLogger.log("Deleting security group {0}".format(
       parameters[self.PARAM_GROUP]))
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
-    while retries_left:
+    while True:
       try:
-        sg = self.get_security_group_by_name(parameters)
+        sg = self.get_security_group_by_name(parameters,
+                                             parameters[self.PARAM_GROUP])
         conn.delete_security_group(group_id=sg.id)
         return
       except EC2ResponseError:
@@ -920,6 +918,8 @@ class EC2Agent(BaseAgent):
       except AgentRuntimeException:
         AppScaleLogger.log('Could not find security group {}, delete '
                            'successful.'.format(parameters[self.PARAM_GROUP]))
+        if retries_left == 0:
+          raise
         return
 
 
