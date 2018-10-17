@@ -23,7 +23,7 @@ from appscale.tools.parse_args import ParseArgs
 
 
 class TestParseArgs(unittest.TestCase):
-  
+
 
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
@@ -96,7 +96,7 @@ class TestParseArgs(unittest.TestCase):
     # using a flag that isn't acceptable should raise
     # an exception
     argv_1 = ['--boo!']
-    self.assertRaises(SystemExit, ParseArgs, argv_1, 
+    self.assertRaises(SystemExit, ParseArgs, argv_1,
       self.function)
 
     # the version flag should quit and print the current
@@ -382,18 +382,18 @@ class TestParseArgs(unittest.TestCase):
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
       "baz"]
-    ParseArgs(argv, self.function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    actual = ParseArgs(argv, self.function)
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
 
     # specifying a EC2_URL should result in it being set in the environment
     argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
       "baz", "--EC2_URL", "http://boo.baz"]
-    ParseArgs(argv, self.function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
-    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+    actual = ParseArgs(argv, self.function)
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
+    self.assertEquals("http://boo.baz", actual.EC2_URL)
 
 
   def test_ec2_creds_in_term_instances(self):
@@ -409,17 +409,17 @@ class TestParseArgs(unittest.TestCase):
 
     # specifying both should result in them being set in the environment
     argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz"]
-    ParseArgs(argv, function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    actual = ParseArgs(argv, function)
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
 
     # specifying a EC2_URL should result in it being set in the environment
     argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz", "--EC2_URL",
       "http://boo.baz"]
-    ParseArgs(argv, function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
-    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+    actual = ParseArgs(argv, function)
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
+    self.assertEquals("http://boo.baz", actual.EC2_URL)
 
 
   def test_disks_flag(self):

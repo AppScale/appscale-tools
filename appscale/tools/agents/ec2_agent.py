@@ -267,8 +267,8 @@ class EC2Agent(BaseAgent):
       params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ.get(credential):
-        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      if args.get(credential):
+        params[self.PARAM_CREDENTIALS][credential] = args[credential]
       else:
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
@@ -314,10 +314,12 @@ class EC2Agent(BaseAgent):
 
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ.get(credential):
-        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
-      else:
+      cred = LocalState.get_infrastructure_option(tag=credential,
+                                                  keyname=keyname)
+      if not cred:
         raise AgentConfigurationException("no " + credential)
+
+      params[self.PARAM_CREDENTIALS][credential] = cred
 
     return params
 

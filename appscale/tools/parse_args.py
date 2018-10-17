@@ -471,7 +471,6 @@ class ParseArgs(object):
       self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
-      self.validate_environment_flags()
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
@@ -488,7 +487,7 @@ class ParseArgs(object):
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      self.validate_environment_flags()
+      pass
     elif function == "appscale-remove-app":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
@@ -579,31 +578,6 @@ class ParseArgs(object):
     """Sets up the ips flag if the ips_layout flag is given."""
     if self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
-
-
-  def validate_environment_flags(self):
-    """Validates flags dealing with setting environment variables.
-
-    Raises:
-      BadConfigurationException: If the user gives us either EC2_ACCESS_KEY
-        or EC2_SECRET_KEY, but forgets to also specify the other.
-    """
-    if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
-      raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
-        "EC2_SECRET_KEY must also be specified.")
-
-    if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
-      raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
-        "EC2_ACCESS_KEY must also be specified.")
-
-    if self.args.EC2_ACCESS_KEY:
-      os.environ['EC2_ACCESS_KEY'] = self.args.EC2_ACCESS_KEY
-
-    if self.args.EC2_SECRET_KEY:
-      os.environ['EC2_SECRET_KEY'] = self.args.EC2_SECRET_KEY
-
-    if self.args.EC2_URL:
-      os.environ['EC2_URL'] = self.args.EC2_URL
 
 
   def validate_infrastructure_flags(self):
@@ -700,6 +674,10 @@ class ParseArgs(object):
       if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")
+    elif self.args.infrasctructure in ['euca', 'ec2']:
+      if not (self.args.EC2_ACCESS_KEY and self.args.EC2_SECRET_KEY):
+        raise BadConfigurationException("Both EC2_ACCESS_KEY and "
+                                        "EC2_SECRET_KEY must be specified.")
 
   def validate_credentials(self):
     """If running over a cloud infrastructure, makes sure that all of the

@@ -260,9 +260,6 @@ Available commands:
     # Construct a run-instances command from the file's contents
     command = []
     for key, value in contents_as_yaml.items():
-      if key in ["EC2_ACCESS_KEY", "EC2_SECRET_KEY", "EC2_URL"]:
-        os.environ[key] = value
-        continue
       if key in self.DEPRECATED_ASF_ARGS:
         raise AppScalefileException(
           "'{0}' has been deprecated. Refer to {1} to see the full changes.".
@@ -837,15 +834,6 @@ Available commands:
       command.append(contents_as_yaml['keyname'])
     else:
       keyname = 'appscale'
-
-    if "EC2_ACCESS_KEY" in contents_as_yaml:
-      os.environ["EC2_ACCESS_KEY"] = contents_as_yaml["EC2_ACCESS_KEY"]
-
-    if "EC2_SECRET_KEY" in contents_as_yaml:
-      os.environ["EC2_SECRET_KEY"] = contents_as_yaml["EC2_SECRET_KEY"]
-
-    if "EC2_URL" in contents_as_yaml:
-      os.environ["EC2_URL"] = contents_as_yaml["EC2_URL"]
 
     if clean:
       if 'test' not in contents_as_yaml or contents_as_yaml['test'] != True:
