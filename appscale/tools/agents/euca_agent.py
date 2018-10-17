@@ -54,7 +54,7 @@ class EucalyptusAgent(EC2Agent):
       self.handle_failure('Unknown scheme in EC2_URL: ' + result.scheme)
       return None
 
-    if parameters.get('IS_VERBOSE', None):
+    if parameters.get(self.PARAM_VERBOSE, False):
       debug_level = 2  # extremely verbose
     else:
       debug_level = 0  # the silent treatment
