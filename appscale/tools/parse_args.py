@@ -674,7 +674,7 @@ class ParseArgs(object):
       if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")
-    elif self.args.infrasctructure in ['euca', 'ec2']:
+    elif self.args.infrastructure in ['euca', 'ec2']:
       if not (self.args.EC2_ACCESS_KEY and self.args.EC2_SECRET_KEY):
         raise BadConfigurationException("Both EC2_ACCESS_KEY and "
                                         "EC2_SECRET_KEY must be specified.")
