@@ -648,7 +648,7 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    version = Version(None)
+    version = Version(None, None)
     version.project_id = options.project_id
     version.service_id = options.service_id or DEFAULT_SERVICE
     version.id = DEFAULT_VERSION
@@ -681,7 +681,7 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    version = Version(None)
+    version = Version(None, None)
     version.project_id = options.project_id
     version.service_id = options.service_id or DEFAULT_SERVICE
     version.id = DEFAULT_VERSION
