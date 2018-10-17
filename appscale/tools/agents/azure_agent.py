@@ -109,34 +109,24 @@ class AzureAgent(BaseAgent):
   # type out the strings each time we need them.
   PARAM_APP_ID = 'azure_app_id'
   PARAM_APP_SECRET = 'azure_app_secret_key'
-  PARAM_CREDENTIALS = 'credentials'
   PARAM_DISKS = 'disks'
   PARAM_EXISTING_RG = 'does_exist'
-  PARAM_GROUP = 'group'
-  PARAM_INSTANCE_IDS = 'instance_ids'
-  PARAM_INSTANCE_TYPE = 'instance_type'
-  PARAM_KEYNAME = 'keyname'
-  PARAM_IMAGE_ID = 'image_id'
-  PARAM_REGION = 'region'
   PARAM_RESOURCE_GROUP = 'azure_resource_group'
   PARAM_STORAGE_ACCOUNT = 'azure_storage_account'
   PARAM_SUBSCRIBER_ID = 'azure_subscription_id'
   PARAM_TENANT_ID = 'azure_tenant_id'
-  PARAM_TEST = 'test'
   PARAM_TAG = 'azure_group_tag'
-  PARAM_VERBOSE = 'IS_VERBOSE'
-  PARAM_ZONE = 'zone'
 
   # A set that contains all of the items necessary to run AppScale in Azure.
   REQUIRED_CREDENTIALS = (
     PARAM_APP_SECRET,
     PARAM_APP_ID,
-    PARAM_IMAGE_ID,
-    PARAM_INSTANCE_TYPE,
-    PARAM_KEYNAME,
+    BaseAgent.PARAM_IMAGE_ID,
+    BaseAgent.PARAM_INSTANCE_TYPE,
+    BaseAgent.PARAM_KEYNAME,
     PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
-    PARAM_ZONE
+    BaseAgent.PARAM_ZONE
   )
 
   # The regex for Azure Marketplace images.
@@ -216,7 +206,7 @@ class AzureAgent(BaseAgent):
         configured in the underlying cloud.
       AgentConfigurationException: If we are unable to authenticate with Azure.
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     # While creating instances during autoscaling, we do not need to create a
     # new keypair or a resource group. We just make use of the existing one.
@@ -667,7 +657,7 @@ class AzureAgent(BaseAgent):
     Returns:
         An instance of LinuxConfiguration
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
     keyname = parameters[self.PARAM_KEYNAME]
     private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
     public_key_path = private_key_path + ".pub"
@@ -796,7 +786,7 @@ class AzureAgent(BaseAgent):
     # While autoscaling, look through existing scale sets to check if they have
     # capacity to hold more vms. If they do, update the scale sets with additional
     # vms. If not, then create a new scale set for them.
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
     if is_autoscale in ['True', True]:
       instances_added = self.add_instances_to_existing_ss(
         num_instances_to_add, parameters)
@@ -1021,7 +1011,7 @@ class AzureAgent(BaseAgent):
           "while trying to list Scale Sets. Please check your cloud "
           "configuration. Reason: {}".format(e.message))
 
-    downscale = parameters['autoscale_agent']
+    downscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     # On downscaling of instances, we need to delete the specific instance
     # from the Scale Set.
@@ -1478,7 +1468,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_TEST: args[self.PARAM_TEST],
       self.PARAM_VERBOSE : args.get('verbose', False),
       self.PARAM_ZONE : args[self.PARAM_ZONE],
-      'autoscale_agent': False
+      self.PARAM_AUTOSCALE_AGENT: False
     }
     self.assert_credentials_are_valid(params)
 
