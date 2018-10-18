@@ -166,18 +166,15 @@ class AdminClient(object):
       'AppScale-Secret': self.secret,
       'Content-Type': 'application/json'
     }
-    parameters = {
+    params = {
       'updateMask': ','.join(fields)
     }
-    query_parameters = '&'.join('='.join(item) for item in parameters.items())
     body = {}
     if version.serving_status:
       body['servingStatus'] = version.serving_status
 
-    request_url = '{uri}?{parameters}'.format(uri=versions_url,
-                                              parameters=query_parameters)
-    response = requests.patch(request_url, headers=headers, json=body,
-                              verify=False)
+    response = requests.patch(versions_url, headers=headers, params=params,
+                              json=body, verify=False)
     operation = self.extract_response(response)
     try:
       operation_id = operation['name'].split('/')[-1]
