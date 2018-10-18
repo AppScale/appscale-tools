@@ -740,8 +740,11 @@ class AppScaleTools(object):
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
+    node_layout = NodeLayout(options)
+
     if options.infrastructure:
-      if not options.disks and not options.test and not options.force:
+      if (not options.test and not options.force and
+          not (options.disks or node_layout.are_disks_used())):
         LocalState.ensure_user_wants_to_run_without_disks()
 
     reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
@@ -750,8 +753,6 @@ class AppScaleTools(object):
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
       APPSCALE_VERSION)
-
-    node_layout = NodeLayout(options)
 
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
