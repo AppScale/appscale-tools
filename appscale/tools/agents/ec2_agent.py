@@ -573,9 +573,8 @@ class EC2Agent(BaseAgent):
       private_ips = []
       end_time = datetime.datetime.now() + datetime.timedelta(0,
         self.MAX_VM_CREATION_TIME)
-      now = datetime.datetime.now()
 
-      while now < end_time:
+      while datetime.datetime.now() < end_time:
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
@@ -583,7 +582,6 @@ class EC2Agent(BaseAgent):
         # If we need a public ip, make sure we actually get one.
         if public_ip_needed and not self.diff(public_ips, private_ips):
           time.sleep(self.SLEEP_TIME)
-          now = datetime.datetime.now()
           continue
 
         public_ips = self.diff(public_ips, active_public_ips)
@@ -592,7 +590,6 @@ class EC2Agent(BaseAgent):
         if count == len(public_ips):
           break
         time.sleep(self.SLEEP_TIME)
-        now = datetime.datetime.now()
 
       if not public_ips:
         self.handle_failure('No public IPs were able to be procured '
