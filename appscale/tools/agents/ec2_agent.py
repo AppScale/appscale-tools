@@ -24,6 +24,10 @@ from base_agent import BaseAgent
 #    don't bother about todo's
 
 
+class SecurityGroupNotFoundException(Exception):
+  """ Exception to raise when a security group could not be found on EC2."""
+  pass
+
 
 class EC2Agent(BaseAgent):
   """
@@ -104,7 +108,6 @@ class EC2Agent(BaseAgent):
   # to malloc ~800MB of memory, which will fail on these instance types).
   DISALLOWED_INSTANCE_TYPES = ["m1.small", "c1.medium", "t1.micro"]
 
-
   def assert_credentials_are_valid(self, parameters):
     """Contacts AWS to see if the given access key and secret key represent a
     valid set of credentials.
@@ -156,8 +159,8 @@ class EC2Agent(BaseAgent):
         .format(keyname))
 
     try:
-      self.get_security_group_by_name(parameters, group)
-    except AgentRuntimeException:
+      self.get_security_group_by_name(conn, group)
+    except SecurityGroupNotFoundException:
       # If this is raised, the group does not exist.
       pass
     else:
@@ -210,8 +213,8 @@ class EC2Agent(BaseAgent):
       except EC2ResponseError:
         pass
       try:
-        return self.get_security_group_by_name(parameters, group)
-      except (EC2ResponseError, AgentRuntimeException):
+        return self.get_security_group_by_name(conn, group)
+      except SecurityGroupNotFoundException:
         pass
       time.sleep(self.SLEEP_TIME)
       retries_left -= 1
@@ -220,26 +223,24 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def get_security_group_by_name(self, parameters, group):
+  def get_security_group_by_name(self, conn, group):
     """Gets a security group in AWS with the given name.
 
     Args:
-      parameters: A dict that contains the credentials necessary to authenticate
-        with AWS.
+      conn: A boto connection.
       group: A str that names the group that should be found.
     Returns:
       The 'boto.ec2.securitygroup.SecurityGroup' that has the correct group
       name.
     Raises:
-      AgentRuntimeException: If the security group could not be found.
+      SecurityGroupNotFoundException: If the security group could not be found.
     """
-    conn = self.open_connection(parameters)
     try:
       return next(sg for sg in conn.get_all_security_groups()
                   if sg.name == group)
-    except (EC2ResponseError, StopIteration):
-      raise AgentRuntimeException('Could not find security group with name '
-                                  '{}!'.format(group))
+    except StopIteration:
+      raise SecurityGroupNotFoundException(
+          'Could not find security group with name {}!'.format(group))
 
 
   def authorize_security_group(self, parameters, group_id, from_port,
@@ -279,13 +280,13 @@ class EC2Agent(BaseAgent):
         pass
       try:
         group_info = self.get_security_group_by_name(
-            parameters, parameters[self.PARAM_GROUP])
+            conn, parameters[self.PARAM_GROUP])
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
             return
-      except EC2ResponseError:
-        pass
+      except SecurityGroupNotFoundException as e:
+        raise AgentRuntimeException(e.message)
       time.sleep(self.SLEEP_TIME)
       retries_left -= 1
 
@@ -541,10 +542,15 @@ class EC2Agent(BaseAgent):
       network_interfaces = None
       groups = None
 
+      conn = self.open_connection(parameters)
+
       # A subnet indicates we're using VPC Networking.
       if subnet:
         # Get security group by name.
-        sg = self.get_security_group_by_name(parameters, group)
+        try:
+          sg = self.get_security_group_by_name(conn, group)
+        except SecurityGroupNotFoundException as e:
+          raise AgentRuntimeException(e.message)
         # Create network interface specification.
         network_interface = NetworkInterfaceSpecification(
           associate_public_ip_address=public_ip_needed,
@@ -552,7 +558,6 @@ class EC2Agent(BaseAgent):
         network_interfaces = NetworkInterfaceCollection(network_interface)
       else:
         groups = [group]
-      conn = self.open_connection(parameters)
 
       if spot:
         price = parameters[self.PARAM_SPOT_PRICE] or \
@@ -905,18 +910,18 @@ class EC2Agent(BaseAgent):
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while True:
       try:
-        sg = self.get_security_group_by_name(parameters,
-                                             parameters[self.PARAM_GROUP])
+        sg = self.get_security_group_by_name(conn, parameters[self.PARAM_GROUP])
         conn.delete_security_group(group_id=sg.id)
         return
-      except EC2ResponseError:
+      except EC2ResponseError as e:
         time.sleep(self.SLEEP_TIME)
         retries_left -= 1
-      except AgentRuntimeException:
-        AppScaleLogger.log('Could not find security group {}, delete '
-                           'successful.'.format(parameters[self.PARAM_GROUP]))
         if retries_left == 0:
-          raise
+          raise AgentRuntimeException('Error deleting security group! Reason: '
+                                      '{}'.format(e.message))
+      except SecurityGroupNotFoundException:
+        AppScaleLogger.log('Could not find security group {}, skipping '
+                           'delete.'.format(parameters[self.PARAM_GROUP]))
         return
 
 
