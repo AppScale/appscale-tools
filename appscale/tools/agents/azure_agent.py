@@ -458,21 +458,30 @@ class AzureAgent(BaseAgent):
     lb_avail_set_name = "lb-availability-set"
     availability_set_names = [availability_set.name for availability_set in
                               compute_client.availability_sets.list(resource_group)]
+    azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    avail_set_sku = None
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
+      avail_set_sku = ComputeSku(name='Aligned')
+
     if lb_avail_set_name not in availability_set_names:
         lb_avail_set = self.create_lb_availability_set(
-            compute_client, lb_avail_set_name, parameters)
+            compute_client, lb_avail_set_name, parameters, avail_set_sku)
     else:
         lb_avail_set = compute_client.availability_sets.get(resource_group, lb_avail_set_name)
 
     availability_set = SubResource(lb_avail_set.id)
     using_disks = parameters.get(self.PARAM_DISKS, False)
-    azure_image_id = parameters[self.PARAM_IMAGE_ID]
 
     if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
       raise AgentConfigurationException("Managed Disks require use of a "
                                         "publisher image.")
     if public_ip_needed or using_disks:
       lb_vms_exceptions = []
+      # Only load balancer VMs with public IPs are added to the availability set and
+      # all other nodes with disks created as regular VMs outside of scaleset
+      # should not be added.
+      if using_disks and not public_ip_needed:
+        availability_set = None
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         lb_vms_futures = [executor.submit(self.setup_virtual_machine_creation,
@@ -499,7 +508,7 @@ class AzureAgent(BaseAgent):
 
     return instance_ids, public_ips, private_ips
 
-  def create_lb_availability_set(self, compute_client, lb_avail_set_name, parameters):
+  def create_lb_availability_set(self, compute_client, lb_avail_set_name, parameters, avail_set_sku=None):
     """ Creates an Availability Set for the load balancer VMs.
     Args:
         compute_client: A ComputeManagementClient instance
@@ -511,9 +520,13 @@ class AzureAgent(BaseAgent):
           set did not succeed.
     """
     try:
+      # The max number of available platform update and fault domains is 3.
       return compute_client.availability_sets.create_or_update(
         parameters[self.PARAM_RESOURCE_GROUP], lb_avail_set_name,
-        AvailabilitySet(location=parameters[self.PARAM_ZONE]))
+        AvailabilitySet(location=parameters[self.PARAM_ZONE],
+                        sku=avail_set_sku, platform_update_domain_count=3,
+                        platform_fault_domain_count=3))
+
     except CloudError as error:
       logging.exception("Azure agent received a CloudError while creating an "
                         "availability set.")

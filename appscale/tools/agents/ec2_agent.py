@@ -689,6 +689,8 @@ class EC2Agent(BaseAgent):
     # get attached to.
     if glob.glob("/dev/xvd*"):
       mount_point = '/dev/xvdc'
+    elif glob.glob("/dev/vd*"):
+      mount_point = '/dev/vdc'
     else:
       mount_point = '/dev/sdc'
 
@@ -721,7 +723,7 @@ class EC2Agent(BaseAgent):
     """
     try:
       volumes = conn.get_all_volumes(filters={'attachment.instance-id':
-                                                instance_id})
+                                              instance_id})
       for volume in volumes:
         if volume.id == disk_name:
           return True
@@ -747,7 +749,7 @@ class EC2Agent(BaseAgent):
     """
     conn = self.open_connection(parameters)
     try:
-      conn.detach_volume(disk_name, instance_id, device='/dev/sdc')
+      conn.detach_volume(disk_name, instance_id)
       return True
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log("Could not detach volume with name {0}".format(
