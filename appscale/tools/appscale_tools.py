@@ -601,7 +601,7 @@ class AppScaleTools(object):
     """
     if not options.confirm:
       response = raw_input(
-        'Are you sure you want to remove this application? (y/N) ')
+        "Are you sure you want to stop this project's services? (y/N) ")
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled application removal.")
 
@@ -609,27 +609,39 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    admin_client.delete_project(options.project_id)
-
-    deadline = time.time() + cls.MAX_OPERATION_TIME
-    while True:
-      if time.time() > deadline:
-        raise AppScaleException('The undeploy operation took too long.')
-      found_project = False
-      projects = admin_client.list_projects()['projects']
-      for project in projects:
-        if options.project_id == project['projectId']:
-          found_project = True
-          break
-
-      if found_project:
-        time.sleep(1)
-        continue
-      else:
-        break
+    for service_id in admin_client.list_services(options.project_id):
+      AppScaleLogger.log('Stopping service: {}'.format(service_id))
+      cls._remove_service(admin_client, options.project_id, service_id)
 
     AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
 
+  @classmethod
+  def _remove_service(cls, admin_client, project_id, service_id):
+    """ Deletes a project's service.
+
+    Args:
+      admin_client: An AdminClient object.
+      project_id: A string specifying a project ID.
+      service_id: A string specifying a service ID.
+    Raises:
+      AppScaleException if the operation times out.
+      AdminError: If there is a problem making an Admin API call.
+    """
+    operation_id = admin_client.delete_service(project_id, service_id)
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The service delete operation timed out')
+
+      operation = admin_client.get_operation(project_id, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
+
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+
+      break
 
   @classmethod
   def remove_service(cls, options):
@@ -648,24 +660,9 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
-    operation_id = admin_client.delete_service(options.project_id,
-                                                options.service_id)
-    deadline = time.time() + cls.MAX_OPERATION_TIME
-    while True:
-      if time.time() > deadline:
-        raise AppScaleException('The undeploy operation took too long.')
-      operation = admin_client.get_operation(options.project_id, operation_id)
-      if not operation['done']:
-        time.sleep(1)
-        continue
-
-      if 'error' in operation:
-        raise AppScaleException(operation['error']['message'])
-      break
-
+    cls._remove_service(admin_client, options.project_id, options.service_id)
     AppScaleLogger.success('Done shutting down service {} for {}.'.format(
       options.project_id, options.service_id))
-
 
   @classmethod
   def reset_password(cls, options):
