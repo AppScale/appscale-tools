@@ -189,7 +189,8 @@ class TestAppScale(unittest.TestCase):
     # file, with an IPs layout that is a str
     contents = {
       'ips_layout': "'master' 'ip1' 'appengine' 'ip1'",
-      'keyname': 'boobazblarg', 'group' : 'boobazblarg'
+      'keyname': 'boobazblarg', 'group' : 'boobazblarg', 'EC2_ACCESS_KEY': '',
+      'EC2_SECRET_KEY': ''
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -225,7 +226,9 @@ class TestAppScale(unittest.TestCase):
       'group' : 'boogroup',
       'min_machines' : 1,
       'max_machines' : 1,
-      'zone' : 'my-zone-1b'
+      'zone' : 'my-zone-1b',
+      'EC2_ACCESS_KEY': 'baz',
+      'EC2_SECRET_KEY': 'baz'
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
@@ -234,10 +237,6 @@ class TestAppScale(unittest.TestCase):
     os.path.should_call('exists')
     os.path.should_receive('exists').with_args(
       '/boo/' + appscale.APPSCALEFILE).and_return(True)
-
-    # throw in some mocks for the argument parsing
-    for credential in EC2Agent.REQUIRED_CREDENTIALS:
-      os.environ[credential] = "baz"
 
     # finally, pretend that our ec2 zone and image exists
     fake_ec2 = flexmock(name="fake_ec2")

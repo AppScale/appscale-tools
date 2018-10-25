@@ -100,7 +100,8 @@ class TestLocalState(unittest.TestCase):
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
-      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
+      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
+      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz'),
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -148,7 +149,8 @@ class TestLocalState(unittest.TestCase):
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
-      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY)
+      default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
+      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz')
     node_layout = NodeLayout({
       'table': 'cassandra',
       'infrastructure': "ec2",

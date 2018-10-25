@@ -28,20 +28,14 @@ class TestParseArgs(unittest.TestCase):
   def setUp(self):
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
       '--infrastructure', 'ec2', '--instance_type', 'm3.medium',
-      '--machine', 'ami-ABCDEFG', '--zone', 'my-zone-1b']
+      '--machine', 'ami-ABCDEFG', '--zone', 'my-zone-1b', '--EC2_ACCESS_KEY',
+      'baz', '--EC2_SECRET_KEY', 'baz', '--EC2_URL', 'http://boo']
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
     # mock out all logging, since it clutters our output
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
-
-    # set up phony AWS credentials for each test
-    # ones that test not having them present can
-    # remove them
-    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = "baz"
-    os.environ['EC2_URL'] = "http://boo"
 
     # pretend that our credentials are valid.
     fake_ec2 = flexmock(name="fake_ec2")
@@ -86,12 +80,6 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
-  def tearDown(self):
-    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = ''
-    os.environ['EC2_URL'] = ''
-
-
   def test_flags_that_cause_program_abort(self):
     # using a flag that isn't acceptable should raise
     # an exception
@@ -104,7 +92,6 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = ['--version']
     try:
       ParseArgs(argv_2, self.function)
-      raise
     except SystemExit:
       pass
 
@@ -240,24 +227,6 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = ["--add_to_existing"]
     actual = ParseArgs(argv_2, "appscale-add-keypair")
     self.assertEquals(True, actual.args.add_to_existing)
-
-
-  def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
-        "ami-ABCDEFG"]
-    for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
-      self.function)
-
-
-  def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",
-      "emi-ABCDEFG"]
-    for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
-      os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
-      self.function)
 
 
   def test_failure_when_ami_doesnt_exist(self):

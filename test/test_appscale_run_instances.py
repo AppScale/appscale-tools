@@ -64,6 +64,8 @@ class TestAppScaleRunInstances(unittest.TestCase):
     appscalefile_contents = """
 keyname: {0}
 group: {1}
+EC2_ACCESS_KEY: 'baz'
+EC2_SECRET_KEY: 'baz'
 """.format(self.keyname, self.group)
 
     self.builtins = flexmock(sys.modules['__builtin__'])
@@ -100,22 +102,11 @@ group: {1}
     self.failed = flexmock(name='failed', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
-    # throw in some mocks that assume our EC2 environment variables are set
-    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = "baz"
-
     # mock out interactions with AWS
     self.fake_ec2 = flexmock(name='fake_ec2')
 
     # And add in mocks for libraries most of the tests mock out
     self.local_state = flexmock(LocalState)
-
-
-  def tearDown(self):
-    # remove the environment variables we set up to not accidentally mess
-    # up other unit tests
-    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = ""
 
 
   def setup_ec2_mocks(self):
@@ -279,7 +270,7 @@ group: {1}
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
                 "-o UserKnownHostsFile=/dev/null root@{} ".format(IP_1),
                 False, 5, stdin="chmod +x /etc/init.d/appcontroller")
-    
+
     self.local_state.should_receive('shell').\
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
