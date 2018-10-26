@@ -365,9 +365,9 @@ class EC2Agent(BaseAgent):
       params[self.PARAM_VPC_ID] = args[self.PARAM_VPC_ID]
       try:
         vpc_conn.get_all_vpcs(params[self.PARAM_VPC_ID])
-      except EC2ResponseError:
-        raise AgentConfigurationException('Specified vpc {} does not '
-                                          'exist!'.format(params[self.PARAM_VPC_ID]))
+      except EC2ResponseError as e:
+        raise AgentConfigurationException('Error looking for vpc: {}'.format(
+            e.message))
 
       # Subnet must exist.
       all_subnets = vpc_conn.get_all_subnets(filters={'vpcId': params[self.PARAM_VPC_ID]})
