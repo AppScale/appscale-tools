@@ -24,7 +24,7 @@ class AppEngineHelper(object):
   DISALLOWED_APP_IDS = ("none", "apichecker", "appscaledashboard")
 
   # A regular expression that matches valid application IDs.
-  APP_ID_REGEX = re.compile(r'\A(\d|[a-z]|[A-Z]|-)+\Z')
+  APP_ID_REGEX = re.compile(r'^[a-z][a-z\d\-]{5,29}$')
 
   # A message to be displayed to the user, in case the given application ID
   # does not comply with the corresponding regular expression.
@@ -95,7 +95,7 @@ class AppEngineHelper(object):
     if version.id is not None:
       AppScaleLogger.log(
         'The version element is not supported in {}. Module {} will be '
-        'overwritten.'.format(version.configuration_type, version.service_id))
+        'overwritten.'.format(version.config_type, version.service_id))
       if not test:
         response = raw_input('Continue? (y/N) ')
         if response.lower() not in ['y', 'yes']:
@@ -116,8 +116,9 @@ class AppEngineHelper(object):
       raise AppEngineConfigException("{0} is a reserved appid".format(app_id))
 
     if not cls.APP_ID_REGEX.match(app_id):
-      raise AppEngineConfigException("Invalid application ID. You can only" + \
-        " use alphanumeric characters and/or '-'.")
+      raise AppEngineConfigException("Invalid application ID." + \
+        " It must be 6 to 30 lowercase letters, digits, " + \
+        "or hyphens. It must start with a letter.")
 
   @classmethod
   def is_valid_ipv4_address(cls, address):

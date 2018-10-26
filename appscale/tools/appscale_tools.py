@@ -18,7 +18,6 @@ import urllib2
 import uuid
 from collections import Counter
 from itertools import chain
-from xml.etree import ElementTree
 
 import yaml
 from SOAPpy import faultType
@@ -183,10 +182,9 @@ class AppScaleTools(object):
 
     path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
     if options.add_to_existing:
-      public_key = path + ".pub"
       private_key = path
     else:
-      public_key, private_key = LocalState.generate_rsa_key(options.keyname,
+      _, private_key = LocalState.generate_rsa_key(options.keyname,
         options.verbose)
 
     if options.auto:
@@ -742,8 +740,11 @@ class AppScaleTools(object):
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
+    node_layout = NodeLayout(options)
+
     if options.infrastructure:
-      if not options.disks and not options.test and not options.force:
+      if (not options.test and not options.force and
+          not (options.disks or node_layout.are_disks_used())):
         LocalState.ensure_user_wants_to_run_without_disks()
 
     reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
@@ -752,8 +753,6 @@ class AppScaleTools(object):
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
       APPSCALE_VERSION)
-
-    node_layout = NodeLayout(options)
 
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
@@ -966,7 +965,7 @@ class AppScaleTools(object):
       version.project_id = options.project
 
     if version.project_id is None:
-      if version.configuration_type == 'app.yaml':
+      if version.config_type == 'app.yaml':
         message = 'Specify --project or define "application" in your app.yaml'
       else:
         message = 'Define "application" in your appengine-web.xml'
@@ -1135,7 +1134,7 @@ class AppScaleTools(object):
       AppScaleLogger.log(
         'Checking if an update is available for appscale-tools')
       latest_tools = latest_tools_version()
-    except:
+    except (URLError, ValueError):
       # Prompt the user if version metadata can't be fetched.
       if not options.test:
         response = raw_input(

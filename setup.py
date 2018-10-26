@@ -45,7 +45,7 @@ setup(
     'adal>=0.4.7',
     'azure==2.0.0',
     'azure-mgmt-marketplaceordering',
-    'cryptography',
+    'cryptography>=2.3.0',
     'argparse',
     'boto',
     'google-api-python-client==1.5.4',
@@ -53,6 +53,7 @@ setup(
     'httplib2',
     'msrestazure==0.4.34',
     'oauth2client==4.0.0',
+    'pyOpenSSL>=18.0.0',
     'PyYAML',
     'requests[security]>=2.16.0,<=2.19.1',
     'retrying==1.3.3',
@@ -69,7 +70,6 @@ setup(
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'License :: OSI Approved :: Apache Software License',
-    'Programming Language :: Python :: 2.6',
     'Programming Language :: Python :: 2.7',
     'Topic :: Utilities'
   ],
@@ -82,7 +82,7 @@ setup(
       'appscale-add-instances=appscale.tools.scripts.add_instances:main',
       'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
       'appscale-show-stats=appscale.tools.scripts.show_stats:main',
-      'appscale-describe-instances='
+      'appscale-describe-instances=' +
         'appscale.tools.scripts.describe_instances:main',
       'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
       'appscale-get-property=appscale.tools.scripts.get_property:main',
@@ -91,7 +91,7 @@ setup(
       'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
       'appscale-run-instances=appscale.tools.scripts.run_instances:main',
       'appscale-set-property=appscale.tools.scripts.set_property:main',
-      'appscale-terminate-instances='
+      'appscale-terminate-instances=' +
         'appscale.tools.scripts.terminate_instances:main',
       'appscale-upgrade=appscale.tools.scripts.upgrade:main',
       'appscale-upload-app=appscale.tools.scripts.upload_app:main'

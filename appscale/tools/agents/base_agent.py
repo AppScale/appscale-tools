@@ -5,6 +5,22 @@ class BaseAgent(object):
   """BaseAgent class defines the interface that must be implemented by
   each cloud agent."""
 
+  # The following constants are string literals that can be used by callers to
+  # index into the parameters that the user passes in, as opposed to having to
+  # type out the strings each time we need them. These are the params that
+  # all agents have in common.
+  PARAM_AUTOSCALE_AGENT = 'autoscale_agent'
+  PARAM_CREDENTIALS = 'credentials'
+  PARAM_GROUP = 'group'
+  PARAM_IMAGE_ID = 'image_id'
+  PARAM_INSTANCE_TYPE = 'instance_type'
+  PARAM_KEYNAME = 'keyname'
+  PARAM_INSTANCE_IDS = 'instance_ids'
+  PARAM_REGION = 'region'
+  PARAM_ZONE = 'zone'
+  PARAM_STATIC_IP = 'static_ip'
+  PARAM_TEST = 'test'
+  PARAM_VERBOSE = 'IS_VERBOSE'
 
   # A str constant the callers can use when they want to start virtual machines.
   OPERATION_RUN = 'run'

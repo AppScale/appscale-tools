@@ -17,6 +17,7 @@ from itertools import count, ifilter
 # Azure specific imports
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.compute.models import ApiEntityReference
+from azure.mgmt.compute.models import AvailabilitySet
 from azure.mgmt.compute.models import CachingTypes
 from azure.mgmt.compute.models import DataDisk
 from azure.mgmt.compute.models import DiskCreateOptionTypes
@@ -33,6 +34,7 @@ from azure.mgmt.compute.models import Sku as ComputeSku
 from azure.mgmt.compute.models import SshConfiguration
 from azure.mgmt.compute.models import SshPublicKey
 from azure.mgmt.compute.models import StorageProfile
+from azure.mgmt.compute.models import SubResource
 from azure.mgmt.compute.models import UpgradePolicy
 from azure.mgmt.compute.models import UpgradeMode
 from azure.mgmt.compute.models import VirtualHardDisk
@@ -97,7 +99,7 @@ class AzureAgent(BaseAgent):
   # recommended by Cassandra. AppScale will still run on these instance types,
   # but is likely to crash after a day or two of use (as Cassandra will attempt
   # to malloc ~800MB of memory, which will fail on these instance types).
-  DISALLOWED_INSTANCE_TYPES = ["Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3"
+  DISALLOWED_INSTANCE_TYPES = ["Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3",
                                "Basic_A4", "Standard_A0", "Standard_A1",
                                "Standard_A2", "Standard_D1", "Standard_D1_v2",
                                "Standard_DS1", "Standard_DS1_v2"]
@@ -107,34 +109,24 @@ class AzureAgent(BaseAgent):
   # type out the strings each time we need them.
   PARAM_APP_ID = 'azure_app_id'
   PARAM_APP_SECRET = 'azure_app_secret_key'
-  PARAM_CREDENTIALS = 'credentials'
   PARAM_DISKS = 'disks'
   PARAM_EXISTING_RG = 'does_exist'
-  PARAM_GROUP = 'group'
-  PARAM_INSTANCE_IDS = 'instance_ids'
-  PARAM_INSTANCE_TYPE = 'instance_type'
-  PARAM_KEYNAME = 'keyname'
-  PARAM_IMAGE_ID = 'image_id'
-  PARAM_REGION = 'region'
   PARAM_RESOURCE_GROUP = 'azure_resource_group'
   PARAM_STORAGE_ACCOUNT = 'azure_storage_account'
   PARAM_SUBSCRIBER_ID = 'azure_subscription_id'
   PARAM_TENANT_ID = 'azure_tenant_id'
-  PARAM_TEST = 'test'
   PARAM_TAG = 'azure_group_tag'
-  PARAM_VERBOSE = 'IS_VERBOSE'
-  PARAM_ZONE = 'zone'
 
   # A set that contains all of the items necessary to run AppScale in Azure.
   REQUIRED_CREDENTIALS = (
     PARAM_APP_SECRET,
     PARAM_APP_ID,
-    PARAM_IMAGE_ID,
-    PARAM_INSTANCE_TYPE,
-    PARAM_KEYNAME,
+    BaseAgent.PARAM_IMAGE_ID,
+    BaseAgent.PARAM_INSTANCE_TYPE,
+    BaseAgent.PARAM_KEYNAME,
     PARAM_SUBSCRIBER_ID,
     PARAM_TENANT_ID,
-    PARAM_ZONE
+    BaseAgent.PARAM_ZONE
   )
 
   # The regex for Azure Marketplace images.
@@ -214,7 +206,7 @@ class AzureAgent(BaseAgent):
         configured in the underlying cloud.
       AgentConfigurationException: If we are unable to authenticate with Azure.
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     # While creating instances during autoscaling, we do not need to create a
     # new keypair or a resource group. We just make use of the existing one.
@@ -385,8 +377,13 @@ class AzureAgent(BaseAgent):
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     try:
+      # Static IPs are not listed because AppScale does not create them.
+      # They are used for creating Azure load balancers from the Portal,
+      # which we would retain even on terminating the deployment and reuse
+      # across multiple deployments.
       public_ips = [public_ip.ip_address for public_ip in
-                    network_client.public_ip_addresses.list(resource_group)]
+                    network_client.public_ip_addresses.list(resource_group)
+                    if not public_ip.public_ip_allocation_method == 'Static']
 
       private_ips = [ip_config.private_ip_address
                      for network_interface in
@@ -446,26 +443,51 @@ class AzureAgent(BaseAgent):
     credentials = self.open_connection(parameters)
     subscription_id = str(parameters[self.PARAM_SUBSCRIBER_ID])
     virtual_network = parameters[self.PARAM_GROUP]
+    resource_group = parameters[self.PARAM_RESOURCE_GROUP]
 
     network_client = NetworkManagementClient(credentials, subscription_id)
+    compute_client = ComputeManagementClient(credentials, subscription_id)
+
     subnet = self.create_virtual_network(network_client, parameters,
                                          virtual_network, virtual_network)
 
     active_public_ips, active_private_ips, active_instances = \
       self.describe_instances(parameters)
-    using_disks = parameters.get(self.PARAM_DISKS, False)
+
+    # Create an Availability Set for Load Balancer VMs
+    lb_avail_set_name = "lb-availability-set"
+    availability_set_names = [availability_set.name for availability_set in
+                              compute_client.availability_sets.list(resource_group)]
     azure_image_id = parameters[self.PARAM_IMAGE_ID]
+    avail_set_sku = None
+    if self.MARKETPLACE_IMAGE.match(azure_image_id):
+      avail_set_sku = ComputeSku(name='Aligned')
+
+    if lb_avail_set_name not in availability_set_names:
+        lb_avail_set = self.create_lb_availability_set(
+            compute_client, lb_avail_set_name, parameters, avail_set_sku)
+    else:
+        lb_avail_set = compute_client.availability_sets.get(resource_group, lb_avail_set_name)
+
+    availability_set = SubResource(lb_avail_set.id)
+    using_disks = parameters.get(self.PARAM_DISKS, False)
 
     if using_disks and not self.MARKETPLACE_IMAGE.match(azure_image_id):
       raise AgentConfigurationException("Managed Disks require use of a "
                                         "publisher image.")
     if public_ip_needed or using_disks:
       lb_vms_exceptions = []
+      # Only load balancer VMs with public IPs are added to the availability set and
+      # all other nodes with disks created as regular VMs outside of scaleset
+      # should not be added.
+      if using_disks and not public_ip_needed:
+        availability_set = None
       # We can use a with statement to ensure threads are cleaned up promptly
       with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         lb_vms_futures = [executor.submit(self.setup_virtual_machine_creation,
-                         credentials, network_client, parameters, subnet)
-                         for _ in range(count)]
+                                          credentials, network_client, parameters,
+                                          subnet, availability_set)
+                                          for _ in range(count)]
         for future in concurrent.futures.as_completed(lb_vms_futures):
           exception = future.exception()
           if exception:
@@ -486,8 +508,40 @@ class AzureAgent(BaseAgent):
 
     return instance_ids, public_ips, private_ips
 
+  def create_lb_availability_set(self, compute_client, lb_avail_set_name, parameters, avail_set_sku=None):
+    """ Creates an Availability Set for the load balancer VMs.
+    Args:
+        compute_client: A ComputeManagementClient instance
+        lb_avail_set_name: The name to use for the availability set.
+        parameters: A dict, containing all the parameters necessary to
+          authenticate this user with Azure.
+    Raises:
+        AgentConfigurationException: If the operation to create an availability
+          set did not succeed.
+    """
+    try:
+      # The max number of available platform update and fault domains is 3.
+      return compute_client.availability_sets.create_or_update(
+        parameters[self.PARAM_RESOURCE_GROUP], lb_avail_set_name,
+        AvailabilitySet(location=parameters[self.PARAM_ZONE],
+                        sku=avail_set_sku, platform_update_domain_count=3,
+                        platform_fault_domain_count=3))
+
+    except CloudError as error:
+      logging.exception("Azure agent received a CloudError while creating an "
+                        "availability set.")
+      raise AgentRuntimeException("Unable to create an Availability Set "
+                                  "{0}: {1}".format(lb_avail_set_name,
+                                                    error.message))
+    except ClientException as e:
+      logging.exception("ClientException received while attempting to contact Azure.")
+      raise AgentConfigurationException("Unable to communicate with Azure "
+                                        "while trying to create an availability set. "
+                                        "Please check your cloud configuration. "
+                                        "Reason: {}".format(e.message))
+
   def setup_virtual_machine_creation(self, credentials, network_client,
-                                     parameters, subnet):
+                                     parameters, subnet, availability_set):
     """ Sets up the network interface and creates the virtual machines needed
     with the load balancer roles.
     Args:
@@ -497,6 +551,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       subnet: A Subnet instance from the Virtual Network created.
+      availability_set: An Availability Set instance for the load balancer VMs.
     """
     resource_group = parameters[self.PARAM_RESOURCE_GROUP]
     vm_network_name = Haikunator().haikunate()
@@ -506,10 +561,11 @@ class AzureAgent(BaseAgent):
       resource_group, vm_network_name)
     self.create_virtual_machine(credentials, network_client,
                                 network_interface.id,
-                                parameters, vm_network_name)
+                                parameters, vm_network_name,
+                                availability_set)
 
   def create_virtual_machine(self, credentials, network_client, network_id,
-                             parameters, vm_network_name):
+                             parameters, vm_network_name, availability_set):
     """ Creates an Azure virtual machine using the network interface created.
     Args:
       credentials: A ServicePrincipalCredentials instance, that can be used to
@@ -519,6 +575,7 @@ class AzureAgent(BaseAgent):
       parameters: A dict, containing all the parameters necessary to
         authenticate this user with Azure.
       vm_network_name: The name of the virtual machine to use.
+      availability_set: An Availability Set instance for the load balancer VMs.
     Raises:
       AgentRuntimeException: If a virtual machine could not be successfully
         created.
@@ -580,7 +637,8 @@ class AzureAgent(BaseAgent):
       compute_client.virtual_machines.create_or_update(
           resource_group, vm_network_name, VirtualMachine(location=zone,
             plan=plan, os_profile=os_profile, hardware_profile=hardware_profile,
-            network_profile=network_profile, storage_profile=storage_profile))
+            network_profile=network_profile, storage_profile=storage_profile,
+            availability_set=availability_set))
       # Sleep until an IP address gets associated with the VM.
       while True:
         public_ip_address = network_client.public_ip_addresses.get(
@@ -612,7 +670,7 @@ class AzureAgent(BaseAgent):
     Returns:
         An instance of LinuxConfiguration
     """
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
     keyname = parameters[self.PARAM_KEYNAME]
     private_key_path = LocalState.LOCAL_APPSCALE_PATH + keyname
     public_key_path = private_key_path + ".pub"
@@ -741,7 +799,7 @@ class AzureAgent(BaseAgent):
     # While autoscaling, look through existing scale sets to check if they have
     # capacity to hold more vms. If they do, update the scale sets with additional
     # vms. If not, then create a new scale set for them.
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
     if is_autoscale in ['True', True]:
       instances_added = self.add_instances_to_existing_ss(
         num_instances_to_add, parameters)
@@ -966,7 +1024,7 @@ class AzureAgent(BaseAgent):
           "while trying to list Scale Sets. Please check your cloud "
           "configuration. Reason: {}".format(e.message))
 
-    downscale = parameters['autoscale_agent']
+    downscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     # On downscaling of instances, we need to delete the specific instance
     # from the Scale Set.
@@ -1423,7 +1481,7 @@ class AzureAgent(BaseAgent):
       self.PARAM_TEST: args[self.PARAM_TEST],
       self.PARAM_VERBOSE : args.get('verbose', False),
       self.PARAM_ZONE : args[self.PARAM_ZONE],
-      'autoscale_agent': False
+      self.PARAM_AUTOSCALE_AGENT: False
     }
     self.assert_credentials_are_valid(params)
 
