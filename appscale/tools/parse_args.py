@@ -212,6 +212,8 @@ class ParseArgs(object):
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=keyname,
         help="the keypair name to use")
+
+      # Euca/EC2 specific flags
       self.parser.add_argument('--use_spot_instances', action='store_true',
         default=False,
         help="use spot instances instead of on-demand instances (EC2 only)")
@@ -223,7 +225,7 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
 
       # Google Compute Engine-specific flags
@@ -353,7 +355,7 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
       self.parser.add_argument('--test', action='store_true',
         default=False,
@@ -487,7 +489,15 @@ class ParseArgs(object):
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      pass
+      if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
+        raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
+                                        "EC2_SECRET_KEY must also be "
+                                        "specified.")
+
+      if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
+        raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
+                                        "EC2_ACCESS_KEY must also be "
+                                        "specified.")
     elif function == "appscale-remove-app":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
