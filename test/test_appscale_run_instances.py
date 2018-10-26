@@ -579,7 +579,9 @@ EC2_SECRET_KEY: 'baz'
       "--group", self.group,
       "--test",
       "--zone", "my-zone-1b",
-      "--static_ip", "elastic-ip"
+      "--static_ip", "elastic-ip",
+      "--EC2_ACCESS_KEY", "baz",
+      "--EC2_SECRET_KEY", "baz"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -748,7 +750,9 @@ EC2_SECRET_KEY: 'baz'
       "--keyname", self.keyname,
       "--group", self.group,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone-1b",
+      "--EC2_ACCESS_KEY", "baz",
+      "--EC2_SECRET_KEY", "baz"
     ]
 
     options = ParseArgs(argv, self.function).args

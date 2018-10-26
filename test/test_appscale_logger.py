@@ -95,6 +95,9 @@ class TestAppScaleLogger(unittest.TestCase):
       "azure_group_tag" : None,
       "azure_storage_account" : None,
       "clear_datastore" : False,
+      'EC2_ACCESS_KEY': 'baz',
+      'EC2_SECRET_KEY': 'baz',
+      'EC2_URL': '',
     }
 
     # finally, construct a http payload for mocking that the below
