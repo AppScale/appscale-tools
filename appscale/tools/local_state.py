@@ -401,7 +401,8 @@ class LocalState(object):
 
     if infrastructure != 'xen':
       appscalefile_contents['zone'] = options.zone
-    elif infrastructure == 'gce':
+
+    if infrastructure == 'gce':
       appscalefile_contents['project'] = options.project
     elif infrastructure in ['ec2', 'euca']:
       appscalefile_contents['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
