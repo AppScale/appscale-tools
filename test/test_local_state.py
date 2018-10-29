@@ -251,7 +251,8 @@ class TestLocalState(unittest.TestCase):
       .and_return(flexmock(write=lambda *args: None))
 
     options = flexmock(name='options', table='cassandra', infrastructure='ec2',
-      keyname='booscale', group='boogroup', zone='my-zone-1b')
+      keyname='booscale', group='boogroup', zone='my-zone-1b',
+      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='')
     node_layout = NodeLayout(options={
       'min_machines' : 1,
       'max_machines' : 1,
