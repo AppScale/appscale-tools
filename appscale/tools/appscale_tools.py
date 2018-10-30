@@ -601,7 +601,7 @@ class AppScaleTools(object):
     """
     if not options.confirm:
       response = raw_input(
-        "Are you sure you want to stop this project's services? (y/N) ")
+        "Are you sure you want to delete this project's services? (y/N) ")
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled application removal.")
 
@@ -610,7 +610,7 @@ class AppScaleTools(object):
     admin_client = AdminClient(login_host, secret)
 
     for service_id in admin_client.list_services(options.project_id):
-      AppScaleLogger.log('Stopping service: {}'.format(service_id))
+      AppScaleLogger.log('Deleting service: {}'.format(service_id))
       cls._remove_service(admin_client, options.project_id, service_id)
 
     AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
