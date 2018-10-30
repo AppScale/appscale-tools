@@ -227,9 +227,13 @@ class LocalState(object):
         'max_machines': str(node_layout.max_machines),
       }
 
-      if options.infrastructure == "gce":
+      if options.infrastructure == 'gce':
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
+      elif options.infrastructure in ['euca', 'ec2']:
+        iaas_creds['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
+        iaas_creds['EC2_SECRET_KEY'] = options.EC2_SECRET_KEY
+        iaas_creds['EC2_URL'] = options.EC2_URL
       elif options.infrastructure == 'azure':
         iaas_creds['azure_subscription_id'] = options.azure_subscription_id
         iaas_creds['azure_app_id'] = options.azure_app_id
@@ -395,13 +399,16 @@ class LocalState(object):
       'group' : options.group,
     }
 
-    if infrastructure != "xen":
+    if infrastructure != 'xen':
       appscalefile_contents['zone'] = options.zone
 
-    if infrastructure == "gce":
+    if infrastructure == 'gce':
       appscalefile_contents['project'] = options.project
-
-    if infrastructure == 'azure':
+    elif infrastructure in ['ec2', 'euca']:
+      appscalefile_contents['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
+      appscalefile_contents['EC2_SECRET_KEY'] = options.EC2_SECRET_KEY
+      appscalefile_contents['EC2_URL'] = options.EC2_URL
+    elif infrastructure == 'azure':
       appscalefile_contents['azure_subscription_id'] = options.azure_subscription_id
       appscalefile_contents['azure_app_id'] = options.azure_app_id
       appscalefile_contents['azure_app_secret_key'] = options.azure_app_secret_key
