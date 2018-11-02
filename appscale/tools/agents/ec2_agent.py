@@ -234,7 +234,7 @@ class EC2Agent(BaseAgent):
 
 
   def authorize_security_group(self, parameters, group_id, from_port,
-                               to_port, ip_protocol, cidr_ip, group_name=None):
+                               to_port, ip_protocol, cidr_ip):
     """Opens up traffic on the given port range for traffic of the named type.
 
     Args:
@@ -249,10 +249,6 @@ class EC2Agent(BaseAgent):
         allowed.
       cidr_ip: A str that names the IP range that traffic should be allowed
         from.
-      group_name: A str that contains the name of the group whose ports
-        should be opened. Default is None since EC2 can just use group_id but
-        Euca will override to the group name in the parameters. EC2 cannot
-        use both group_id and group_name.
     Raises:
       AgentRuntimeException: If the ports could not be opened on the security
       group.
@@ -263,9 +259,9 @@ class EC2Agent(BaseAgent):
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.authorize_security_group(group_name=group_name, group_id=group_id,
-                                      from_port=from_port, to_port=to_port,
-                                      ip_protocol=ip_protocol, cidr_ip=cidr_ip)
+        conn.authorize_security_group(group_id=group_id, from_port=from_port,
+                                      to_port=to_port, cidr_ip=cidr_ip,
+                                      ip_protocol=ip_protocol)
       except EC2ResponseError:
         pass
       try:
