@@ -228,18 +228,17 @@ class EC2Agent(BaseAgent):
     Raises:
       SecurityGroupNotFoundException: If the security group could not be found.
     """
-    try:
-      for sg in conn.get_all_security_groups():
-        if sg.name == group and sg.vpc_id == vpc_id:
-          return sg
-    except StopIteration:
-      if vpc_id:
-        msg = 'Could not find security group with name {} in VPC {}!'.format(
-            group, vpc_id)
-      else:
-        msg = 'Could not find security group with name {} in classic ' \
-              'network!'.format(group)
-      raise SecurityGroupNotFoundException(msg)
+    for sg in conn.get_all_security_groups():
+      if sg.name == group and sg.vpc_id == vpc_id:
+        return sg
+
+    if vpc_id:
+      msg = 'Could not find security group with name {} in VPC {}!'.format(
+          group, vpc_id)
+    else:
+      msg = 'Could not find security group with name {} in classic ' \
+            'network!'.format(group)
+    raise SecurityGroupNotFoundException(msg)
 
 
   def authorize_security_group(self, parameters, group_id, from_port,
