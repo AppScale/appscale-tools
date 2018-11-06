@@ -11,7 +11,6 @@ import time
 from boto.ec2.networkinterface import NetworkInterfaceCollection
 from boto.ec2.networkinterface import NetworkInterfaceSpecification
 from boto.exception import EC2ResponseError
-from boto.vpc import VPCConnection
 
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.local_state import LocalState
@@ -214,7 +213,8 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def get_security_group_by_name(self, conn, group, vpc_id):
+  @classmethod
+  def get_security_group_by_name(cls, conn, group, vpc_id):
     """Gets a security group in AWS with the given name.
 
     Args:

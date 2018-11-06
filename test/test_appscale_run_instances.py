@@ -23,7 +23,6 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
-from appscale.tools.agents.base_agent import AgentRuntimeException
 from appscale.tools.agents.ec2_agent import EC2Agent
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
@@ -32,7 +31,6 @@ from appscale.tools.local_state import APPSCALE_VERSION
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
-from appscale.tools.custom_exceptions import BadConfigurationException
 
 from test_ip_layouts import (IP_1, ONE_NODE_CLUSTER)
 
