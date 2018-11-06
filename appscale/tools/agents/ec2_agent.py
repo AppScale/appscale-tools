@@ -149,7 +149,8 @@ class EC2Agent(BaseAgent):
         .format(keyname))
 
     try:
-      self.get_security_group_by_name(conn, group)
+      self.get_security_group_by_name(conn, group,
+                                      parameters.get(self.PARAM_VPC_ID))
     except SecurityGroupNotFoundException:
       # If this is raised, the group does not exist.
       pass
@@ -203,7 +204,7 @@ class EC2Agent(BaseAgent):
       except EC2ResponseError:
         pass
       try:
-        return self.get_security_group_by_name(conn, group)
+        return self.get_security_group_by_name(conn, group, specified_vpc)
       except SecurityGroupNotFoundException:
         pass
       time.sleep(self.SLEEP_TIME)
@@ -213,12 +214,14 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def get_security_group_by_name(self, conn, group):
+  def get_security_group_by_name(self, conn, group, vpc_id):
     """Gets a security group in AWS with the given name.
 
     Args:
       conn: A boto connection.
       group: A str that names the group that should be found.
+      vpc_id: A str containing the id of the VPC, used for checking if the
+        security group located is in the proper VPC or None.
     Returns:
       The 'boto.ec2.securitygroup.SecurityGroup' that has the correct group
       name.
@@ -226,11 +229,17 @@ class EC2Agent(BaseAgent):
       SecurityGroupNotFoundException: If the security group could not be found.
     """
     try:
-      return next(sg for sg in conn.get_all_security_groups()
-                  if sg.name == group)
+      for sg in conn.get_all_security_groups():
+        if sg.name == group and sg.vpc_id == vpc_id:
+          return sg
     except StopIteration:
-      raise SecurityGroupNotFoundException(
-          'Could not find security group with name {}!'.format(group))
+      if vpc_id:
+        msg = 'Could not find security group with name {} in VPC {}!'.format(
+            group, vpc_id)
+      else:
+        msg = 'Could not find security group with name {} in classic ' \
+              'network!'.format(group)
+      raise SecurityGroupNotFoundException(msg)
 
 
   def authorize_security_group(self, parameters, group_id, from_port,
@@ -266,7 +275,7 @@ class EC2Agent(BaseAgent):
         pass
       try:
         group_info = self.get_security_group_by_name(
-            conn, parameters[self.PARAM_GROUP])
+            conn, parameters[self.PARAM_GROUP], parameters.get(self.PARAM_VPC_ID))
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
@@ -534,7 +543,8 @@ class EC2Agent(BaseAgent):
       if subnet:
         # Get security group by name.
         try:
-          sg = self.get_security_group_by_name(conn, group)
+          sg = self.get_security_group_by_name(conn, group,
+                                               parameters[self.PARAM_VPC_ID])
         except SecurityGroupNotFoundException as e:
           raise AgentRuntimeException(e.message)
         # Create network interface specification.
@@ -898,7 +908,8 @@ class EC2Agent(BaseAgent):
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while True:
       try:
-        sg = self.get_security_group_by_name(conn, parameters[self.PARAM_GROUP])
+        sg = self.get_security_group_by_name(conn, parameters[self.PARAM_GROUP],
+                                             parameters.get(self.PARAM_VPC_ID))
         conn.delete_security_group(group_id=sg.id)
         return
       except EC2ResponseError as e:
