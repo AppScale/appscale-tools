@@ -145,7 +145,7 @@ group: {1}
     udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
     tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
     icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
-    group = flexmock(name=self.group, id='sg-id',
+    group = flexmock(name=self.group, id='sg-id', vpc_id=None,
                      rules=[tcp_rule, udp_rule, icmp_rule])
     self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
     self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([group])
