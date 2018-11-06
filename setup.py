@@ -55,7 +55,7 @@ setup(
     'oauth2client==4.0.0',
     'pyOpenSSL>=18.0.0',
     'PyYAML',
-    'requests[security]>=2.16.0,<=2.19.1',
+    'requests[security]>=2.20.0',
     'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
