@@ -26,10 +26,6 @@ class TestAppScaleLogger(unittest.TestCase):
     builtins = flexmock(sys.modules['__builtin__'])
     builtins.should_receive('print').and_return()
 
-    # next, pretend our ec2 credentials are properly set
-    for credential in EC2Agent.REQUIRED_CREDENTIALS:
-      os.environ[credential] = "baz"
-
     # pretend that our credentials are valid.
     fake_ec2 = flexmock(name="fake_ec2")
     fake_ec2.should_receive('get_all_instances')
@@ -49,7 +45,8 @@ class TestAppScaleLogger(unittest.TestCase):
     # same way every time
     argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--instance_type",
       "m3.medium", "--machine", "ami-ABCDEFG", "--group", "blargscale", "--keyname",
-      "appscale", "--zone", "my-zone-1b"]
+      "appscale", "--zone", "my-zone-1b",  "--EC2_ACCESS_KEY", "baz",
+      "--EC2_SECRET_KEY", "baz"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
     self.my_id = "12345"
@@ -100,6 +97,9 @@ class TestAppScaleLogger(unittest.TestCase):
       "azure_group_tag" : None,
       "azure_storage_account" : None,
       "clear_datastore" : False,
+      'EC2_ACCESS_KEY': 'baz',
+      'EC2_SECRET_KEY': 'baz',
+      'EC2_URL': '',
     }
 
     # finally, construct a http payload for mocking that the below

@@ -212,6 +212,8 @@ class ParseArgs(object):
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=keyname,
         help="the keypair name to use")
+
+      # Euca/EC2 specific flags
       self.parser.add_argument('--use_spot_instances', action='store_true',
         default=False,
         help="use spot instances instead of on-demand instances (EC2 only)")
@@ -223,7 +225,7 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
       self.parser.add_argument('--aws_vpc_id',
         help="the id for the vpc in the aws region to spawn instances in.")
@@ -357,7 +359,7 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
       self.parser.add_argument('--test', action='store_true',
         default=False,
@@ -475,7 +477,6 @@ class ParseArgs(object):
       self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
-      self.validate_environment_flags()
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
@@ -492,7 +493,15 @@ class ParseArgs(object):
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      self.validate_environment_flags()
+      if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
+        raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
+                                        "EC2_SECRET_KEY must also be "
+                                        "specified.")
+
+      if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
+        raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
+                                        "EC2_ACCESS_KEY must also be "
+                                        "specified.")
     elif function == "appscale-remove-app":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
@@ -583,31 +592,6 @@ class ParseArgs(object):
     """Sets up the ips flag if the ips_layout flag is given."""
     if self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
-
-
-  def validate_environment_flags(self):
-    """Validates flags dealing with setting environment variables.
-
-    Raises:
-      BadConfigurationException: If the user gives us either EC2_ACCESS_KEY
-        or EC2_SECRET_KEY, but forgets to also specify the other.
-    """
-    if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
-      raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
-        "EC2_SECRET_KEY must also be specified.")
-
-    if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
-      raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
-        "EC2_ACCESS_KEY must also be specified.")
-
-    if self.args.EC2_ACCESS_KEY:
-      os.environ['EC2_ACCESS_KEY'] = self.args.EC2_ACCESS_KEY
-
-    if self.args.EC2_SECRET_KEY:
-      os.environ['EC2_SECRET_KEY'] = self.args.EC2_SECRET_KEY
-
-    if self.args.EC2_URL:
-      os.environ['EC2_URL'] = self.args.EC2_URL
 
 
   def validate_infrastructure_flags(self):
@@ -704,6 +688,10 @@ class ParseArgs(object):
       if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")
+    elif self.args.infrastructure in ['euca', 'ec2']:
+      if not (self.args.EC2_ACCESS_KEY and self.args.EC2_SECRET_KEY):
+        raise BadConfigurationException("Both EC2_ACCESS_KEY and "
+                                        "EC2_SECRET_KEY must be specified.")
 
   def validate_credentials(self):
     """If running over a cloud infrastructure, makes sure that all of the
