@@ -3,6 +3,7 @@ Helper library for EC2 interaction
 """
 import boto
 import boto.ec2
+import boto.vpc
 import datetime
 import glob
 import os
