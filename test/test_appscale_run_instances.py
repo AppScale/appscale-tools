@@ -138,8 +138,9 @@ EC2_SECRET_KEY: 'baz'
     icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
     group = flexmock(name=self.group, id='sg-id', vpc_id=None,
                      rules=[tcp_rule, udp_rule, icmp_rule])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([group])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args()\
+      .and_return([]).and_return([]).and_return([group]).and_return([group])\
+      .and_return([group]).and_return([group])
 
 
     # mock out creating the keypair
@@ -154,13 +155,13 @@ EC2_SECRET_KEY: 'baz'
         self.group, str, None).and_return()
     self.fake_ec2.should_receive('authorize_security_group').with_args(
         group_id=group.id, from_port=1, to_port=65535, ip_protocol='udp',
-        cidr_ip='0.0.0.0/0', group_name=None)
+        cidr_ip='0.0.0.0/0')
     self.fake_ec2.should_receive('authorize_security_group').with_args(
         group_id=group.id, from_port=1, to_port=65535, ip_protocol='tcp',
-        cidr_ip='0.0.0.0/0', group_name=None)
+        cidr_ip='0.0.0.0/0')
     self.fake_ec2.should_receive('authorize_security_group').with_args(
         group_id=group.id, from_port=-1, to_port=-1, ip_protocol='icmp',
-        cidr_ip='0.0.0.0/0', group_name=None)
+        cidr_ip='0.0.0.0/0')
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
