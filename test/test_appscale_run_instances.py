@@ -31,7 +31,6 @@ from appscale.tools.local_state import APPSCALE_VERSION
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
-from appscale.tools.custom_exceptions import BadConfigurationException
 
 from test_ip_layouts import (IP_1, ONE_NODE_CLUSTER)
 
@@ -137,9 +136,11 @@ EC2_SECRET_KEY: 'baz'
     udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
     tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
     icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
-    group = flexmock(name=self.group, rules=[tcp_rule, udp_rule, icmp_rule])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args(self.group).and_return([group])
+    group = flexmock(name=self.group, id='sg-id', vpc_id=None,
+                     rules=[tcp_rule, udp_rule, icmp_rule])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args()\
+      .and_return([]).and_return([]).and_return([group]).and_return([group])\
+      .and_return([group]).and_return([group])
 
 
     # mock out creating the keypair
@@ -150,14 +151,17 @@ EC2_SECRET_KEY: 'baz'
       .and_return(fake_key)
 
     # and the same for the security group
-    self.fake_ec2.should_receive('create_security_group').with_args(self.group,
-      str).and_return()
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=-1, to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('create_security_group').with_args(
+        self.group, str, None).and_return()
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='udp',
+        cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='tcp',
+        cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=-1, to_port=-1, ip_protocol='icmp',
+        cidr_ip='0.0.0.0/0')
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
@@ -438,9 +442,10 @@ EC2_SECRET_KEY: 'baz'
       availability_zone='my-zone-1b').and_return([fake_entry])
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.1', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
 
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
@@ -624,10 +629,10 @@ EC2_SECRET_KEY: 'baz'
     self.setup_ec2_mocks()
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
-
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.23', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
 

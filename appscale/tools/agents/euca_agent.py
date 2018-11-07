@@ -4,9 +4,6 @@ from appscale.tools.appscale_logger import AppScaleLogger
 from ec2_agent import EC2Agent
 from urlparse import urlparse
 
-__author__ = 'hiranya'
-__email__ = 'hiranya@appscale.com'
-
 class EucalyptusAgent(EC2Agent):
   """
   Eucalyptus infrastructure agent which can be used to spawn and terminate
@@ -14,7 +11,7 @@ class EucalyptusAgent(EC2Agent):
   """
 
   # The version of Eucalyptus API used to interact with Euca clouds
-  EUCA_API_VERSION = '2010-08-31'
+  EUCA_API_VERSION = '2016-11-15'
 
 
   # A list of the credentials that we require users to provide the AppScale
@@ -66,7 +63,6 @@ class EucalyptusAgent(EC2Agent):
       path=result.path,
       is_secure=(result.scheme == 'https'),
       api_version=self.EUCA_API_VERSION, debug=debug_level)
-
 
   def does_zone_exist(self, parameters):
     """

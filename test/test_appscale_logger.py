@@ -87,6 +87,8 @@ class TestAppScaleLogger(unittest.TestCase):
       "verbose" : False,
       "version" : False,
       "zone" : "my-zone-1b",
+      "aws_subnet_id" : None,
+      "aws_vpc_id" : None,
       "azure_subscription_id" : None,
       "azure_app_id" : None,
       "azure_app_secret_key" : None,
