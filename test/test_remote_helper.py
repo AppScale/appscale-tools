@@ -19,10 +19,10 @@ import SOAPpy
 
 
 # AppScale import, the library that we're testing here
-from appscale.tools.agents.euca_agent import EucalyptusAgent
-from appscale.tools.agents import factory
-from appscale.tools.agents.gce_agent import CredentialTypes
-from appscale.tools.agents.gce_agent import GCEAgent
+from appscale.agents.euca_agent import EucalyptusAgent
+from appscale.agents import factory
+from appscale.agents.gce_agent import CredentialTypes
+from appscale.agents.gce_agent import GCEAgent
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException

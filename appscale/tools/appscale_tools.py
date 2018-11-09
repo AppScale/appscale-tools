@@ -27,7 +27,7 @@ from appscale.tools import utils
 from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
                                              DEFAULT_VERSION)
 from appscale.tools.admin_api.version import Version
-from appscale.tools.agents.factory import InfrastructureAgentFactory
+from appscale.agents.factory import InfrastructureAgentFactory
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appengine_helper import AppEngineHelper
 from appscale.tools.appscale_logger import AppScaleLogger
