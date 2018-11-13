@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
 # General-purpose Python library imports
 import argparse
@@ -21,9 +22,9 @@ from appscale.agents.base_agent import BaseAgent
 from appscale.agents.ec2_agent import EC2Agent
 from appscale.agents.gce_agent import GCEAgent
 from appscale.agents.factory import InfrastructureAgentFactory
-from custom_exceptions import BadConfigurationException
-from local_state import APPSCALE_VERSION
-from local_state import LocalState
+from .custom_exceptions import BadConfigurationException
+from .local_state import APPSCALE_VERSION
+from .local_state import LocalState
 
 
 class ParseArgs(object):
