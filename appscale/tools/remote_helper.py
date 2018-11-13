@@ -16,7 +16,6 @@ import yaml
 from boto.exception import BotoServerError
 
 # AppScale-specific imports
-from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
@@ -24,9 +23,10 @@ from custom_exceptions import AppScaleException
 from custom_exceptions import BadConfigurationException
 from custom_exceptions import ShellException
 from custom_exceptions import TimeoutException
-from agents.base_agent import AgentRuntimeException
-from agents.gce_agent import CredentialTypes
-from agents.gce_agent import GCEAgent
+from appscale.agents.base_agent import AgentRuntimeException
+from appscale.agents.gce_agent import CredentialTypes
+from appscale.agents.gce_agent import GCEAgent
+from appscale.agents.factory import InfrastructureAgentFactory
 from local_state import APPSCALE_VERSION
 from local_state import LocalState
 

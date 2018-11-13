@@ -7,7 +7,7 @@ import yaml
 
 
 # AppScale-specific imports
-from agents.factory import InfrastructureAgentFactory
+from appscale.agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState

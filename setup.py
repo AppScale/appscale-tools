@@ -43,7 +43,7 @@ setup(
   platforms='Posix; MacOS X',
   install_requires=[
     'adal>=0.4.7',
-    'appscale.agents',
+    'appscale-agents',
     'azure==2.0.0',
     'azure-mgmt-marketplaceordering',
     'cryptography>=2.3.0',

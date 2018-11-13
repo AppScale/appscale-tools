@@ -14,13 +14,13 @@ import yaml
 
 # AppScale-specific imports
 try:
-  from agents.azure_agent import AzureAgent
+  from appscale.agents.azure_agent import AzureAgent
 except ImportError:
   AzureAgent = None
-from agents.base_agent import BaseAgent
-from agents.ec2_agent import EC2Agent
-from agents.gce_agent import GCEAgent
-from agents.factory import InfrastructureAgentFactory
+from appscale.agents.base_agent import BaseAgent
+from appscale.agents.ec2_agent import EC2Agent
+from appscale.agents.gce_agent import GCEAgent
+from appscale.agents.factory import InfrastructureAgentFactory
 from custom_exceptions import BadConfigurationException
 from local_state import APPSCALE_VERSION
 from local_state import LocalState

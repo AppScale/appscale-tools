@@ -27,7 +27,6 @@ from appscale.tools import utils
 from appscale.tools.admin_api.client import (AdminClient, DEFAULT_SERVICE,
                                              DEFAULT_VERSION)
 from appscale.tools.admin_api.version import Version
-from appscale.agents.factory import InfrastructureAgentFactory
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appengine_helper import AppEngineHelper
 from appscale.tools.appscale_logger import AppScaleLogger
@@ -39,6 +38,8 @@ from appscale.tools.local_state import APPSCALE_VERSION, LocalState
 from appscale.tools.node_layout import NodeLayout
 from appscale.tools.remote_helper import RemoteHelper
 from appscale.tools.version_helper import latest_tools_version
+
+from appscale.agents.factory import InfrastructureAgentFactory
 
 
 def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
