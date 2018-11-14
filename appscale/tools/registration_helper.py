@@ -4,10 +4,10 @@ import json
 import urllib
 import urllib2
 
-from appcontroller_client import AppControllerClient
-from custom_exceptions import AppScaleException
-from local_state import LocalState
-from local_state import APPSCALE_VERSION
+from .appcontroller_client import AppControllerClient
+from .custom_exceptions import AppScaleException
+from .local_state import LocalState
+from .local_state import APPSCALE_VERSION
 
 class RegistrationHelper(object):
   """ RegistrationHelper provides convenience methods used during the

@@ -21,13 +21,13 @@ from string import ascii_lowercase, digits
 
 
 # AppScale-specific imports
-from appcontroller_client import AppControllerClient
-from appscale_logger import AppScaleLogger
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
+from .appcontroller_client import AppControllerClient
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import AppControllerException
+from .custom_exceptions import AppScaleException
+from .custom_exceptions import AppScalefileException
+from .custom_exceptions import BadConfigurationException
+from .custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
