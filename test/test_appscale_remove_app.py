@@ -60,9 +60,6 @@ class TestAppScaleRemoveApp(unittest.TestCase):
     builtins.should_receive('open').with_args(secret_key_location, 'r') \
       .and_return(fake_secret)
 
-    flexmock(AdminClient).should_receive('delete_project').\
-      and_raise(AdminError)
-
     # mock out reading the locations.json file, and slip in our own json
     flexmock(os.path)
     os.path.should_call('exists')  # set the fall-through
@@ -81,6 +78,8 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
 
+    flexmock(AdminClient).should_receive('list_services').\
+      and_raise(AdminError)
     argv = [
       "--project-id", "blargapp",
       "--keyname", self.keyname
@@ -121,12 +120,12 @@ class TestAppScaleRemoveApp(unittest.TestCase):
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)
 
-    operation_id = 'operation-1'
-    flexmock(AdminClient).should_receive('delete_project').\
-      and_return(operation_id)
-    flexmock(AdminClient).should_receive('list_projects').\
-      and_return({'projects': []})
-
+    flexmock(AdminClient).should_receive('list_services').\
+      and_return(['default'])
+    flexmock(AdminClient).should_receive('delete_service').\
+      with_args('blargapp', 'default').and_return('op_id')
+    flexmock(AdminClient).should_receive('get_operation').\
+      with_args('blargapp', 'op_id').and_return({'done': True})
     argv = [
       "--project-id", "blargapp",
       "--keyname", self.keyname
