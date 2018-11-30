@@ -1072,6 +1072,52 @@ class AppScaleTools(object):
     admin_client.update_cron(version.project_id, cron_jobs)
 
   @classmethod
+  def update_indexes(cls, source_location, keyname, project_id):
+    """ Updates a project's composite indexes from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
+
+    index_config = fetch_function('index.yaml', source_location)
+    if index_config is None:
+      index_config = fetch_function('datastore-indexes.xml', source_location)
+      # If the source does not have an index configuration file, do nothing.
+      if index_config is None:
+        return
+
+      indexes = utils.indexes_from_xml(index_config)
+    else:
+      indexes = yaml.safe_load(index_config)
+
+    AppScaleLogger.log('Updating indexes')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_indexes(version.project_id, indexes)
+
+  @classmethod
   def update_queues(cls, source_location, keyname, project_id):
     """ Updates a project's queues from the configuration file.
 

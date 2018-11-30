@@ -233,6 +233,33 @@ class AdminClient(object):
     raise AdminError(message)
 
   @retry(**RETRY_POLICY)
+  def update_indexes(self, project_id, indexes):
+    """ Updates the the project's index configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      indexes: A dictionary containing index configuration details.
+    Raises:
+      AdminError if unable to update index configuration.
+    """
+    index_yaml = yaml.safe_dump(indexes, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    indexes_url = 'https://{}:{}/api/datastore/index/add?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(indexes_url, headers=headers, data=index_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
+
+  @retry(**RETRY_POLICY)
   def update_queues(self, project_id, queues):
     """ Updates the the project's queue configuration.
 
