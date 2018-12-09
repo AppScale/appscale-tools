@@ -155,13 +155,12 @@ def indexes_from_xml(contents):
   Returns:
     A dictionary containing index configuration details.
   """
-  tree = ElementTree.fromstring(contents)
-  if len(tree) != 1 or tree[0].tag != 'datastore-indexes':
+  index_entries = ElementTree.fromstring(contents)
+  if index_entries.tag != 'datastore-indexes':
     raise BadConfigurationException(
       'datastore-indexes.xml should have a single root element named '
       'datastore-indexes')
 
-  index_entries = tree[0]
   indexes = {'indexes': []}
   for index_entry in index_entries:
     if index_entry.tag != 'datastore-index':
