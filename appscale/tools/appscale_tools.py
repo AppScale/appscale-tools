@@ -1100,16 +1100,10 @@ class AppScaleTools(object):
     if project_id:
       version.project_id = project_id
 
-    index_config = fetch_function('index.yaml', source_location)
-    if index_config is None:
-      index_config = fetch_function('datastore-indexes.xml', source_location)
-      # If the source does not have an index configuration file, do nothing.
-      if index_config is None:
-        return
-
-      indexes = utils.indexes_from_xml(index_config)
-    else:
-      indexes = yaml.safe_load(index_config)
+    indexes = utils.get_indexes(source_location, fetch_function)
+    # If the source does not have an index configuration file, do nothing.
+    if indexes is None:
+      return
 
     AppScaleLogger.log('Updating indexes')
     login_host = LocalState.get_login_host(keyname)

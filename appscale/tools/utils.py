@@ -3,6 +3,7 @@
 import errno
 import os
 import tarfile
+import yaml
 import zipfile
 from xml.etree import ElementTree
 
@@ -205,6 +206,28 @@ def indexes_from_xml(contents):
     indexes['indexes'].append(index)
 
   return indexes
+
+
+def get_indexes(source_location, fetch_function):
+  """ Retrieves a list of index definitions from a source's configuration.
+
+  Args:
+    source_location: A string specifying the location of the source code.
+    fetch_function: The function used to find a file within the source.
+  Returns:
+    A list of dictionaries containing index definition details or None.
+  """
+  index_config = fetch_function('index.yaml', source_location)
+  if index_config is not None:
+    return yaml.safe_load(index_config)
+
+  index_config = fetch_function('datastore-indexes.xml', source_location)
+  if index_config is not None:
+    return indexes_from_xml(index_config)
+
+  index_config = fetch_function('datastore-indexes-auto.xml', source_location)
+  if index_config is not None:
+    return indexes_from_xml(index_config)
 
 
 def queues_from_xml(contents):
