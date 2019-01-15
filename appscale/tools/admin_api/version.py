@@ -46,6 +46,7 @@ class Version(object):
     self.handlers = None
     self.manual_scaling = None
     self.automatic_scaling = None
+    self.serving_status = None
 
   @staticmethod
   def from_yaml(app_yaml):

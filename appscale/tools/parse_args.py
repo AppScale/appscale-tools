@@ -389,6 +389,23 @@ class ParseArgs(object):
       self.parser.add_argument('--confirm', action='store_true',
                                default=False,
                                help="does not ask user to confirm application removal")
+    elif function == "appscale-start-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to start")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to start")
+    elif function == "appscale-stop-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to stop")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to stop")
+      self.parser.add_argument('--confirm', action='store_true',
+                               default=False,
+                               help="does not ask user to confirm application stop")
 
     elif function == "appscale-reset-pwd":
       self.parser.add_argument('--keyname', '-k',
@@ -506,6 +523,16 @@ class ParseArgs(object):
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
     elif function == "appscale-remove-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
+    elif function == "appscale-start-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
+    elif function == "appscale-stop-service":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
       if not self.args.service_id:

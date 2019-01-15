@@ -148,6 +148,42 @@ class AdminClient(object):
     return operation_id
 
   @retry(**RETRY_POLICY)
+  def patch_version(self, version, fields):
+    """ Patches (updates) a version.
+
+    Args:
+      version: A Version object.
+      fields: The set of fields to patch.
+    Returns:
+      A dictionary containing the deployment operation details.
+    Raises:
+      AdminError if the Admin API call was not successful.
+    """
+    versions_url = ('{prefix}/{project}/services/{service}/versions/{version}'
+                    .format(prefix=self.prefix, project=version.project_id,
+                            service=version.service_id, version=version.id))
+    headers = {
+      'AppScale-Secret': self.secret,
+      'Content-Type': 'application/json'
+    }
+    params = {
+      'updateMask': ','.join(fields)
+    }
+    body = {}
+    if version.serving_status:
+      body['servingStatus'] = version.serving_status
+
+    response = requests.patch(versions_url, headers=headers, params=params,
+                              json=body, verify=False)
+    operation = self.extract_response(response)
+    try:
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
+
+  @retry(**RETRY_POLICY)
   def delete_service(self, project_id, service_id):
     """ Deletes a service.
 
