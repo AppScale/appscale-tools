@@ -75,57 +75,20 @@ class GCEAgent(BaseAgent):
 
   # The following constants are string literals that can be used by callers to
   # index into the parameters the user passes in, as opposed to having to type
-  # out the strings each time we need them.
-  PARAM_CREDENTIALS = 'credentials'
-
-
-  PARAM_GROUP = 'group'
-
-
-  PARAM_IMAGE_ID = 'image_id'
-
-
-  PARAM_INSTANCE_IDS = 'instance_ids'
-
-
-  PARAM_INSTANCE_TYPE = 'instance_type'
-
-
-  PARAM_KEYNAME = 'keyname'
-
-
+  # out the strings each time we need them. These are specific to the GCE agent.
   PARAM_PROJECT = 'project'
-
-
-  PARAM_REGION = 'region'
-
-
   PARAM_SECRETS = 'client_secrets'
-
-
-  PARAM_STATIC_IP = 'static_ip'
-
-
   PARAM_STORAGE = 'oauth2_storage'
-
-
-  PARAM_TEST = 'test'
-
-
-  PARAM_VERBOSE = 'IS_VERBOSE'
-
-
-  PARAM_ZONE = 'zone'
 
 
   # A set that contains all of the items necessary to run AppScale in Google
   # Compute Engine.
   REQUIRED_CREDENTIALS = (
-    PARAM_GROUP,
-    PARAM_IMAGE_ID,
-    PARAM_KEYNAME,
+    BaseAgent.PARAM_GROUP,
+    BaseAgent.PARAM_IMAGE_ID,
+    BaseAgent.PARAM_KEYNAME,
     PARAM_PROJECT,
-    PARAM_ZONE
+    BaseAgent.PARAM_ZONE
   )
 
 
@@ -211,7 +174,7 @@ class GCEAgent(BaseAgent):
       AgentRuntimeException: If the named network or firewall already exist in
       GCE.
     """
-    is_autoscale_agent = parameters.get('autoscale_agent', False)
+    is_autoscale_agent = parameters.get(self.PARAM_AUTOSCALE_AGENT, False)
 
     # While creating instances during autoscaling, we do not need to create a
     # new keypair or a network. We just make use of the existing one.
@@ -554,7 +517,7 @@ class GCEAgent(BaseAgent):
       self.PARAM_ZONE : args['zone'],
       self.PARAM_TEST: args['test'],
       self.PARAM_VERBOSE: args.get('verbose', False),
-      'autoscale_agent': False
+      self.PARAM_AUTOSCALE_AGENT: False
     }
 
     # A zone in GCE looks like 'us-central2-a', which is in the region
@@ -622,7 +585,7 @@ class GCEAgent(BaseAgent):
         present, or if the client_secrets parameter refers to a file that is not
         present on the local filesystem.
     """
-    is_autoscale_agent = parameters.get('autoscale_agent', False)
+    is_autoscale_agent = parameters.get(self.PARAM_AUTOSCALE_AGENT, False)
 
     # Make sure the user has set each parameter.
     for param in self.REQUIRED_CREDENTIALS:
@@ -1143,7 +1106,7 @@ class GCEAgent(BaseAgent):
     Raises:
       AppScaleException if the user wants to abort.
     """
-    is_autoscale_agent = parameters.get('autoscale_agent', False)
+    is_autoscale_agent = parameters.get(self.PARAM_AUTOSCALE_AGENT, False)
 
     # Determine paths to credential files
     if is_autoscale_agent:

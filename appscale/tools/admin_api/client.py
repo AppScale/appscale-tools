@@ -210,34 +210,20 @@ class AdminClient(object):
     return operation_id
 
   @retry(**RETRY_POLICY)
-  def delete_project(self, project_id):
-    """ Deletes a project.
-
-    Args:
-      project_id: A string specifying the project ID.
-    Raises:
-      AdminError if the response is not 200.
-    """
-    url = 'https://{}:{}/v1/projects/{}'.format(self.host, self.PORT,
-                                                project_id)
-    headers = {'AppScale-Secret': self.secret}
-    response = requests.delete(url, headers=headers, verify=False)
-    if response.status_code != 200:
-      raise AdminError('Error asking Admin Server to delete project!')
-
-  @retry(**RETRY_POLICY)
-  def list_projects(self):
-    """ Lists projects.
+  def list_services(self, project_id):
+    """ Lists a project's services.
 
     Returns:
-      A list containing the projects of this deployment.
+      A list containing the project's service IDs.
     Raises:
       AdminError if the response is formatted incorrectly.
     """
-    url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
+    url = 'https://{}:{}/v1/apps/{}/services'.format(
+      self.host, self.PORT, project_id)
     headers = {'AppScale-Secret': self.secret}
     response = requests.get(url, headers=headers, verify=False)
-    return self.extract_response(response)
+    return [service['id']
+            for service in self.extract_response(response)['services']]
 
   @retry(**RETRY_POLICY)
   def get_operation(self, project, operation_id):
@@ -270,6 +256,33 @@ class AdminClient(object):
     cron_url = 'https://{}:{}/api/cron/update?app_id={}'.format(
       self.host, self.PORT, project_id)
     response = requests.post(cron_url, headers=headers, data=cron_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
+
+  @retry(**RETRY_POLICY)
+  def update_indexes(self, project_id, indexes):
+    """ Updates the the project's index configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      indexes: A dictionary containing index configuration details.
+    Raises:
+      AdminError if unable to update index configuration.
+    """
+    index_yaml = yaml.safe_dump(indexes, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    indexes_url = 'https://{}:{}/api/datastore/index/add?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(indexes_url, headers=headers, data=index_yaml,
                              verify=False)
 
     if response.status_code == 200:

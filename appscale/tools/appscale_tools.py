@@ -602,7 +602,7 @@ class AppScaleTools(object):
     """
     if not options.confirm:
       response = raw_input(
-        'Are you sure you want to remove this application? (y/N) ')
+        "Are you sure you want to delete this project's services? (y/N) ")
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled application removal.")
 
@@ -610,26 +610,39 @@ class AppScaleTools(object):
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
 
-    admin_client.delete_project(options.project_id)
+    for service_id in admin_client.list_services(options.project_id):
+      AppScaleLogger.log('Deleting service: {}'.format(service_id))
+      cls._remove_service(admin_client, options.project_id, service_id)
 
+    AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
+
+  @classmethod
+  def _remove_service(cls, admin_client, project_id, service_id):
+    """ Deletes a project's service.
+
+    Args:
+      admin_client: An AdminClient object.
+      project_id: A string specifying a project ID.
+      service_id: A string specifying a service ID.
+    Raises:
+      AppScaleException if the operation times out.
+      AdminError: If there is a problem making an Admin API call.
+    """
+    operation_id = admin_client.delete_service(project_id, service_id)
     deadline = time.time() + cls.MAX_OPERATION_TIME
     while True:
       if time.time() > deadline:
-        raise AppScaleException('The undeploy operation took too long.')
-      found_project = False
-      projects = admin_client.list_projects()['projects']
-      for project in projects:
-        if options.project_id == project['projectId']:
-          found_project = True
-          break
+        raise AppScaleException('The service delete operation timed out')
 
-      if found_project:
+      operation = admin_client.get_operation(project_id, operation_id)
+      if not operation['done']:
         time.sleep(1)
         continue
-      else:
-        break
 
-    AppScaleLogger.success('Done shutting down {}.'.format(options.project_id))
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+
+      break
 
   @classmethod
   def start_service(cls, options):
@@ -708,24 +721,9 @@ class AppScaleTools(object):
     login_host = LocalState.get_login_host(options.keyname)
     secret = LocalState.get_secret_key(options.keyname)
     admin_client = AdminClient(login_host, secret)
-    operation_id = admin_client.delete_service(options.project_id,
-                                                options.service_id)
-    deadline = time.time() + cls.MAX_OPERATION_TIME
-    while True:
-      if time.time() > deadline:
-        raise AppScaleException('The undeploy operation took too long.')
-      operation = admin_client.get_operation(options.project_id, operation_id)
-      if not operation['done']:
-        time.sleep(1)
-        continue
-
-      if 'error' in operation:
-        raise AppScaleException(operation['error']['message'])
-      break
-
+    cls._remove_service(admin_client, options.project_id, options.service_id)
     AppScaleLogger.success('Done shutting down service {} for {}.'.format(
       options.project_id, options.service_id))
-
 
   @classmethod
   def reset_password(cls, options):
@@ -800,8 +798,11 @@ class AppScaleTools(object):
     """
     LocalState.make_appscale_directory()
     LocalState.ensure_appscale_isnt_running(options.keyname, options.force)
+    node_layout = NodeLayout(options)
+
     if options.infrastructure:
-      if not options.disks and not options.test and not options.force:
+      if (not options.test and not options.force and
+          not (options.disks or node_layout.are_disks_used())):
         LocalState.ensure_user_wants_to_run_without_disks()
 
     reduced_version = '.'.join(x for x in APPSCALE_VERSION.split('.')[:2])
@@ -810,8 +811,6 @@ class AppScaleTools(object):
     my_id = str(uuid.uuid4())
     AppScaleLogger.remote_log_tools_state(options, my_id, "started",
       APPSCALE_VERSION)
-
-    node_layout = NodeLayout(options)
 
     head_node = node_layout.head_node()
     # Start VMs in cloud via cloud agent.
@@ -1132,6 +1131,46 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(login_host, secret_key)
     admin_client.update_cron(version.project_id, cron_jobs)
+
+  @classmethod
+  def update_indexes(cls, source_location, keyname, project_id):
+    """ Updates a project's composite indexes from the configuration file.
+
+    Args:
+      source_location: A string specifying the location of the source code.
+      keyname: A string specifying the key name.
+      project_id: A string specifying the project ID.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
+
+    indexes = utils.get_indexes(source_location, fetch_function)
+    # If the source does not have an index configuration file, do nothing.
+    if indexes is None:
+      return
+
+    AppScaleLogger.log('Updating indexes')
+    login_host = LocalState.get_login_host(keyname)
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(login_host, secret_key)
+    admin_client.update_indexes(version.project_id, indexes)
 
   @classmethod
   def update_queues(cls, source_location, keyname, project_id):

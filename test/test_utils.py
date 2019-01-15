@@ -1,7 +1,7 @@
 import unittest
 
 from appscale.tools.custom_exceptions import BadConfigurationException
-from appscale.tools.utils import cron_from_xml
+from appscale.tools.utils import cron_from_xml, indexes_from_xml
 
 
 class TestUtils(unittest.TestCase):
@@ -52,3 +52,41 @@ class TestUtils(unittest.TestCase):
     """.strip()
     with self.assertRaises(BadConfigurationException):
       cron_from_xml(contents)
+
+  def test_indexes_from_xml(self):
+    contents = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <datastore-indexes autoGenerate="true">
+        <datastore-index kind="Employee" ancestor="false">
+            <property name="lastName" direction="asc" />
+            <property name="hireDate" direction="desc" />
+        </datastore-index>
+        <datastore-index kind="Project" ancestor="false">
+            <property name="dueDate" direction="asc" />
+            <property name="cost" direction="desc" />
+        </datastore-index>
+    </datastore-indexes>
+    """.strip()
+
+    expected_config = {
+      'indexes': [
+        {'kind': 'Employee',
+         'ancestor': 'false',
+         'properties': [{'name': 'lastName', 'direction': 'asc'},
+                        {'name': 'hireDate', 'direction': 'desc'}]},
+        {'kind': 'Project',
+         'ancestor': 'false',
+         'properties': [{'name': 'dueDate', 'direction': 'asc'},
+                        {'name': 'cost', 'direction': 'desc'}]}
+      ]
+    }
+    self.assertDictEqual(indexes_from_xml(contents), expected_config)
+
+    contents = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <datastore-indexes>
+      <invalid-element></invalid-element>
+    </datastore-indexes>
+    """.strip()
+    with self.assertRaises(BadConfigurationException):
+      indexes_from_xml(contents)

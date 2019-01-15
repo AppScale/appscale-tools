@@ -3,22 +3,30 @@ Helper library for EC2 interaction
 """
 import boto
 import boto.ec2
+import boto.vpc
 import datetime
 import glob
 import os
 import time
+
+from boto.ec2.networkinterface import NetworkInterfaceCollection
+from boto.ec2.networkinterface import NetworkInterfaceSpecification
+from boto.exception import EC2ResponseError
 
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.local_state import LocalState
 from base_agent import AgentConfigurationException
 from base_agent import AgentRuntimeException
 from base_agent import BaseAgent
-from boto.exception import EC2ResponseError
 
 
 # pylint: disable-msg=W0511
 #    don't bother about todo's
 
+
+class SecurityGroupNotFoundException(Exception):
+  """ Exception to raise when a security group could not be found on EC2."""
+  pass
 
 
 class EC2Agent(BaseAgent):
@@ -40,29 +48,22 @@ class EC2Agent(BaseAgent):
   # requests as replay attacks.
   SLEEP_TIME = 20
 
-  PARAM_CREDENTIALS = 'credentials'
-  PARAM_GROUP = 'group'
-  PARAM_IMAGE_ID = 'image_id'
-  PARAM_INSTANCE_TYPE = 'instance_type'
-  PARAM_KEYNAME = 'keyname'
-  PARAM_INSTANCE_IDS = 'instance_ids'
-  PARAM_REGION = 'region'
   PARAM_SPOT = 'use_spot_instances'
   PARAM_SPOT_PRICE = 'max_spot_price'
-  PARAM_STATIC_IP = 'static_ip'
-  PARAM_ZONE = 'zone'
+  PARAM_SUBNET_ID = 'aws_subnet_id'
+  PARAM_VPC_ID = 'aws_vpc_id'
 
   REQUIRED_EC2_RUN_INSTANCES_PARAMS = (
-    PARAM_CREDENTIALS,
-    PARAM_GROUP,
-    PARAM_IMAGE_ID,
-    PARAM_KEYNAME,
+    BaseAgent.PARAM_CREDENTIALS,
+    BaseAgent.PARAM_GROUP,
+    BaseAgent.PARAM_IMAGE_ID,
+    BaseAgent.PARAM_KEYNAME,
     PARAM_SPOT
   )
 
   REQUIRED_EC2_TERMINATE_INSTANCES_PARAMS = (
-    PARAM_CREDENTIALS,
-    PARAM_INSTANCE_IDS
+    BaseAgent.PARAM_CREDENTIALS,
+    BaseAgent.PARAM_INSTANCE_IDS
   )
 
   # A list of the environment variables that must be provided
@@ -130,7 +131,7 @@ class EC2Agent(BaseAgent):
     """
     keyname = parameters[self.PARAM_KEYNAME]
     group = parameters[self.PARAM_GROUP]
-    is_autoscale = parameters['autoscale_agent']
+    is_autoscale = parameters[self.PARAM_AUTOSCALE_AGENT]
 
     AppScaleLogger.log("Verifying that keyname {0}".format(keyname) + \
       " is not already registered.")
@@ -147,26 +148,35 @@ class EC2Agent(BaseAgent):
         "value, or erase it to have one automatically generated for you." \
         .format(keyname))
 
-    security_groups = conn.get_all_security_groups()
-    for security_group in security_groups:
-      if security_group.name == group:
-        self.handle_failure("Security group {0} is already registered. Please" \
-          " change the 'group' specified in your AppScalefile to a different " \
-          "value, or erase it to have one automatically generated for you." \
-          .format(group))
+    try:
+      self.get_security_group_by_name(conn, group,
+                                      parameters.get(self.PARAM_VPC_ID))
+    except SecurityGroupNotFoundException:
+      # If this is raised, the group does not exist.
+      pass
+    else:
+      self.handle_failure("Security group {0} is already registered. Please "
+                          "change the 'group' specified in your AppScalefile "
+                          "to a different value, or erase it to have one "
+                          "automatically generated for you.".format(group))
+
 
     AppScaleLogger.log("Creating key pair: {0}".format(keyname))
     key_pair = conn.create_key_pair(keyname)
     ssh_key = '{0}{1}.key'.format(LocalState.LOCAL_APPSCALE_PATH, keyname)
     LocalState.write_key_file(ssh_key, key_pair.material)
 
-    self.create_security_group(parameters, group)
-    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
-      ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    self.authorize_security_group(parameters, group, from_port=1, to_port=65535,
-      ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    self.authorize_security_group(parameters, group, from_port=-1, to_port=-1,
-      ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    sg = self.create_security_group(parameters, group)
+
+    self.authorize_security_group(parameters, sg.id, from_port=1,
+                                  to_port=65535, ip_protocol='udp',
+                                  cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, sg.id, from_port=1,
+                                  to_port=65535, ip_protocol='tcp',
+                                  cidr_ip='0.0.0.0/0')
+    self.authorize_security_group(parameters, sg.id, from_port=-1,
+                                  to_port=-1, ip_protocol='icmp',
+                                  cidr_ip='0.0.0.0/0')
     return True
 
 
@@ -177,21 +187,25 @@ class EC2Agent(BaseAgent):
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
       group: A str that names the group that should be created.
+    Returns:
+      The 'boto.ec2.securitygroup.SecurityGroup' that was just created.
     Raises:
       AgentRuntimeException: If the security group could not be created.
     """
     AppScaleLogger.log('Creating security group: {0}'.format(group))
     conn = self.open_connection(parameters)
+    specified_vpc = parameters.get(self.PARAM_VPC_ID)
+
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.create_security_group(group, 'AppScale security group')
+        conn.create_security_group(group, 'AppScale security group',
+                                   specified_vpc)
       except EC2ResponseError:
         pass
       try:
-        conn.get_all_security_groups(group)
-        return
-      except EC2ResponseError:
+        return self.get_security_group_by_name(conn, group, specified_vpc)
+      except SecurityGroupNotFoundException:
         pass
       time.sleep(self.SLEEP_TIME)
       retries_left -= 1
@@ -200,14 +214,43 @@ class EC2Agent(BaseAgent):
       "name {0}".format(group))
 
 
-  def authorize_security_group(self, parameters, group, from_port, to_port,
-    ip_protocol, cidr_ip):
+  @classmethod
+  def get_security_group_by_name(cls, conn, group, vpc_id):
+    """Gets a security group in AWS with the given name.
+
+    Args:
+      conn: A boto connection.
+      group: A str that names the group that should be found.
+      vpc_id: A str containing the id of the VPC, used for checking if the
+        security group located is in the proper VPC or None.
+    Returns:
+      The 'boto.ec2.securitygroup.SecurityGroup' that has the correct group
+      name.
+    Raises:
+      SecurityGroupNotFoundException: If the security group could not be found.
+    """
+    for sg in conn.get_all_security_groups():
+      if sg.name == group and sg.vpc_id == vpc_id:
+        return sg
+
+    if vpc_id:
+      msg = 'Could not find security group with name {} in VPC {}!'.format(
+          group, vpc_id)
+    else:
+      msg = 'Could not find security group with name {} in classic ' \
+            'network!'.format(group)
+    raise SecurityGroupNotFoundException(msg)
+
+
+  def authorize_security_group(self, parameters, group_id, from_port,
+                               to_port, ip_protocol, cidr_ip):
     """Opens up traffic on the given port range for traffic of the named type.
 
     Args:
       parameters: A dict that contains the credentials necessary to authenticate
         with AWS.
-      group: A str that names the group whose ports should be opened.
+      group_id: A str that contains the id of the group whose ports should be
+        opened.
       from_port: An int that names the first port that access should be allowed
         on.
       to_port: An int that names the last port that access should be allowed on.
@@ -220,23 +263,25 @@ class EC2Agent(BaseAgent):
       group.
     """
     AppScaleLogger.log('Authorizing security group {0} for {1} traffic from ' \
-      'port {2} to port {3}'.format(group, ip_protocol, from_port, to_port))
+      'port {2} to port {3}'.format(group_id, ip_protocol, from_port, to_port))
     conn = self.open_connection(parameters)
     retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while retries_left:
       try:
-        conn.authorize_security_group(group, from_port=from_port,
-          to_port=to_port, ip_protocol=ip_protocol, cidr_ip=cidr_ip)
+        conn.authorize_security_group(group_id=group_id, from_port=from_port,
+                                      to_port=to_port, cidr_ip=cidr_ip,
+                                      ip_protocol=ip_protocol)
       except EC2ResponseError:
         pass
       try:
-        group_info = conn.get_all_security_groups(group)[0]
+        group_info = self.get_security_group_by_name(
+            conn, parameters[self.PARAM_GROUP], parameters.get(self.PARAM_VPC_ID))
         for rule in group_info.rules:
           if int(rule.from_port) == from_port and int(rule.to_port) == to_port \
             and rule.ip_protocol == ip_protocol:
             return
-      except EC2ResponseError:
-        pass
+      except SecurityGroupNotFoundException as e:
+        raise AgentRuntimeException(e.message)
       time.sleep(self.SLEEP_TIME)
       retries_left -= 1
 
@@ -266,8 +311,8 @@ class EC2Agent(BaseAgent):
       self.PARAM_KEYNAME : args['keyname'],
       self.PARAM_STATIC_IP : args.get(self.PARAM_STATIC_IP),
       self.PARAM_ZONE : args.get('zone'),
-      'IS_VERBOSE' : args.get('verbose', False),
-      'autoscale_agent' : False
+      self.PARAM_VERBOSE : args.get('verbose', False),
+      self.PARAM_AUTOSCALE_AGENT : False
     }
 
     if params[self.PARAM_ZONE]:
@@ -276,8 +321,8 @@ class EC2Agent(BaseAgent):
       params[self.PARAM_REGION] = self.DEFAULT_REGION
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ.get(credential):
-        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
+      if args.get(credential):
+        params[self.PARAM_CREDENTIALS][credential] = args[credential]
       else:
         raise AgentConfigurationException("Couldn't find {0} in your " \
           "environment. Please set it and run AppScale again."
@@ -297,6 +342,36 @@ class EC2Agent(BaseAgent):
           self.open_connection(params), params[self.PARAM_INSTANCE_TYPE],
           params[self.PARAM_ZONE])
 
+    # If VPC id and Subnet id are not set assume classic networking should be
+    # used.
+    vpc_id = args.get(self.PARAM_VPC_ID)
+    subnet_id = args.get(self.PARAM_SUBNET_ID)
+    if not vpc_id and not subnet_id:
+      AppScaleLogger.log('Using Classic Networking since subnet and vpc were '
+                         'not specified.')
+    # All further checks are for VPC Networking.
+    elif (vpc_id or subnet_id) and not (vpc_id and subnet_id):
+      raise AgentConfigurationException('Both VPC id and Subnet id must be '
+                                        'specified to use VPC Networking.')
+    else:
+      # VPC must exist.
+      vpc_conn = self.open_vpc_connection(params)
+
+      params[self.PARAM_VPC_ID] = args[self.PARAM_VPC_ID]
+      try:
+        vpc_conn.get_all_vpcs(params[self.PARAM_VPC_ID])
+      except EC2ResponseError as e:
+        raise AgentConfigurationException('Error looking for vpc: {}'.format(
+            e.message))
+
+      # Subnet must exist.
+      all_subnets = vpc_conn.get_all_subnets(filters={'vpcId': params[self.PARAM_VPC_ID]})
+      params[self.PARAM_SUBNET_ID] = args[self.PARAM_SUBNET_ID]
+
+      if not any(subnet.id == params[self.PARAM_SUBNET_ID] for subnet in all_subnets):
+        raise AgentConfigurationException('Specified subnet {} does not exist '
+                                          'in vpc {}!'.format(params[self.PARAM_SUBNET_ID],
+                                                              params[self.PARAM_VPC_ID]))
     return params
 
 
@@ -323,10 +398,12 @@ class EC2Agent(BaseAgent):
 
 
     for credential in self.REQUIRED_CREDENTIALS:
-      if os.environ.get(credential):
-        params[self.PARAM_CREDENTIALS][credential] = os.environ[credential]
-      else:
+      cred = LocalState.get_infrastructure_option(tag=credential,
+                                                  keyname=keyname)
+      if not cred:
         raise AgentConfigurationException("no " + credential)
+
+      params[self.PARAM_CREDENTIALS][credential] = cred
 
     return params
 
@@ -379,7 +456,7 @@ class EC2Agent(BaseAgent):
       if (i.state == 'running' or (pending and i.state == 'pending'))\
            and i.key_name == parameters[self.PARAM_KEYNAME]:
         instance_ids.append(i.id)
-        public_ips.append(i.ip_address)
+        public_ips.append(i.ip_address or i.private_ip_address)
         private_ips.append(i.private_ip_address)
     return public_ips, private_ips, instance_ids
 
@@ -398,6 +475,8 @@ class EC2Agent(BaseAgent):
         'keyname', 'group', 'image_id' and 'instance_type' parameters.
       security_configured: Uses this boolean value as an heuristic to
         detect brand new AppScale deployments.
+      public_ip_needed: A boolean, specifies whether to launch with a public
+        ip or not.
     Returns:
       A tuple of the form (instances, public_ips, private_ips)
     """
@@ -454,36 +533,66 @@ class EC2Agent(BaseAgent):
           self.handle_failure('Failed to invoke describe_instances')
         attempts += 1
 
+      # Get subnet from parameters.
+      subnet = parameters.get(self.PARAM_SUBNET_ID)
+
+      network_interfaces = None
+      groups = None
+
       conn = self.open_connection(parameters)
+
+      # A subnet indicates we're using VPC Networking.
+      if subnet:
+        # Get security group by name.
+        try:
+          sg = self.get_security_group_by_name(conn, group,
+                                               parameters[self.PARAM_VPC_ID])
+        except SecurityGroupNotFoundException as e:
+          raise AgentRuntimeException(e.message)
+        # Create network interface specification.
+        network_interface = NetworkInterfaceSpecification(
+          associate_public_ip_address=public_ip_needed,
+          groups=[sg.id], subnet_id=subnet)
+        network_interfaces = NetworkInterfaceCollection(network_interface)
+      else:
+        groups = [group]
+
       if spot:
         price = parameters[self.PARAM_SPOT_PRICE] or \
           self.get_optimal_spot_price(conn, instance_type, zone)
 
         conn.request_spot_instances(str(price), image_id, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, count=count,
-          placement=zone)
+                                    instance_type=instance_type, count=count,
+                                    placement=zone, security_groups=groups,
+                                    network_interfaces=network_interfaces)
       else:
         conn.run_instances(image_id, count, count, key_name=keyname,
-          security_groups=[group], instance_type=instance_type, placement=zone)
+                           instance_type=instance_type, placement=zone,
+                           security_groups=groups,
+                           network_interfaces=network_interfaces)
 
       instance_ids = []
       public_ips = []
       private_ips = []
       end_time = datetime.datetime.now() + datetime.timedelta(0,
         self.MAX_VM_CREATION_TIME)
-      now = datetime.datetime.now()
 
-      while now < end_time:
+      while datetime.datetime.now() < end_time:
         AppScaleLogger.log("Waiting for your instances to start...")
         public_ips, private_ips, instance_ids = self.describe_instances(
           parameters)
+
+        # If we need a public ip, make sure we actually get one.
+        if public_ip_needed and not self.diff(public_ips, private_ips):
+          time.sleep(self.SLEEP_TIME)
+          continue
+
         public_ips = self.diff(public_ips, active_public_ips)
         private_ips = self.diff(private_ips, active_private_ips)
         instance_ids = self.diff(instance_ids, active_instances)
         if count == len(public_ips):
           break
         time.sleep(self.SLEEP_TIME)
-        now = datetime.datetime.now()
 
       if not public_ips:
         self.handle_failure('No public IPs were able to be procured '
@@ -583,8 +692,8 @@ class EC2Agent(BaseAgent):
     conn.terminate_instances(instance_ids)
 
 
-  def wait_for_status_change(self, parameters, conn, state_requested, \
-                              max_wait_time=60,poll_interval=10):
+  def wait_for_status_change(self, parameters, conn, state_requested,
+                             max_wait_time=60,poll_interval=10):
     """ After we have sent a signal to the cloud infrastructure to change the state
       of the instances (unsually from runnning to either stoppped or
       terminated), wait for the status to change.  If all the instances change
@@ -593,7 +702,7 @@ class EC2Agent(BaseAgent):
     Args:
       parameters: A dictionary of parameters.
       conn: A connection object returned from self.open_connection().
-      state_requrested: String of the requested final state of the instances.
+      state_requested: String of the requested final state of the instances.
       max_wait_time: int of maximum amount of time (in seconds)  to wait for the
         state change.
       poll_interval: int of the number of seconds to wait between checking of
@@ -627,9 +736,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the given Elastic IP has been allocated, and False otherwise.
     """
+    elastic_ip = parameters[self.PARAM_STATIC_IP]
     try:
       conn = self.open_connection(parameters)
-      elastic_ip = parameters[self.PARAM_STATIC_IP]
       conn.get_all_addresses(elastic_ip)
       AppScaleLogger.log('Elastic IP {0} can be used for this AppScale ' \
         'deployment.'.format(elastic_ip))
@@ -647,9 +756,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the machine ID exists, False otherwise.
     """
+    image_id = parameters[self.PARAM_IMAGE_ID]
     try:
       conn = self.open_connection(parameters)
-      image_id = parameters[self.PARAM_IMAGE_ID]
       conn.get_image(image_id)
       AppScaleLogger.log('Machine image {0} does exist'.format(image_id))
       return True
@@ -696,6 +805,8 @@ class EC2Agent(BaseAgent):
     # get attached to.
     if glob.glob("/dev/xvd*"):
       mount_point = '/dev/xvdc'
+    elif glob.glob("/dev/vd*"):
+      mount_point = '/dev/vdc'
     else:
       mount_point = '/dev/sdc'
 
@@ -728,7 +839,7 @@ class EC2Agent(BaseAgent):
     """
     try:
       volumes = conn.get_all_volumes(filters={'attachment.instance-id':
-                                                instance_id})
+                                              instance_id})
       for volume in volumes:
         if volume.id == disk_name:
           return True
@@ -754,7 +865,7 @@ class EC2Agent(BaseAgent):
     """
     conn = self.open_connection(parameters)
     try:
-      conn.detach_volume(disk_name, instance_id, device='/dev/sdc')
+      conn.detach_volume(disk_name, instance_id)
       return True
     except boto.exception.EC2ResponseError:
       AppScaleLogger.log("Could not detach volume with name {0}".format(
@@ -771,9 +882,9 @@ class EC2Agent(BaseAgent):
     Returns:
       True if the availability zone exists, and False otherwise.
     """
+    zone = parameters[self.PARAM_ZONE]
     try:
       conn = self.open_connection(parameters)
-      zone = parameters[self.PARAM_ZONE]
       conn.get_all_zones(zone)
       AppScaleLogger.log('Availability zone {0} does exist'.format(zone))
       return True
@@ -796,12 +907,23 @@ class EC2Agent(BaseAgent):
 
     AppScaleLogger.log("Deleting security group {0}".format(
       parameters[self.PARAM_GROUP]))
+    retries_left = self.SECURITY_GROUP_RETRY_COUNT
     while True:
       try:
-        conn.delete_security_group(parameters[self.PARAM_GROUP])
+        sg = self.get_security_group_by_name(conn, parameters[self.PARAM_GROUP],
+                                             parameters.get(self.PARAM_VPC_ID))
+        conn.delete_security_group(group_id=sg.id)
         return
-      except EC2ResponseError:
-        time.sleep(5)
+      except EC2ResponseError as e:
+        time.sleep(self.SLEEP_TIME)
+        retries_left -= 1
+        if retries_left == 0:
+          raise AgentRuntimeException('Error deleting security group! Reason: '
+                                      '{}'.format(e.message))
+      except SecurityGroupNotFoundException:
+        AppScaleLogger.log('Could not find security group {}, skipping '
+                           'delete.'.format(parameters[self.PARAM_GROUP]))
+        return
 
 
   def get_optimal_spot_price(self, conn, instance_type, zone):
@@ -848,6 +970,20 @@ class EC2Agent(BaseAgent):
     return boto.ec2.connect_to_region(parameters[self.PARAM_REGION],
       aws_access_key_id=credentials['EC2_ACCESS_KEY'],
       aws_secret_access_key=credentials['EC2_SECRET_KEY'])
+
+  def open_vpc_connection(self, parameters):
+    """
+    Initialize a connection to the back-end VPC APIs.
+
+    Args:
+      parameters: A dictionary containing the 'credentials' parameter.
+    Returns:
+      An instance of Boto VPCConnection
+    """
+    credentials = parameters[self.PARAM_CREDENTIALS]
+    return boto.vpc.connect_to_region(parameters[self.PARAM_REGION],
+        aws_access_key_id=credentials['EC2_ACCESS_KEY'],
+        aws_secret_access_key=credentials['EC2_SECRET_KEY'])
 
   def handle_failure(self, msg):
     """ Log the specified error message and raise an AgentRuntimeException

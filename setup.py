@@ -33,7 +33,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='3.6.0',
+  version='3.7.0',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
@@ -45,7 +45,7 @@ setup(
     'adal>=0.4.7',
     'azure==2.0.0',
     'azure-mgmt-marketplaceordering',
-    'cryptography',
+    'cryptography>=2.3.0',
     'argparse',
     'boto',
     'google-api-python-client==1.5.4',
@@ -53,8 +53,9 @@ setup(
     'httplib2',
     'msrestazure==0.4.34',
     'oauth2client==4.0.0',
+    'pyOpenSSL>=18.0.0',
     'PyYAML',
-    'requests[security]>=2.16.0,<=2.19.1',
+    'requests[security]>=2.20.0',
     'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
@@ -69,7 +70,6 @@ setup(
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'License :: OSI Approved :: Apache Software License',
-    'Programming Language :: Python :: 2.6',
     'Programming Language :: Python :: 2.7',
     'Topic :: Utilities'
   ],

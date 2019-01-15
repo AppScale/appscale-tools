@@ -3,6 +3,7 @@
 import errno
 import os
 import tarfile
+import yaml
 import zipfile
 from xml.etree import ElementTree
 
@@ -144,6 +145,88 @@ def cron_from_xml(contents):
     cron_config['cron'].append(job)
 
   return cron_config
+
+
+def indexes_from_xml(contents):
+  """ Parses the contents of a datastore-indexes.xml file.
+
+  Args:
+    contents: An XML string containing index configuration details.
+  Returns:
+    A dictionary containing index configuration details.
+  """
+  index_entries = ElementTree.fromstring(contents)
+  if index_entries.tag != 'datastore-indexes':
+    raise BadConfigurationException(
+      'datastore-indexes.xml should have a single root element named '
+      'datastore-indexes')
+
+  indexes = {'indexes': []}
+  for index_entry in index_entries:
+    if index_entry.tag != 'datastore-index':
+      raise BadConfigurationException(
+        'Unrecognized element in datastore-indexes.xml: '
+        '{}'.format(index_entry.tag))
+
+    try:
+      index = {'kind': index_entry.attrib['kind']}
+    except KeyError:
+      raise BadConfigurationException('Index missing "kind" attribute')
+
+    if 'ancestor' in index_entry.attrib:
+      index['ancestor'] = index_entry.attrib['ancestor']
+      if index['ancestor'].lower() not in ('yes', 'no', 'true', 'false'):
+        raise BadConfigurationException(
+          'Invalid ancestor value: {}'.format(index['ancestor']))
+
+    index['properties'] = []
+    if len(index_entry) < 1:
+      raise BadConfigurationException(
+        'All index entries must have at least one property')
+
+    for prop in index_entry:
+      if prop.tag != 'property':
+        raise BadConfigurationException(
+          'Unrecognized element in datastore-index: {}'.format(prop.tag))
+
+      try:
+        prop_details = {'name': prop.attrib['name']}
+      except KeyError:
+        raise BadConfigurationException('Property missing "name" attribute')
+
+      if 'direction' in prop.attrib:
+        prop_details['direction'] = prop.attrib['direction']
+        if prop_details['direction'].lower() not in ('asc', 'desc'):
+          raise BadConfigurationException(
+            'Invalid direction value: {}'.format(prop_details['direction']))
+
+      index['properties'].append(prop_details)
+
+    indexes['indexes'].append(index)
+
+  return indexes
+
+
+def get_indexes(source_location, fetch_function):
+  """ Retrieves a list of index definitions from a source's configuration.
+
+  Args:
+    source_location: A string specifying the location of the source code.
+    fetch_function: The function used to find a file within the source.
+  Returns:
+    A list of dictionaries containing index definition details or None.
+  """
+  index_config = fetch_function('index.yaml', source_location)
+  if index_config is not None:
+    return yaml.safe_load(index_config)
+
+  index_config = fetch_function('datastore-indexes.xml', source_location)
+  if index_config is not None:
+    return indexes_from_xml(index_config)
+
+  index_config = fetch_function('datastore-indexes-auto.xml', source_location)
+  if index_config is not None:
+    return indexes_from_xml(index_config)
 
 
 def queues_from_xml(contents):

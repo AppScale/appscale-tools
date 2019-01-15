@@ -513,6 +513,19 @@ class NodeLayout():
         return node
     return None
 
+  def are_disks_used(self):
+    """ Searches through the nodes in this NodeLayout to see if any persistent
+    disks are being used.
+
+    Returns:
+      True if any persistent disks are used, and False otherwise.
+    """
+    disks = [node.disk for node in self.nodes]
+    for disk in disks:
+      if disk:
+        return True
+    return False
+
   def to_list(self):
     """ Converts all of the nodes (except the head node) to a format that can
     be easily JSON-dumped (a list of dicts).

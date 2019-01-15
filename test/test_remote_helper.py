@@ -139,7 +139,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
-      'AppScale security group').and_return()
+      'AppScale security group', None).and_return()
     fake_ec2.should_receive('authorize_security_group').and_return()
 
     # next, add in mocks for run_instances
@@ -382,7 +382,7 @@ class TestRemoteHelper(unittest.TestCase):
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
 
-    # Mock out additional remote calls. 
+    # Mock out additional remote calls.
     local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
 
     local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
