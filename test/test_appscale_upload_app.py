@@ -240,11 +240,11 @@ class TestAppScaleUploadApp(unittest.TestCase):
     app_id = 'guestbook'
     source_path = '{}.tar.gz'.format(app_id)
     extracted_dir = '/tmp/{}'.format(app_id)
-    login_host = '192.168.33.10'
+    head_node = '192.168.33.10'
     secret = 'secret-key'
     operation_id = 'operation-1'
     port = 8080
-    version_url = 'http://{}:{}'.format(login_host, port)
+    version_url = 'http://{}:{}'.format(head_node, port)
 
     argv = ['--keyname', self.keyname, '--file', source_path, '--test']
     options = ParseArgs(argv, self.function).args
@@ -256,8 +256,8 @@ class TestAppScaleUploadApp(unittest.TestCase):
       and_return('/tmp/{}'.format(app_id))
     flexmock(Version).should_receive('from_tar_gz').and_return(version)
     flexmock(AppEngineHelper).should_receive('validate_app_id')
-    flexmock(LocalState).should_receive('get_login_host').\
-      and_return(login_host)
+    flexmock(LocalState).should_receive('get_host_with_role').\
+      and_return(head_node)
     flexmock(LocalState).should_receive('get_secret_key').and_return(secret)
     flexmock(RemoteHelper).should_receive('copy_app_to_host').\
       with_args(extracted_dir, app_id, self.keyname, False, {}, None).\
@@ -270,7 +270,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AppEngineHelper).should_receive('warn_if_version_defined')
 
     given_host, given_port = AppScaleTools.upload_app(options)
-    self.assertEquals(given_host, login_host)
+    self.assertEquals(given_host, head_node)
     self.assertEquals(given_port, port)
 
     # If provided user is not app admin, deployment should fail.
@@ -285,7 +285,7 @@ class TestAppScaleUploadApp(unittest.TestCase):
     flexmock(AdminClient).should_receive('create_version').\
       and_return(operation_id)
     given_host, given_port = AppScaleTools.upload_app(options)
-    self.assertEquals(given_host, login_host)
+    self.assertEquals(given_host, head_node)
     self.assertEquals(given_port, port)
  
  

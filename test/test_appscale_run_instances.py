@@ -213,7 +213,7 @@ EC2_SECRET_KEY: 'baz'
     role_info = [{
       'public_ip' : public_ip,
       'private_ip' : private_ip,
-      'jobs' : ['shadow', 'login'],
+      'jobs' : ['shadow'],
       'instance_id': 'i-APPSCALE'
     }]
     fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
@@ -356,7 +356,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip": IP_1,
         "private_ip": IP_1,
-        "jobs": ["shadow", "login"]
+        "jobs": ["shadow"]
       }])))
 
     # Assume the locations files were copied successfully.
@@ -384,6 +384,8 @@ EC2_SECRET_KEY: 'baz'
 
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
+    AppControllerClient.should_receive('get_property').\
+      and_return({'login': IP_1})
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
@@ -539,7 +541,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : "elastic-ip",
         "private_ip" : "private1",
-        "jobs": ["shadow", "login"]
+        "jobs": ["shadow"]
       }])))
 
     # copying over the locations yaml and json files should be fine
@@ -553,6 +555,8 @@ EC2_SECRET_KEY: 'baz'
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
+    AppControllerClient.should_receive('get_property').\
+      and_return({'login': 'elastic-ip'})
 
     # Let's mock the call to describe_instances when checking for old
     # instances to re-use, and then to start the headnode.
@@ -699,7 +703,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
-        "jobs" : ["shadow", "login"]
+        "jobs" : ["shadow"]
       }])))
 
     # copying over the locations json file should be fine
@@ -723,6 +727,8 @@ EC2_SECRET_KEY: 'baz'
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
+    AppControllerClient.should_receive('get_property').\
+      and_return({'login': 'public1'})
 
     # Let's mock the call to describe_instances when checking for old
     # instances to re-use, and then to start the headnode.
@@ -773,7 +779,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : IP_1,
         "private_ip" : IP_1,
-        "jobs" : ["shadow", "login"]
+        "jobs" : ["shadow"]
       }])))
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 
@@ -794,6 +800,8 @@ EC2_SECRET_KEY: 'baz'
     AppControllerClient.should_receive('does_user_exist').and_return(True)
     AppControllerClient.should_receive('is_initialized').and_return(True)
     AppControllerClient.should_receive('set_admin_role').and_return('true')
+    AppControllerClient.should_receive('get_property').\
+      and_return({'login': IP_1})
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).

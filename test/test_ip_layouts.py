@@ -33,9 +33,6 @@ ONE_NODE_CLUSTER = [
 OPEN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
                   {'roles': 'open', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1}]
 
-LOGIN_NODE_CLOUD = [{'roles': ['master', 'database', 'appengine'], 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
-                  {'roles': 'login', 'nodes': 1, 'instance_type': INSTANCE_TYPE_2}]
-
 FOUR_NODE_CLOUD = [{'roles': 'master', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
                    {'roles': 'appengine', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},
                    {'roles': 'database', 'nodes': 1, 'instance_type': INSTANCE_TYPE_1},

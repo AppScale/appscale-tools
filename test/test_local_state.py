@@ -68,7 +68,8 @@ class TestLocalState(unittest.TestCase):
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    flexmock(LocalState).should_receive('get_login_host').and_return('login_ip')
+    flexmock(LocalState).should_receive('get_host_with_role').\
+      and_return('load_balancer')
     flexmock(LocalState).should_receive('get_secret_key').and_return('super-secret')
     (flexmock(AppControllerClient)
        .should_receive('get_all_public_ips').and_return("OK"))

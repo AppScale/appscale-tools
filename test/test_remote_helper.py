@@ -437,7 +437,7 @@ class TestRemoteHelper(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+        "jobs": ["shadow"]
       }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location('bookey'), 'r') \
@@ -453,6 +453,8 @@ class TestRemoteHelper(unittest.TestCase):
       'the secret').and_return('false')
     fake_appcontroller.should_receive('create_user').with_args('boo@public1', str,
       'xmpp_user', 'the secret').and_return('true')
+    fake_appcontroller.should_receive('get_property').\
+      with_args('login', 'the secret').and_return('{"login":"public1"}')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
@@ -528,7 +530,7 @@ class TestRemoteHelper(unittest.TestCase):
   reattach_node_info = [{ "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
-                          "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                          "jobs": ['load_balancer', 'taskqueue', 'shadow',
                                    'taskqueue_master'],
                           "instance_type" : "instance_type_1"},
                         { "public_ip": "0.0.0.0",
@@ -557,7 +559,7 @@ class TestRemoteHelper(unittest.TestCase):
       with_args('euca'). \
       and_return(fake_agent)
 
-    LocalState.should_receive('get_login_host').and_return(IP_1)
+    LocalState.should_receive('get_host_with_role').and_return(IP_1)
 
     LocalState.should_receive('get_local_nodes_info') \
       .and_return(self.reattach_node_info)
@@ -595,8 +597,6 @@ class TestRemoteHelper(unittest.TestCase):
       with_args('public cloud'). \
       and_return(fake_agent)
 
-    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
-
     LocalState.should_receive('get_local_nodes_info')\
       .and_return(self.reattach_node_info)
 
@@ -611,12 +611,12 @@ class TestRemoteHelper(unittest.TestCase):
       with_args('public cloud'). \
       and_return(fake_agent)
 
-    LocalState.should_receive('get_login_host').and_return('0.0.0.1')
+    LocalState.should_receive('get_host_with_role').and_return('0.0.0.1')
 
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE1",
-                   "jobs": ['load_balancer', 'taskqueue', 'shadow', 'login',
+                   "jobs": ['load_balancer', 'taskqueue', 'shadow',
                             'taskqueue_master'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",

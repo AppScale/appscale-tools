@@ -40,16 +40,18 @@ class NodeLayout():
 
   # A tuple containing the keys that can be used in advanced deployments.
   # TODO: remove 'appengine' role.
-  ADVANCED_FORMAT_KEYS = ['master', 'database', 'appengine', 'compute', 'open',
-    'login', 'zookeeper', 'memcache', 'taskqueue', 'search', 'load_balancer']
+  ADVANCED_FORMAT_KEYS = [
+    'master', 'database', 'appengine', 'compute', 'open', 'zookeeper',
+    'memcache', 'taskqueue', 'search', 'load_balancer']
 
 
   # A tuple containing all of the roles (simple and advanced) that the
   # AppController recognizes. These include _master and _slave roles, which
   # the user may not be able to specify directly.
   # TODO: remove 'appengine' role.
-  VALID_ROLES = ('master', 'appengine', 'compute', 'database', 'shadow', 'open',
-    'load_balancer', 'login', 'db_master', 'db_slave', 'zookeeper', 'memcache',
+  VALID_ROLES = (
+    'master', 'appengine', 'compute', 'database', 'shadow', 'open',
+    'load_balancer', 'db_master', 'db_slave', 'zookeeper', 'memcache',
     'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
 
 
@@ -205,13 +207,11 @@ class NodeLayout():
       'memcache': 0,
       'taskqueue': 0,
       'zookeeper': 0,
-      'login': 0,
       'db_master': 0,
       'taskqueue_master': 0
     }
     node_count = 0
     all_disks = []
-    login_found = False
     # Loop through the list of "node sets", which are grouped by role.
     for node_set in self.input_yaml:
       # If the key nodes is mapped to an integer it should be a cloud
@@ -290,8 +290,7 @@ class NodeLayout():
       for node in nodes:
         for role in roles:
           node.add_role(role)
-          if role == 'login':
-            node.public_ip = self.login_host or node.public_ip
+
         node.instance_type = instance_type
         if not node.is_valid():
           self.invalid(",".join(node.errors()))
@@ -299,12 +298,6 @@ class NodeLayout():
       # All nodes that have the same roles will be expanded the same way,
       # so get the updated list of roles from the first node.
       roles = nodes[0].roles
-
-      # Check for login after roles have been expanded.
-      if 'login' in roles and login_found:
-        self.invalid("Only one login is allowed.")
-      elif 'login' in roles:
-        login_found = True
 
       # Update dictionary containing role counts.
       role_count.update({role: role_count.get(role, 0) + len(nodes)
@@ -407,9 +400,6 @@ class NodeLayout():
       elif role == 'taskqueue':
         self.master.add_role('taskqueue')
         self.master.add_role('taskqueue_master')
-      elif role == 'login':
-        self.master.add_role('login')
-        self.master.public_ip = self.login_host or self.master.public_ip
       elif role == 'db_master':
         # Get first database node.
         db_node = self.get_nodes('database', True, nodes)[0]
@@ -436,8 +426,8 @@ class NodeLayout():
       Returns:
         A dict that has one controller node and the other nodes set as servers.
     """
-    master_node_roles = ['master', 'database', 'memcache', 'login',
-                         'zookeeper', 'taskqueue']
+    master_node_roles = ['master', 'database', 'memcache', 'zookeeper',
+                         'taskqueue']
     layout = [{'roles' : master_node_roles, 'nodes' : 1}]
     if self.min_machines == 1:
       layout[0]['roles'].append('appengine')
@@ -718,7 +708,7 @@ class Node():
 
   def expand_roles(self):
     """Converts the 'master' composite role into the roles it represents, and
-    adds dependencies necessary for the 'login' and 'database' roles.
+    adds dependencies necessary for the 'database' role.
     """
     for i in range(len(self.roles)):
       role = self.roles[i]
@@ -731,9 +721,6 @@ class Node():
     if 'master' in self.roles:
       self.roles.remove('master')
       self.roles.append('shadow')
-      self.roles.append('load_balancer')
-
-    if 'login' in self.roles:
       self.roles.append('load_balancer')
 
     # TODO: remove these, db_slave and taskqueue_slave are currently deprecated.

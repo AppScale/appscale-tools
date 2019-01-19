@@ -53,7 +53,7 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "login"]
+        "jobs": ["shadow", "load_balancer"]
       }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins = flexmock(sys.modules['__builtin__'])
@@ -127,6 +127,8 @@ class TestAppScaleRelocateApp(unittest.TestCase):
     version_key = '{}_default_v1'.format(self.appid)
     fake_appcontroller.should_receive('relocate_version').with_args(
       version_key, 80, 443, 'the secret').and_return('OK')
+    fake_appcontroller.should_receive('get_property').\
+      and_return('{"login":"public1"}')
     flexmock(SOAPpy)
     SOAPpy.should_receive('SOAPProxy').with_args('https://public1:17443') \
       .and_return(fake_appcontroller)
