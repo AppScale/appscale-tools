@@ -23,11 +23,11 @@ ips_layout:
       - zookeeper
     nodes: [1 | vm1_private_IP]
 
-# A multi node deployment example. Within nodes one can use the numbers of
-# nodes desired (when running on clouds) or a list of IPs (in case of a
-# cluster deployment). When running on a cloud, each role stanza can
-# define a specific instance type to be used: if left unspecified, the
-# global instance_type type will be used.
+# A multi node deployment example. Within nodes, one can specify either
+# the number of nodes desired (cloud deployment) or a list of IPs (cluster
+# deployment)." When running on a cloud, each role stanza can define a
+# specific instance type to be used: if left unspecified, the global
+# instance_type type will be used.
 #
 #ips_layout:
 #  -
@@ -85,8 +85,8 @@ ips_layout:
 
 # This is the default instance type to be used when no instance_type has
 # been specified for the particular node. It is also the instance type
-# that will be used for autoascaling (if autoscaling is enabled). It can
-# be changed at run time using the 'set' command. There is no default.
+# that will be used for autoscaling (if autoscaling is enabled). It can be
+# changed at run time using the 'set' command. There is no default.
 #instance_type : 'n1-standard-8'
 
 # The availability zone that should be used for all virtual machines in your
