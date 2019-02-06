@@ -834,7 +834,7 @@ class AzureAgent(BaseAgent):
           # Start creating scalesets.
           scalesets_futures.append(executor.submit(self.create_scale_set,
               capacity, parameters, resource_name, scale_set_name, subnet))
-        remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
+          remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
         for future in concurrent.futures.as_completed(scalesets_futures):
           exception = future.exception()
           if exception:
