@@ -25,7 +25,7 @@ ips_layout:
 
 # A multi node deployment example. Within nodes, one can specify either
 # the number of nodes desired (cloud deployment) or a list of IPs (cluster
-# deployment)." When running on a cloud, each role stanza can define a
+# deployment). When running on a cloud, each role stanza can define a
 # specific instance type to be used: if left unspecified, the global
 # instance_type type will be used.
 #
