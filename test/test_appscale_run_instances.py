@@ -24,6 +24,7 @@ import SOAPpy
 
 # AppScale import, the library that we're testing here
 from appscale.agents.ec2_agent import EC2Agent
+from appscale.agents.config import AppScaleState
 from appscale.tools.appcontroller_client import AppControllerClient
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.appscale_tools import AppScaleTools
@@ -107,6 +108,8 @@ EC2_SECRET_KEY: 'baz'
     # And add in mocks for libraries most of the tests mock out
     self.local_state = flexmock(LocalState)
 
+    # AppScale Agents
+    self.appscale_state = flexmock(AppScaleState)
 
   def setup_ec2_mocks(self):
     # first, pretend that our image does exist in EC2
@@ -145,7 +148,7 @@ EC2_SECRET_KEY: 'baz'
 
     # mock out creating the keypair
     fake_key = flexmock(name='fake_key', material='baz')
-    self.local_state.should_receive('write_key_file').with_args(
+    self.appscale_state.should_receive('write_key_file').with_args(
       re.compile(self.keyname), fake_key.material).and_return()
     self.fake_ec2.should_receive('create_key_pair').with_args(self.keyname) \
       .and_return(fake_key)
@@ -425,7 +428,7 @@ EC2_SECRET_KEY: 'baz'
 
     # mock out writing the secret key to ~/.appscale, as well as reading it
     # later
-    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    secret_key_location = AppScaleState.ssh_key(self.keyname)
     fake_secret = flexmock(name="fake_secret")
     fake_secret.should_receive('read').and_return('the secret')
     fake_secret.should_receive('write').and_return()
