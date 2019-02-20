@@ -437,6 +437,17 @@ EC2_SECRET_KEY: 'baz'
     self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
       .and_return(fake_secret)
 
+    # mock out writing the secret key to ~/.appscale, as well as reading it
+    # later
+    secret_key_location = LocalState.get_secret_key_location(self.keyname)
+    fake_secret = flexmock(name="fake_secret")
+    fake_secret.should_receive('read').and_return('the secret')
+    fake_secret.should_receive('write').and_return()
+    self.builtins.should_receive('open').with_args(secret_key_location, 'r') \
+      .and_return(fake_secret)
+    self.builtins.should_receive('open').with_args(secret_key_location, 'w') \
+      .and_return(fake_secret)
+
     self.setup_ec2_mocks()
 
     # slip in some fake spot instance info
