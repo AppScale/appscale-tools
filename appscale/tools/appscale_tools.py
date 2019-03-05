@@ -1226,8 +1226,8 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     node_layout = NodeLayout(options)
-    previous_node_list = node_layout.from_locations_json_list(
-        LocalState.get_local_nodes_info(options.keyname))
+    previous_ips = LocalState.get_local_nodes_info(options.keyname)
+    previous_node_list = node_layout.from_locations_json_list(previous_ips)
     node_layout.nodes = previous_node_list
 
     latest_tools = APPSCALE_VERSION
