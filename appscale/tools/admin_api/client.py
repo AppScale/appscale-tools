@@ -71,39 +71,43 @@ class AdminClient(object):
     return content
 
   @retry(**RETRY_POLICY)
-  def create_version(self, project_id, service_id, source_path, runtime,
-                     env_variables, threadsafe=None, inbound_services=None):
+  def create_version(self, version, source_path):
     """ Creates or updates a version.
 
     Args:
-      project_id: A string specifying the project ID.
-      service_id: A string specifying the service ID.
+      version: A Version object.
       source_path: A string specifying the location of the source code.
-      runtime: A string specifying the version's language.
-      env_variables: A dictionary containing environment variables.
-      threadsafe: Indicates that the version is threadsafe.
-      inbound_services: A list of strings specifying service types for XMPP.
     Returns:
       A dictionary containing the deployment operation details.
     Raises:
-      AdminError if the response is formatted incorrectly.
+      AdminError if the Admin API call was not successful.
     """
     versions_url = '{prefix}/{project}/services/{service}/versions'.format(
-      prefix=self.prefix, project=project_id, service=service_id)
+      prefix=self.prefix, project=version.project_id, service=version.service_id)
     headers = {'AppScale-Secret': self.secret}
     body = {
       'deployment': {'zip': {'sourceUrl': source_path}},
       'id': DEFAULT_VERSION,
-      'runtime': runtime
+      'runtime': version.runtime
     }
-    if env_variables:
-      body['envVariables'] = env_variables
+    if version.env_variables:
+      body['envVariables'] = version.env_variables
 
-    if threadsafe is not None:
-      body['threadsafe'] = threadsafe
+    if version.threadsafe is not None:
+      body['threadsafe'] = version.threadsafe
 
-    if inbound_services is not None:
-      body['inboundServices'] = inbound_services
+    if version.inbound_services:
+      body['inboundServices'] = ['INBOUND_SERVICE_{}'.format(service).upper()
+                                 for service in version.inbound_services]
+
+    if version.handlers is not None:
+      body['handlers'] = [handler.to_api_dict()
+                          for handler in version.handlers]
+
+    if version.manual_scaling:
+      body['manualScaling'] = version.manual_scaling
+    elif version.automatic_scaling:
+      body['automaticScaling'] = version.automatic_scaling
 
     response = requests.post(versions_url, headers=headers, json=body,
                              verify=False)
@@ -144,6 +148,42 @@ class AdminClient(object):
     return operation_id
 
   @retry(**RETRY_POLICY)
+  def patch_version(self, version, fields):
+    """ Patches (updates) a version.
+
+    Args:
+      version: A Version object.
+      fields: The set of fields to patch.
+    Returns:
+      A dictionary containing the deployment operation details.
+    Raises:
+      AdminError if the Admin API call was not successful.
+    """
+    versions_url = ('{prefix}/{project}/services/{service}/versions/{version}'
+                    .format(prefix=self.prefix, project=version.project_id,
+                            service=version.service_id, version=version.id))
+    headers = {
+      'AppScale-Secret': self.secret,
+      'Content-Type': 'application/json'
+    }
+    params = {
+      'updateMask': ','.join(fields)
+    }
+    body = {}
+    if version.serving_status:
+      body['servingStatus'] = version.serving_status
+
+    response = requests.patch(versions_url, headers=headers, params=params,
+                              json=body, verify=False)
+    operation = self.extract_response(response)
+    try:
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
+
+  @retry(**RETRY_POLICY)
   def delete_service(self, project_id, service_id):
     """ Deletes a service.
 
@@ -170,34 +210,20 @@ class AdminClient(object):
     return operation_id
 
   @retry(**RETRY_POLICY)
-  def delete_project(self, project_id):
-    """ Deletes a project.
-
-    Args:
-      project_id: A string specifying the project ID.
-    Raises:
-      AdminError if the response is not 200.
-    """
-    url = 'https://{}:{}/v1/projects/{}'.format(self.host, self.PORT,
-                                                project_id)
-    headers = {'AppScale-Secret': self.secret}
-    response = requests.delete(url, headers=headers, verify=False)
-    if response.status_code != 200:
-      raise AdminError('Error asking Admin Server to delete project!')
-
-  @retry(**RETRY_POLICY)
-  def list_projects(self):
-    """ Lists projects.
+  def list_services(self, project_id):
+    """ Lists a project's services.
 
     Returns:
-      A list containing the projects of this deployment.
+      A list containing the project's service IDs.
     Raises:
       AdminError if the response is formatted incorrectly.
     """
-    url = 'https://{}:{}/v1/projects'.format(self.host, self.PORT)
+    url = 'https://{}:{}/v1/apps/{}/services'.format(
+      self.host, self.PORT, project_id)
     headers = {'AppScale-Secret': self.secret}
     response = requests.get(url, headers=headers, verify=False)
-    return self.extract_response(response)
+    return [service['id']
+            for service in self.extract_response(response)['services']]
 
   @retry(**RETRY_POLICY)
   def get_operation(self, project, operation_id):
@@ -230,6 +256,33 @@ class AdminClient(object):
     cron_url = 'https://{}:{}/api/cron/update?app_id={}'.format(
       self.host, self.PORT, project_id)
     response = requests.post(cron_url, headers=headers, data=cron_yaml,
+                             verify=False)
+
+    if response.status_code == 200:
+      return
+
+    try:
+      message = response.json()['error']['message']
+    except (ValueError, KeyError):
+      message = 'AdminServer returned: {}'.format(response.status_code)
+
+    raise AdminError(message)
+
+  @retry(**RETRY_POLICY)
+  def update_indexes(self, project_id, indexes):
+    """ Updates the the project's index configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      indexes: A dictionary containing index configuration details.
+    Raises:
+      AdminError if unable to update index configuration.
+    """
+    index_yaml = yaml.safe_dump(indexes, default_flow_style=False)
+    headers = {'AppScale-Secret': self.secret}
+    indexes_url = 'https://{}:{}/api/datastore/index/add?app_id={}'.format(
+      self.host, self.PORT, project_id)
+    response = requests.post(indexes_url, headers=headers, data=index_yaml,
                              verify=False)
 
     if response.status_code == 200:

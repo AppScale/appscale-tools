@@ -23,25 +23,22 @@ from appscale.tools.parse_args import ParseArgs
 
 
 class TestParseArgs(unittest.TestCase):
-  
+
 
   def setUp(self):
+    self.ec2_args = ['--EC2_ACCESS_KEY', 'baz', '--EC2_SECRET_KEY', 'baz',
+      '--infrastructure', 'ec2']
+    # change infrastructure and add EC2_URL.
+    self.euca_args = self.ec2_args[:-1] + ['euca', '--EC2_URL', 'http://boo']
     self.cloud_argv = ['--min', '1', '--max', '1', '--group', 'blargscale',
-      '--infrastructure', 'ec2', '--instance_type', 'm3.medium',
-      '--machine', 'ami-ABCDEFG', '--zone', 'my-zone-1b']
+                       '--instance_type', 'm3.medium', '--machine',
+                       'ami-ABCDEFG', '--zone', 'my-zone-1b'] + self.ec2_args
     self.cluster_argv = ['--ips', 'ips.yaml']
     self.function = "appscale-run-instances"
 
     # mock out all logging, since it clutters our output
     flexmock(AppScaleLogger)
     AppScaleLogger.should_receive('log').and_return()
-
-    # set up phony AWS credentials for each test
-    # ones that test not having them present can
-    # remove them
-    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = "baz"
-    os.environ['EC2_URL'] = "http://boo"
 
     # pretend that our credentials are valid.
     fake_ec2 = flexmock(name="fake_ec2")
@@ -86,17 +83,11 @@ class TestParseArgs(unittest.TestCase):
     boto.should_receive('connect_euca').and_return(fake_ec2)
 
 
-  def tearDown(self):
-    for credential in EucalyptusAgent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = ''
-    os.environ['EC2_URL'] = ''
-
-
   def test_flags_that_cause_program_abort(self):
     # using a flag that isn't acceptable should raise
     # an exception
     argv_1 = ['--boo!']
-    self.assertRaises(SystemExit, ParseArgs, argv_1, 
+    self.assertRaises(SystemExit, ParseArgs, argv_1,
       self.function)
 
     # the version flag should quit and print the current
@@ -104,7 +95,6 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = ['--version']
     try:
       ParseArgs(argv_2, self.function)
-      raise
     except SystemExit:
       pass
 
@@ -183,19 +173,16 @@ class TestParseArgs(unittest.TestCase):
 
   def test_infrastructure_flags(self):
     # Specifying infastructure as EC2 or Eucalyptus is acceptable.
-    argv_1 = self.cloud_argv[:] + ['--infrastructure', 'ec2', '--machine',
-      'ami-ABCDEFG']
-    actual_1 = ParseArgs(argv_1, self.function)
+    actual_1 = ParseArgs(self.cloud_argv, self.function)
     self.assertEquals('ec2', actual_1.args.infrastructure)
 
-    argv_2 = self.cloud_argv[:] + ['--infrastructure', 'euca', '--machine',
-        'emi-ABCDEFG']
+    cloud_args = [arg for arg in self.cloud_argv[:] if arg not in self.ec2_args]
+    argv_2 = cloud_args + self.euca_args
     actual_2 = ParseArgs(argv_2, self.function)
     self.assertEquals('euca', actual_2.args.infrastructure)
 
     # Specifying something else as the infrastructure is not acceptable.
-    argv_3 = self.cloud_argv[:] + ['--infrastructure', 'boocloud', '--machine',
-      'boo']
+    argv_3 = self.cloud_argv[:-1] + ['--infrastructure', 'boocloud']
     self.assertRaises(SystemExit, ParseArgs, argv_3, self.function)
 
     # Specifying --machine when we're not running in a cloud is not acceptable.
@@ -240,24 +227,6 @@ class TestParseArgs(unittest.TestCase):
     argv_2 = ["--add_to_existing"]
     actual = ParseArgs(argv_2, "appscale-add-keypair")
     self.assertEquals(True, actual.args.add_to_existing)
-
-
-  def test_environment_variables_not_set_in_ec2_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
-        "ami-ABCDEFG"]
-    for var in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
-      self.function)
-
-
-  def test_environment_variables_not_set_in_euca_cloud_deployments(self):
-    argv = self.cloud_argv[:] + ["--infrastructure", "euca", "--machine",
-      "emi-ABCDEFG"]
-    for var in EucalyptusAgent.REQUIRED_EUCA_CREDENTIALS:
-      os.environ[var] = ''
-    self.assertRaises(AgentConfigurationException, ParseArgs, argv,
-      self.function)
 
 
   def test_failure_when_ami_doesnt_exist(self):
@@ -368,32 +337,28 @@ class TestParseArgs(unittest.TestCase):
 
 
   def test_ec2_creds_in_run_instances(self):
+    cloud_args = [arg for arg in self.cloud_argv[:] if arg not in self.ec2_args]
     # specifying EC2_ACCESS_KEY but not EC2_SECRET_KEY should fail
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+    argv = cloud_args + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG", "--EC2_ACCESS_KEY", "access_key"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
     # specifying EC2_SECRET_KEY but not EC2_ACCESS_KEY should fail
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
+    argv = cloud_args + ["--infrastructure", "ec2", "--machine",
       "ami-ABCDEFG", "--EC2_SECRET_KEY", "secret_key"]
     self.assertRaises(BadConfigurationException, ParseArgs, argv, self.function)
 
-    # specifying both should result in them being set in the environment
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
-      "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
-      "baz"]
-    ParseArgs(argv, self.function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    # specifying both should pass and be in ParseArgs.
+    actual = ParseArgs(self.cloud_argv, self.function).args
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
 
-    # specifying a EC2_URL should result in it being set in the environment
-    argv = self.cloud_argv[:] + ["--infrastructure", "ec2", "--machine",
-      "ami-ABCDEFG", "--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY",
-      "baz", "--EC2_URL", "http://boo.baz"]
-    ParseArgs(argv, self.function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
-    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+    # specifying a EC2_URL should put it in ParseArgs.
+    argv = self.cloud_argv[:] + ["--EC2_URL", "http://boo.baz"]
+    actual = ParseArgs(argv, self.function).args
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
+    self.assertEquals("http://boo.baz", actual.EC2_URL)
 
 
   def test_ec2_creds_in_term_instances(self):
@@ -409,17 +374,17 @@ class TestParseArgs(unittest.TestCase):
 
     # specifying both should result in them being set in the environment
     argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz"]
-    ParseArgs(argv, function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
+    actual = ParseArgs(argv, function).args
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
 
     # specifying a EC2_URL should result in it being set in the environment
     argv = ["--EC2_ACCESS_KEY", "baz", "--EC2_SECRET_KEY", "baz", "--EC2_URL",
       "http://boo.baz"]
-    ParseArgs(argv, function)
-    self.assertEquals("baz", os.environ['EC2_ACCESS_KEY'])
-    self.assertEquals("baz", os.environ['EC2_SECRET_KEY'])
-    self.assertEquals("http://boo.baz", os.environ['EC2_URL'])
+    actual = ParseArgs(argv, function).args
+    self.assertEquals("baz", actual.EC2_ACCESS_KEY)
+    self.assertEquals("baz", actual.EC2_SECRET_KEY)
+    self.assertEquals("http://boo.baz", actual.EC2_URL)
 
 
   def test_disks_flag(self):

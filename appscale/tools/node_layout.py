@@ -11,6 +11,7 @@ from agents.factory import InfrastructureAgentFactory
 from appscale_logger import AppScaleLogger
 from custom_exceptions import BadConfigurationException
 from local_state import LocalState
+from parse_args import ParseArgs
 
 
 class NodeLayout():
@@ -512,6 +513,19 @@ class NodeLayout():
         return node
     return None
 
+  def are_disks_used(self):
+    """ Searches through the nodes in this NodeLayout to see if any persistent
+    disks are being used.
+
+    Returns:
+      True if any persistent disks are used, and False otherwise.
+    """
+    disks = [node.disk for node in self.nodes]
+    for disk in disks:
+      if disk:
+        return True
+    return False
+
   def to_list(self):
     """ Converts all of the nodes (except the head node) to a format that can
     be easily JSON-dumped (a list of dicts).
@@ -525,61 +539,65 @@ class NodeLayout():
 
   def from_locations_json_list(self, locations_nodes_list):
     """Returns a list of nodes if the previous locations JSON matches with the
-    current NodeLayout from the AppScalefile. Otherwise returns None."""
+    current NodeLayout from the AppScalefile.
+
+    Args:
+      locations_nodes_list: A list of nodes in dictionary form loaded from
+        the locations json.
+    Raises:
+      BadConfigurationException if the locations json nodes cannot be matched
+        with the AppScalefile nodes.
+    """
 
     # If the length does not match up the user has added or removed a node in
     # the AppScalefile.
     if len(locations_nodes_list) != len(self.nodes):
-      return None
+      raise BadConfigurationException("AppScale does not currently support "
+                                      "changes to AppScalefile or locations "
+                                      "JSON between a down and an up. If "
+                                      "you would like to "
+                                      "change the node layout use "
+                                      "down --terminate before an up.")
 
-    nodes = []
+    # Place defined nodes first so they will be matched before open nodes.
+    old_nodes = [node for node in locations_nodes_list if
+                 node['jobs'] != ['open']]
+    old_nodes.extend(
+        [node for node in locations_nodes_list if node['jobs'] == ['open']])
 
-    # Use a copy so we do not overwrite self.nodes when we call
-    # Node.from_json since that method modifies the node it is called on.
-    nodes_copy = self.nodes[:]
-    open_nodes = []
-    for old_node in locations_nodes_list:
+    def nodes_match(old_node, new_node):
+      """ Determines if old node is a sufficient match for the new node. """
+      if old_node.get('instance_type') != new_node.instance_type:
+        return False
+
       # Because this function deals with the locations json file we use this
       # method from LocalState.
-      old_node_roles = LocalState.get_node_roles(old_node)
-      # Convert deprecated roles to new roles.
-      old_node_roles = [role if role not in self.DEPRECATED_ROLES else
-                        self.DEPRECATED_ROLES[role] for role in old_node_roles]
-      if old_node_roles == ["open"]:
-        open_nodes.append(old_node)
-        continue
-      for _, node in enumerate(nodes_copy):
-        # Match nodes based on jobs/roles and the instance type specified.
-        if set(old_node_roles) == set(node.roles) \
-                and old_node.get('instance_type') == node.instance_type:
-          nodes_copy.remove(node)
-          node.from_json(old_node)
-          if node.is_valid():
-            nodes.append(node)
-          else:
-            # Locations JSON is incorrect if we get here.
-            return None
-          break
-    for open_node in open_nodes:
-      for node in nodes_copy:
-        # Match nodes based on jobs/roles and the instance type specified.
-        if node.instance_type == open_node.get('instance_type'):
-          roles = node.roles
-          node.from_json(open_node)
-          node.roles = roles
-          if node.is_valid():
-            nodes.append(node)
-          else:
-            # Locations JSON is incorrect if we get here.
-            return None
-        else:
-          continue
+      local_state_roles = LocalState.get_node_roles(old_node)
 
-    # If these lengths are equal all nodes were matched.
-    if len(nodes) == len(self.nodes):
-      return nodes
-    else:
-      return None
+      if local_state_roles == ['open']:
+        return True
+
+      old_roles = {self.DEPRECATED_ROLES.get(role, role)
+                   for role in local_state_roles}
+      return old_roles == set(new_node.roles)
+
+    # Ensure each node has a matching locations.json entry.
+    for new_node in self.nodes:
+      index = next((index for index, old_node in enumerate(old_nodes)
+                    if nodes_match(old_node, new_node)), -1)
+
+      if index == -1:
+        raise BadConfigurationException('Unable to find a match for {}'
+                                        'in locations.json'.format(new_node))
+      roles = new_node.roles
+      old_node = old_nodes.pop(index)
+      new_node.from_json(old_node)
+      new_node.roles = roles
+
+      if not new_node.is_valid():
+        raise BadConfigurationException('Node is invalid: {}'.format(new_node))
+
+    return self.nodes
 
   def invalid(self, message):
     """ Wrapper that NodeLayout validation aspects call when the given layout
@@ -615,6 +633,10 @@ class Node():
     self.disk = disk
     self.instance_type = instance_type
     self.expand_roles()
+
+
+  def __str__(self):
+    return str(self.to_json())
 
 
   def add_db_role(self, is_master):

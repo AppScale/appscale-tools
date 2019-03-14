@@ -50,15 +50,21 @@ class ParseArgs(object):
   # limitation.
   ALLOWED_EC2_INSTANCE_TYPES = [
     # General Purpose Instances
+    "m1.medium", "m1.large", "m1.xlarge",
     "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
+    "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+    "m4.16xlarge",
+    "m5.large", "m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.12xlarge",
 
     # Compute Optimized Instances
+    "c1.xlarge",
     "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
 
     # Cluster Compute Instances
     "cc2.8xlarge",
 
     # High Memory Cluster Instances
+    "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
     "cr1.8xlarge",
 
     # Cluster GPU Instances
@@ -96,7 +102,7 @@ class ParseArgs(object):
     "Standard_DS14", "Standard_DS2_v2", "Standard_DS3_v2", "Standard_DS4_v2",
     "Standard_DS5_v2", "Standard_DS11_v2", "Standard_DS12_v2", "Standard_DS13_v2",
     "Standard_DS14_v2", "Standard_DS15_v2", "Standard_F4", "Standard_F8",
-    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s"
+    "Standard_F16", "Standard_F4s", "Standard_F8s", "Standard_F16s",
     "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
     "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"]
 
@@ -212,6 +218,8 @@ class ParseArgs(object):
         help="the security group to use")
       self.parser.add_argument('--keyname', '-k', default=keyname,
         help="the keypair name to use")
+
+      # Euca/EC2 specific flags
       self.parser.add_argument('--use_spot_instances', action='store_true',
         default=False,
         help="use spot instances instead of on-demand instances (EC2 only)")
@@ -223,8 +231,12 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
+      self.parser.add_argument('--aws_vpc_id',
+        help="the id for the vpc in the aws region to spawn instances in.")
+      self.parser.add_argument('--aws_subnet_id',
+        help="the id for the subnet in the aws region to spawn instances in.")
 
       # Google Compute Engine-specific flags
       gce_group = self.parser.add_mutually_exclusive_group()
@@ -353,7 +365,7 @@ class ParseArgs(object):
       self.parser.add_argument('--EC2_SECRET_KEY',
         help="the secret key that identifies this user in an EC2-compatible" + \
           " service")
-      self.parser.add_argument('--EC2_URL',
+      self.parser.add_argument('--EC2_URL', default='',
         help="a URL that identifies where an EC2-compatible service runs")
       self.parser.add_argument('--test', action='store_true',
         default=False,
@@ -383,11 +395,53 @@ class ParseArgs(object):
       self.parser.add_argument('--confirm', action='store_true',
                                default=False,
                                help="does not ask user to confirm application removal")
+    elif function == "appscale-start-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to start")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to start")
+    elif function == "appscale-stop-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to stop")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to stop")
+      self.parser.add_argument('--confirm', action='store_true',
+                               default=False,
+                               help="does not ask user to confirm application stop")
 
     elif function == "appscale-reset-pwd":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
+    elif function == "appscale-show-stats":
+      self.parser.add_argument('--keyname', '-k',
+        default=self.DEFAULT_KEYNAME,
+        help="the keypair name to use")
+      self.parser.add_argument('--types',
+        nargs='+',
+        choices=['nodes', 'processes', 'proxies'],
+        default=['nodes', 'proxies'],
+        help="the type(s) of statistics to print")
+      self.parser.add_argument('--roles', '-r',
+        nargs='*',
+        default=[],
+        help="print nodes with specified role(s)")
+      self.parser.add_argument('--order-processes', '-o',
+        choices=['cpu', 'mem', 'name'],
+        default='mem',
+        help="the field to order process statistics by")
+      self.parser.add_argument('--top',
+        type=int,
+        default='15',
+        help="the number of processes to print")
+      self.parser.add_argument('--apps-only',
+        action='store_true',
+        default=False,
+        help="print only application proxy statistics")
     elif function == "appscale-create-user":
       self.parser.add_argument('--keyname', '-k',
         default=self.DEFAULT_KEYNAME,
@@ -446,7 +500,6 @@ class ParseArgs(object):
       self.validate_ips_flags()
       self.validate_num_of_vms_flags()
       self.validate_infrastructure_flags()
-      self.validate_environment_flags()
       self.validate_credentials()
       self.validate_machine_image()
       self.validate_database_flags()
@@ -463,7 +516,15 @@ class ParseArgs(object):
       if not self.args.location:
         self.args.location = "/tmp/{0}-logs/".format(self.args.keyname)
     elif function == "appscale-terminate-instances":
-      self.validate_environment_flags()
+      if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
+        raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
+                                        "EC2_SECRET_KEY must also be "
+                                        "specified.")
+
+      if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
+        raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
+                                        "EC2_ACCESS_KEY must also be "
+                                        "specified.")
     elif function == "appscale-remove-app":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
@@ -472,7 +533,19 @@ class ParseArgs(object):
         raise SystemExit("Must specify project-id")
       if not self.args.service_id:
         raise SystemExit("Must specify service-id")
+    elif function == "appscale-start-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
+    elif function == "appscale-stop-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
     elif function == "appscale-reset-pwd":
+      pass
+    elif function == "appscale-show-stats":
       pass
     elif function == "appscale-create-user":
       pass
@@ -536,44 +609,22 @@ class ParseArgs(object):
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
     else:
       if self.args.min_machines < 1:
-        raise BadConfigurationException("Min cannot be less than 1.")
+        raise BadConfigurationException(
+          "If ips_layout is not defined, min_machines cannot be less than 1.")
 
       if self.args.max_machines < 1:
-        raise BadConfigurationException("Max cannot be less than 1.")
+        raise BadConfigurationException(
+          "If ips_layout is not defined, max_machines cannot be less than 1.")
 
       if self.args.min_machines > self.args.max_machines:
-        raise BadConfigurationException("Min cannot exceed max.")
+        raise BadConfigurationException(
+          "min_machines cannot exceed max_machines")
 
 
   def validate_ips_flags(self):
     """Sets up the ips flag if the ips_layout flag is given."""
     if self.args.ips_layout:
       self.args.ips = yaml.safe_load(base64.b64decode(self.args.ips_layout))
-
-
-  def validate_environment_flags(self):
-    """Validates flags dealing with setting environment variables.
-
-    Raises:
-      BadConfigurationException: If the user gives us either EC2_ACCESS_KEY
-        or EC2_SECRET_KEY, but forgets to also specify the other.
-    """
-    if self.args.EC2_ACCESS_KEY and not self.args.EC2_SECRET_KEY:
-      raise BadConfigurationException("When specifying EC2_ACCESS_KEY, " + \
-        "EC2_SECRET_KEY must also be specified.")
-
-    if self.args.EC2_SECRET_KEY and not self.args.EC2_ACCESS_KEY:
-      raise BadConfigurationException("When specifying EC2_SECRET_KEY, " + \
-        "EC2_ACCESS_KEY must also be specified.")
-
-    if self.args.EC2_ACCESS_KEY:
-      os.environ['EC2_ACCESS_KEY'] = self.args.EC2_ACCESS_KEY
-
-    if self.args.EC2_SECRET_KEY:
-      os.environ['EC2_SECRET_KEY'] = self.args.EC2_SECRET_KEY
-
-    if self.args.EC2_URL:
-      os.environ['EC2_URL'] = self.args.EC2_URL
 
 
   def validate_infrastructure_flags(self):
@@ -670,6 +721,10 @@ class ParseArgs(object):
       if not self.args.azure_tenant_id:
         raise BadConfigurationException("Cannot authenticate an Azure instance " \
                                         "without the Tenant ID.")
+    elif self.args.infrastructure in ['euca', 'ec2']:
+      if not (self.args.EC2_ACCESS_KEY and self.args.EC2_SECRET_KEY):
+        raise BadConfigurationException("Both EC2_ACCESS_KEY and "
+                                        "EC2_SECRET_KEY must be specified.")
 
   def validate_credentials(self):
     """If running over a cloud infrastructure, makes sure that all of the

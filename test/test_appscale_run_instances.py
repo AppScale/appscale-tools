@@ -31,7 +31,6 @@ from appscale.tools.local_state import APPSCALE_VERSION
 from appscale.tools.local_state import LocalState
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.remote_helper import RemoteHelper
-from appscale.tools.custom_exceptions import BadConfigurationException
 
 from test_ip_layouts import (IP_1, ONE_NODE_CLUSTER)
 
@@ -64,6 +63,8 @@ class TestAppScaleRunInstances(unittest.TestCase):
     appscalefile_contents = """
 keyname: {0}
 group: {1}
+EC2_ACCESS_KEY: 'baz'
+EC2_SECRET_KEY: 'baz'
 """.format(self.keyname, self.group)
 
     self.builtins = flexmock(sys.modules['__builtin__'])
@@ -100,22 +101,11 @@ group: {1}
     self.failed = flexmock(name='failed', returncode=1)
     self.failed.should_receive('wait').and_return(1)
 
-    # throw in some mocks that assume our EC2 environment variables are set
-    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = "baz"
-
     # mock out interactions with AWS
     self.fake_ec2 = flexmock(name='fake_ec2')
 
     # And add in mocks for libraries most of the tests mock out
     self.local_state = flexmock(LocalState)
-
-
-  def tearDown(self):
-    # remove the environment variables we set up to not accidentally mess
-    # up other unit tests
-    for credential in EC2Agent.REQUIRED_EC2_CREDENTIALS:
-      os.environ[credential] = ""
 
 
   def setup_ec2_mocks(self):
@@ -146,9 +136,11 @@ group: {1}
     udp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='udp')
     tcp_rule = flexmock(from_port=1, to_port=65535, ip_protocol='tcp')
     icmp_rule = flexmock(from_port=-1, to_port=-1, ip_protocol='icmp')
-    group = flexmock(name=self.group, rules=[tcp_rule, udp_rule, icmp_rule])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args().and_return([])
-    self.fake_ec2.should_receive('get_all_security_groups').with_args(self.group).and_return([group])
+    group = flexmock(name=self.group, id='sg-id', vpc_id=None,
+                     rules=[tcp_rule, udp_rule, icmp_rule])
+    self.fake_ec2.should_receive('get_all_security_groups').with_args()\
+      .and_return([]).and_return([]).and_return([group]).and_return([group])\
+      .and_return([group]).and_return([group])
 
 
     # mock out creating the keypair
@@ -159,14 +151,17 @@ group: {1}
       .and_return(fake_key)
 
     # and the same for the security group
-    self.fake_ec2.should_receive('create_security_group').with_args(self.group,
-      str).and_return()
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='udp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=1, to_port=65535, ip_protocol='tcp', cidr_ip='0.0.0.0/0')
-    self.fake_ec2.should_receive('authorize_security_group').with_args(self.group,
-      from_port=-1, to_port=-1, ip_protocol='icmp', cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('create_security_group').with_args(
+        self.group, str, None).and_return()
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='udp',
+        cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=1, to_port=65535, ip_protocol='tcp',
+        cidr_ip='0.0.0.0/0')
+    self.fake_ec2.should_receive('authorize_security_group').with_args(
+        group_id=group.id, from_port=-1, to_port=-1, ip_protocol='icmp',
+        cidr_ip='0.0.0.0/0')
 
     # assume that there are no instances running initially, and that the
     # instance we spawn starts as pending, then becomes running
@@ -232,7 +227,7 @@ group: {1}
       .and_return(True)
     fake_appcontroller.should_receive('is_initialized').and_return(True)
     fake_appcontroller.should_receive('does_user_exist').and_return(False)
-    fake_appcontroller.should_receive('set_admin_role').and_return()
+    fake_appcontroller.should_receive('set_admin_role').and_return('true')
     fake_appcontroller.should_receive('create_user').with_args(
       'a@a.com', str, 'xmpp_user', 'the secret') \
       .and_return('true')
@@ -447,9 +442,10 @@ group: {1}
       availability_zone='my-zone-1b').and_return([fake_entry])
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.1',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=[self.group],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.1', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
 
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
@@ -588,7 +584,9 @@ group: {1}
       "--group", self.group,
       "--test",
       "--zone", "my-zone-1b",
-      "--static_ip", "elastic-ip"
+      "--static_ip", "elastic-ip",
+      "--EC2_ACCESS_KEY", "baz",
+      "--EC2_SECRET_KEY", "baz"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -631,10 +629,10 @@ group: {1}
     self.setup_ec2_mocks()
 
     # also mock out acquiring a spot instance
-    self.fake_ec2.should_receive('request_spot_instances').with_args('1.23',
-      'ami-ABCDEFG', key_name=self.keyname, security_groups=['bazgroup'],
-      instance_type='m3.medium', count=1, placement='my-zone-1b')
-
+    self.fake_ec2.should_receive('request_spot_instances').with_args(
+        '1.23', 'ami-ABCDEFG', key_name=self.keyname, network_interfaces=None,
+        security_groups=[self.group], instance_type='m3.medium', count=1,
+        placement='my-zone-1b')
     # Don't write local metadata files.
     flexmock(LocalState).should_receive('update_local_metadata')
 
@@ -757,7 +755,9 @@ group: {1}
       "--keyname", self.keyname,
       "--group", self.group,
       "--test",
-      "--zone", "my-zone-1b"
+      "--zone", "my-zone-1b",
+      "--EC2_ACCESS_KEY", "baz",
+      "--EC2_SECRET_KEY", "baz"
     ]
 
     options = ParseArgs(argv, self.function).args
@@ -793,7 +793,7 @@ group: {1}
     flexmock(AppControllerClient)
     AppControllerClient.should_receive('does_user_exist').and_return(True)
     AppControllerClient.should_receive('is_initialized').and_return(True)
-    AppControllerClient.should_receive('set_admin_role').and_return()
+    AppControllerClient.should_receive('set_admin_role').and_return('true')
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).

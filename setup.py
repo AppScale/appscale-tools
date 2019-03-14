@@ -33,7 +33,7 @@ http://www.appscale.com
 
 setup(
   name='appscale-tools',
-  version='3.5.0',
+  version='3.7.0',
   description='A set of command-line tools for interacting with AppScale',
   long_description=long_description,
   author='AppScale Systems, Inc.',
@@ -42,20 +42,20 @@ setup(
   keywords='appscale google-app-engine python java go php',
   platforms='Posix; MacOS X',
   install_requires=[
-    'adal==0.4.5',
-    'azure==2.0.0rc6',
-    'azure-common[autorest]==1.1.4',
-    'cryptography',
+    'adal>=0.4.7',
+    'azure==2.0.0',
+    'azure-mgmt-marketplaceordering',
+    'cryptography>=2.3.0',
     'argparse',
     'boto',
     'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
-    'msrest',
-    'msrestazure<0.4.20',
+    'msrestazure==0.4.34',
     'oauth2client==4.0.0',
+    'pyOpenSSL>=18.0.0',
     'PyYAML',
-    'requests[security]>=2.7.0,<2.15',
+    'requests[security]>=2.20.0',
     'retrying==1.3.3',
     'setuptools>=11.3,<34',
     'SOAPpy',
@@ -63,25 +63,26 @@ setup(
     'termcolor',
     'wstools==0.4.3'
   ],
+  extras_require={'testing': ['mock']},
   classifiers=[
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'License :: OSI Approved :: Apache Software License',
-    'Programming Language :: Python :: 2.6',
     'Programming Language :: Python :: 2.7',
     'Topic :: Utilities'
   ],
   namespace_packages=['appscale'],
-  packages=['appscale', 'appscale.tools', 'appscale.tools.agents',
-            'appscale.tools.scripts'],
+  packages=['appscale', 'appscale.tools', 'appscale.tools.admin_api',
+            'appscale.tools.agents', 'appscale.tools.scripts'],
   entry_points={
     'console_scripts': [
       'appscale=appscale.tools.scripts.appscale:main',
       'appscale-add-instances=appscale.tools.scripts.add_instances:main',
       'appscale-add-keypair=appscale.tools.scripts.add_keypair:main',
-      'appscale-describe-instances='
+      'appscale-show-stats=appscale.tools.scripts.show_stats:main',
+      'appscale-describe-instances=' +
         'appscale.tools.scripts.describe_instances:main',
       'appscale-gather-logs=appscale.tools.scripts.gather_logs:main',
       'appscale-get-property=appscale.tools.scripts.get_property:main',
@@ -90,7 +91,7 @@ setup(
       'appscale-reset-pwd=appscale.tools.scripts.reset_pwd:main',
       'appscale-run-instances=appscale.tools.scripts.run_instances:main',
       'appscale-set-property=appscale.tools.scripts.set_property:main',
-      'appscale-terminate-instances='
+      'appscale-terminate-instances=' +
         'appscale.tools.scripts.terminate_instances:main',
       'appscale-upgrade=appscale.tools.scripts.upgrade:main',
       'appscale-upload-app=appscale.tools.scripts.upload_app:main'

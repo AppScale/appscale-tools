@@ -20,12 +20,12 @@ fi
 # Some dependencies require a newer Pip than the repositories provide.
 case ${DIST} in
     trusty)
-        pip install -U pip
+        pip install -U 'pip<10'
         hash -r
         ;;
     jessie)
         # The system's pip does not allow updating itself.
-        easy_install pip
+        easy_install --upgrade 'pip<10.0.0b1'
         hash -r
         ;;
 esac
@@ -42,6 +42,21 @@ case ${DIST} in
         pip install --upgrade httplib2 six
         ;;
 esac
+
+# Uninstall old version of azure because of packaging issues during upgrades.
+if [ "$(pip freeze | grep azure==2.0.0)" = "azure==2.0.0rc6" ]; then
+    AZURE_PACKAGES='azure azure-batch azure-common azure-mgmt
+        azure-mgmt-batch azure-mgmt-compute azure-mgmt-keyvault azure-mgmt-logic
+        azure-mgmt-network azure-mgmt-nspkg azure-mgmt-redis azure-mgmt-resource
+        azure-mgmt-scheduler azure-mgmt-storage azure-nspkg azure-servicebus
+        azure-servicemanagement-legacy azure-storage'
+
+    echo "In order to upgrade AppScale Tools to use a new version we must
+      uninstall the following azure packages $AZURE_PACKAGES"
+    for package in $AZURE_PACKAGES; do
+        pip uninstall -y "$package"
+    done
+fi
 
 # Fill in new dependencies.
 # See pip.pypa.io/en/stable/user_guide/#only-if-needed-recursive-upgrade.

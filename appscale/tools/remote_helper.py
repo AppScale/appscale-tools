@@ -18,7 +18,6 @@ from boto.exception import BotoServerError
 # AppScale-specific imports
 from agents.factory import InfrastructureAgentFactory
 from appcontroller_client import AppControllerClient
-from appengine_helper import AppEngineHelper
 from appscale_logger import AppScaleLogger
 from custom_exceptions import AppControllerException
 from custom_exceptions import AppScaleException
@@ -129,16 +128,8 @@ class RemoteHelper(object):
       node_info = LocalState.get_local_nodes_info(keyname=options.keyname)
 
       previous_node_list = node_layout.from_locations_json_list(node_info)
-      # If this is None, the AppScalefile has been changed or the nodes could
-      # not be matched up by roles.
-      if previous_node_list is None:
-        raise BadConfigurationException("AppScale does not currently support "
-                                        "changes to AppScalefile or locations "
-                                        "JSON between a down and an up. If "
-                                        "you would like to "
-                                        "change the node layout use "
-                                        "down --terminate before an up.")
       node_layout.nodes = previous_node_list
+
       for node_index, node in enumerate(node_layout.nodes):
         try:
           index = instance_ids.index(node.instance_id)
@@ -154,26 +145,25 @@ class RemoteHelper(object):
     agent.configure_instance_security(params)
 
     load_balancer_roles = {}
-    instance_type_roles = {}
+    instance_type_disks_roles = {'with_disks':{},'without_disks':{}}
 
-    for node in node_layout.get_nodes('load_balancer', True):
-      load_balancer_roles.setdefault(node.instance_type, []).append(node)
-
-    for node in node_layout.get_nodes('load_balancer', False):
-      instance_type = instance_type_roles
+    for node in node_layout.nodes:
+      if node.is_role('load_balancer'):
+        load_balancer_roles.setdefault(node.instance_type, []).append(node)
+        continue
+      instance_type = instance_type_disks_roles['with_disks'] if node.disk else \
+        instance_type_disks_roles['without_disks']
       instance_type.setdefault(node.instance_type, []).append(node)
 
     spawned_instance_ids = []
 
     for instance_type, load_balancer_nodes in load_balancer_roles.items():
-      # Copy parameters so we can modify the instance type.
-      instance_type_params = params.copy()
-      instance_type_params['instance_type'] = instance_type
+      params['instance_type'] = instance_type
+      params['disks'] = any([node.disk for node in load_balancer_nodes])
 
       try:
         instance_ids, public_ips, private_ips = cls.spawn_nodes_in_cloud(
-          agent, instance_type_params, count=len(load_balancer_nodes),
-          load_balancer=True)
+            agent, params, count=len(load_balancer_nodes), load_balancer=True)
       except (AgentRuntimeException, BotoServerError):
         AppScaleLogger.warn("AppScale was unable to start the requested number "
                             "of instances, attempting to terminate those that "
@@ -207,36 +197,38 @@ class RemoteHelper(object):
     AppScaleLogger.log("\nPlease wait for AppScale to prepare your machines "
                        "for use. This can take few minutes.")
 
-    for instance_type, nodes in instance_type_roles.items():
-      # Copy parameters so we can modify the instance type.
-      instance_type_params = params.copy()
-      instance_type_params['instance_type'] = instance_type
+    for disks_needed, instance_type_nodes in instance_type_disks_roles.items():
+      for instance_type, nodes in instance_type_nodes.items():
+        if len(nodes) <= 0:
+          break
+        # Copy parameters so we can modify the instance type.
+        params['instance_type'] = instance_type
+        params['disks'] = (disks_needed == 'with_disks')
 
-      try:
-        _instance_ids, _public_ips, _private_ips = cls.spawn_nodes_in_cloud(
-          agent, instance_type_params, count=len(nodes))
-      except (AgentRuntimeException, BotoServerError):
-        AppScaleLogger.warn("AppScale was unable to start the requested number "
-                            "of instances, attempting to terminate those that "
-                            "were started.")
-        if len(spawned_instance_ids) > 0:
-          AppScaleLogger.warn("Attempting to terminate those that were started.")
-          cls.terminate_spawned_instances(spawned_instance_ids, agent, params)
+        try:
+          _instance_ids, _public_ips, _private_ips = \
+            cls.spawn_nodes_in_cloud(agent, params, count=len(nodes))
+        except (AgentRuntimeException, BotoServerError):
+          if len(spawned_instance_ids) > 0:
+            AppScaleLogger.warn("AppScale was unable to start the requested "
+                                "number of instances, attempting to terminate "
+                                "those that were started.")
+            cls.terminate_spawned_instances(spawned_instance_ids, agent, params)
 
-        # Cleanup the keyname since it failed.
-        LocalState.cleanup_keyname(options.keyname)
+          # Cleanup the keyname since it failed.
+          LocalState.cleanup_keyname(options.keyname)
 
-        # Re-raise the original exception.
-        raise
+          # Re-raise the original exception.
+          raise
 
-      # Keep track of instances we have started.
-      spawned_instance_ids.extend(_instance_ids)
+        # Keep track of instances we have started.
+        spawned_instance_ids.extend(_instance_ids)
 
-      for node_index, node in enumerate(nodes):
-        index = node_layout.nodes.index(node)
-        node_layout.nodes[index].public_ip = _public_ips[node_index]
-        node_layout.nodes[index].private_ip = _private_ips[node_index]
-        node_layout.nodes[index].instance_id = _instance_ids[node_index]
+        for node_index, node in enumerate(nodes):
+          index = node_layout.nodes.index(node)
+          node_layout.nodes[index].public_ip = _public_ips[node_index]
+          node_layout.nodes[index].private_ip = _private_ips[node_index]
+          node_layout.nodes[index].instance_id = _instance_ids[node_index]
 
     return node_layout
 
@@ -1085,7 +1077,8 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose, extras=None):
+  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose,
+                       extras=None, custom_service_yaml=None):
     """Copies the given application to a machine running the Login service
     within an AppScale deployment.
 
@@ -1098,6 +1091,8 @@ class RemoteHelper(object):
       is_verbose: A bool that indicates if we should print the commands we exec
         to copy the app to the remote host to stdout.
       extras: A dictionary containing a list of files to include in the upload.
+      custom_service_yaml: A string specifying the location of the service
+        yaml being deployed.
 
     Returns:
       A str corresponding to the location on the remote filesystem where the
@@ -1123,9 +1118,15 @@ class RemoteHelper(object):
       app_files.update(extras)
 
     with tarfile.open(local_tarred_app, 'w:gz') as app_tar:
-      for tarball_path in app_files:
-        local_path = app_files[tarball_path]
+      for tarball_path, local_path in app_files.items():
+        # Replace app.yaml with the service yaml being deployed.
+        if custom_service_yaml and os.path.normpath(tarball_path) == 'app.yaml':
+          continue
+
         app_tar.add(local_path, tarball_path)
+
+      if custom_service_yaml:
+        app_tar.add(custom_service_yaml, 'app.yaml')
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)

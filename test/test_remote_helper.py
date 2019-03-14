@@ -139,7 +139,7 @@ class TestRemoteHelper(unittest.TestCase):
 
     # and then assume we can create and open our security group fine
     fake_ec2.should_receive('create_security_group').with_args('boogroup',
-      'AppScale security group').and_return()
+      'AppScale security group', None).and_return()
     fake_ec2.should_receive('authorize_security_group').and_return()
 
     # next, add in mocks for run_instances
