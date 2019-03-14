@@ -925,4 +925,5 @@ Available commands:
     options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
     options.terminate = False
     options.clean = False
+    options.instance_type = contents_as_yaml.get('instance_type')
     AppScaleTools.upgrade(options)
