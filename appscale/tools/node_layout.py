@@ -561,9 +561,10 @@ class NodeLayout():
 
     # Place defined nodes first so they will be matched before open nodes.
     old_nodes = [node for node in locations_nodes_list if
-                 node['roles'] != ['open']]
+                 LocalState.get_node_roles(node) != ['open']]
     old_nodes.extend(
-        [node for node in locations_nodes_list if node['roles'] == ['open']])
+        [node for node in locations_nodes_list
+         if LocalState.get_node_roles(node) == ['open']])
 
     def nodes_match(old_node, new_node):
       """ Determines if old node is a sufficient match for the new node. """
