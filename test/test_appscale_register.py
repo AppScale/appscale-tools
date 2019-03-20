@@ -16,7 +16,7 @@ class TestAppScaleRegister(unittest.TestCase):
     deployment = {
       'name': 'bar',
       'deployment_id': 'baz',
-      'nodes': [{'public_ip': 'public1', 'jobs': ['shadow']}]
+      'nodes': [{'public_ip': 'public1', 'roles': ['shadow']}]
     }
 
     flexmock(AppScale).should_receive('read_appscalefile')\

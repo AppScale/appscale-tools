@@ -561,20 +561,25 @@ class NodeLayout():
 
     # Place defined nodes first so they will be matched before open nodes.
     old_nodes = [node for node in locations_nodes_list if
-                 node['jobs'] != ['open']]
+                 LocalState.get_node_roles(node) != ['open']]
     old_nodes.extend(
-        [node for node in locations_nodes_list if node['jobs'] == ['open']])
+        [node for node in locations_nodes_list
+         if LocalState.get_node_roles(node) == ['open']])
 
     def nodes_match(old_node, new_node):
       """ Determines if old node is a sufficient match for the new node. """
       if old_node.get('instance_type') != new_node.instance_type:
         return False
 
-      if old_node['jobs'] == ['open']:
+      # Because this function deals with the locations json file we use this
+      # method from LocalState.
+      local_state_roles = LocalState.get_node_roles(old_node)
+
+      if local_state_roles == ['open']:
         return True
 
       old_roles = {self.DEPRECATED_ROLES.get(role, role)
-                   for role in old_node.get('jobs', [])}
+                   for role in local_state_roles}
       return old_roles == set(new_node.roles)
 
     # Ensure each node has a matching locations.json entry.
@@ -754,7 +759,7 @@ class Node():
       'public_ip': self.public_ip,
       'private_ip': self.private_ip,
       'instance_id': self.instance_id,
-      'jobs': self.roles,
+      'roles': self.roles,
       'disk': self.disk,
       'instance_type' : self.instance_type
     }
@@ -770,13 +775,13 @@ class Node():
           'public_ip': self.public_ip,
           'private_ip': self.private_ip,
           'instance_id': self.instance_id,
-          'jobs': self.roles,
+          'roles': self.roles,
           'disk': self.disk
         }
     """
     self.public_ip = node_dict.get('public_ip')
     self.private_ip = node_dict.get('private_ip')
     self.instance_id = node_dict.get('instance_id')
-    self.roles = node_dict.get('jobs')
+    self.roles = node_dict.get('roles')
     self.disk = node_dict.get('disk')
     self.instance_type = node_dict.get('instance_type')

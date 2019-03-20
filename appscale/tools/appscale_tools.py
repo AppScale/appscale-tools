@@ -501,7 +501,7 @@ class AppScaleTools(object):
       if node_info:
         private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
         os.symlink(local_link, private_ip_dir)
-        for role in node_info['jobs']:
+        for role in node_info['roles']:
           role_dir = os.path.join(location, 'symlinks', role)
           utils.mkdir(role_dir)
           os.symlink(local_link, os.path.join(role_dir, public_ip))
