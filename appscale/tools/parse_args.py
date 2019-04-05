@@ -50,15 +50,21 @@ class ParseArgs(object):
   # limitation.
   ALLOWED_EC2_INSTANCE_TYPES = [
     # General Purpose Instances
+    "m1.medium", "m1.large", "m1.xlarge",
     "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
+    "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+    "m4.16xlarge",
+    "m5.large", "m5.xlarge", "m5.2xlarge", "m5.4xlarge", "m5.12xlarge",
 
     # Compute Optimized Instances
+    "c1.xlarge",
     "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
 
     # Cluster Compute Instances
     "cc2.8xlarge",
 
     # High Memory Cluster Instances
+    "m2.xlarge", "m2.2xlarge", "m2.4xlarge",
     "cr1.8xlarge",
 
     # Cluster GPU Instances
@@ -389,6 +395,23 @@ class ParseArgs(object):
       self.parser.add_argument('--confirm', action='store_true',
                                default=False,
                                help="does not ask user to confirm application removal")
+    elif function == "appscale-start-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to start")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to start")
+    elif function == "appscale-stop-service":
+      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
+                               help="the keypair name to use")
+      self.parser.add_argument('--project-id',
+                               help="the name of the application to stop")
+      self.parser.add_argument('--service-id',
+                               help="the name of the service to stop")
+      self.parser.add_argument('--confirm', action='store_true',
+                               default=False,
+                               help="does not ask user to confirm application stop")
 
     elif function == "appscale-reset-pwd":
       self.parser.add_argument('--keyname', '-k',
@@ -506,6 +529,16 @@ class ParseArgs(object):
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
     elif function == "appscale-remove-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
+    elif function == "appscale-start-service":
+      if not self.args.project_id:
+        raise SystemExit("Must specify project-id")
+      if not self.args.service_id:
+        raise SystemExit("Must specify service-id")
+    elif function == "appscale-stop-service":
       if not self.args.project_id:
         raise SystemExit("Must specify project-id")
       if not self.args.service_id:

@@ -213,7 +213,7 @@ EC2_SECRET_KEY: 'baz'
     role_info = [{
       'public_ip' : public_ip,
       'private_ip' : private_ip,
-      'jobs' : ['shadow'],
+      'roles' : ['shadow'],
       'instance_id': 'i-APPSCALE'
     }]
     fake_appcontroller.should_receive('get_role_info').with_args('the secret') \
@@ -356,7 +356,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip": IP_1,
         "private_ip": IP_1,
-        "jobs": ["shadow"]
+        "roles": ["shadow"]
       }])))
 
     # Assume the locations files were copied successfully.
@@ -541,7 +541,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : "elastic-ip",
         "private_ip" : "private1",
-        "jobs": ["shadow"]
+        "roles": ["shadow"]
       }])))
 
     # copying over the locations yaml and json files should be fine
@@ -703,7 +703,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : "public1",
         "private_ip" : "private1",
-        "jobs" : ["shadow"]
+        "roles" : ["shadow"]
       }])))
 
     # copying over the locations json file should be fine
@@ -779,7 +779,7 @@ EC2_SECRET_KEY: 'baz'
       json.dumps([{
         "public_ip" : IP_1,
         "private_ip" : IP_1,
-        "jobs" : ["shadow"]
+        "roles" : ["shadow"]
       }])))
     self.local_state.should_receive('get_secret_key').and_return("fookey")
 

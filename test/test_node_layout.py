@@ -198,23 +198,23 @@ class TestNodeLayout(unittest.TestCase):
   reattach_node_info = [{ "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
-                          "jobs": ['load_balancer', 'taskqueue', 'shadow',
-                                   'taskqueue_master'],
+                          "roles": ['load_balancer', 'taskqueue', 'shadow',
+                                    'taskqueue_master'],
                           "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "jobs": ['memcache', 'appengine'],
+                          "roles": ['memcache', 'appengine'],
                           "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "jobs": ['zookeeper'],
+                          "roles": ['zookeeper'],
                           "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'db_master'],
+                          "roles": ['database', 'db_master'],
                           "instance_type": "instance_type_1"}
                         ]
 
@@ -257,23 +257,23 @@ class TestNodeLayout(unittest.TestCase):
     cleaned_node_info = [{"public_ip": "0.0.0.0",
                            "private_ip": "0.0.0.0",
                            "instance_id": "i-APPSCALE1",
-                           "jobs": ['load_balancer', 'taskqueue', 'shadow',
-                                    'taskqueue_master'],
+                           "roles": ['load_balancer', 'taskqueue', 'shadow',
+                                     'taskqueue_master'],
                            "instance_type": "instance_type_1"},
                           {"public_ip": "0.0.0.0",
                            "private_ip": "0.0.0.0",
                            "instance_id": "i-APPSCALE2",
-                           "jobs": ['open'],
+                           "roles": ['open'],
                            "instance_type": "instance_type_1"},
                           {"public_ip": "0.0.0.0",
                            "private_ip": "0.0.0.0",
                            "instance_id": "i-APPSCALE3",
-                           "jobs": ['open'],
+                           "roles": ['open'],
                            "instance_type": "instance_type_1"},
                           {"public_ip": "0.0.0.0",
                            "private_ip": "0.0.0.0",
                            "instance_id": "i-APPSCALE4",
-                           "jobs": ['open'],
+                           "roles": ['open'],
                            "instance_type": "instance_type_1"}
                           ]
     node_layout = NodeLayout(options)
@@ -321,7 +321,7 @@ class TestNodeLayout(unittest.TestCase):
         if set(old_node.roles) == set(node.roles):
           old_nodes.pop(index)
           break
-  
+
     self.assertEqual(old_nodes, [])
 
   def test_from_locations_json_list_invalid_locations(self):
@@ -331,20 +331,20 @@ class TestNodeLayout(unittest.TestCase):
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE1",
-                   "jobs": ['load_balancer', 'taskqueue', 'shadow',
-                            'taskqueue_master'] },
+                   "roles": ['load_balancer', 'taskqueue', 'shadow',
+                             'taskqueue_master'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE2",
-                   "jobs": ['memcache', 'appengine'] },
+                   "roles": ['memcache', 'appengine'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE3",
-                   "jobs": ['zookeeper'] },
+                   "roles": ['zookeeper'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['database', 'db_master', 'zookeeper'] }
+                   "roles": ['database', 'db_master', 'zookeeper'] }
                  ]
 
     with self.assertRaises(BadConfigurationException):

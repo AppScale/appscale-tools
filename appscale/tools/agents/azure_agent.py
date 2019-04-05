@@ -95,6 +95,9 @@ class AzureAgent(BaseAgent):
   # Default resource group name to use for Azure.
   DEFAULT_RESOURCE_GROUP = 'appscalegroup'
 
+  # Default resource tag name to use for Azure.
+  DEFAULT_TAG = 'default-tag'
+
   # A list of Azure instance types that have less than 4 GB of RAM, the amount
   # recommended by Cassandra. AppScale will still run on these instance types,
   # but is likely to crash after a day or two of use (as Cassandra will attempt
@@ -834,7 +837,7 @@ class AzureAgent(BaseAgent):
           # Start creating scalesets.
           scalesets_futures.append(executor.submit(self.create_scale_set,
               capacity, parameters, resource_name, scale_set_name, subnet))
-        remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
+          remaining_vms_count = remaining_vms_count - self.MAX_VMSS_CAPACITY
         for future in concurrent.futures.as_completed(scalesets_futures):
           exception = future.exception()
           if exception:
@@ -1473,21 +1476,17 @@ class AzureAgent(BaseAgent):
       self.PARAM_INSTANCE_TYPE: args[self.PARAM_INSTANCE_TYPE],
       self.PARAM_GROUP: args[self.PARAM_GROUP],
       self.PARAM_KEYNAME: args[self.PARAM_KEYNAME],
-      self.PARAM_RESOURCE_GROUP: args[self.PARAM_RESOURCE_GROUP],
-      self.PARAM_STORAGE_ACCOUNT: args[self.PARAM_STORAGE_ACCOUNT],
+      self.PARAM_RESOURCE_GROUP: args.get(self.PARAM_RESOURCE_GROUP,
+                                          self.DEFAULT_RESOURCE_GROUP),
+      self.PARAM_STORAGE_ACCOUNT: args.get(self.PARAM_STORAGE_ACCOUNT),
       self.PARAM_SUBSCRIBER_ID: args[self.PARAM_SUBSCRIBER_ID],
-      self.PARAM_TAG: args[self.PARAM_TAG],
+      self.PARAM_TAG: args.get(self.PARAM_TAG, self.DEFAULT_TAG),
       self.PARAM_TENANT_ID: args[self.PARAM_TENANT_ID],
-      self.PARAM_TEST: args[self.PARAM_TEST],
       self.PARAM_VERBOSE : args.get('verbose', False),
       self.PARAM_ZONE : args[self.PARAM_ZONE],
       self.PARAM_AUTOSCALE_AGENT: False
     }
     self.assert_credentials_are_valid(params)
-
-    # In case no resource group is passed, pass a default group.
-    if not args[self.PARAM_RESOURCE_GROUP]:
-      params[self.PARAM_RESOURCE_GROUP] = self.DEFAULT_RESOURCE_GROUP
 
     # Perform Marketplace Image checks.
     if self.MARKETPLACE_IMAGE.match(params[self.PARAM_IMAGE_ID]):
@@ -1495,7 +1494,7 @@ class AzureAgent(BaseAgent):
       self.check_marketplace_image(params)
     # Only assign default storage account if we are not using a Marketplace
     # Image.
-    elif not args[self.PARAM_STORAGE_ACCOUNT]:
+    elif not params[self.PARAM_STORAGE_ACCOUNT]:
      params[self.PARAM_STORAGE_ACCOUNT] = self.DEFAULT_STORAGE_ACCT
 
     return params
@@ -1818,9 +1817,7 @@ class AzureAgent(BaseAgent):
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_group_name = parameters[self.PARAM_RESOURCE_GROUP]
 
-    tag_name = 'default-tag'
-    if parameters[self.PARAM_TAG]:
-      tag_name = parameters[self.PARAM_TAG]
+    tag_name = parameters[self.PARAM_TAG]
 
     storage_client = StorageManagementClient(credentials, subscription_id)
     try:

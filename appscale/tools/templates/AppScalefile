@@ -23,19 +23,27 @@ ips_layout:
       - zookeeper
     nodes: [1 | vm1_private_IP]
 
-# A multi node deployment.
+# A multi node deployment example. Within nodes, one can specify either
+# the number of nodes desired (cloud deployment) or a list of IPs (cluster
+# deployment). When running on a cloud, each role stanza can define a
+# specific instance type to be used: if left unspecified, the global
+# instance_type type will be used.
+#
 #ips_layout:
 #  -
 #    roles: master
 #    nodes: [1 | vm1_private_IP]
 #    disks: disk_1
+#    instance_type : n1-standard-8
 #  -
 #    roles: compute
 #    nodes: [1 | vm2_private_IP]
+#    instance_type : n1-standard-4
 #  -
 #    roles: database   # Cassandra needs a quorum to answer queries (hence 3)
 #    nodes: [3 | [vm3_private_IP, vm4_private_IP, vm5_private_IP]]
 #    disks: [disk_1, disk_2, disk_3]
+#    instance_type : n1-standard-16
 #  -
 #    roles: zookeeper  # Zookeeper needs a majority of peers online (hence 3)
 #    nodes: [3 | [vm6_private_IP, vm7_private_IP, vm8_private_IP]]
@@ -55,7 +63,7 @@ ips_layout:
 
 # Login is used to instruct AppScale which one is the visible public IP used
 # by clients to connect. It could be the public IP of the master/load-balancer
-# instance, or it could be the list of IPs used for external load-balancers.
+# instance, or it could be the IP used for external load-balancer.
 #login : [vm1_public_IP | Domain Name]
 
 
@@ -75,8 +83,11 @@ ips_layout:
 #EC2_ACCESS_KEY: 'YYYY'
 #EC2_SECRET_KEY: 'ZZZZ'
 
-# Instance type of your choice. Default is m3.medium.
-#instance_type : 'm3.medium'
+# This is the default instance type to be used when no instance_type has
+# been specified for the particular node. It is also the instance type
+# that will be used for autoscaling (if autoscaling is enabled). It can be
+# changed at run time using the 'set' command. There is no default.
+#instance_type : 'n1-standard-8'
 
 # The availability zone that should be used for all virtual machines in your
 # AppScale deployment. If using persistent disks in your AppScale deployment,

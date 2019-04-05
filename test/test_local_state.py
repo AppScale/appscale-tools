@@ -229,7 +229,7 @@ class TestLocalState(unittest.TestCase):
     role_info = [{
         'public_ip' : 'public1',
         'private_ip' : 'private1',
-        'jobs' : ['shadow', 'db_master']
+        'roles' : ['shadow', 'db_master']
     }]
     fake_soap.should_receive('get_role_info').with_args('the secret') \
       .and_return(json.dumps(role_info))

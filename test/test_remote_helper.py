@@ -437,7 +437,7 @@ class TestRemoteHelper(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow"]
+        "roles": ["shadow"]
       }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location('bookey'), 'r') \
@@ -481,12 +481,12 @@ class TestRemoteHelper(unittest.TestCase):
       {
         'public_ip' : 'public1',
         'private_ip' : 'private1',
-        'jobs' : ['shadow', 'db_master']
+        'roles' : ['shadow', 'db_master']
       },
       {
         'public_ip' : 'public2',
         'private_ip' : 'private2',
-        'jobs' : ['appengine']
+        'roles' : ['appengine']
       }
     ]
     fake_soap.should_receive('get_role_info').with_args('the secret') \
@@ -530,23 +530,23 @@ class TestRemoteHelper(unittest.TestCase):
   reattach_node_info = [{ "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE1",
-                          "jobs": ['load_balancer', 'taskqueue', 'shadow',
-                                   'taskqueue_master'],
+                          "roles": ['load_balancer', 'taskqueue', 'shadow',
+                                    'taskqueue_master'],
                           "instance_type" : "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE2",
-                          "jobs": ['memcache', 'appengine'],
+                          "roles": ['memcache', 'appengine'],
                           "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE3",
-                          "jobs": ['zookeeper'],
+                          "roles": ['zookeeper'],
                           "instance_type": "instance_type_1"},
                         { "public_ip": "0.0.0.0",
                           "private_ip": "0.0.0.0",
                           "instance_id": "i-APPSCALE4",
-                          "jobs": ['database', 'db_master'],
+                          "roles": ['database', 'db_master'],
                           "instance_type": "instance_type_1"}
                         ]
 
@@ -616,20 +616,20 @@ class TestRemoteHelper(unittest.TestCase):
     node_info = [{ "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE1",
-                   "jobs": ['load_balancer', 'taskqueue', 'shadow',
+                   "roles": ['load_balancer', 'taskqueue', 'shadow',
                             'taskqueue_master'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE2",
-                   "jobs": ['memcache', 'appengine'] },
+                   "roles": ['memcache', 'appengine'] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE3",
-                   "jobs": ['zookeeper', "appengine"] },
+                   "roles": ['zookeeper', "appengine"] },
                  { "public_ip": "0.0.0.0",
                    "private_ip": "0.0.0.0",
                    "instance_id": "i-APPSCALE4",
-                   "jobs": ['db_master'] }
+                   "roles": ['db_master'] }
                  ]
 
     LocalState.should_receive('get_local_nodes_info').and_return(node_info)

@@ -383,7 +383,8 @@ class AppScaleTools(object):
        "{}/{}".format(service.http, service.https),
        "{}/{}".format(service.appservers, service.pending_appservers),
        "{}/{}".format(service.reqs_enqueued, service.total_reqs),
-       "Ready" if service.appservers > 0 else "Starting")
+       ("Ready" if service.appservers > 0 else
+        "Starting" if service.pending_appservers > 0 else "Stopped"))
       for service in services
     )
     AppScaleLogger.log("\n" + tabulate(table, headers=header, tablefmt="plain"))
@@ -508,7 +509,7 @@ class AppScaleTools(object):
       if node_info:
         private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
         os.symlink(local_link, private_ip_dir)
-        for role in node_info['jobs']:
+        for role in node_info['roles']:
           role_dir = os.path.join(location, 'symlinks', role)
           utils.mkdir(role_dir)
           os.symlink(local_link, os.path.join(role_dir, public_ip))
@@ -657,6 +658,68 @@ class AppScaleTools(object):
         raise AppScaleException(operation['error']['message'])
 
       break
+
+  @classmethod
+  def start_service(cls, options):
+    """Instructs AppScale to start the named service.
+
+    This is applicable for services using manual scaling.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    Raises:
+      AppScaleException: If the named service isn't running in this
+        AppScale cloud, or if start is not valid for the service.
+    """
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
+    secret = LocalState.get_secret_key(options.keyname)
+    admin_client = AdminClient(load_balancer_ip, secret)
+
+    version = Version(None, None)
+    version.project_id = options.project_id
+    version.service_id = options.service_id or DEFAULT_SERVICE
+    version.id = DEFAULT_VERSION
+    version.serving_status = 'SERVING'
+
+    admin_client.patch_version(version, ['servingStatus'])
+
+    AppScaleLogger.success('Start requested for {}.'.format(options.project_id))
+
+  @classmethod
+  def stop_service(cls, options):
+    """Instructs AppScale to stop the named service.
+
+    This is applicable for services using manual scaling.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    Raises:
+      AppScaleException: If the named service isn't running in this
+        AppScale cloud, or if stop is not valid for the service.
+    """
+    if not options.confirm:
+      response = raw_input(
+        'Are you sure you want to stop this service? (y/N) ')
+      if response.lower() not in ['y', 'yes']:
+        raise AppScaleException("Cancelled service stop.")
+
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
+    secret = LocalState.get_secret_key(options.keyname)
+    admin_client = AdminClient(load_balancer_ip, secret)
+
+    version = Version(None, None)
+    version.project_id = options.project_id
+    version.service_id = options.service_id or DEFAULT_SERVICE
+    version.id = DEFAULT_VERSION
+    version.serving_status = 'STOPPED'
+
+    admin_client.patch_version(version, ['servingStatus'])
+
+    AppScaleLogger.success('Stop requested for {}.'.format(options.project_id))
 
   @classmethod
   def remove_service(cls, options):
@@ -1193,6 +1256,9 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     node_layout = NodeLayout(options)
+    previous_ips = LocalState.get_local_nodes_info(options.keyname)
+    previous_node_list = node_layout.from_locations_json_list(previous_ips)
+    node_layout.nodes = previous_node_list
 
     latest_tools = APPSCALE_VERSION
     try:

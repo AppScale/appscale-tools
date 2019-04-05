@@ -76,16 +76,16 @@ class TestAppScaleGatherLogs(unittest.TestCase):
         {
           "public_ip": "public1",
           "private_ip": "private1",
-          "jobs": ["load_balancer", "taskqueue_master", "zookeeper",
-                   "db_master", "taskqueue", "shadow"]
+          "roles": ["load_balancer", "taskqueue_master", "zookeeper",
+                    "db_master", "taskqueue", "shadow"]
         }, {
           "public_ip": "public2",
           "private_ip": "private2",
-          "jobs": ["memcache", "appengine", "zookeeper"]
+          "roles": ["memcache", "appengine", "zookeeper"]
         }, {
           "public_ip": "public3",
           "private_ip": "private3",
-          "jobs": ["memcache", "appengine"]
+          "roles": ["memcache", "appengine"]
         },
       ]
     }

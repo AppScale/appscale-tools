@@ -53,7 +53,7 @@ class TestAppScaleRelocateApp(unittest.TestCase):
       json.dumps({"node_info": [{
         "public_ip": "public1",
         "private_ip": "private1",
-        "jobs": ["shadow", "load_balancer"]
+        "roles": ["shadow", "load_balancer"]
       }]}))
     fake_nodes_json.should_receive('write').and_return()
     builtins = flexmock(sys.modules['__builtin__'])
