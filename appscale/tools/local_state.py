@@ -203,7 +203,7 @@ class LocalState(object):
     """
     creds = {
       "table": options.table,
-      "login": node_layout.head_node().public_ip,
+      "login": options.login_host or node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
       "default_min_appservers": str(options.default_min_appservers),
