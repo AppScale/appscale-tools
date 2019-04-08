@@ -95,14 +95,16 @@ class TestLocalState(unittest.TestCase):
   def test_generate_deployment_params(self):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
-    options = flexmock(name='options', table='cassandra', keyname='boo',
+    options = flexmock(
+      name='options', table='cassandra', keyname='boo',
       default_min_appservers='1', autoscale=False, group='bazgroup',
       replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
-      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='')
+      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
+      login_host='public1')
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -147,14 +149,16 @@ class TestLocalState(unittest.TestCase):
   def test_generate_deployment_params_no_login(self):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
-    options = flexmock(name='options', table='cassandra', keyname='boo',
+    options = flexmock(
+      name='options', table='cassandra', keyname='boo',
       default_min_appservers='1', autoscale=False, group='bazgroup',
       replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
       clear_datastore=False, disks={'node-1' : 'vol-ABCDEFG'},
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
-      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='')
+      EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
+      login_host=None)
     node_layout = NodeLayout({
       'table': 'cassandra',
       'infrastructure': "ec2",
