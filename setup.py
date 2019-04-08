@@ -51,6 +51,7 @@ setup(
     'google-api-python-client==1.5.4',
     'haikunator',
     'httplib2',
+    'keyring<19.0.0',
     'msrestazure==0.4.34',
     'oauth2client==4.0.0',
     'pyOpenSSL>=18.0.0',
