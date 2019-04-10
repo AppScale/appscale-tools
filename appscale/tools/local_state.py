@@ -98,18 +98,19 @@ class LocalState(object):
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
       try:
-        login_host = cls.get_login_host(keyname)
+        load_balancer_ip = cls.get_host_with_role(keyname, 'load_balancer')
         secret_key = cls.get_secret_key(keyname)
       except (IOError, AppScaleException, BadConfigurationException):
         # If we don't have the locations files, we are not running.
         return
 
-      acc = AppControllerClient(login_host, secret_key)
+      acc = AppControllerClient(load_balancer_ip, secret_key)
       try:
         acc.get_all_public_ips()
       except AppControllerException:
         # AC is not running, so we assume appscale is not up and running.
-        AppScaleLogger.log("AppController not running on login node.")
+        AppScaleLogger.log(
+          "AppController not running on {}".format(load_balancer_ip))
       else:
         raise BadConfigurationException("AppScale is already running. Terminate" +
           " it, set 'force: True' in your AppScalefile, or use the --force flag" +
@@ -202,7 +203,7 @@ class LocalState(object):
     """
     creds = {
       "table": options.table,
-      "login": node_layout.head_node().public_ip,
+      "login": options.login_host or node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
       "default_min_appservers": str(options.default_min_appservers),
@@ -628,20 +629,6 @@ class LocalState(object):
     except KeyError:
       pass
     return node['roles']
-
-
-  @classmethod
-  def get_login_host(cls, keyname):
-    """Searches through the local metadata to see which virtual machine runs the
-    login service.
-
-    Args:
-      keyname: The SSH keypair name that uniquely identifies this AppScale
-        deployment.
-    Returns:
-      A str containing the host that runs the login service.
-    """
-    return cls.get_host_with_role(keyname, 'login')
 
 
   @classmethod

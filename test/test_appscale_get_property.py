@@ -61,7 +61,7 @@ class TestAppScaleGetProperty(unittest.TestCase):
       {"node_info": [{
         'public_ip': 'public1',
         'private_ip': 'private1',
-        'roles': ['login', 'shadow']
+        'roles': ['shadow']
       }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \

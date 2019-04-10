@@ -40,7 +40,7 @@ class TestStats(unittest.TestCase):
 
   test_all_roles = {
     '192.168.33.10': [
-      'load_balancer', 'shadow', 'login', 'appengine'
+      'load_balancer', 'shadow', 'appengine'
     ],
     '192.168.33.11': [
       'taskqueue_master', 'zookeeper', 'db_master', 'taskqueue', 'memcache'
@@ -247,7 +247,7 @@ class TestStats(unittest.TestCase):
   }
 
   def test_get_node_stats_headers_and_specified_roles(self):
-    specified_roles = ['login', 'shadow']
+    specified_roles = ['shadow']
 
     node_headers, node_stats = get_node_stats_rows(
       raw_node_stats=self.test_raw_node_stats,
@@ -266,7 +266,7 @@ class TestStats(unittest.TestCase):
         u"\x1b[1m32% (1273 MB)\x1b[0m",
         u"\x1b[1m0.1 0.4 0.2\x1b[0m",
         u"\x1b[1m\x1b[31m\x1b[1m/test: 92\x1b[0m\x1b[1m, /main: 84, /: 44, ...\x1b[0m",
-        u"\x1b[1mload_balancer shadow login appengine\x1b[0m"
+        u"\x1b[1mload_balancer shadow appengine\x1b[0m"
       ]
     ]
 
@@ -290,7 +290,7 @@ class TestStats(unittest.TestCase):
         "\x1b[1m0.1 0.4 0.2\x1b[0m",
         ("\x1b[1m\x1b[31m\x1b[1m/test: 92\x1b[0m\x1b[1m, /main: 84, "
          "/: 44, /user: 25\x1b[0m"),
-        "\x1b[1mload_balancer shadow login appengine\x1b[0m"
+        "\x1b[1mload_balancer shadow appengine\x1b[0m"
       ],
       [
         "192.168.33.11",
@@ -417,11 +417,12 @@ class TestStats(unittest.TestCase):
 
     self.assertEqual(expected_proxy_stats, proxy_stats)
 
-  @patch("appscale.tools.appscale_stats.LocalState.get_login_host")
+  @patch("appscale.tools.appscale_stats.LocalState.get_host_with_role")
   @patch("appscale.tools.appscale_stats.LocalState.get_secret_key")
   @patch("requests.get")
-  def test_get_stats(self, mock_get, mock_get_secret_key, mock_get_login_host):
-    mock_get_login_host.return_value = "192.168.33.10"
+  def test_get_stats(self, mock_get, mock_get_secret_key,
+                     mock_get_host_with_role):
+    mock_get_host_with_role.return_value = "192.168.33.10"
     mock_get_secret_key.return_value = "secret_key"
 
     attr = {
