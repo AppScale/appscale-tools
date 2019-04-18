@@ -76,16 +76,16 @@ class TestAppScaleGatherLogs(unittest.TestCase):
         {
           "public_ip": "public1",
           "private_ip": "private1",
-          "jobs": ["load_balancer", "taskqueue_master", "zookeeper",
-                   "db_master", "taskqueue", "shadow", "login"]
+          "roles": ["load_balancer", "taskqueue_master", "zookeeper",
+                    "db_master", "taskqueue", "shadow"]
         }, {
           "public_ip": "public2",
           "private_ip": "private2",
-          "jobs": ["memcache", "appengine", "zookeeper"]
+          "roles": ["memcache", "appengine", "zookeeper"]
         }, {
           "public_ip": "public3",
           "private_ip": "private3",
-          "jobs": ["memcache", "appengine"]
+          "roles": ["memcache", "appengine"]
         },
       ]
     }
@@ -133,7 +133,6 @@ class TestAppScaleGatherLogs(unittest.TestCase):
     utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/db_master')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/taskqueue')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/shadow')
-    utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/login')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/memcache')
     utils.should_receive('mkdir').with_args('/tmp/foobaz/symlinks/appengine')
 
@@ -147,7 +146,6 @@ class TestAppScaleGatherLogs(unittest.TestCase):
         '/tmp/foobaz/symlinks/db_master/public1',
         '/tmp/foobaz/symlinks/taskqueue/public1',
         '/tmp/foobaz/symlinks/shadow/public1',
-        '/tmp/foobaz/symlinks/login/public1',
       ],
       '../../public2': [
         '/tmp/foobaz/symlinks/private-ips/private2',

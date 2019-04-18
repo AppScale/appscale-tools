@@ -98,18 +98,19 @@ class LocalState(object):
 
     if os.path.exists(cls.get_secret_key_location(keyname)):
       try:
-        login_host = cls.get_login_host(keyname)
+        load_balancer_ip = cls.get_host_with_role(keyname, 'load_balancer')
         secret_key = cls.get_secret_key(keyname)
       except (IOError, AppScaleException, BadConfigurationException):
         # If we don't have the locations files, we are not running.
         return
 
-      acc = AppControllerClient(login_host, secret_key)
+      acc = AppControllerClient(load_balancer_ip, secret_key)
       try:
         acc.get_all_public_ips()
       except AppControllerException:
         # AC is not running, so we assume appscale is not up and running.
-        AppScaleLogger.log("AppController not running on login node.")
+        AppScaleLogger.log(
+          "AppController not running on {}".format(load_balancer_ip))
       else:
         raise BadConfigurationException("AppScale is already running. Terminate" +
           " it, set 'force: True' in your AppScalefile, or use the --force flag" +
@@ -202,7 +203,7 @@ class LocalState(object):
     """
     creds = {
       "table": options.table,
-      "login": node_layout.head_node().public_ip,
+      "login": options.login_host or node_layout.head_node().public_ip,
       "keyname": options.keyname,
       "replication": str(options.replication),
       "default_min_appservers": str(options.default_min_appservers),
@@ -452,8 +453,8 @@ class LocalState(object):
           file_contents = json.loads(file_handle.read())
         cleaned_nodes = []
         for node in file_contents.get('node_info'):
-          if 'load_balancer' not in node.get('jobs'):
-            node['jobs'] = ['open']
+          if 'load_balancer' not in cls.get_node_roles(node):
+            node['roles'] = ['open']
           cleaned_nodes.append(node)
         file_contents['node_info'] = cleaned_nodes
         # Now we write the JSON file after our changes.
@@ -583,7 +584,7 @@ class LocalState(object):
       role: A str, the role we are looking up the host for.
     """
     for node in cls.get_local_nodes_info(keyname):
-      if role in node["jobs"]:
+      if role in cls.get_node_roles(node):
         return node["public_ip"]
 
 
@@ -620,17 +621,16 @@ class LocalState(object):
 
 
   @classmethod
-  def get_login_host(cls, keyname):
-    """Searches through the local metadata to see which virtual machine runs the
-    login service.
-
-    Args:
-      keyname: The SSH keypair name that uniquely identifies this AppScale
-        deployment.
-    Returns:
-      A str containing the host that runs the login service.
+  def get_node_roles(cls, node):
+    """ Method to get the roles of the specified node and convert 'jobs' key
+    to 'roles' if needed.
     """
-    return cls.get_host_with_role(keyname, 'login')
+    try:
+      node['roles'] = node['jobs']
+      del node['jobs']
+    except KeyError:
+      pass
+    return node['roles']
 
 
   @classmethod
@@ -647,7 +647,7 @@ class LocalState(object):
     """
     nodes = cls.get_local_nodes_info(keyname)
     for node in nodes:
-      if role in node['jobs']:
+      if role in cls.get_node_roles(node):
         return node['public_ip']
     raise AppScaleException("Couldn't find a {0} node.".format(role))
 

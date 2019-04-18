@@ -154,8 +154,9 @@ class AppScaleTools(object):
     # Finally, find an AppController and send it a message to add
     # the given nodes with the new roles.
     AppScaleLogger.log("Sending request to add instances")
-    login_ip = LocalState.get_login_host(options.keyname)
-    acc = AppControllerClient(login_ip, LocalState.get_secret_key(
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
+    acc = AppControllerClient(load_balancer_ip, LocalState.get_secret_key(
       options.keyname))
     acc.start_roles_on_nodes(json.dumps(options.ips))
 
@@ -231,11 +232,12 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     try:
-      login_host = LocalState.get_login_host(options.keyname)
-      login_acc = AppControllerClient(login_host,
-        LocalState.get_secret_key(options.keyname))
-      all_private_ips = login_acc.get_all_private_ips()
-      cluster_stats = login_acc.get_cluster_stats()
+      load_balancer_ip = LocalState.get_host_with_role(
+        options.keyname, 'load_balancer')
+      acc = AppControllerClient(
+        load_balancer_ip, LocalState.get_secret_key(options.keyname))
+      all_private_ips = acc.get_all_private_ips()
+      cluster_stats = acc.get_cluster_stats()
     except (faultType, AppControllerException, BadConfigurationException):
       AppScaleLogger.warn("AppScale deployment is probably down")
       raise
@@ -261,6 +263,11 @@ class AppScaleTools(object):
     cls._print_cluster_summary(nodes, invisible_nodes, services)
     cls._print_services(services)
     cls._print_status_alerts(nodes)
+
+    try:
+      login_host = acc.get_property('login')['login']
+    except KeyError:
+      raise AppControllerException('login property not found')
 
     dashboard = next(
       (service for service in services
@@ -446,9 +453,10 @@ class AppScaleTools(object):
       raise AppScaleException("Can't gather logs, as the location you " + \
         "specified, {}, already exists.".format(location))
 
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     secret = LocalState.get_secret_key(options.keyname)
-    acc = AppControllerClient(login_host, secret)
+    acc = AppControllerClient(load_balancer_ip, secret)
 
     try:
       all_ips = acc.get_all_public_ips()
@@ -501,7 +509,7 @@ class AppScaleTools(object):
       if node_info:
         private_ip_dir = os.path.join(private_ips_dir, node_info["private_ip"])
         os.symlink(local_link, private_ip_dir)
-        for role in node_info['jobs']:
+        for role in node_info['roles']:
           role_dir = os.path.join(location, 'symlinks', role)
           utils.mkdir(role_dir)
           os.symlink(local_link, os.path.join(role_dir, public_ip))
@@ -567,9 +575,10 @@ class AppScaleTools(object):
         if the AppController rejects the request to relocate the application (in
         which case it includes the reason why the rejection occurred).
     """
-    login_host = LocalState.get_login_host(options.keyname)
-    acc = AppControllerClient(login_host, LocalState.get_secret_key(
-      options.keyname))
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
+    acc = AppControllerClient(
+      load_balancer_ip, LocalState.get_secret_key(options.keyname))
 
     version_key = '_'.join([options.appname, DEFAULT_SERVICE, DEFAULT_VERSION])
     app_info_map = acc.get_app_info_map()
@@ -577,6 +586,11 @@ class AppScaleTools(object):
       raise AppScaleException("The given application, {0}, is not currently " \
         "running in this AppScale cloud, so we can't move it to a different " \
         "port.".format(options.appname))
+
+    try:
+      login_host = acc.get_property('login')['login']
+    except KeyError:
+      raise AppControllerException('login property not found')
 
     acc.relocate_version(version_key, options.http_port, options.https_port)
     AppScaleLogger.success(
@@ -606,9 +620,10 @@ class AppScaleTools(object):
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled application removal.")
 
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     secret = LocalState.get_secret_key(options.keyname)
-    admin_client = AdminClient(login_host, secret)
+    admin_client = AdminClient(load_balancer_ip, secret)
 
     for service_id in admin_client.list_services(options.project_id):
       AppScaleLogger.log('Deleting service: {}'.format(service_id))
@@ -657,9 +672,10 @@ class AppScaleTools(object):
       AppScaleException: If the named service isn't running in this
         AppScale cloud, or if start is not valid for the service.
     """
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     secret = LocalState.get_secret_key(options.keyname)
-    admin_client = AdminClient(login_host, secret)
+    admin_client = AdminClient(load_balancer_ip, secret)
 
     version = Version(None, None)
     version.project_id = options.project_id
@@ -690,9 +706,10 @@ class AppScaleTools(object):
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled service stop.")
 
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     secret = LocalState.get_secret_key(options.keyname)
-    admin_client = AdminClient(login_host, secret)
+    admin_client = AdminClient(load_balancer_ip, secret)
 
     version = Version(None, None)
     version.project_id = options.project_id
@@ -718,9 +735,10 @@ class AppScaleTools(object):
       if response.lower() not in ['y', 'yes']:
         raise AppScaleException("Cancelled service removal.")
 
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     secret = LocalState.get_secret_key(options.keyname)
-    admin_client = AdminClient(login_host, secret)
+    admin_client = AdminClient(load_balancer_ip, secret)
     cls._remove_service(admin_client, options.project_id, options.service_id)
     AppScaleLogger.success('Done shutting down service {} for {}.'.format(
       options.project_id, options.service_id))
@@ -734,11 +752,12 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     secret = LocalState.get_secret_key(options.keyname)
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
     username, password = LocalState.get_credentials(is_admin=False)
     encrypted_password = LocalState.encrypt_password(username, password)
 
-    acc = AppControllerClient(login_host,secret)
+    acc = AppControllerClient(load_balancer_ip, secret)
 
     try:
       acc.reset_password(username, encrypted_password)
@@ -763,13 +782,15 @@ class AppScaleTools(object):
             the AppController crashed.
         """
     secret = LocalState.get_secret_key(options.keyname)
-    login_host = LocalState.get_login_host(options.keyname)
+    load_balancer_ip = LocalState.get_host_with_role(
+      options.keyname, 'load_balancer')
 
     username, password = LocalState.get_credentials(is_admin)
 
-    acc = AppControllerClient(login_host, secret)
+    acc = AppControllerClient(load_balancer_ip, secret)
 
-    RemoteHelper.create_user_accounts(username, password, login_host, options.keyname)
+    RemoteHelper.create_user_accounts(
+      username, password, load_balancer_ip, options.keyname)
 
     try:
       if is_admin:
@@ -885,13 +906,19 @@ class AppScaleTools(object):
 
     # Wait for machines to finish loading and AppScale Dashboard to be deployed.
     RemoteHelper.wait_for_machines_to_finish_loading(head_node, options.keyname)
-    RemoteHelper.sleep_until_port_is_open(LocalState.get_login_host(
-      options.keyname), RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
+
+    try:
+      login_host = acc.get_property('login')['login']
+    except KeyError:
+      raise AppControllerException('login property not found')
+
+    RemoteHelper.sleep_until_port_is_open(
+      login_host, RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
 
     AppScaleLogger.success("AppScale successfully started!")
-    AppScaleLogger.success("View status information about your AppScale " + \
-                           "deployment at http://{0}:{1}".format(LocalState.get_login_host(
-                           options.keyname), RemoteHelper.APP_DASHBOARD_PORT))
+    AppScaleLogger.success(
+      'View status information about your AppScale deployment at '
+      'http://{}:{}'.format(login_host, RemoteHelper.APP_DASHBOARD_PORT))
     AppScaleLogger.remote_log_tools_state(options, my_id,
       "finished", APPSCALE_VERSION)
 
@@ -1046,9 +1073,10 @@ class AppScaleTools(object):
         'current supported SDK version is '
         '{}.'.format(AppEngineHelper.SUPPORTED_SDK_VERSION))
 
-    login_host = LocalState.get_login_host(options.keyname)
+    head_node_public_ip = LocalState.get_host_with_role(
+      options.keyname, 'shadow')
     secret_key = LocalState.get_secret_key(options.keyname)
-    admin_client = AdminClient(login_host, secret_key)
+    admin_client = AdminClient(head_node_public_ip, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(
       file_location, version.project_id, options.keyname, options.verbose,
@@ -1083,8 +1111,10 @@ class AppScaleTools(object):
     if created_dir:
       shutil.rmtree(file_location)
 
-    http_port = int(version_url.split(':')[-1])
-    return (login_host, http_port)
+    match = re.match('http://(.+):(\d+)', version_url)
+    login_host = match.group(1)
+    http_port = int(match.group(2))
+    return login_host, http_port
 
   @classmethod
   def update_cron(cls, source_location, keyname, project_id):
@@ -1127,9 +1157,9 @@ class AppScaleTools(object):
       cron_jobs = yaml.safe_load(cron_config)
 
     AppScaleLogger.log('Updating cron jobs')
-    login_host = LocalState.get_login_host(keyname)
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
     secret_key = LocalState.get_secret_key(keyname)
-    admin_client = AdminClient(login_host, secret_key)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
     admin_client.update_cron(version.project_id, cron_jobs)
 
   @classmethod
@@ -1167,9 +1197,9 @@ class AppScaleTools(object):
       return
 
     AppScaleLogger.log('Updating indexes')
-    login_host = LocalState.get_login_host(keyname)
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
     secret_key = LocalState.get_secret_key(keyname)
-    admin_client = AdminClient(login_host, secret_key)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
     admin_client.update_indexes(version.project_id, indexes)
 
   @classmethod
@@ -1213,9 +1243,9 @@ class AppScaleTools(object):
       queues = yaml.safe_load(queue_config)
 
     AppScaleLogger.log('Updating queues')
-    login_host = LocalState.get_login_host(keyname)
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
     secret_key = LocalState.get_secret_key(keyname)
-    admin_client = AdminClient(login_host, secret_key)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
     admin_client.update_queues(version.project_id, queues)
 
   @classmethod
@@ -1226,6 +1256,9 @@ class AppScaleTools(object):
         passed in via the command-line interface.
     """
     node_layout = NodeLayout(options)
+    previous_ips = LocalState.get_local_nodes_info(options.keyname)
+    previous_node_list = node_layout.from_locations_json_list(previous_ips)
+    node_layout.nodes = previous_node_list
 
     latest_tools = APPSCALE_VERSION
     try:

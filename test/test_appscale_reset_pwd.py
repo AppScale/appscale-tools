@@ -67,7 +67,7 @@ class TestAppScaleResetPassword(unittest.TestCase):
       json.dumps({"node_info": [{
         'public_ip': 'public1',
         'private_ip': 'private1',
-        'jobs': ['login', 'db_master']
+        'roles': ['load_balancer', 'db_master']
       }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
@@ -120,7 +120,7 @@ class TestAppScaleResetPassword(unittest.TestCase):
       json.dumps({"node_info": [{
         'public_ip': 'public1',
         'private_ip': 'private1',
-        'jobs': ['login', 'db_master']
+        'roles': ['load_balancer', 'db_master']
       }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \

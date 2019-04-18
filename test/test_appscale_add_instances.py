@@ -130,7 +130,7 @@ appengine: 1.2.3.4
     fake_nodes_json.should_receive('read').and_return(json.dumps({
       "node_info": [{ "public_ip": "public1",
                       "private_ip": "private1",
-                      "jobs": ["shadow", "login"] }]}))
+                      "roles": ["shadow", "load_balancer"] }]}))
     builtins.should_receive('open').with_args(
       LocalState.get_locations_json_location(self.keyname), 'r') \
       .and_return(fake_nodes_json)

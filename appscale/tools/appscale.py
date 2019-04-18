@@ -195,7 +195,7 @@ Available commands:
       A string containing the IP address of the head node.
     """
     for node in nodes:
-      if 'shadow' in node['jobs']:
+      if 'shadow' in node['roles']:
         return node['public_ip']
 
     raise AppScaleException('Unable to find head node.')
@@ -925,4 +925,5 @@ Available commands:
     options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
     options.terminate = False
     options.clean = False
+    options.instance_type = contents_as_yaml.get('instance_type')
     AppScaleTools.upgrade(options)

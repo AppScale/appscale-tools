@@ -32,7 +32,8 @@ class LogsCollector(object):
 class TestPrintAppscaleStatus(unittest.TestCase):
   def test_started_two_nodes(self):
     # Mock functions which provides inputs for print_cluster_status
-    flexmock(LocalState).should_receive("get_login_host").and_return("1.1.1.1")
+    flexmock(LocalState).should_receive("get_host_with_role").\
+      and_return("1.1.1.1")
     flexmock(LocalState).should_receive("get_secret_key").and_return("xxxxxxx")
     fake_ac_client = flexmock()
     (flexmock(appscale_tools)
@@ -47,7 +48,7 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'private_ip': '10.10.4.220',
         'public_ip': '1.1.1.1',
         'roles': ['load_balancer', 'taskqueue_master', 'zookeeper',
-                  'db_master','taskqueue', 'shadow', 'login'],
+                  'db_master','taskqueue', 'shadow'],
         'is_initialized': True,
         'is_loaded': True,
         'apps': {
@@ -85,6 +86,8 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'services': {},
       }
     ]
+    fake_ac_client.should_receive('get_property').\
+      and_return({'login': '1.1.1.1'})
     (fake_ac_client.should_receive("get_cluster_stats")
        .and_return(cluster_stats))
 
@@ -114,7 +117,7 @@ class TestPrintAppscaleStatus(unittest.TestCase):
 
   def test_deployment_looks_down(self):
     for err in (faultType, AppControllerException, BadConfigurationException):
-      flexmock(LocalState).should_receive("get_login_host").and_raise(err)
+      flexmock(LocalState).should_receive("get_host_with_role").and_raise(err)
 
       # Catch warning and check if it matches expectation
       (flexmock(appscale_tools.AppScaleLogger)

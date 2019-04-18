@@ -17,7 +17,7 @@ class TestRegistrationHelper(unittest.TestCase):
     deployment = {
       'deployment_id': 'boo',
       'deployment_type': 'cluster',
-      'nodes': [{'public_ip': 'public1', 'jobs': ['appengine']}]
+      'nodes': [{'public_ip': 'public1', 'roles': ['appengine']}]
     }
 
     # When the portal returns a HTTP_NOTFOUND, the tools should raise

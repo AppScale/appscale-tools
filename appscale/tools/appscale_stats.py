@@ -58,7 +58,7 @@ def _get_stats(keyname, stats_kind, include_lists):
     A dict of statistics.
     A dict of failures.
   """
-  login_host = LocalState.get_login_host(keyname=keyname)
+  load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
   secret = LocalState.get_secret_key(keyname=keyname)
   administration_port = "17441"
   stats_path = "/stats/cluster/{stats_kind}".format(stats_kind=stats_kind)
@@ -66,7 +66,7 @@ def _get_stats(keyname, stats_kind, include_lists):
   headers = {'Appscale-Secret': secret}
   data = {'include_lists': include_lists}
   url = "https://{ip}:{port}{path}".format(
-    ip=login_host,
+    ip=load_balancer_ip,
     port=administration_port,
     path=stats_path
   )
@@ -341,12 +341,12 @@ def get_roles(keyname):
   Returns:
     A dict in which each key is an ip and value is a role list.
   """
-  login_host = LocalState.get_login_host(keyname=keyname)
-  login_acc = AppControllerClient(
-    host=login_host,
+  load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
+  acc = AppControllerClient(
+    host=load_balancer_ip,
     secret=LocalState.get_secret_key(keyname)
   )
-  cluster_stats = login_acc.get_cluster_stats()
+  cluster_stats = acc.get_cluster_stats()
 
   roles_data = {
     node["private_ip"]: (node["roles"] if len(node["roles"]) > 0 else ["?"])

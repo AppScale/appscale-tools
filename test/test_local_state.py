@@ -68,7 +68,8 @@ class TestLocalState(unittest.TestCase):
     os.path.should_receive('exists').with_args(
       LocalState.get_secret_key_location(self.keyname)).and_return(True)
 
-    flexmock(LocalState).should_receive('get_login_host').and_return('login_ip')
+    flexmock(LocalState).should_receive('get_host_with_role').\
+      and_return('load_balancer')
     flexmock(LocalState).should_receive('get_secret_key').and_return('super-secret')
     (flexmock(AppControllerClient)
        .should_receive('get_all_public_ips').and_return("OK"))
@@ -94,7 +95,8 @@ class TestLocalState(unittest.TestCase):
   def test_generate_deployment_params(self):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
-    options = flexmock(name='options', table='cassandra', keyname='boo',
+    options = flexmock(
+      name='options', table='cassandra', keyname='boo',
       default_min_appservers='1', autoscale=False, group='bazgroup',
       replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
@@ -102,7 +104,7 @@ class TestLocalState(unittest.TestCase):
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
-      aws_subnet_id=None, aws_vpc_id=None)
+      login_host='public1', aws_subnet_id=None, aws_vpc_id=None)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -149,7 +151,8 @@ class TestLocalState(unittest.TestCase):
   def test_generate_deployment_params_no_login(self):
     # this method is fairly light, so just make sure that it constructs the dict
     # to send to the AppController correctly
-    options = flexmock(name='options', table='cassandra', keyname='boo',
+    options = flexmock(
+      name='options', table='cassandra', keyname='boo',
       default_min_appservers='1', autoscale=False, group='bazgroup',
       replication=None, infrastructure='ec2', machine='ami-ABCDEFG',
       instance_type='m1.large', use_spot_instances=True, max_spot_price=1.23,
@@ -157,7 +160,7 @@ class TestLocalState(unittest.TestCase):
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
-      aws_subnet_id=None, aws_vpc_id=None)
+      login_host=None, aws_subnet_id=None, aws_vpc_id=None)
     node_layout = NodeLayout({
       'table': 'cassandra',
       'infrastructure': "ec2",
@@ -234,7 +237,7 @@ class TestLocalState(unittest.TestCase):
     role_info = [{
         'public_ip' : 'public1',
         'private_ip' : 'private1',
-        'jobs' : ['shadow', 'db_master']
+        'roles' : ['shadow', 'db_master']
     }]
     fake_soap.should_receive('get_role_info').with_args('the secret') \
       .and_return(json.dumps(role_info))
