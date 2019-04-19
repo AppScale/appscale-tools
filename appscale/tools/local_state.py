@@ -232,6 +232,8 @@ class LocalState(object):
         iaas_creds['project'] = options.project
         iaas_creds['gce_user'] = getpass.getuser()
       elif options.infrastructure in ['euca', 'ec2']:
+        iaas_creds['aws_subnet_id'] = options.aws_subnet_id
+        iaas_creds['aws_vpc_id'] = options.aws_vpc_id
         iaas_creds['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
         iaas_creds['EC2_SECRET_KEY'] = options.EC2_SECRET_KEY
         iaas_creds['EC2_URL'] = options.EC2_URL

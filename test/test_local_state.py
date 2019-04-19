@@ -104,7 +104,7 @@ class TestLocalState(unittest.TestCase):
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
-      login_host='public1')
+      login_host='public1', aws_subnet_id=None, aws_vpc_id=None)
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -139,7 +139,9 @@ class TestLocalState(unittest.TestCase):
       'default_max_appserver_memory' : str(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY),
       'EC2_ACCESS_KEY': 'baz',
       'EC2_SECRET_KEY': 'baz',
-      'EC2_URL': ''
+      'EC2_URL': '',
+      'aws_subnet_id': None,
+      'aws_vpc_id': None
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       {'max_spot_price':'1.23'})
@@ -158,7 +160,7 @@ class TestLocalState(unittest.TestCase):
       zone='my-zone-1b', verbose=True, user_commands=[], flower_password="abc",
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
-      login_host=None)
+      login_host=None, aws_subnet_id=None, aws_vpc_id=None)
     node_layout = NodeLayout({
       'table': 'cassandra',
       'infrastructure': "ec2",
@@ -193,7 +195,9 @@ class TestLocalState(unittest.TestCase):
       'default_max_appserver_memory': str(ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY),
       'EC2_ACCESS_KEY': 'baz',
       'EC2_SECRET_KEY': 'baz',
-      'EC2_URL': ''
+      'EC2_URL': '',
+      'aws_subnet_id': None,
+      'aws_vpc_id': None
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       {'max_spot_price': '1.23'})
