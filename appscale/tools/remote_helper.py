@@ -108,21 +108,23 @@ class RemoteHelper(object):
     # If we have running instances under the current keyname, we try to
     # re-attach to them. If we have issue finding the locations file or the
     # IP of the head node, we throw an exception.
-    login_ip = None
+    head_node_public_ip = None
     public_ips, private_ips, instance_ids = agent.describe_instances(params)
     if public_ips:
       try:
-        login_ip = LocalState.get_login_host(options.keyname)
+        head_node_public_ip = LocalState.get_host_with_role(
+          options.keyname, 'shadow')
       except (IOError, BadConfigurationException):
         raise AppScaleException(
           "Couldn't get login ip for running deployment with keyname"
           " {}.".format(options.keyname))
-      if login_ip not in public_ips:
+
+      if head_node_public_ip not in public_ips:
         raise AppScaleException(
           "Couldn't recognize running instances for deployment with"
           " keyname {}.".format(options.keyname))
 
-    if login_ip in public_ips:
+    if head_node_public_ip in public_ips:
       AppScaleLogger.log("Reusing already running instances.")
       # Get the node_info from the locations JSON.
       node_info = LocalState.get_local_nodes_info(keyname=options.keyname)
@@ -838,7 +840,13 @@ class RemoteHelper(object):
     # means their XMPP account name is a@login_ip
     username_regex = re.compile('\A(.*)@')
     username = username_regex.match(email).groups()[0]
-    xmpp_user = "{0}@{1}".format(username, LocalState.get_login_host(keyname))
+
+    try:
+      login_host = acc.get_property('login')['login']
+    except KeyError:
+      raise AppControllerException('login property not found')
+
+    xmpp_user = "{0}@{1}".format(username, login_host)
     xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
     is_xmpp_user_exist = acc.does_user_exist(xmpp_user)
@@ -847,7 +855,7 @@ class RemoteHelper(object):
       AppScaleLogger.log("XMPP User {0} conflict!".format(xmpp_user))
 
       generated_xmpp_username = LocalState.generate_xmpp_username(username)
-      xmpp_user = "{0}@{1}".format(generated_xmpp_username, LocalState.get_login_host(keyname))
+      xmpp_user = "{0}@{1}".format(generated_xmpp_username, login_host)
       xmpp_pass = LocalState.encrypt_password(xmpp_user, password)
 
       acc.create_user(xmpp_user, xmpp_pass)
@@ -1130,8 +1138,9 @@ class RemoteHelper(object):
 
     AppScaleLogger.log("Copying over application")
     remote_app_tar = "{0}/{1}.tar.gz".format(cls.REMOTE_APP_DIR, app_id)
-    cls.scp(LocalState.get_login_host(keyname), keyname, local_tarred_app,
-            remote_app_tar, is_verbose)
+    head_node_public_ip = LocalState.get_host_with_role(keyname, 'shadow')
+    cls.scp(head_node_public_ip, keyname, local_tarred_app, remote_app_tar,
+            is_verbose)
 
     AppScaleLogger.verbose("Removing local copy of tarred application",
                            is_verbose)
