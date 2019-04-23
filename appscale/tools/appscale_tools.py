@@ -1243,6 +1243,13 @@ class AppScaleTools(object):
       queues = yaml.safe_load(queue_config)
 
     AppScaleLogger.log('Updating queues')
+
+    for queue in queues.get('queue', []):
+      if 'bucket_size' in queue or 'max_concurrent_requests' in queue:
+        AppScaleLogger.warn('Queue configuration uses unsupported rate options'
+                            ' (bucket size or max concurrent requests)')
+        break
+
     load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(load_balancer_ip, secret_key)
