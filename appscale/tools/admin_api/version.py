@@ -104,6 +104,17 @@ class Version(object):
         except StandardError:
             raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
 
+        # Adds optional elements for automatic scaling.
+        if automatic_scaling.get('min_idle_instances'):
+            version.automatic_scaling['minIdleInstances'] =
+                    automatic_scaling.get('min_idle_instances')
+        if automatic_scaling.get('max_idle_instances'):
+            version.automatic_scaling['maxIdleInstances'] =
+                    automatic_scaling.get('max_idle_instances')
+        if automatic_scaling.get('max_concurrent_requests'):
+            version.automatic_scaling['maxConcurrentRequests'] =
+                    automatic_scaling.get('max_concurrent_requests')
+
     if version.runtime in ('python27', 'java'):
       try:
         version.threadsafe = app_yaml['threadsafe']
