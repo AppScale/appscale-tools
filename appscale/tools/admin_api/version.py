@@ -105,15 +105,20 @@ class Version(object):
             raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
 
         # Adds optional elements for automatic scaling.
-        if automatic_scaling.get('min_idle_instances'):
-            version.automatic_scaling['minIdleInstances'] =
-                    automatic_scaling.get('min_idle_instances')
-        if automatic_scaling.get('max_idle_instances'):
-            version.automatic_scaling['maxIdleInstances'] =
-                    automatic_scaling.get('max_idle_instances')
-        if automatic_scaling.get('max_concurrent_requests'):
-            version.automatic_scaling['maxConcurrentRequests'] =
-                    automatic_scaling.get('max_concurrent_requests')
+        try:
+            min_idle = automatic_scaling.get('min_idle_instances')
+            if min_idle is not None:
+                version.automatic_scaling['minIdleInstances'] = int(min_idle)
+            max_idle = automatic_scaling.get('max_idle_instances')
+            if max_idle is not None:
+                version.automatic_scaling['maxIdleInstances'] = int(max_idle)
+            max_concurrent = automatic_scaling.get('max_concurrent_requests')
+            if max_concurrent is not None:
+                version.automatic_scaling['maxConcurrentRequests'] =
+                                          int(max_concurrent)
+        except ValueError:
+            raise AppEngineConfigException('Invalid app.yaml: value for '
+                    'automatic scaling option is not integer.')
 
     if version.runtime in ('python27', 'java'):
       try:
@@ -194,6 +199,22 @@ class Version(object):
                 'maxInstances': int(automatic_scaling.findtext(qname('max-instances')))}}
         except StandardError:
             raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
+
+    # Adds optional elements for automatic scaling.
+    try:
+        min_idle = root.find(qname('min-idle-instances'))
+        if min_idle is not None:
+            version.automatic_scaling = {'minIdleInstances': int(min_idle}
+        max_idle = root.find(qname('max-idle-instances'))
+        if max_idle is not None:
+            version.automatic_scaling = {'maxIdleInstances': int(max_idle)}
+        max_concurrent = root.find(qname('max-concurrent-requests'))
+        if max_idle is not None:
+            version.automatic_scaling = {'maxConcurrentRequests':
+                                         int(max_concurrent)}
+    except ValueError:
+        raise AppEngineConfigException('Invalid appengine-web.xml: value for '
+                'automatic scaling option is not integer.')
 
     threadsafe_element = root.find(qname('threadsafe'))
     if threadsafe_element is None:
