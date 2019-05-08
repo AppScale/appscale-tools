@@ -201,14 +201,14 @@ class Version(object):
 
         # Adds optional elements for automatic scaling.
         try:
-            min_idle = root.find(qname('min-idle-instances'))
+            min_idle = automatic_scaling.findtext(qname('min-idle-instances'))
             if min_idle is not None:
                 version.automatic_scaling['minIdleInstances'] = int(min_idle)
-            max_idle = root.find(qname('max-idle-instances'))
+            max_idle = automatic_scaling.findtext(qname('max-idle-instances'))
             if max_idle is not None:
                 version.automatic_scaling['maxIdleInstances'] = int(max_idle)
-            max_concurrent = root.find(qname('max-concurrent-requests'))
-            if max_idle is not None:
+            max_concurrent = automatic_scaling.findtext(qname('max-concurrent'))
+            if max_concurrent is not None:
                 version.automatic_scaling['maxConcurrentRequests'] = int(max_concurrent)
         except ValueError:
             raise AppEngineConfigException('Invalid appengine-web.xml: value for '
