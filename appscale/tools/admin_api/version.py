@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import tarfile
 import zipfile
+from collections import defaultdict
 from xml.etree import ElementTree
 
 import yaml
@@ -96,25 +97,22 @@ class Version(object):
       except StandardError:
         raise AppEngineConfigException('Invalid app.yaml: manual_scaling invalid.')
     elif automatic_scaling:
+        version.automatic_scaling = defaultdict(dict)
         try:
-            version.automatic_scaling = {'standardSchedulerSettings': {
-                'minInstances': int(automatic_scaling['min_instances']),
-                'maxInstances': int(automatic_scaling['max_instances'])
-            }}
-        except StandardError:
-            raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
-
-        # Adds optional elements for automatic scaling.
-        try:
+            min_instances = automatic_scaling.get('min_instances')
+            if min_instances is not None:
+                version.automatic_scaling['standardSchedulerSettings']['minInstances'] =  (
+                        int(min_instances))
+            max_instances = automatic_scaling.get('max_instances')
+            if max_instances is not None:
+                version.automatic_scaling['standardSchedulerSettings']['maxInstances'] =  (
+                        int(max_instances))
             min_idle = automatic_scaling.get('min_idle_instances')
             if min_idle is not None:
                 version.automatic_scaling['minIdleInstances'] = int(min_idle)
             max_idle = automatic_scaling.get('max_idle_instances')
             if max_idle is not None:
                 version.automatic_scaling['maxIdleInstances'] = int(max_idle)
-            max_concurrent = automatic_scaling.get('max_concurrent_requests')
-            if max_concurrent is not None:
-                version.automatic_scaling['maxConcurrentRequests'] = int(max_concurrent)
         except ValueError:
             raise AppEngineConfigException('Invalid app.yaml: value for '
                     'automatic scaling option is not integer.')
@@ -192,24 +190,22 @@ class Version(object):
         except StandardError:
             raise AppEngineConfigException('Invalid app.yaml: manual_scaling invalid.')
     elif automatic_scaling is not None:
+        version.automatic_scaling = defaultdict(dict)
         try:
-            version.automatic_scaling = {'standardSchedulerSettings': {
-                'minInstances': int(automatic_scaling.findtext(qname('min-instances'))),
-                'maxInstances': int(automatic_scaling.findtext(qname('max-instances')))}}
-        except StandardError:
-            raise AppEngineConfigException('Invalid app.yaml: automatic_scaling invalid.')
-
-        # Adds optional elements for automatic scaling.
-        try:
+            min_instances = automatic_scaling.findtext(qname('min-instances'))
+            if min_instances is not None:
+                version.automatic_scaling['standardSchedulerSettings']['minInstances'] =  (
+                        int(min_instances))
+            max_instances = automatic_scaling.findtext(qname('max-instances'))
+            if max_instances is not None:
+                version.automatic_scaling['standardSchedulerSettings']['maxInstances'] =  (
+                        int(max_instances))
             min_idle = automatic_scaling.findtext(qname('min-idle-instances'))
             if min_idle is not None:
                 version.automatic_scaling['minIdleInstances'] = int(min_idle)
             max_idle = automatic_scaling.findtext(qname('max-idle-instances'))
             if max_idle is not None:
                 version.automatic_scaling['maxIdleInstances'] = int(max_idle)
-            max_concurrent = automatic_scaling.findtext(qname('max-concurrent'))
-            if max_concurrent is not None:
-                version.automatic_scaling['maxConcurrentRequests'] = int(max_concurrent)
         except ValueError:
             raise AppEngineConfigException('Invalid appengine-web.xml: value for '
                     'automatic scaling option is not integer.')
