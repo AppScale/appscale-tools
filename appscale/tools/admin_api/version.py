@@ -114,8 +114,7 @@ class Version(object):
                 version.automatic_scaling['maxIdleInstances'] = int(max_idle)
             max_concurrent = automatic_scaling.get('max_concurrent_requests')
             if max_concurrent is not None:
-                version.automatic_scaling['maxConcurrentRequests'] =
-                                          int(max_concurrent)
+                version.automatic_scaling['maxConcurrentRequests'] = int(max_concurrent)
         except ValueError:
             raise AppEngineConfigException('Invalid app.yaml: value for '
                     'automatic scaling option is not integer.')
@@ -210,8 +209,7 @@ class Version(object):
             version.automatic_scaling['maxIdleInstances'] = int(max_idle)
         max_concurrent = root.find(qname('max-concurrent-requests'))
         if max_idle is not None:
-            version.automatic_scaling['maxConcurrentRequests'] =
-                                         int(max_concurrent)
+            version.automatic_scaling['maxConcurrentRequests'] = int(max_concurrent)
     except ValueError:
         raise AppEngineConfigException('Invalid appengine-web.xml: value for '
                 'automatic scaling option is not integer.')
