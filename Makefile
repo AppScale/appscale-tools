@@ -3,8 +3,8 @@
 #
 .PHONY: bump-major bump-minor bump-patch help all test
 
-AGENTS_REPO?=https://github.com/scragraham/appscale-agents
-AGENTS_BRANCH?=topic-agent-init
+AGENTS_REPO?=https://github.com/appscale/appscale-agents
+AGENTS_BRANCH?=master
 
 all: help
 
