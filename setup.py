@@ -43,6 +43,7 @@ setup(
   platforms='Posix; MacOS X',
   install_requires=[
     'adal>=0.4.7',
+    'appscale-agents',
     'azure==2.0.0',
     'azure-mgmt-marketplaceordering',
     'cryptography>=2.3.0',
@@ -76,7 +77,7 @@ setup(
   ],
   namespace_packages=['appscale'],
   packages=['appscale', 'appscale.tools', 'appscale.tools.admin_api',
-            'appscale.tools.agents', 'appscale.tools.scripts'],
+            'appscale.tools.scripts'],
   entry_points={
     'console_scripts': [
       'appscale=appscale.tools.scripts.appscale:main',

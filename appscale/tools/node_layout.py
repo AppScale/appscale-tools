@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
 # General-purpose Python library imports
 import re
@@ -7,11 +8,11 @@ import yaml
 
 
 # AppScale-specific imports
-from agents.factory import InfrastructureAgentFactory
-from appscale_logger import AppScaleLogger
-from custom_exceptions import BadConfigurationException
-from local_state import LocalState
-from parse_args import ParseArgs
+from appscale.agents.factory import InfrastructureAgentFactory
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import BadConfigurationException
+from .local_state import LocalState
+from .parse_args import ParseArgs
 
 
 class NodeLayout():

@@ -12,7 +12,7 @@ from flexmock import flexmock
 
 
 # AppScale import, the library that we're testing here
-from appscale.tools.agents.ec2_agent import EC2Agent
+from appscale.agents.ec2_agent import EC2Agent
 from appscale.tools.appscale_logger import AppScaleLogger
 from appscale.tools.custom_exceptions import BadConfigurationException
 from appscale.tools.node_layout import NodeLayout
