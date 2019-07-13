@@ -181,8 +181,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+    self.fake_ec2.should_receive('get_all_instances') \
+      .and_return(no_instances) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     # finally, inject the mocked EC2 in
@@ -586,9 +587,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+    self.fake_ec2.should_receive('get_all_instances') \
       .and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     argv = [
@@ -759,9 +760,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
                                    instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+    self.fake_ec2.should_receive('get_all_instances') \
       .and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     argv = [
