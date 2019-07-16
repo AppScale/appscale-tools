@@ -17,7 +17,7 @@ class NodeStats(object):
       self.idle = cpu_dict["idle"]
       self.system = cpu_dict["system"]
       self.user = cpu_dict["user"]
-      self.load = 100.0 - self.idle
+      self.load = cpu_dict["percent"]
       self.count = cpu_dict["count"]
 
   class Memory(object):
