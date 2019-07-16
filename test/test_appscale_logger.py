@@ -45,7 +45,7 @@ class TestAppScaleLogger(unittest.TestCase):
     argv = ["--min", "1", "--max", "1", "--infrastructure", "ec2", "--instance_type",
       "m3.medium", "--machine", "ami-ABCDEFG", "--group", "blargscale", "--keyname",
       "appscale", "--zone", "my-zone-1b",  "--EC2_ACCESS_KEY", "baz",
-      "--EC2_SECRET_KEY", "baz"]
+      "--EC2_SECRET_KEY", "baz", "--update", "common"]
     function = "appscale-run-instances"
     self.options = ParseArgs(argv, function).args
     self.my_id = "12345"
@@ -99,6 +99,7 @@ class TestAppScaleLogger(unittest.TestCase):
       'EC2_ACCESS_KEY': 'baz',
       'EC2_SECRET_KEY': 'baz',
       'EC2_URL': '',
+      'update': 'common'
     }
 
     # finally, construct a http payload for mocking that the below
