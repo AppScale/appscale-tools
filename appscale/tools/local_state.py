@@ -216,6 +216,12 @@ class LocalState(object):
     }
     creds.update(additional_creds)
 
+    if options.update:
+      update_dir_creds = {
+        'update': str(options.update)
+      }
+      creds.update(update_dir_creds)
+
     if options.infrastructure:
       iaas_creds = {
         'infrastructure': options.infrastructure,
