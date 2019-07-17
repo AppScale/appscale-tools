@@ -56,10 +56,9 @@ class TestPrintAppscaleStatus(unittest.TestCase):
             'http': 1080, 'language': 'python', 'total_reqs': 24, 'appservers': 3,
             'pending_appservers': 0, 'https': 1443, 'reqs_enqueued': 0}},
         'memory': {'available': 1117507584, 'total': 3839168512, 'used': 3400077312},
-        'disk': [{'/': {'total': 9687113728, 'free': 4895760384, 'used': 4364763136}}],
-        'cpu': {'count': 2, 'idle': 66.7, 'system': 9.5, 'user': 19.0},
-        'loadavg': {'last_1_min': 0.64, 'last_5_min': 1.04, 'last_15_min': 0.95,
-                    'scheduling_entities': 381, 'runnable_entities': 3},
+        'partitions_dict': {'/': {'total': 9687113728, 'free': 4895760384, 'used': 4364763136}},
+        'cpu': {'count': 2, 'idle': 66.7, 'system': 9.5, 'user': 19.0, 'percent': 33.3},
+        'loadavg': {'last_1min': 0.64, 'last_5min': 1.04, 'last_15min': 0.95},
         # Irrelevant for status bellow
         'state': 'Done starting up AppScale, now in heartbeat mode',
         'swap': {'used': 0, 'free': 0},
@@ -74,11 +73,10 @@ class TestPrintAppscaleStatus(unittest.TestCase):
         'is_initialized': True,
         'is_loaded': True,
         'apps': {},
-        'loadavg': {'last_1_min': 1.05, 'last_5_min': 0.92, 'last_15_min': 0.95,
-                    'scheduling_entities': 312, 'runnable_entities': 2},
+        'loadavg': {'last_1min': 1.05, 'last_5min': 0.92, 'last_15min': 0.95},
         'memory': {'available': 2891546624, 'total': 3839168512, 'used': 1951600640},
-        'disk': [{'/': {'total': 9687113728, 'free': 5160316928, 'used': 4100206592}}],
-        'cpu': {'count': 2, 'idle': 100.0, 'system': 0.0, 'user': 0.0},
+        'partitions_dict': {'/': {'total': 9687113728, 'free': 5160316928, 'used': 4100206592}},
+        'cpu': {'count': 2, 'idle': 100.0, 'system': 0.0, 'user': 0.0, 'percent': 0.0},
 
         # Irrelevant for status bellow
         'state': 'Done starting up AppScale, now in heartbeat mode',
