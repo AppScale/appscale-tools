@@ -263,7 +263,9 @@ Available commands:
     command = []
     if update:
         command.append("--update")
-        command.append(str(update))
+        update_dirs = update.split(',')
+        for dir in update_dirs:
+          command.append(dir)
 
     for key, value in contents_as_yaml.items():
       if key in self.DEPRECATED_ASF_ARGS:

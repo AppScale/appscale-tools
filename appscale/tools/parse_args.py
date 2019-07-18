@@ -188,6 +188,7 @@ class ParseArgs(object):
     # supported. (min, max, appengine, max_memory, scp)
     if function == "appscale-run-instances":
       self.parser.add_argument('--update',
+        nargs='+',
         choices=self.ALLOWED_DIR_UPDATES,
         default="", help="updates specified code directory and builds it")
       # flags relating to how many VMs we should spawn
