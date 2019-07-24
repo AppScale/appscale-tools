@@ -287,7 +287,7 @@ def dispatch_from_yaml(source_location):
   modified_rules = []
   for dispatch_rule in dispatch_rules['dispatch']:
     rule = {}
-    rule['service'] = dispatch_rule['service']
+    rule['service'] = dispatch_rule['module']
     rule['domain'], rule['path'] = DISPATCH_URL.match(
         dispatch_rule['url']).groups()
     modified_rules.append(rule)
