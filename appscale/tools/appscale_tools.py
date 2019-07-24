@@ -1117,6 +1117,57 @@ class AppScaleTools(object):
     http_port = int(match.group(2))
     return login_host, http_port
 
+
+
+  @classmethod
+  def update_dispatch(cls, options):
+    """ Updates an application's dispatch routing rules from the configuration
+      file.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if not options.project:
+      raise BadConfigurationException('Project must be specified to deploy a '
+                                      'dispatch.yaml file')
+    project_id = options.project
+    source_location = options.file
+    keyname = options.keyname
+    is_verbose = options.verbose
+    dispatch_rules = utils.dispatch_from_yaml(source_location)
+
+    AppScaleLogger.log('Updating dispatch for {}'.format(project_id))
+
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
+    operation_id = admin_client.update_dispatch(project_id, dispatch_rules)
+
+    # Check on the operation.
+    AppScaleLogger.log("Please wait for your dispatch to be updated.")
+
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The operation took too long.')
+      operation = admin_client.get_operation(project_id, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
+
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+      dispatch_rules = operation['response']['dispatchRules']
+      break
+
+    AppScaleLogger.verbose(
+        "The following dispatchRules have been applied to your application's "
+        "configuration (note: rules have been converted to be compatible "
+        "with AppScale) : {}".format(dispatch_rules), is_verbose)
+    AppScaleLogger.success('Dispatch has been updated for {}'.format(
+        project_id))
+
   @classmethod
   def update_cron(cls, source_location, keyname, project_id):
     """ Updates a project's cron jobs from the configuration file.

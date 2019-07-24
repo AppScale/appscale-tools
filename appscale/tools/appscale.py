@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -568,9 +569,14 @@ Available commands:
     command.append("--file")
     command.append(app)
 
+
     if project_id is not None:
       command.append("--project")
       command.append(project_id)
+
+    if re.match(r'\/dispatch\.yaml$', app):
+      options = ParseArgs(command, "appscale-upload-app").args
+      AppScaleTools.update_dispatch(options)
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.

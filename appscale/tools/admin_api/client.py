@@ -321,3 +321,35 @@ class AdminClient(object):
       message = 'AdminServer returned: {}'.format(response.status_code)
 
     raise AdminError(message)
+
+  @retry(**RETRY_POLICY)
+  def update_dispatch(self, project_id, dispatch_rules):
+    """ Updates the the project's dispatch configuration.
+
+    Args:
+      project_id: A string specifying the project ID.
+      dispatch_rules: A dictionary containing dispatch configuration details.
+    Raises:
+      AdminError if unable to update dispatch configuration.
+    """
+    versions_url = ('{prefix}/{project}'
+                    .format(prefix=self.prefix, project=project_id))
+    headers = {
+      'AppScale-Secret': self.secret,
+      'Content-Type': 'application/json'
+    }
+    params = {
+      'updateMask': 'dispatchRules'
+    }
+    body = dispatch_rules
+
+    response = requests.patch(versions_url, headers=headers, params=params,
+                              json=body, verify=False)
+
+    operation = self.extract_response(response)
+    try:
+      operation_id = operation['name'].split('/')[-1]
+    except (KeyError, IndexError):
+      raise AdminError('Invalid operation: {}'.format(operation))
+
+    return operation_id
