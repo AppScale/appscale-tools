@@ -341,7 +341,7 @@ class AdminClient(object):
     params = {
       'updateMask': 'dispatchRules'
     }
-    body = dispatch_rules
+    body = {'dispatchRules': dispatch_rules}
 
     response = requests.patch(versions_url, headers=headers, params=params,
                               json=body, verify=False)
