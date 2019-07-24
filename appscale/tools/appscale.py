@@ -574,7 +574,7 @@ Available commands:
       command.append("--project")
       command.append(project_id)
 
-    if re.match(r'\/dispatch\.yaml$', app):
+    if re.match(r'.*\/dispatch\.yaml$', app):
       options = ParseArgs(command, "appscale-upload-app").args
       AppScaleTools.update_dispatch(options)
 
