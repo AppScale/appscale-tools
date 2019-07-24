@@ -279,7 +279,7 @@ def queues_from_xml(contents):
 def dispatch_from_yaml(source_location):
   dispatch_rules = None
   with open(source_location) as config_file:
-    dispatch_rules = config_file.read()
+    dispatch_rules = yaml.safe_load(config_file.read())
 
   if not dispatch_rules or not dispatch_rules.get('dispatch'):
     raise BadConfigurationException('Could not retrieve anything from '
