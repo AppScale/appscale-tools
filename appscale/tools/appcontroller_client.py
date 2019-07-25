@@ -45,6 +45,10 @@ class AppControllerClient():
   BAD_SECRET_MESSAGE = 'false: bad secret'
 
 
+  # The message that an AppController can return when not ready for requests.
+  NOT_READY_MESSAGE = 'false: not ready yet'
+
+
   # The number of times we should retry SOAP calls in case of failures.
   DEFAULT_NUM_RETRIES = 5
 
@@ -127,6 +131,9 @@ class AppControllerClient():
     if retval == self.BAD_SECRET_MESSAGE:
       raise BadSecretException("Could not authenticate successfully" + \
         " to the AppController. You may need to change the keyname in use.")
+
+    if retval == self.NOT_READY_MESSAGE:
+      raise AppControllerException("AppController not ready.")
 
     return retval
 
