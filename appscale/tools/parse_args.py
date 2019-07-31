@@ -314,6 +314,8 @@ class ParseArgs(object):
       self.parser.add_argument('--user_commands',
         help="a base64-encoded YAML dictating the commands to run before " +
           "starting each AppController")
+      self.parser.add_argument('--fdb_clusterfile_content',
+        help="a string representing content of FoundationDB clusterfile")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
