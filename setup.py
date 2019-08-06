@@ -95,7 +95,6 @@ setup(
       'appscale-set-property=appscale.tools.scripts.set_property:main',
       'appscale-terminate-instances=' +
         'appscale.tools.scripts.terminate_instances:main',
-      'appscale-upgrade=appscale.tools.scripts.upgrade:main',
       'appscale-upload-app=appscale.tools.scripts.upload_app:main'
     ]
   },

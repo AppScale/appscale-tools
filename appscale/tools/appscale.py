@@ -113,7 +113,6 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
-  upgrade                           Upgrades AppScale code to its latest version.
 """
   # Deprecated AppScaleFile arguments
   DEPRECATED_ASF_ARGS =  ['n', 'scp', 'appengine', 'max_memory', 'min', 'max']
@@ -894,36 +893,3 @@ Available commands:
     AppScaleLogger.success(
       'Registration complete for AppScale deployment {0}.'
       .format(deployment['name']))
-
-  def upgrade(self):
-    """ Allows users to upgrade to the latest version of AppScale."""
-    contents_as_yaml = yaml.safe_load(self.read_appscalefile())
-
-    # Construct the appscale-upgrade command from argv and the contents of
-    # the AppScalefile.
-    command = []
-
-    if 'keyname' in contents_as_yaml:
-      command.append("--keyname")
-      command.append(contents_as_yaml['keyname'])
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      command.append("--verbose")
-
-    if 'ips_layout' in contents_as_yaml:
-      command.append('--ips_layout')
-      command.append(
-        base64.b64encode(yaml.dump(contents_as_yaml['ips_layout'])))
-
-    if 'login' in contents_as_yaml:
-      command.extend(['--login', contents_as_yaml['login']])
-
-    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
-      command.append('--test')
-
-    options = ParseArgs(command, 'appscale-upgrade').args
-    options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
-    options.terminate = False
-    options.clean = False
-    options.instance_type = contents_as_yaml.get('instance_type')
-    AppScaleTools.upgrade(options)

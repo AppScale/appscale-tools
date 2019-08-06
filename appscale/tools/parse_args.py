@@ -473,16 +473,6 @@ class ParseArgs(object):
         help="the name of the AppController property to set")
       self.parser.add_argument('--property_value',
         help="the value of the AppController property to set")
-    elif function == "appscale-upgrade":
-      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
-        help="the keypair name to use")
-      self.parser.add_argument('--ips_layout',
-        help="a YAML file dictating the placement strategy")
-      self.parser.add_argument(
-        '--login_host', help='The public IP address of the head node')
-      self.parser.add_argument(
-        '--test', action='store_true', default=False,
-        help='Skips user input when upgrading deployment')
     else:
       raise SystemExit
 
@@ -581,8 +571,6 @@ class ParseArgs(object):
     elif function == "appscale-get-property":
       pass
     elif function == "appscale-set-property":
-      pass
-    elif function == "appscale-upgrade":
       pass
     else:
       raise SystemExit
