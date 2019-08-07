@@ -302,7 +302,7 @@ class AppScaleTools(object):
                       "+" if n.is_loaded else "-"),
        "{:.1f}x{}".format(n.cpu.load, n.cpu.count),
        100.0 - n.memory.available_percent,
-       " ".join("{:.1f}".format(p.used_percent) for p in n.disk.partitions),
+       " ".join('"{}" => {:.1f}'.format(p.mountpoint, p.used_percent) for p in n.disk.partitions),
        "{:.1f} {:.1f} {:.1f}".format(
          n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
        " ".join(n.roles))
