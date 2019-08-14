@@ -1163,8 +1163,7 @@ class AppScaleTools(object):
 
     AppScaleLogger.verbose(
         "The following dispatchRules have been applied to your application's "
-        "configuration (note: rules have been converted to be compatible "
-        "with AppScale) : {}".format(dispatch_rules), is_verbose)
+        "configuration : {}".format(dispatch_rules), is_verbose)
     AppScaleLogger.success('Dispatch has been updated for {}'.format(
         project_id))
 

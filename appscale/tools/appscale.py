@@ -152,6 +152,27 @@ Available commands:
         "again.")
 
 
+  def is_dispatch_yaml(self, source_location):
+    """ Checks the path passed to appscale deploy to see if it is a
+    dispatch yaml
+
+    Returns:
+      True if source_location is a non-empty file containing a 'dispatch' key.
+      False if source_location is a directory, the file is empty, or the file
+        does not contain a 'dispatch' key.
+    """
+    if os.path.isdir(source_location):
+      return False
+
+    with open(source_location) as config_file:
+      dispatch_rules = yaml.safe_load(config_file)
+
+    if dispatch_rules and dispatch_rules.get('dispatch'):
+      return True
+
+    return False
+
+
   def get_locations_json_file(self, keyname):
     """ Returns the location where the AppScale tools writes JSON data
     about where each virtual machine is located in the currently running
@@ -574,7 +595,7 @@ Available commands:
       command.append("--project")
       command.append(project_id)
 
-    if re.match(r'.*\/dispatch\.yaml$', app):
+    if self.is_dispatch_yaml(app):
       options = ParseArgs(command, "appscale-upload-app").args
       AppScaleTools.update_dispatch(options)
 
