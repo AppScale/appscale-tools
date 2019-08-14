@@ -598,6 +598,7 @@ Available commands:
     if self.is_dispatch_yaml(app):
       options = ParseArgs(command, "appscale-upload-app").args
       AppScaleTools.update_dispatch(options)
+      return
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
