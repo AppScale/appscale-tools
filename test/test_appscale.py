@@ -429,7 +429,8 @@ class TestAppScale(unittest.TestCase):
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-
+    flexmock(appscale)
+    appscale.should_receive('is_dispatch_yaml').and_return(False)
     # finally, mock out the actual appscale-run-instances call
     fake_port = 8080
     fake_host = 'fake_host'
@@ -499,7 +500,8 @@ class TestAppScale(unittest.TestCase):
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-
+    flexmock(appscale)
+    appscale.should_receive('is_dispatch_yaml').and_return(False)
     # finally, mock out the actual appscale-run-instances call
     fake_port = 8080
     fake_host = 'fake_host'
