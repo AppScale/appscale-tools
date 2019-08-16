@@ -231,12 +231,6 @@ def main():
   elif command in ["--version", "-v"]:
     print APPSCALE_VERSION
     sys.exit(0)
-  elif command == "upgrade":
-    try:
-        appscale.upgrade()
-    except Exception as exception:
-      LocalState.generate_crash_log(exception, traceback.format_exc())
-      sys.exit(1)
   else:
     print(AppScale.USAGE)
     if command == "help":
