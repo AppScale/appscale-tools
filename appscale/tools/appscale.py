@@ -22,7 +22,7 @@ from appscale.tools.node_layout import NodeLayout
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.registration_helper import RegistrationHelper
 from appscale.tools.remote_helper import RemoteHelper
-
+from appscale.tools.admin_api.client import AdminError
 
 class AppScale():
   """ AppScale provides a configuration-file-based alternative to the
@@ -580,7 +580,7 @@ Available commands:
     try:
       AppScaleTools.update_dispatch(options.file, options.keyname,
                                     options.project, options.verbose)
-    except AppScaleException as e:
+    except (AdminError, AppScaleException) as e:
       AppScaleLogger.warn('Request to update dispatch failed, if your '
                           'dispatch references undeployed services, ignore '
                           'this exception: {}'.format(e))
