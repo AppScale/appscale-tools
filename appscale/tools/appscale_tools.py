@@ -1076,9 +1076,8 @@ class AppScaleTools(object):
     return login_host, http_port
 
 
-
   @classmethod
-  def update_dispatch(cls, options):
+  def update_dispatch(cls, source_location, keyname, project_id, is_verbose):
     """ Updates an application's dispatch routing rules from the configuration
       file.
 
@@ -1086,15 +1085,31 @@ class AppScaleTools(object):
       options: A Namespace that has fields for each parameter that can be
         passed in via the command-line interface.
     """
-    if not options.project:
-      raise BadConfigurationException('Project must be specified to deploy a '
-                                      'dispatch.yaml file')
-    project_id = options.project
-    source_location = options.file
-    keyname = options.keyname
-    is_verbose = options.verbose
-    dispatch_rules = utils.dispatch_from_yaml(source_location)
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
 
+    if project_id:
+      version.project_id = project_id
+
+    dispatch_config = fetch_function('dispatch.yaml', source_location)
+    if dispatch_config is None:
+        return
+
+    dispatch_rules = utils.dispatch_from_yaml(dispatch_config)
     AppScaleLogger.log('Updating dispatch for {}'.format(project_id))
 
     load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
@@ -1124,6 +1139,7 @@ class AppScaleTools(object):
         "configuration : {}".format(dispatch_rules), is_verbose)
     AppScaleLogger.success('Dispatch has been updated for {}'.format(
         project_id))
+
 
   @classmethod
   def update_cron(cls, source_location, keyname, project_id):

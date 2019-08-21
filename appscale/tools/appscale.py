@@ -5,11 +5,9 @@ from __future__ import absolute_import
 import base64
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
-
 import yaml
 
 from appscale.tools.appengine_helper import AppEngineHelper
@@ -149,27 +147,6 @@ Available commands:
       raise AppScalefileException("No AppScalefile found in this " +
         "directory. Please run 'appscale init' to generate one and try " +
         "again.")
-
-
-  def is_dispatch_yaml(self, source_location):
-    """ Checks the path passed to appscale deploy to see if it is a
-    dispatch yaml
-
-    Returns:
-      True if source_location is a non-empty file containing a 'dispatch' key.
-      False if source_location is a directory, the file is empty, or the file
-        does not contain a 'dispatch' key.
-    """
-    if os.path.isdir(source_location):
-      return False
-
-    with open(source_location) as config_file:
-      dispatch_rules = yaml.safe_load(config_file)
-
-    if dispatch_rules and dispatch_rules.get('dispatch'):
-      return True
-
-    return False
 
 
   def get_locations_json_file(self, keyname):
@@ -589,15 +566,9 @@ Available commands:
     command.append("--file")
     command.append(app)
 
-
     if project_id is not None:
       command.append("--project")
       command.append(project_id)
-
-    if self.is_dispatch_yaml(app):
-      options = ParseArgs(command, "appscale-upload-app").args
-      AppScaleTools.update_dispatch(options)
-      return
 
     # Finally, exec the command. Don't worry about validating it -
     # appscale-upload-app will do that for us.
@@ -606,6 +577,13 @@ Available commands:
     AppScaleTools.update_indexes(options.file, options.keyname, options.project)
     AppScaleTools.update_cron(options.file, options.keyname, options.project)
     AppScaleTools.update_queues(options.file, options.keyname, options.project)
+    try:
+      AppScaleTools.update_dispatch(options.file, options.keyname,
+                                    options.project, options.verbose)
+    except AppScaleException as e:
+      AppScaleLogger.warn('Request to update dispatch failed, if your '
+                          'dispatch references undeployed services, ignore '
+                          'this exception: {}'.format(e))
     return login_host, http_port
 
 
