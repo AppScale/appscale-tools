@@ -1105,17 +1105,15 @@ class AppScaleTools(object):
     if project_id:
       version.project_id = project_id
 
-    dispatch_config = fetch_function('dispatch.yaml', source_location)
-    if dispatch_config is None:
+    dispatch_rules = utils.dispatch_from_yaml(source_location, fetch_function)
+    if dispatch_rules is None:
         return
-
-    dispatch_rules = utils.dispatch_from_yaml(dispatch_config)
-    AppScaleLogger.log('Updating dispatch for {}'.format(project_id))
+    AppScaleLogger.log('Updating dispatch for {}'.format(version.project_id))
 
     load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(load_balancer_ip, secret_key)
-    operation_id = admin_client.update_dispatch(project_id, dispatch_rules)
+    operation_id = admin_client.update_dispatch(version.project_id, dispatch_rules)
 
     # Check on the operation.
     AppScaleLogger.log("Please wait for your dispatch to be updated.")
@@ -1124,7 +1122,7 @@ class AppScaleTools(object):
     while True:
       if time.time() > deadline:
         raise AppScaleException('The operation took too long.')
-      operation = admin_client.get_operation(project_id, operation_id)
+      operation = admin_client.get_operation(version.project_id, operation_id)
       if not operation['done']:
         time.sleep(1)
         continue
@@ -1138,7 +1136,7 @@ class AppScaleTools(object):
         "The following dispatchRules have been applied to your application's "
         "configuration : {}".format(dispatch_rules), is_verbose)
     AppScaleLogger.success('Dispatch has been updated for {}'.format(
-        project_id))
+        version.project_id))
 
 
   @classmethod
