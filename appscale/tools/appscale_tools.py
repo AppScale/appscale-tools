@@ -1075,6 +1075,70 @@ class AppScaleTools(object):
     http_port = int(match.group(2))
     return login_host, http_port
 
+
+  @classmethod
+  def update_dispatch(cls, source_location, keyname, project_id, is_verbose):
+    """ Updates an application's dispatch routing rules from the configuration
+      file.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
+
+    dispatch_rules = utils.dispatch_from_yaml(source_location, fetch_function)
+    if dispatch_rules is None:
+        return
+    AppScaleLogger.log('Updating dispatch for {}'.format(version.project_id))
+
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
+    operation_id = admin_client.update_dispatch(version.project_id, dispatch_rules)
+
+    # Check on the operation.
+    AppScaleLogger.log("Please wait for your dispatch to be updated.")
+
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The operation took too long.')
+      operation = admin_client.get_operation(version.project_id, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
+
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+      dispatch_rules = operation['response']['dispatchRules']
+      break
+
+    AppScaleLogger.verbose(
+        "The following dispatchRules have been applied to your application's "
+        "configuration : {}".format(dispatch_rules), is_verbose)
+    AppScaleLogger.success('Dispatch has been updated for {}'.format(
+        version.project_id))
+
+
   @classmethod
   def update_cron(cls, source_location, keyname, project_id):
     """ Updates a project's cron jobs from the configuration file.

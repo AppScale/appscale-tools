@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 import sys
-
 import yaml
 
 from appscale.tools.appengine_helper import AppEngineHelper
@@ -23,7 +22,7 @@ from appscale.tools.node_layout import NodeLayout
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.registration_helper import RegistrationHelper
 from appscale.tools.remote_helper import RemoteHelper
-
+from appscale.tools.admin_api.client import AdminError
 
 class AppScale():
   """ AppScale provides a configuration-file-based alternative to the
@@ -578,6 +577,13 @@ Available commands:
     AppScaleTools.update_indexes(options.file, options.keyname, options.project)
     AppScaleTools.update_cron(options.file, options.keyname, options.project)
     AppScaleTools.update_queues(options.file, options.keyname, options.project)
+    try:
+      AppScaleTools.update_dispatch(options.file, options.keyname,
+                                    options.project, options.verbose)
+    except (AdminError, AppScaleException) as e:
+      AppScaleLogger.warn('Request to update dispatch failed, if your '
+                          'dispatch references undeployed services, ignore '
+                          'this exception: {}'.format(e))
     return login_host, http_port
 
 
