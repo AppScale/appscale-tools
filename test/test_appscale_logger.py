@@ -99,6 +99,7 @@ class TestAppScaleLogger(unittest.TestCase):
       'EC2_ACCESS_KEY': 'baz',
       'EC2_SECRET_KEY': 'baz',
       'EC2_URL': '',
+      'fdb_clusterfile_content': None,
       'update': ['common']
     }
 

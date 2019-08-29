@@ -471,7 +471,6 @@ class TestAppScale(unittest.TestCase):
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-
     # finally, mock out the actual appscale-run-instances call
     fake_port = 8080
     fake_host = 'fake_host'
@@ -481,6 +480,7 @@ class TestAppScale(unittest.TestCase):
     AppScaleTools.should_receive('update_indexes')
     AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
+    AppScaleTools.should_receive('update_dispatch')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
     self.assertEquals(fake_host, host)
@@ -541,7 +541,6 @@ class TestAppScale(unittest.TestCase):
     }
     yaml_dumped_contents = yaml.dump(contents)
     self.addMockForAppScalefile(appscale, yaml_dumped_contents)
-
     # finally, mock out the actual appscale-run-instances call
     fake_port = 8080
     fake_host = 'fake_host'
@@ -551,6 +550,7 @@ class TestAppScale(unittest.TestCase):
     AppScaleTools.should_receive('update_indexes')
     AppScaleTools.should_receive('update_cron')
     AppScaleTools.should_receive('update_queues')
+    AppScaleTools.should_receive('update_dispatch')
     app = '/bar/app'
     (host, port) = appscale.deploy(app)
     self.assertEquals(fake_host, host)
