@@ -41,23 +41,17 @@ def main():
            "customize it for your particular cloud or cluster.", 'green')
     sys.exit(0)
   elif command == "up":
-    update_dir = ""
+    update_dir = []
     if len(sys.argv) > 2:
       if sys.argv[2] != '--update':
         cprint("Usage: appscale up [--update] <code directory to update>", 'red')
         sys.exit(1)
 
-      if len(sys.argv) > 4:
-        dir_args = sys.argv[3:]
-        update_dir = ",".join(dir_args)
+      if len(sys.argv) < 4:
+        cprint("Usage: appscale up [--update] <code directory to update>", 'red')
+        cprint("Please specify the code directory to update and build", 'red')
 
-      else:
-        try:
-          update_dir = sys.argv[3]
-        except IndexError as e:
-          cprint("Usage: appscale up [--update] <code directory to update>", 'red')
-          cprint("Please specify the code directory to update and build", 'red')
-          sys.exit(1)
+      update_dir = sys.argv[3:]
 
     try:
       appscale.up(update=update_dir)
