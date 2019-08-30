@@ -261,7 +261,7 @@ class TestAppScale(unittest.TestCase):
     # the name of the appscale code directory to update and build.
     appscale = AppScale()
 
-    update_dir = 'common'
+    update_dir = ['common']
     contents = {
       'infrastructure': 'ec2',
       'instance_type': 'm3.medium',
