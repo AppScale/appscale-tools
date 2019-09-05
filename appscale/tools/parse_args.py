@@ -137,6 +137,10 @@ class ParseArgs(object):
   # explicitly provide a value, in megabytes.
   DEFAULT_MAX_APPSERVER_MEMORY = 400
 
+  # The list of code directories to specify which updating the code and building it.
+  ALLOWED_DIR_UPDATES = ('all', 'common', 'app_controller', 'admin_server',
+                         'taskqueue', 'app_db', 'iaas_manager', 'hermes',
+                         'api_server', 'appserver_java')
 
   def __init__(self, argv, function):
     """Creates a new ParseArgs for a set of acceptable flags.
@@ -183,6 +187,10 @@ class ParseArgs(object):
     #TODO: remove arguments in appscale-run-instances that are no longer
     # supported. (min, max, appengine, max_memory, scp)
     if function == "appscale-run-instances":
+      self.parser.add_argument('--update',
+        nargs='+',
+        choices=self.ALLOWED_DIR_UPDATES,
+        default=[], help="updates specified code directory and builds it")
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min_machines', '--min', type=int,
         help="the minimum number of VMs to use")
