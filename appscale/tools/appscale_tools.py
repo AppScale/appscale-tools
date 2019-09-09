@@ -108,7 +108,7 @@ class AppScaleTools(object):
         ips_to_check.extend(ip_group)
       for ip in ips_to_check:
         # throws a ShellException if the SSH key doesn't work
-        RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
+        RemoteHelper.ssh(ip, options.keyname, "ls")
 
     # Finally, find an AppController and send it a message to add
     # the given nodes with the new roles.
@@ -137,15 +137,14 @@ class AppScaleTools(object):
       AppScaleException: If any of the machines named in the ips_layout are
         not running, or do not have the SSH daemon running.
     """
-    LocalState.require_ssh_commands(options.auto, options.verbose)
+    LocalState.require_ssh_commands(options.auto)
     LocalState.make_appscale_directory()
 
     path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
     if options.add_to_existing:
       private_key = path
     else:
-      _, private_key = LocalState.generate_rsa_key(options.keyname,
-        options.verbose)
+      _, private_key = LocalState.generate_rsa_key(options.keyname)
 
     if options.auto:
       if 'root_password' in options:
@@ -162,8 +161,7 @@ class AppScaleTools(object):
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
       # first, make sure ssh is actually running on the host machine
-      if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT,
-        options.verbose):
+      if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT):
         raise AppScaleException("SSH does not appear to be running at {0}. " \
           "Is the machine at {0} up and running? Make sure your IPs are " \
           "correct!".format(ip))
@@ -172,10 +170,9 @@ class AppScaleTools(object):
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
       if options.auto:
         LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
-          private_key, password), options.verbose)
+          private_key, password))
       else:
-        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
-          options.verbose)
+        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip))
 
     AppScaleLogger.success("Generated a new SSH key for this deployment " + \
       "at {0}".format(private_key))
@@ -212,7 +209,7 @@ class AppScaleTools(object):
     nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
     invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
-    if options.verbose:
+    if AppScaleLogger.is_verbose:
       AppScaleLogger.log("-"*76)
       cls._print_nodes_info(nodes, invisible_nodes)
       cls._print_roles_info(nodes)
@@ -482,16 +479,14 @@ class AppScaleTools(object):
 
         try:
           RemoteHelper.scp_remote_to_local(
-            public_ip, options.keyname, log_path['remote'],
-            sub_dir, options.verbose
+            public_ip, options.keyname, log_path['remote'], sub_dir
           )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
                               format(log_path['remote'], public_ip))
           AppScaleLogger.verbose(
-            'Encountered exception: {}'.format(str(shell_exception)),
-            options.verbose)
+            'Encountered exception: {}'.format(str(shell_exception)))
 
     if failures:
       AppScaleLogger.log("Done copying to {}. There were failures while "
@@ -555,8 +550,7 @@ class AppScaleTools(object):
     AppScaleLogger.success(
       'Successfully issued request to move {0} to ports {1} and {2}'.format(
         options.appname, options.http_port, options.https_port))
-    RemoteHelper.sleep_until_port_is_open(
-      login_host, options.http_port, options.verbose)
+    RemoteHelper.sleep_until_port_is_open(login_host, options.http_port)
     AppScaleLogger.success(
       'Your app serves unencrypted traffic at: http://{0}:{1}'.format(
         login_host, options.http_port))
@@ -799,19 +793,18 @@ class AppScaleTools(object):
 
       # Enables root logins and SSH access on the head node.
       RemoteHelper.enable_root_ssh(options, head_node.public_ip)
-    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
-                           options.verbose)
+    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()))
 
     # Ensure all nodes are compatible.
     RemoteHelper.ensure_machine_is_compatible(
-      head_node.public_ip, options.keyname, options.verbose)
+      head_node.public_ip, options.keyname)
 
     # Use rsync to move custom code into the deployment.
     if options.rsync_source:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".
         format(options.rsync_source))
       RemoteHelper.rsync_files(head_node.public_ip, options.keyname,
-                               options.rsync_source, options.verbose)
+                               options.rsync_source)
 
     # Start services on head node.
     RemoteHelper.start_head_node(options, my_id, node_layout)
@@ -823,7 +816,7 @@ class AppScaleTools(object):
 
     # Copy the locations.json to the head node
     RemoteHelper.copy_local_metadata(node_layout.head_node().public_ip,
-                                     options.keyname, options.verbose)
+                                     options.keyname)
 
     # Wait for services on head node to start.
     secret_key = LocalState.get_secret_key(options.keyname)
@@ -838,7 +831,7 @@ class AppScaleTools(object):
       AppScaleLogger.warn('Unable to initialize AppController: {}'.
                           format(socket_error.message))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        head_node, options.keyname, options.verbose)
+        head_node, options.keyname)
       raise AppControllerException(message)
 
     # Set up admin account.
@@ -872,7 +865,7 @@ class AppScaleTools(object):
       raise AppControllerException('login property not found')
 
     RemoteHelper.sleep_until_port_is_open(
-      login_host, RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
+      login_host, RemoteHelper.APP_DASHBOARD_PORT)
 
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success(
@@ -925,8 +918,7 @@ class AppScaleTools(object):
     # Stop gracefully the AppScale deployment.
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
-                                                 options.clean,
-                                                 options.verbose)
+                                                 options.clean)
     except (IOError, AppScaleException, AppControllerException,
             BadConfigurationException) as e:
       if not (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
@@ -936,7 +928,7 @@ class AppScaleTools(object):
       if options.test:
         AppScaleLogger.warn(e)
       else:
-        AppScaleLogger.verbose(e, options.verbose)
+        AppScaleLogger.verbose(e)
         if isinstance(e, AppControllerException):
           response = raw_input(
             'AppScale may not have shut down properly, are you sure you want '
@@ -954,8 +946,7 @@ class AppScaleTools(object):
     # asked.
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):
-      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-        options.verbose)
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname)
     elif infrastructure in InfrastructureAgentFactory.VALID_AGENTS and not \
         options.terminate:
       AppScaleLogger.log("AppScale did not terminate any of your cloud "
@@ -978,13 +969,11 @@ class AppScaleTools(object):
     """
     custom_service_yaml = None
     if cls.TAR_GZ_REGEX.search(options.file):
-      file_location = LocalState.extract_tgz_app_to_dir(options.file,
-        options.verbose)
+      file_location = LocalState.extract_tgz_app_to_dir(options.file)
       created_dir = True
       version = Version.from_tar_gz(options.file)
     elif cls.ZIP_REGEX.search(options.file):
-      file_location = LocalState.extract_zip_app_to_dir(options.file,
-        options.verbose)
+      file_location = LocalState.extract_zip_app_to_dir(options.file)
       created_dir = True
       version = Version.from_zip(options.file)
     elif os.path.isdir(options.file):
@@ -1038,7 +1027,7 @@ class AppScaleTools(object):
     admin_client = AdminClient(head_node_public_ip, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(
-      file_location, version.project_id, options.keyname, options.verbose,
+      file_location, version.project_id, options.keyname,
       extras, custom_service_yaml)
 
     AppScaleLogger.log(
@@ -1077,7 +1066,7 @@ class AppScaleTools(object):
 
 
   @classmethod
-  def update_dispatch(cls, source_location, keyname, project_id, is_verbose):
+  def update_dispatch(cls, source_location, keyname, project_id):
     """ Updates an application's dispatch routing rules from the configuration
       file.
 
@@ -1134,7 +1123,7 @@ class AppScaleTools(object):
 
     AppScaleLogger.verbose(
         "The following dispatchRules have been applied to your application's "
-        "configuration : {}".format(dispatch_rules), is_verbose)
+        "configuration : {}".format(dispatch_rules))
     AppScaleLogger.success('Dispatch has been updated for {}'.format(
         version.project_id))
 

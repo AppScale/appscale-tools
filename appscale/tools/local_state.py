@@ -210,7 +210,7 @@ class LocalState(object):
       "autoscale": str(options.autoscale),
       "clear_datastore": str(False),
       "user_commands": json.dumps(options.user_commands),
-      "verbose": str(options.verbose),
+      "verbose": str(AppScaleLogger.is_verbose),
       "flower_password": options.flower_password,
       "default_max_appserver_memory": str(options.default_max_appserver_memory),
       "fdb_clusterfile_content": options.fdb_clusterfile_content
@@ -298,21 +298,19 @@ class LocalState(object):
 
 
   @classmethod
-  def generate_ssl_cert(cls, keyname, is_verbose):
+  def generate_ssl_cert(cls, keyname):
     """Generates a self-signed SSL certificate that AppScale services can use
     to encrypt traffic with.
 
     Args:
       keyname: A str representing the SSH keypair name used for this AppScale
         deployment.
-      is_verbose: A bool that indicates if we want to print out the certificate
-        generation to stdout or not.
     """
     cls.shell("openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 " + \
       "-subj '/C=US/ST=Foo/L=Bar/O=AppScale/CN=appscale.com' " + \
       "-keyout {0} -out {1}". \
       format(LocalState.get_private_key_location(keyname),
-      LocalState.get_certificate_location(keyname)), is_verbose, stdin=None)
+      LocalState.get_certificate_location(keyname)), stdin=None)
 
 
   @classmethod
@@ -938,15 +936,12 @@ class LocalState(object):
 
 
   @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES,
-    stdin=None):
+  def shell(cls, command, num_retries=DEFAULT_NUM_RETRIES, stdin=None):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
 
     Args:
       command: A str representing the command to execute.
-      is_verbose: A bool that indicates if we should print the command we are
-        executing to stdout.
       num_retries: The number of times we should try to execute the given
         command before aborting.
       stdin: A str that is passes as standard input to the process
@@ -960,21 +955,20 @@ class LocalState(object):
     tries_left = num_retries
     try:
       while tries_left:
-        AppScaleLogger.verbose("shell> {0}".format(command), is_verbose)
+        AppScaleLogger.verbose("shell> {0}".format(command))
         the_temp_file = tempfile.NamedTemporaryFile()
         if stdin is not None:
           stdin_strio = tempfile.TemporaryFile()
           stdin_strio.write(stdin)
           stdin_strio.seek(0)
-          AppScaleLogger.verbose("       stdin str: {0}"\
-            .format(stdin), is_verbose)
+          AppScaleLogger.verbose("       stdin str: {0}".format(stdin))
           result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
             stdin=stdin_strio, stderr=subprocess.STDOUT)
         else:
           result = subprocess.Popen(command, shell=True, stdout=the_temp_file,
             stderr=subprocess.STDOUT)
-        AppScaleLogger.verbose("       stdout buffer: {0}"\
-          .format(the_temp_file.name), is_verbose)
+        AppScaleLogger.verbose("       stdout buffer: {0}"
+                               .format(the_temp_file.name))
         result.wait()
         if stdin is not None:
           stdin_strio.close()
@@ -986,8 +980,8 @@ class LocalState(object):
         tries_left -= 1
         if tries_left:
           the_temp_file.close()
-          AppScaleLogger.verbose("Command failed. Trying again momentarily." \
-            .format(command), is_verbose)
+          AppScaleLogger.verbose("Command failed. Trying again momentarily."
+                                 .format(command))
         else:
           the_temp_file.seek(0)
           output = the_temp_file.read()
@@ -1009,15 +1003,13 @@ class LocalState(object):
 
 
   @classmethod
-  def require_ssh_commands(cls, needs_expect, is_verbose):
+  def require_ssh_commands(cls, needs_expect):
     """Checks to make sure the commands needed to set up passwordless SSH
     access are installed on this machine.
 
     Args:
       needs_expect: A bool that indicates if we should also check for the
         'expect' command.
-      is_verbose: A bool that indicates if we should print how we check for
-        each command to stdout.
     Raises:
       BadConfigurationException: If any of the required commands aren't present
         on this machine.
@@ -1028,22 +1020,20 @@ class LocalState(object):
 
     for command in required_commands:
       try:
-        cls.shell("hash {0}".format(command), is_verbose)
+        cls.shell("hash {0}".format(command))
       except ShellException:
         raise BadConfigurationException("Couldn't find {0} in your PATH."
           .format(command))
 
 
   @classmethod
-  def generate_rsa_key(cls, keyname, is_verbose):
+  def generate_rsa_key(cls, keyname):
     """Generates a new RSA public and private keypair, and saves it to the
     local filesystem.
 
     Args:
       keyname: The SSH keypair name that uniquely identifies this AppScale
         deployment.
-      is_verbose: A bool that indicates if we should print the ssh-keygen
-        command to stdout.
     """
     private_key = cls.LOCAL_APPSCALE_PATH + keyname
     public_key = private_key + ".pub"
@@ -1054,7 +1044,7 @@ class LocalState(object):
     if os.path.exists(private_key):
       os.remove(private_key)
 
-    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key), is_verbose)
+    cls.shell("ssh-keygen -t rsa -N '' -f {0}".format(private_key))
     os.chmod(public_key, 0600)
     os.chmod(private_key, 0600)
     shutil.copy(private_key, private_key + ".key")
@@ -1062,41 +1052,37 @@ class LocalState(object):
 
 
   @classmethod
-  def extract_tgz_app_to_dir(cls, tar_location, is_verbose):
+  def extract_tgz_app_to_dir(cls, tar_location):
     """Extracts the given tar.gz file to a randomly generated location and
     returns that location.
 
     Args:
       archive_location: The location on the local filesystem where the tar.gz
         file to extract can be found.
-      is_verbose: A bool that indicates if we should print the command we
-        execute to stdout.
     Returns:
       The location on the local filesystem where the file was extracted
         to.
     """
-    return cls.extract_app_to_dir(tar_location, "tar zxvf", is_verbose)
+    return cls.extract_app_to_dir(tar_location, "tar zxvf")
 
 
   @classmethod
-  def extract_zip_app_to_dir(cls, zip_location, is_verbose):
+  def extract_zip_app_to_dir(cls, zip_location):
     """Extracts the given zip file to a randomly generated location and
     returns that location.
 
     Args:
       archive_location: The location on the local filesystem where the zip file
         to extract can be found.
-      is_verbose: A bool that indicates if we should print the command we
-        execute to stdout.
     Returns:
       The location on the local filesystem where the file was extracted
         to.
     """
-    return cls.extract_app_to_dir(zip_location, "unzip", is_verbose)
+    return cls.extract_app_to_dir(zip_location, "unzip")
 
 
   @classmethod
-  def extract_app_to_dir(cls, archive_location, extract_command, is_verbose):
+  def extract_app_to_dir(cls, archive_location, extract_command):
     """Extracts the given file to a randomly generated location and returns that
     location.
 
@@ -1105,8 +1091,6 @@ class LocalState(object):
         to extract can be found.
       extract_command: The command and flags necessary to extract the archived
         file.
-      is_verbose: A bool that indicates if we should print the command we
-        execute to stdout.
     Returns:
       The location on the local filesystem where the file was extracted
         to.
@@ -1116,7 +1100,7 @@ class LocalState(object):
 
     os.mkdir(extracted_location)
     cls.shell("cd {0} && {1} '{2}'".format(extracted_location, extract_command,
-      os.path.abspath(archive_location)), is_verbose)
+      os.path.abspath(archive_location)))
 
     file_list = os.listdir(extracted_location)
     if len(file_list) > 0:

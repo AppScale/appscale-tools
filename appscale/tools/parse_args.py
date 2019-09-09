@@ -14,6 +14,8 @@ import yaml
 
 
 # AppScale-specific imports
+from appscale.tools.appscale_logger import AppScaleLogger
+
 try:
   from appscale.agents.azure_agent import AzureAgent
 except ImportError:
@@ -164,6 +166,7 @@ class ParseArgs(object):
     if self.args.version:
       raise SystemExit(APPSCALE_VERSION)
 
+    AppScaleLogger.is_verbose = self.args.verbose
     self.validate_allowed_flags(function)
 
 
