@@ -359,20 +359,11 @@ class TestRemoteHelper(unittest.TestCase):
     RemoteHelper.copy_deployment_credentials('public1', options)
 
   def test_start_remote_appcontroller(self):
-    # mock out removing the old json file
     local_state = flexmock(LocalState)
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
-      .and_return()
-
-    # assume we started monit on public1 fine
-    local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'), False, 5, stdin=re.compile('monit'))\
-      .and_return()
 
     # and assume we started the AppController on public1 fine
     local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
+      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
 
     # finally, assume the appcontroller comes up after a few tries
     # assume that ssh comes up on the third attempt
@@ -381,13 +372,6 @@ class TestRemoteHelper(unittest.TestCase):
       AppControllerClient.PORT)).and_raise(Exception) \
       .and_raise(Exception).and_return(None)
     socket.should_receive('socket').and_return(fake_socket)
-
-    # Mock out additional remote calls.
-    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
-
-    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
-
-    local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
     RemoteHelper.start_remote_appcontroller('public1', 'bookey', False)
 

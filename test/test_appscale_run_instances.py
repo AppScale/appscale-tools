@@ -331,25 +331,8 @@ EC2_SECRET_KEY: 'baz'
       .with_args(re.compile('^openssl'),False,stdin=None)\
       .and_return()
 
-    # mock out removing the old json file
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('rm -rf'))\
-      .and_return()
-
-    # assume that we started monit fine
-    self.local_state.should_receive('shell')\
-      .with_args(re.compile('^ssh'),False,5,stdin=re.compile('monit'))\
-      .and_return()
-
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
-
-    self.local_state.should_receive('shell').\
-      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
-                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
-                '-o UserKnownHostsFile=/dev/null root@{} '.format(IP_1),
-                False, 5,
-                stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
+      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks(IP_1)
     self.setup_appcontroller_mocks(IP_1, IP_1)
@@ -509,43 +492,14 @@ EC2_SECRET_KEY: 'baz'
       with_args(re.compile('scp .*{0}'.format(self.keyname)), False, 5).\
       and_return()
 
-    self.local_state.should_receive('shell').\
-      with_args('ssh -i /root/.appscale/bookey.key -o LogLevel=quiet -o '
-                'NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
-                '-o UserKnownHostsFile=/dev/null root@public1 ',
-                False, 5,
-                stdin='cp /root/appscale/AppController/scripts/appcontroller '
-                      '/etc/init.d/').\
-      and_return()
-
-    self.local_state.should_receive('shell').\
-      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
-                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
-                '-o UserKnownHostsFile=/dev/null root@elastic-ip ',
-                False, 5,
-                stdin='cp /root/appscale/AppController/scripts/appcontroller '
-                      '/etc/init.d/').\
-      and_return()
-
-    self.local_state.should_receive('shell').\
-      with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet '
-                '-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no '
-                '-o UserKnownHostsFile=/dev/null root@elastic-ip ',
-                False, 5, stdin='chmod +x /etc/init.d/appcontroller').\
-      and_return()
-
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
-    # assume that we started monit fine
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('monit'))
-
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
+      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks('elastic-ip')
     self.setup_appcontroller_mocks('elastic-ip', 'private1')
@@ -702,12 +656,8 @@ EC2_SECRET_KEY: 'baz'
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
       False, stdin=None)
 
-    # assume that we started monit fine
-    self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin=re.compile('monit'))
-
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='service appscale-controller start')
+      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
@@ -727,16 +677,6 @@ EC2_SECRET_KEY: 'baz'
     # same for the secret key
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
       False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazbargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/').and_return()
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@elastic-ip ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='cp /root/appscale/AppController/scripts/appcontroller /etc/init.d/')
-
-    self.local_state.should_receive('shell').with_args('ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet -o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no -o UserKnownHostsFile=/dev/null root@public1 ', False, 5, stdin='chmod +x /etc/init.d/appcontroller').and_return()
 
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)

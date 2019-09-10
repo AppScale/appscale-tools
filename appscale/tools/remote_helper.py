@@ -769,17 +769,8 @@ class RemoteHelper(object):
     """
     AppScaleLogger.log("Starting AppController at {0}".format(host))
 
-    # Remove any previous state. TODO: Don't do this with the tools.
-    cls.ssh(host, keyname,
-      'rm -rf {}/appcontroller-state.json'.format(cls.CONFIG_DIR), is_verbose)
-
-    # Remove any monit configuration files from previous AppScale deployments.
-    cls.ssh(host, keyname, 'rm -rf /etc/monit/conf.d/appscale-*.cfg', is_verbose)
-
-    cls.ssh(host, keyname, 'service monit start', is_verbose)
-
     # Start the AppController.
-    cls.ssh(host, keyname, 'service appscale-controller start', is_verbose)
+    cls.ssh(host, keyname, 'systemctl start appscale-controller', is_verbose)
 
     AppScaleLogger.log("Please wait for the AppController to finish " + \
       "pre-processing tasks.")
