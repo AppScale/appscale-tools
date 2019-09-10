@@ -46,14 +46,16 @@ class AppScaleLogger():
     cprint(message, 'green')
 
   @classmethod
-  def verbose(cls, message):
+  def verbose(cls, message, is_verbose=None):
     """Prints the specified message if we're running in 'verbose' mode, and
     always logs it.
 
     Args:
       message: A str representing the message to log.
+      is_verbose: A bool that indicates whether or not the message should be
+        printed to stdout.
     """
-    if cls.is_verbose:
+    if is_verbose or (is_verbose is None and cls.is_verbose):
       print message
 
 

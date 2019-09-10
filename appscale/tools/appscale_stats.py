@@ -114,7 +114,8 @@ def show_stats(options):
     node_headers, node_stats = get_node_stats_rows(
       raw_node_stats=raw_node_stats,
       all_roles=all_roles,
-      specified_roles=options.roles
+      specified_roles=options.roles,
+      verbose=options.verbose
     )
     print_table(
       table_name="NODE STATISTICS",
@@ -168,7 +169,7 @@ def show_stats(options):
     if process_failures:
       failures["processes"] = process_failures
 
-    if AppScaleLogger.is_verbose:
+    if options.verbose:
       # Additionally render detailed processes stats table in verbose mode
       order_columns_map = {
         "name": PROCESSES_NAME_COLUMN_VERBOSE_NUMBER,
@@ -202,6 +203,7 @@ def show_stats(options):
     # Prepare proxies stats table
     proxy_headers, proxy_stats = get_proxy_stats_rows(
       raw_proxy_stats=raw_proxy_stats,
+      verbose=options.verbose,
       apps_filter=options.apps_only
     )
     proxy_stats = sort_proxy_stats_rows(
@@ -245,12 +247,14 @@ def render_loadavg(loadavg):
   ])
 
 
-def render_partitions(partitions):
+def render_partitions(partitions, verbose):
   """
   Renders partitions information.
 
   Args:
     partitions: A dict representing partition values.
+    verbose: A boolean - render all partitions if True,
+      add only three the most used partitions if False.
 
   Returns:
     A string with information about partition values
@@ -271,7 +275,7 @@ def render_partitions(partitions):
     for part in part_list
   ]
 
-  if not AppScaleLogger.is_verbose and len(partitions_info) > 3:
+  if not verbose and len(partitions_info) > 3:
     partitions_info = partitions_info[:3] + ["..."]
 
   return ", ".join(partitions_info)
@@ -352,7 +356,7 @@ def get_roles(keyname):
   return roles_data
 
 
-def get_node_stats_rows(raw_node_stats, all_roles, specified_roles):
+def get_node_stats_rows(raw_node_stats, all_roles, specified_roles, verbose):
   """
   Obtains useful information from node statistics and returns:
   PRIVATE IP, AVAILABLE MEMORY, LOADAVG, PARTITIONS USAGE, ROLES values.
@@ -363,6 +367,8 @@ def get_node_stats_rows(raw_node_stats, all_roles, specified_roles):
     all_roles: A dict in which each key is an ip and value is a role list.
     specified_roles: A list representing specified roles
       that nodes should contain.
+    verbose: A boolean - add all partitions if True,
+      add only three the most used partitions if False.
 
   Returns:
     A list of node statistics headers.
@@ -391,7 +397,7 @@ def get_node_stats_rows(raw_node_stats, all_roles, specified_roles):
       styled(render_memory(memory=node["memory"]), "bold", if_=is_master),
       styled(render_loadavg(loadavg=node["loadavg"]), "bold", if_=is_master),
       styled(
-        render_partitions(partitions=node["partitions_dict"]),
+        render_partitions(partitions=node["partitions_dict"], verbose=verbose),
         "bold", if_=is_master
       ),
       styled(u" ".join(ip_roles), "bold", if_=is_master)
@@ -508,7 +514,7 @@ def get_summary_process_stats_rows(raw_process_stats, raw_node_stats):
   return process_stats_headers, process_stats
 
 
-def get_proxy_stats_rows(raw_proxy_stats, apps_filter):
+def get_proxy_stats_rows(raw_proxy_stats, verbose, apps_filter):
   """
   Obtains useful information from proxy statistics and returns:
   SERVICE (ID), UNIQUE MEMORY SUM (MB), CPU PER 1 PROCESS (%),
@@ -517,13 +523,14 @@ def get_proxy_stats_rows(raw_proxy_stats, apps_filter):
   Args:
     raw_proxy_stats: A dict in which each key is an ip and value is a dict
       of useful information.
+    verbose: A boolean - verbose or not verbose mode.
     apps_filter: A boolean - show all services or applications only.
 
   Returns:
     A list of proxy statistics headers.
     A list of proxy statistics.
   """
-  if AppScaleLogger.is_verbose:
+  if verbose:
     headers = [
       "SERVICE (ID)", "SERVERS | DOWN", "RATE | REQ TOTAL", "5xx | 4xx",
       "BYTES IN | BYTES OUT", "QCUR | SCUR", "QTIME | RTIME"
@@ -585,7 +592,7 @@ def get_proxy_stats_rows(raw_proxy_stats, apps_filter):
       )
     ]
 
-    if AppScaleLogger.is_verbose:
+    if verbose:
       proxy_row.append("{bin} | {bout}".format(**value))
       proxy_row.append("{qcur} | {scur}".format(**value))
       if "qtime" in value:

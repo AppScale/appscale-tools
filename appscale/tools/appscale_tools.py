@@ -122,8 +122,7 @@ class AppScaleTools(object):
     # TODO(cgb): Should we wait for the new instances to come up and get
     # initialized?
     AppScaleLogger.success("Successfully sent request to add instances " + \
-      "to this AppScale deployment.")
-
+                           "to this AppScale deployment.")
 
   @classmethod
   def add_keypair(cls, options):
@@ -209,7 +208,7 @@ class AppScaleTools(object):
     nodes = [NodeStats(ip, node) for ip, node in node_stats.iteritems() if node]
     invisible_nodes = [ip for ip, node in node_stats.iteritems() if not node]
 
-    if AppScaleLogger.is_verbose:
+    if options.verbose:
       AppScaleLogger.log("-"*76)
       cls._print_nodes_info(nodes, invisible_nodes)
       cls._print_roles_info(nodes)

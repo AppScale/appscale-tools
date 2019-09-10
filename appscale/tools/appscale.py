@@ -343,7 +343,7 @@ Available commands:
       BadConfigurationException: If the IPs layout was not a dictionary.
     """
     keyname = config['keyname']
-    AppScaleLogger.is_verbose = config.get('verbose', False)
+    verbose = config.get('verbose', False)
 
     if not isinstance(config['ips_layout'], dict) and \
         not isinstance(config['ips_layout'], list):
@@ -368,7 +368,7 @@ Available commands:
       remote_key = '{}/ssh.key'.format(RemoteHelper.CONFIG_DIR)
       try:
         RemoteHelper.scp(
-          head_node.public_ip, keyname, ssh_key_location, remote_key)
+          head_node.public_ip, keyname, ssh_key_location, remote_key, verbose)
       except ShellException:
         return False
 
@@ -377,13 +377,13 @@ Available commands:
           .format(key=remote_key, ip=ip)
         try:
           RemoteHelper.ssh(
-            head_node.public_ip, keyname, ssh_to_ip, user='root')
+            head_node.public_ip, keyname, ssh_to_ip, verbose, user='root')
         except ShellException:
           return False
       return True
 
     for ip in all_ips:
-      if not self.can_ssh_to_ip(ip, keyname):
+      if not self.can_ssh_to_ip(ip, keyname, verbose):
         return False
 
     return True
@@ -408,7 +408,7 @@ Available commands:
       'Invalid IP address in {}'.format(all_ips)
     return all_ips
 
-  def can_ssh_to_ip(self, ip, keyname):
+  def can_ssh_to_ip(self, ip, keyname, is_verbose=None):
     """ Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
 
@@ -416,13 +416,15 @@ Available commands:
       ip: The IP address to attempt to SSH into.
       keyname: The name of the SSH key that uniquely identifies this AppScale
         deployment.
+      is_verbose: A bool that indicates if we should print the SSH command we
+        execute to stdout.
 
     Returns:
       A bool that indicates whether or not the given SSH key can log in without
       a password to the given machine.
     """
     try:
-      RemoteHelper.ssh(ip, keyname, 'ls', user='root')
+      RemoteHelper.ssh(ip, keyname, 'ls', is_verbose, user='root')
       return True
     except ShellException:
       return False
