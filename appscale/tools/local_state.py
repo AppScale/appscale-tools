@@ -21,17 +21,17 @@ from string import ascii_lowercase, digits
 
 
 # AppScale-specific imports
-from appcontroller_client import AppControllerClient
-from appscale_logger import AppScaleLogger
-from custom_exceptions import AppControllerException
-from custom_exceptions import AppScaleException
-from custom_exceptions import AppScalefileException
-from custom_exceptions import BadConfigurationException
-from custom_exceptions import ShellException
+from .appcontroller_client import AppControllerClient
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import AppControllerException
+from .custom_exceptions import AppScaleException
+from .custom_exceptions import AppScalefileException
+from .custom_exceptions import BadConfigurationException
+from .custom_exceptions import ShellException
 
 
 # The version of the AppScale Tools we're running on.
-APPSCALE_VERSION = "3.7.0"
+APPSCALE_VERSION = "3.8.0"
 
 
 class LocalState(object):
@@ -212,9 +212,16 @@ class LocalState(object):
       "user_commands": json.dumps(options.user_commands),
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
-      "default_max_appserver_memory": str(options.default_max_appserver_memory)
+      "default_max_appserver_memory": str(options.default_max_appserver_memory),
+      "fdb_clusterfile_content": options.fdb_clusterfile_content
     }
     creds.update(additional_creds)
+
+    if options.update:
+      update_dir_creds = {
+        'update': options.update
+      }
+      creds.update(update_dir_creds)
 
     if options.infrastructure:
       iaas_creds = {

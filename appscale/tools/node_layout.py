@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
 # General-purpose Python library imports
 import re
@@ -7,11 +8,11 @@ import yaml
 
 
 # AppScale-specific imports
-from agents.factory import InfrastructureAgentFactory
-from appscale_logger import AppScaleLogger
-from custom_exceptions import BadConfigurationException
-from local_state import LocalState
-from parse_args import ParseArgs
+from appscale.agents.factory import InfrastructureAgentFactory
+from .appscale_logger import AppScaleLogger
+from .custom_exceptions import BadConfigurationException
+from .local_state import LocalState
+from .parse_args import ParseArgs
 
 
 class NodeLayout():
@@ -42,7 +43,8 @@ class NodeLayout():
   # TODO: remove 'appengine' role.
   ADVANCED_FORMAT_KEYS = [
     'master', 'database', 'appengine', 'compute', 'open', 'zookeeper',
-    'memcache', 'taskqueue', 'search', 'load_balancer']
+    'memcache', 'taskqueue', 'search', 'search2', 'load_balancer'
+  ]
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -52,7 +54,8 @@ class NodeLayout():
   VALID_ROLES = (
     'master', 'appengine', 'compute', 'database', 'shadow', 'open',
     'load_balancer', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search', 'search2'
+  )
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for

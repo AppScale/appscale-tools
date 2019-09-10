@@ -41,8 +41,20 @@ def main():
            "customize it for your particular cloud or cluster.", 'green')
     sys.exit(0)
   elif command == "up":
+    update_dir = []
+    if len(sys.argv) > 2:
+      if sys.argv[2] != '--update':
+        cprint("Usage: appscale up [--update] <code directory to update>", 'red')
+        sys.exit(1)
+
+      if len(sys.argv) < 4:
+        cprint("Usage: appscale up [--update] <code directory to update>", 'red')
+        cprint("Please specify the code directory to update and build", 'red')
+
+      update_dir = sys.argv[3:]
+
     try:
-      appscale.up()
+      appscale.up(update=update_dir)
     except Exception as exception:
       LocalState.generate_crash_log(exception, traceback.format_exc())
       sys.exit(1)
@@ -231,12 +243,6 @@ def main():
   elif command in ["--version", "-v"]:
     print APPSCALE_VERSION
     sys.exit(0)
-  elif command == "upgrade":
-    try:
-        appscale.upgrade()
-    except Exception as exception:
-      LocalState.generate_crash_log(exception, traceback.format_exc())
-      sys.exit(1)
   else:
     print(AppScale.USAGE)
     if command == "help":
