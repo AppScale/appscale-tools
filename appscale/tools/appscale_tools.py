@@ -449,7 +449,6 @@ class AppScaleTools(object):
       {'remote': '/var/log/appscale'},
       {'remote': '/var/log/haproxy.log*'},
       {'remote': '/var/log/kern.log*'},
-      {'remote': '/var/log/monit.log*'},
       {'remote': '/var/log/nginx'},
       {'remote': '/var/log/rabbitmq/*', 'local': 'rabbitmq'},
       {'remote': '/var/log/syslog*'},
