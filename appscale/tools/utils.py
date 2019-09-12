@@ -2,12 +2,17 @@
 
 import errno
 import os
+import re
 import tarfile
 import yaml
 import zipfile
 from xml.etree import ElementTree
 
 from .custom_exceptions import BadConfigurationException
+
+# The regex used to group the dispatch url into 'domain' and 'path'.
+# taken from GAE's 1.9.69 SDK (google/appengine/api/dispatchinfo.py)
+_URL_SPLITTER_RE = re.compile(r'^([^/]+)(/.*)$')
 
 
 def shortest_path_from_list(file_name, name_list):
@@ -271,6 +276,34 @@ def queues_from_xml(contents):
     queues['queue'].append(queue)
 
   return queues
+
+def dispatch_from_yaml(source_location, fetch_function):
+  dispatch_config = fetch_function('dispatch.yaml', source_location)
+  if dispatch_config is None:
+    return
+
+  dispatch_rules = yaml.safe_load(dispatch_config)
+
+  if not dispatch_rules or not dispatch_rules.get('dispatch'):
+    raise BadConfigurationException('Could not retrieve anything from '
+                                    'specified dispatch.yaml')
+  modified_rules = []
+  for dispatch_rule in dispatch_rules['dispatch']:
+    rule = {}
+    module = dispatch_rule.get('module')
+    service = dispatch_rule.get('service')
+    if module and service:
+      raise BadConfigurationException('Both module: and service: in dispatch '
+                                      'entry. Please use only one.')
+    if not (module or service):
+      raise BadConfigurationException("Missing required value 'service'.")
+
+    rule['service'] = module or service
+    rule['domain'], rule['path'] = _URL_SPLITTER_RE.match(
+        dispatch_rule['url']).groups()
+    modified_rules.append(rule)
+
+  return modified_rules
 
 
 def mkdir(dir_path):

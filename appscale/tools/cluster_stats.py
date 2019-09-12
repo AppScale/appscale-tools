@@ -17,7 +17,7 @@ class NodeStats(object):
       self.idle = cpu_dict["idle"]
       self.system = cpu_dict["system"]
       self.user = cpu_dict["user"]
-      self.load = 100.0 - self.idle
+      self.load = cpu_dict["percent"]
       self.count = cpu_dict["count"]
 
   class Memory(object):
@@ -47,11 +47,9 @@ class NodeStats(object):
 
   class LoadAvg(object):
     def __init__(self, loadavg_dict):
-      self.last_1_min = loadavg_dict["last_1_min"]
-      self.last_5_min = loadavg_dict["last_5_min"]
-      self.last_15_min = loadavg_dict["last_15_min"]
-      self.runnable_entities = loadavg_dict["runnable_entities"]
-      self.scheduling_entities = loadavg_dict["scheduling_entities"]
+      self.last_1_min = loadavg_dict["last_1min"]
+      self.last_5_min = loadavg_dict["last_5min"]
+      self.last_15_min = loadavg_dict["last_15min"]
 
   class Disk(object):
     def __init__(self, partitions):
@@ -70,8 +68,7 @@ class NodeStats(object):
     self.swap = NodeStats.Swap(node_stats_dict["swap"])
     partitions = [
       NodeStats.Partition(mountpoint, details)
-      for partition_dict in node_stats_dict["disk"]
-      for mountpoint, details in partition_dict.iteritems()
+      for mountpoint, details in node_stats_dict["partitions_dict"].iteritems()
     ]
     self.disk = NodeStats.Disk(partitions)
     self.loadavg = NodeStats.LoadAvg(node_stats_dict["loadavg"])

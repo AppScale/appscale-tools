@@ -277,12 +277,12 @@ class TestRemoteHelper(unittest.TestCase):
     flexmock(RemoteHelper).\
       should_receive('run_user_commands').\
       with_args('some IP', self.options.user_commands,
-                self.options.keyname, self.options.verbose).\
+                self.options.keyname).\
       and_return()
 
     flexmock(RemoteHelper).\
       should_receive('start_remote_appcontroller').\
-      with_args('some IP', self.options.keyname, self.options.verbose).\
+      with_args('some IP', self.options.keyname).\
       and_return()
 
     layout = {}

@@ -14,6 +14,8 @@ import yaml
 
 
 # AppScale-specific imports
+from appscale.tools.appscale_logger import AppScaleLogger
+
 try:
   from appscale.agents.azure_agent import AzureAgent
 except ImportError:
@@ -137,6 +139,10 @@ class ParseArgs(object):
   # explicitly provide a value, in megabytes.
   DEFAULT_MAX_APPSERVER_MEMORY = 400
 
+  # The list of code directories to specify which updating the code and building it.
+  ALLOWED_DIR_UPDATES = ('all', 'common', 'app_controller', 'admin_server',
+                         'taskqueue', 'app_db', 'iaas_manager', 'hermes',
+                         'api_server', 'appserver_java')
 
   def __init__(self, argv, function):
     """Creates a new ParseArgs for a set of acceptable flags.
@@ -160,6 +166,7 @@ class ParseArgs(object):
     if self.args.version:
       raise SystemExit(APPSCALE_VERSION)
 
+    AppScaleLogger.is_verbose = self.args.verbose
     self.validate_allowed_flags(function)
 
 
@@ -183,6 +190,10 @@ class ParseArgs(object):
     #TODO: remove arguments in appscale-run-instances that are no longer
     # supported. (min, max, appengine, max_memory, scp)
     if function == "appscale-run-instances":
+      self.parser.add_argument('--update',
+        nargs='+',
+        choices=self.ALLOWED_DIR_UPDATES,
+        default=[], help="updates specified code directory and builds it")
       # flags relating to how many VMs we should spawn
       self.parser.add_argument('--min_machines', '--min', type=int,
         help="the minimum number of VMs to use")
@@ -314,6 +325,8 @@ class ParseArgs(object):
       self.parser.add_argument('--user_commands',
         help="a base64-encoded YAML dictating the commands to run before " +
           "starting each AppController")
+      self.parser.add_argument('--fdb_clusterfile_content',
+        help="a string representing content of FoundationDB clusterfile")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
@@ -473,16 +486,6 @@ class ParseArgs(object):
         help="the name of the AppController property to set")
       self.parser.add_argument('--property_value',
         help="the value of the AppController property to set")
-    elif function == "appscale-upgrade":
-      self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
-        help="the keypair name to use")
-      self.parser.add_argument('--ips_layout',
-        help="a YAML file dictating the placement strategy")
-      self.parser.add_argument(
-        '--login_host', help='The public IP address of the head node')
-      self.parser.add_argument(
-        '--test', action='store_true', default=False,
-        help='Skips user input when upgrading deployment')
     else:
       raise SystemExit
 
@@ -581,8 +584,6 @@ class ParseArgs(object):
     elif function == "appscale-get-property":
       pass
     elif function == "appscale-set-property":
-      pass
-    elif function == "appscale-upgrade":
       pass
     else:
       raise SystemExit

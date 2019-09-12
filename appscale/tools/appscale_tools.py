@@ -2,8 +2,6 @@
 
 from __future__ import absolute_import
 
-import Queue
-import datetime
 import getpass
 import json
 import os
@@ -11,10 +9,7 @@ import re
 import shutil
 import socket
 import sys
-import threading
 import time
-import traceback
-import urllib2
 import uuid
 from collections import Counter
 from itertools import chain
@@ -37,25 +32,8 @@ from appscale.tools.custom_exceptions import (
 from appscale.tools.local_state import APPSCALE_VERSION, LocalState
 from appscale.tools.node_layout import NodeLayout
 from appscale.tools.remote_helper import RemoteHelper
-from appscale.tools.version_helper import latest_tools_version
 
 from appscale.agents.factory import InfrastructureAgentFactory
-
-
-def async_layout_upgrade(ip, keyname, script, error_bucket, verbose=False):
-  """ Run a command over SSH and place exceptions in a bucket.
-
-  Args:
-    ip: A string containing and IP address.
-    keyname: A string containing the deployment keyname.
-    script: A string to run as a command over SSH.
-    error_bucket: A thread-safe queue.
-    verbose: A boolean indicating whether or not to log verbosely.
-  """
-  try:
-    RemoteHelper.ssh(ip, keyname, script, verbose)
-  except ShellException as ssh_error:
-    error_bucket.put(ssh_error)
 
 
 MIN_FREE_DISK_DB = 40.0
@@ -109,26 +87,6 @@ class AppScaleTools(object):
   ADMIN_CAPABILITIES = "upload_app"
 
 
-  # AppScale repository location on an AppScale image.
-  APPSCALE_REPO = "~/appscale"
-
-
-  # Bootstrap command to run.
-  BOOTSTRAP_CMD = '{}/bootstrap.sh >> /var/log/appscale/bootstrap.log'.\
-    format(APPSCALE_REPO)
-
-
-  # Command to run the upgrade script from /appscale/scripts directory.
-  UPGRADE_SCRIPT = "python " + APPSCALE_REPO + "/scripts/upgrade.py"
-
-
-  # Template used for GitHub API calls.
-  GITHUB_API = 'https://api.github.com/repos/{owner}/{repo}'
-
-
-  # Location of the upgrade status file on the remote machine.
-  UPGRADE_STATUS_FILE_LOC = '/var/log/appscale/upgrade-status-'
-
   @classmethod
   def add_instances(cls, options):
     """Adds additional machines to an AppScale deployment.
@@ -150,7 +108,7 @@ class AppScaleTools(object):
         ips_to_check.extend(ip_group)
       for ip in ips_to_check:
         # throws a ShellException if the SSH key doesn't work
-        RemoteHelper.ssh(ip, options.keyname, "ls", options.verbose)
+        RemoteHelper.ssh(ip, options.keyname, "ls")
 
     # Finally, find an AppController and send it a message to add
     # the given nodes with the new roles.
@@ -164,8 +122,7 @@ class AppScaleTools(object):
     # TODO(cgb): Should we wait for the new instances to come up and get
     # initialized?
     AppScaleLogger.success("Successfully sent request to add instances " + \
-      "to this AppScale deployment.")
-
+                           "to this AppScale deployment.")
 
   @classmethod
   def add_keypair(cls, options):
@@ -179,15 +136,14 @@ class AppScaleTools(object):
       AppScaleException: If any of the machines named in the ips_layout are
         not running, or do not have the SSH daemon running.
     """
-    LocalState.require_ssh_commands(options.auto, options.verbose)
+    LocalState.require_ssh_commands(options.auto)
     LocalState.make_appscale_directory()
 
     path = LocalState.LOCAL_APPSCALE_PATH + options.keyname
     if options.add_to_existing:
       private_key = path
     else:
-      _, private_key = LocalState.generate_rsa_key(options.keyname,
-        options.verbose)
+      _, private_key = LocalState.generate_rsa_key(options.keyname)
 
     if options.auto:
       if 'root_password' in options:
@@ -204,8 +160,7 @@ class AppScaleTools(object):
     all_ips = [node.public_ip for node in node_layout.nodes]
     for ip in all_ips:
       # first, make sure ssh is actually running on the host machine
-      if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT,
-        options.verbose):
+      if not RemoteHelper.is_port_open(ip, RemoteHelper.SSH_PORT):
         raise AppScaleException("SSH does not appear to be running at {0}. " \
           "Is the machine at {0} up and running? Make sure your IPs are " \
           "correct!".format(ip))
@@ -214,10 +169,9 @@ class AppScaleTools(object):
       AppScaleLogger.log("Executing ssh-copy-id for host: {0}".format(ip))
       if options.auto:
         LocalState.shell("{0} root@{1} {2} {3}".format(cls.EXPECT_SCRIPT, ip,
-          private_key, password), options.verbose)
+          private_key, password))
       else:
-        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip),
-          options.verbose)
+        LocalState.shell("ssh-copy-id -i {0} root@{1}".format(private_key, ip))
 
     AppScaleLogger.success("Generated a new SSH key for this deployment " + \
       "at {0}".format(private_key))
@@ -302,7 +256,7 @@ class AppScaleTools(object):
                       "+" if n.is_loaded else "-"),
        "{:.1f}x{}".format(n.cpu.load, n.cpu.count),
        100.0 - n.memory.available_percent,
-       " ".join("{:.1f}".format(p.used_percent) for p in n.disk.partitions),
+       " ".join('"{}" => {:.1f}'.format(p.mountpoint, p.used_percent) for p in n.disk.partitions),
        "{:.1f} {:.1f} {:.1f}".format(
          n.loadavg.last_1_min, n.loadavg.last_5_min, n.loadavg.last_15_min),
        " ".join(n.roles))
@@ -524,16 +478,14 @@ class AppScaleTools(object):
 
         try:
           RemoteHelper.scp_remote_to_local(
-            public_ip, options.keyname, log_path['remote'],
-            sub_dir, options.verbose
+            public_ip, options.keyname, log_path['remote'], sub_dir
           )
         except ShellException as shell_exception:
           failures = True
           AppScaleLogger.warn('Unable to collect logs from {} for host {}'.
                               format(log_path['remote'], public_ip))
           AppScaleLogger.verbose(
-            'Encountered exception: {}'.format(str(shell_exception)),
-            options.verbose)
+            'Encountered exception: {}'.format(str(shell_exception)))
 
     if failures:
       AppScaleLogger.log("Done copying to {}. There were failures while "
@@ -597,8 +549,7 @@ class AppScaleTools(object):
     AppScaleLogger.success(
       'Successfully issued request to move {0} to ports {1} and {2}'.format(
         options.appname, options.http_port, options.https_port))
-    RemoteHelper.sleep_until_port_is_open(
-      login_host, options.http_port, options.verbose)
+    RemoteHelper.sleep_until_port_is_open(login_host, options.http_port)
     AppScaleLogger.success(
       'Your app serves unencrypted traffic at: http://{0}:{1}'.format(
         login_host, options.http_port))
@@ -841,19 +792,18 @@ class AppScaleTools(object):
 
       # Enables root logins and SSH access on the head node.
       RemoteHelper.enable_root_ssh(options, head_node.public_ip)
-    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()),
-                           options.verbose)
+    AppScaleLogger.verbose("Node Layout: {}".format(node_layout.to_list()))
 
     # Ensure all nodes are compatible.
     RemoteHelper.ensure_machine_is_compatible(
-      head_node.public_ip, options.keyname, options.verbose)
+      head_node.public_ip, options.keyname)
 
     # Use rsync to move custom code into the deployment.
     if options.rsync_source:
       AppScaleLogger.log("Copying over local copy of AppScale from {0}".
         format(options.rsync_source))
       RemoteHelper.rsync_files(head_node.public_ip, options.keyname,
-                               options.rsync_source, options.verbose)
+                               options.rsync_source)
 
     # Start services on head node.
     RemoteHelper.start_head_node(options, my_id, node_layout)
@@ -865,7 +815,7 @@ class AppScaleTools(object):
 
     # Copy the locations.json to the head node
     RemoteHelper.copy_local_metadata(node_layout.head_node().public_ip,
-                                     options.keyname, options.verbose)
+                                     options.keyname)
 
     # Wait for services on head node to start.
     secret_key = LocalState.get_secret_key(options.keyname)
@@ -880,7 +830,7 @@ class AppScaleTools(object):
       AppScaleLogger.warn('Unable to initialize AppController: {}'.
                           format(socket_error.message))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        head_node, options.keyname, options.verbose)
+        head_node, options.keyname)
       raise AppControllerException(message)
 
     # Set up admin account.
@@ -914,7 +864,7 @@ class AppScaleTools(object):
       raise AppControllerException('login property not found')
 
     RemoteHelper.sleep_until_port_is_open(
-      login_host, RemoteHelper.APP_DASHBOARD_PORT, options.verbose)
+      login_host, RemoteHelper.APP_DASHBOARD_PORT)
 
     AppScaleLogger.success("AppScale successfully started!")
     AppScaleLogger.success(
@@ -967,8 +917,7 @@ class AppScaleTools(object):
     # Stop gracefully the AppScale deployment.
     try:
       RemoteHelper.terminate_virtualized_cluster(options.keyname,
-                                                 options.clean,
-                                                 options.verbose)
+                                                 options.clean)
     except (IOError, AppScaleException, AppControllerException,
             BadConfigurationException) as e:
       if not (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
@@ -978,7 +927,7 @@ class AppScaleTools(object):
       if options.test:
         AppScaleLogger.warn(e)
       else:
-        AppScaleLogger.verbose(e, options.verbose)
+        AppScaleLogger.verbose(e)
         if isinstance(e, AppControllerException):
           response = raw_input(
             'AppScale may not have shut down properly, are you sure you want '
@@ -996,8 +945,7 @@ class AppScaleTools(object):
     # asked.
     if (infrastructure in InfrastructureAgentFactory.VALID_AGENTS and
           options.terminate):
-      RemoteHelper.terminate_cloud_infrastructure(options.keyname,
-        options.verbose)
+      RemoteHelper.terminate_cloud_infrastructure(options.keyname)
     elif infrastructure in InfrastructureAgentFactory.VALID_AGENTS and not \
         options.terminate:
       AppScaleLogger.log("AppScale did not terminate any of your cloud "
@@ -1020,13 +968,11 @@ class AppScaleTools(object):
     """
     custom_service_yaml = None
     if cls.TAR_GZ_REGEX.search(options.file):
-      file_location = LocalState.extract_tgz_app_to_dir(options.file,
-        options.verbose)
+      file_location = LocalState.extract_tgz_app_to_dir(options.file)
       created_dir = True
       version = Version.from_tar_gz(options.file)
     elif cls.ZIP_REGEX.search(options.file):
-      file_location = LocalState.extract_zip_app_to_dir(options.file,
-        options.verbose)
+      file_location = LocalState.extract_zip_app_to_dir(options.file)
       created_dir = True
       version = Version.from_zip(options.file)
     elif os.path.isdir(options.file):
@@ -1080,7 +1026,7 @@ class AppScaleTools(object):
     admin_client = AdminClient(head_node_public_ip, secret_key)
 
     remote_file_path = RemoteHelper.copy_app_to_host(
-      file_location, version.project_id, options.keyname, options.verbose,
+      file_location, version.project_id, options.keyname,
       extras, custom_service_yaml)
 
     AppScaleLogger.log(
@@ -1116,6 +1062,70 @@ class AppScaleTools(object):
     login_host = match.group(1)
     http_port = int(match.group(2))
     return login_host, http_port
+
+
+  @classmethod
+  def update_dispatch(cls, source_location, keyname, project_id):
+    """ Updates an application's dispatch routing rules from the configuration
+      file.
+
+    Args:
+      options: A Namespace that has fields for each parameter that can be
+        passed in via the command-line interface.
+    """
+    if cls.TAR_GZ_REGEX.search(source_location):
+      fetch_function = utils.config_from_tar_gz
+      version = Version.from_tar_gz(source_location)
+    elif cls.ZIP_REGEX.search(source_location):
+      fetch_function = utils.config_from_zip
+      version = Version.from_zip(source_location)
+    elif os.path.isdir(source_location):
+      fetch_function = utils.config_from_dir
+      version = Version.from_directory(source_location)
+    elif source_location.endswith('.yaml'):
+      fetch_function = utils.config_from_dir
+      version = Version.from_yaml_file(source_location)
+      source_location = os.path.dirname(source_location)
+    else:
+      raise BadConfigurationException(
+        '{} must be a directory, tar.gz, or zip'.format(source_location))
+
+    if project_id:
+      version.project_id = project_id
+
+    dispatch_rules = utils.dispatch_from_yaml(source_location, fetch_function)
+    if dispatch_rules is None:
+        return
+    AppScaleLogger.log('Updating dispatch for {}'.format(version.project_id))
+
+    load_balancer_ip = LocalState.get_host_with_role(keyname, 'load_balancer')
+    secret_key = LocalState.get_secret_key(keyname)
+    admin_client = AdminClient(load_balancer_ip, secret_key)
+    operation_id = admin_client.update_dispatch(version.project_id, dispatch_rules)
+
+    # Check on the operation.
+    AppScaleLogger.log("Please wait for your dispatch to be updated.")
+
+    deadline = time.time() + cls.MAX_OPERATION_TIME
+    while True:
+      if time.time() > deadline:
+        raise AppScaleException('The operation took too long.')
+      operation = admin_client.get_operation(version.project_id, operation_id)
+      if not operation['done']:
+        time.sleep(1)
+        continue
+
+      if 'error' in operation:
+        raise AppScaleException(operation['error']['message'])
+      dispatch_rules = operation['response']['dispatchRules']
+      break
+
+    AppScaleLogger.verbose(
+        "The following dispatchRules have been applied to your application's "
+        "configuration : {}".format(dispatch_rules))
+    AppScaleLogger.success('Dispatch has been updated for {}'.format(
+        version.project_id))
+
 
   @classmethod
   def update_cron(cls, source_location, keyname, project_id):
@@ -1255,210 +1265,3 @@ class AppScaleTools(object):
     secret_key = LocalState.get_secret_key(keyname)
     admin_client = AdminClient(load_balancer_ip, secret_key)
     admin_client.update_queues(version.project_id, queues)
-
-  @classmethod
-  def upgrade(cls, options):
-    """ Upgrades the deployment to the latest AppScale version.
-    Args:
-      options: A Namespace that has fields for each parameter that can be
-        passed in via the command-line interface.
-    """
-    node_layout = NodeLayout(options)
-    previous_ips = LocalState.get_local_nodes_info(options.keyname)
-    previous_node_list = node_layout.from_locations_json_list(previous_ips)
-    node_layout.nodes = previous_node_list
-
-    latest_tools = APPSCALE_VERSION
-    try:
-      AppScaleLogger.log(
-        'Checking if an update is available for appscale-tools')
-      latest_tools = latest_tools_version()
-    except (URLError, ValueError):
-      # Prompt the user if version metadata can't be fetched.
-      if not options.test:
-        response = raw_input(
-          'Unable to check for the latest version of appscale-tools. Would '
-          'you like to continue upgrading anyway? (y/N) ')
-        if response.lower() not in ['y', 'yes']:
-          raise AppScaleException('Cancelled AppScale upgrade.')
-
-    if latest_tools > APPSCALE_VERSION:
-      raise AppScaleException(
-        "There is a newer version ({}) of appscale-tools available. Please "
-        "upgrade the tools package before running 'appscale upgrade'.".
-        format(latest_tools))
-
-    master_ip = node_layout.head_node().public_ip
-    upgrade_version_available = cls.get_upgrade_version_available()
-
-    current_version = RemoteHelper.get_host_appscale_version(
-      master_ip, options.keyname, options.verbose)
-
-    # Don't run bootstrap if current version is later that the most recent
-    # public one. Covers cases of revoked versions/tags and ensures we won't
-    # try to downgrade the code.
-    if current_version >= upgrade_version_available:
-      AppScaleLogger.log(
-        'AppScale is already up to date. Skipping code upgrade.')
-      AppScaleLogger.log(
-        'Running upgrade script to check if any other upgrades are needed.')
-      cls.shut_down_appscale_if_running(options)
-      cls.run_upgrade_script(options, node_layout)
-      return
-
-    cls.shut_down_appscale_if_running(options)
-    cls.upgrade_appscale(options, node_layout)
-
-  @classmethod
-  def run_upgrade_script(cls, options, node_layout):
-    """ Runs the upgrade script which checks for any upgrades needed to be performed.
-      Args:
-        options: A Namespace that has fields for each parameter that can be
-          passed in via the command-line interface.
-        node_layout: A NodeLayout object for the deployment.
-    """
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-
-    db_ips = [node.private_ip for node in node_layout.nodes
-              if node.is_role('db_master') or node.is_role('db_slave')]
-    zk_ips = [node.private_ip for node in node_layout.nodes
-              if node.is_role('zookeeper')]
-
-    upgrade_script_command = '{script} --keyname {keyname} '\
-      '--log-postfix {timestamp} '\
-      '--db-master {db_master} '\
-      '--zookeeper {zk_ips} '\
-      '--database {db_ips} '\
-      '--replication {replication}'.format(
-      script=cls.UPGRADE_SCRIPT,
-      keyname=options.keyname,
-      timestamp=timestamp,
-      db_master=node_layout.db_master().private_ip,
-      zk_ips=' '.join(zk_ips),
-      db_ips=' '.join(db_ips),
-      replication=node_layout.replication
-    )
-    master_public_ip = node_layout.head_node().public_ip
-
-    AppScaleLogger.log("Running upgrade script to check if any other upgrade is needed.")
-    # Run the upgrade command as a background process.
-    error_bucket = Queue.Queue()
-    threading.Thread(
-      target=async_layout_upgrade,
-      args=(master_public_ip, options.keyname, upgrade_script_command,
-            error_bucket, options.verbose)
-    ).start()
-
-    last_message = None
-    while True:
-      # Check if the SSH thread has crashed.
-      try:
-        ssh_error = error_bucket.get(block=False)
-        AppScaleLogger.warn('Error executing upgrade script')
-        LocalState.generate_crash_log(ssh_error, traceback.format_exc())
-      except Queue.Empty:
-        pass
-
-      upgrade_status_file = cls.UPGRADE_STATUS_FILE_LOC + timestamp + ".json"
-      command = 'cat' + " " + upgrade_status_file
-      upgrade_status = RemoteHelper.ssh(
-        master_public_ip, options.keyname, command, options.verbose)
-      json_status = json.loads(upgrade_status)
-
-      if 'status' not in json_status or 'message' not in json_status:
-        raise AppScaleException('Invalid status log format')
-
-      if json_status['status'] == 'complete':
-        AppScaleLogger.success(json_status['message'])
-        break
-
-      if json_status['status'] == 'inProgress':
-        if json_status['message'] != last_message:
-          AppScaleLogger.log(json_status['message'])
-          last_message = json_status['message']
-        time.sleep(cls.SLEEP_TIME)
-        continue
-
-      # Assume the message is an error.
-      AppScaleLogger.warn(json_status['message'])
-      raise AppScaleException(json_status['message'])
-
-  @classmethod
-  def shut_down_appscale_if_running(cls, options):
-    """ Checks if AppScale is running and shuts it down as this is an offline upgrade.
-      Args:
-        options: A Namespace that has fields for each parameter that can be
-          passed in via the command-line interface.
-    """
-    if os.path.exists(LocalState.get_secret_key_location(options.keyname)):
-      AppScaleLogger.warn("AppScale needs to be down for this upgrade. "
-        "Upgrade process could take a while and it is not reversible.")
-
-      if not options.test:
-        response = raw_input(
-          'Are you sure you want to proceed with shutting down AppScale to '
-          'continue the upgrade? (y/N) ')
-        if response.lower() not in ['y', 'yes']:
-          raise AppScaleException("Cancelled AppScale upgrade.")
-
-      AppScaleLogger.log("Shutting down AppScale...")
-      cls.terminate_instances(options)
-    else:
-      AppScaleLogger.warn("Upgrade process could take a while and it is not reversible.")
-
-      if options.test:
-        return
-
-      response = raw_input(
-        'Are you sure you want to proceed with the upgrade? (y/N) ')
-      if response.lower() not in ['y', 'yes']:
-        raise AppScaleException("Cancelled AppScale upgrade.")
-
-  @classmethod
-  def upgrade_appscale(cls, options, node_layout):
-    """ Runs the bootstrap script on each of the remote machines.
-      Args:
-        options: A Namespace that has fields for each parameter that can be
-          passed in via the command-line interface.
-        node_layout: A NodeLayout object for the deployment.
-    """
-    unique_ips = [node.public_ip for node in node_layout.nodes]
-
-    AppScaleLogger.log("Upgrading AppScale code to the latest version on "
-      "these machines: {}".format(unique_ips))
-    threads = []
-    error_ips = []
-    for ip in unique_ips:
-      t = threading.Thread(target=cls.run_bootstrap, args=(ip, options, error_ips))
-      threads.append(t)
-
-    for x in threads:
-      x.start()
-
-    for x in threads:
-      x.join()
-
-    if not error_ips:
-      cls.run_upgrade_script(options, node_layout)
-
-  @classmethod
-  def run_bootstrap(cls, ip, options, error_ips):
-    try:
-      RemoteHelper.ssh(ip, options.keyname, cls.BOOTSTRAP_CMD, options.verbose)
-      AppScaleLogger.success(
-        'Successfully updated and built AppScale on {}'.format(ip))
-    except ShellException:
-      error_ips.append(ip)
-      AppScaleLogger.warn('Unable to upgrade AppScale code on {}.\n'
-        'Please correct any errors listed in /var/log/appscale/bootstrap.log '
-        'on that machine and re-run appscale upgrade.'.format(ip))
-      return error_ips
-
-  @classmethod
-  def get_upgrade_version_available(cls):
-    """ Gets the latest release tag version available.
-    """
-    github_api = cls.GITHUB_API.format(owner='AppScale', repo='appscale')
-    response = urllib2.urlopen('{}/tags'.format(github_api))
-    tag_list = json.loads(response.read())
-    return tag_list[0]['name']

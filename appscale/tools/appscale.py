@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 import sys
-
 import yaml
 
 from appscale.tools.appengine_helper import AppEngineHelper
@@ -23,7 +22,7 @@ from appscale.tools.node_layout import NodeLayout
 from appscale.tools.parse_args import ParseArgs
 from appscale.tools.registration_helper import RegistrationHelper
 from appscale.tools.remote_helper import RemoteHelper
-
+from appscale.tools.admin_api.client import AdminError
 
 class AppScale():
   """ AppScale provides a configuration-file-based alternative to the
@@ -113,7 +112,6 @@ Available commands:
   undeploy <appid>                  Removes <appid> from the current
                                     deployment. DATA ASSOCIATED WITH
                                     THE APPLICATION WILL BE LOST.
-  upgrade                           Upgrades AppScale code to its latest version.
 """
   # Deprecated AppScaleFile arguments
   DEPRECATED_ASF_ARGS =  ['n', 'scp', 'appengine', 'max_memory', 'min', 'max']
@@ -241,10 +239,12 @@ Available commands:
     shutil.copy(self.TEMPLATE_APPSCALEFILE, appscalefile_location)
 
 
-  def up(self):
+  def up(self, update=[]):
     """ Starts an AppScale deployment with the configuration options from the
     AppScalefile in the current directory.
 
+    Args:
+        update: A list of appscale code directories to update and build.
     Raises:
       AppScalefileException: If there is no AppScalefile in the current
       directory.
@@ -259,6 +259,10 @@ Available commands:
 
     # Construct a run-instances command from the file's contents
     command = []
+    if update:
+        command.append("--update")
+        command.extend(update)
+
     for key, value in contents_as_yaml.items():
       if key in self.DEPRECATED_ASF_ARGS:
         raise AppScalefileException(
@@ -404,7 +408,7 @@ Available commands:
       'Invalid IP address in {}'.format(all_ips)
     return all_ips
 
-  def can_ssh_to_ip(self, ip, keyname, is_verbose):
+  def can_ssh_to_ip(self, ip, keyname, is_verbose=None):
     """ Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
 
@@ -579,6 +583,13 @@ Available commands:
     AppScaleTools.update_indexes(options.file, options.keyname, options.project)
     AppScaleTools.update_cron(options.file, options.keyname, options.project)
     AppScaleTools.update_queues(options.file, options.keyname, options.project)
+    try:
+      AppScaleTools.update_dispatch(options.file, options.keyname,
+                                    options.project)
+    except (AdminError, AppScaleException) as e:
+      AppScaleLogger.warn('Request to update dispatch failed, if your '
+                          'dispatch references undeployed services, ignore '
+                          'this exception: {}'.format(e))
     return login_host, http_port
 
 
@@ -894,36 +905,3 @@ Available commands:
     AppScaleLogger.success(
       'Registration complete for AppScale deployment {0}.'
       .format(deployment['name']))
-
-  def upgrade(self):
-    """ Allows users to upgrade to the latest version of AppScale."""
-    contents_as_yaml = yaml.safe_load(self.read_appscalefile())
-
-    # Construct the appscale-upgrade command from argv and the contents of
-    # the AppScalefile.
-    command = []
-
-    if 'keyname' in contents_as_yaml:
-      command.append("--keyname")
-      command.append(contents_as_yaml['keyname'])
-
-    if 'verbose' in contents_as_yaml and contents_as_yaml['verbose'] == True:
-      command.append("--verbose")
-
-    if 'ips_layout' in contents_as_yaml:
-      command.append('--ips_layout')
-      command.append(
-        base64.b64encode(yaml.dump(contents_as_yaml['ips_layout'])))
-
-    if 'login' in contents_as_yaml:
-      command.extend(['--login', contents_as_yaml['login']])
-
-    if 'test' in contents_as_yaml and contents_as_yaml['test'] == True:
-      command.append('--test')
-
-    options = ParseArgs(command, 'appscale-upgrade').args
-    options.ips = yaml.safe_load(base64.b64decode(options.ips_layout))
-    options.terminate = False
-    options.clean = False
-    options.instance_type = contents_as_yaml.get('instance_type')
-    AppScaleTools.upgrade(options)

@@ -43,7 +43,8 @@ class NodeLayout():
   # TODO: remove 'appengine' role.
   ADVANCED_FORMAT_KEYS = [
     'master', 'database', 'appengine', 'compute', 'open', 'zookeeper',
-    'memcache', 'taskqueue', 'search', 'load_balancer']
+    'memcache', 'taskqueue', 'search', 'search2', 'load_balancer'
+  ]
 
 
   # A tuple containing all of the roles (simple and advanced) that the
@@ -53,7 +54,8 @@ class NodeLayout():
   VALID_ROLES = (
     'master', 'appengine', 'compute', 'database', 'shadow', 'open',
     'load_balancer', 'db_master', 'db_slave', 'zookeeper', 'memcache',
-    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search')
+    'taskqueue', 'taskqueue_master', 'taskqueue_slave', 'search', 'search2'
+  )
 
 
   # A regular expression that matches IP addresses, used in ips.yaml files for
