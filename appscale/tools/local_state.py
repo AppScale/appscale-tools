@@ -213,7 +213,8 @@ class LocalState(object):
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
       "default_max_appserver_memory": str(options.default_max_appserver_memory),
-      "fdb_clusterfile_content": options.fdb_clusterfile_content
+      "fdb_clusterfile_content": options.fdb_clusterfile_content,
+      "postgres_dsn": options.postgres_dsn
     }
     creds.update(additional_creds)
 

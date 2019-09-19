@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
-
 # General-purpose Python library imports
 import httplib
-import os
 import sys
 import unittest
 
@@ -100,6 +96,7 @@ class TestAppScaleLogger(unittest.TestCase):
       'EC2_SECRET_KEY': 'baz',
       'EC2_URL': '',
       'fdb_clusterfile_content': None,
+      'postgres_dsn': None,
       'update': ['common']
     }
 
