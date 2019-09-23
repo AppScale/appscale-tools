@@ -190,6 +190,13 @@ ips_layout:
 # By default, this value is set to 'appscale'.
 #flower_password: 'appscale'
 
+# Content of FoundationDB clusterfile to be used for establishing connection
+# to FoundationDB cluster.
+#fdb_clusterfile_content: 'EwFiSLfA:vRPUR2qe@10.10.0.15:4500'
+
+# DSN string for establishing connection to Postgres database.
+#postgres_dsn: 'dbname=pullqueues-db user=appscale password=secure-pwd host=10.10.0.16'
+
 
 
 #######################################

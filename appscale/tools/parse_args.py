@@ -327,6 +327,8 @@ class ParseArgs(object):
           "starting each AppController")
       self.parser.add_argument('--fdb_clusterfile_content',
         help="a string representing content of FoundationDB clusterfile")
+      self.parser.add_argument('--postgres_dsn',
+        help="a string representing Postgres DSN string")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")
