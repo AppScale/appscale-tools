@@ -213,7 +213,8 @@ class LocalState(object):
       "verbose": str(options.verbose),
       "flower_password": options.flower_password,
       "default_max_appserver_memory": str(options.default_max_appserver_memory),
-      "fdb_clusterfile_content": options.fdb_clusterfile_content
+      "fdb_clusterfile_content": options.fdb_clusterfile_content,
+      "postgres_dsn": options.postgres_dsn
     }
     creds.update(additional_creds)
 
@@ -298,7 +299,7 @@ class LocalState(object):
 
 
   @classmethod
-  def generate_ssl_cert(cls, keyname, is_verbose):
+  def generate_ssl_cert(cls, keyname, is_verbose=None):
     """Generates a self-signed SSL certificate that AppScale services can use
     to encrypt traffic with.
 
@@ -938,7 +939,7 @@ class LocalState(object):
 
 
   @classmethod
-  def shell(cls, command, is_verbose, num_retries=DEFAULT_NUM_RETRIES,
+  def shell(cls, command, is_verbose=None, num_retries=DEFAULT_NUM_RETRIES,
     stdin=None):
     """Executes a command on this machine, retrying it up to five times if it
     initially fails.
@@ -957,6 +958,8 @@ class LocalState(object):
       ShellException: If, after five attempts, executing the named command
       failed.
     """
+    if is_verbose is None:
+      is_verbose = AppScaleLogger.is_verbose
     tries_left = num_retries
     try:
       while tries_left:
@@ -1009,7 +1012,7 @@ class LocalState(object):
 
 
   @classmethod
-  def require_ssh_commands(cls, needs_expect, is_verbose):
+  def require_ssh_commands(cls, needs_expect, is_verbose=None):
     """Checks to make sure the commands needed to set up passwordless SSH
     access are installed on this machine.
 
@@ -1035,7 +1038,7 @@ class LocalState(object):
 
 
   @classmethod
-  def generate_rsa_key(cls, keyname, is_verbose):
+  def generate_rsa_key(cls, keyname, is_verbose=None):
     """Generates a new RSA public and private keypair, and saves it to the
     local filesystem.
 
@@ -1062,7 +1065,7 @@ class LocalState(object):
 
 
   @classmethod
-  def extract_tgz_app_to_dir(cls, tar_location, is_verbose):
+  def extract_tgz_app_to_dir(cls, tar_location, is_verbose=None):
     """Extracts the given tar.gz file to a randomly generated location and
     returns that location.
 
@@ -1079,7 +1082,7 @@ class LocalState(object):
 
 
   @classmethod
-  def extract_zip_app_to_dir(cls, zip_location, is_verbose):
+  def extract_zip_app_to_dir(cls, zip_location, is_verbose=None):
     """Extracts the given zip file to a randomly generated location and
     returns that location.
 
@@ -1096,7 +1099,7 @@ class LocalState(object):
 
 
   @classmethod
-  def extract_app_to_dir(cls, archive_location, extract_command, is_verbose):
+  def extract_app_to_dir(cls, archive_location, extract_command, is_verbose=None):
     """Extracts the given file to a randomly generated location and returns that
     location.
 

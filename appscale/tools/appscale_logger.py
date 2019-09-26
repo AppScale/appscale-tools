@@ -1,11 +1,5 @@
-#!/usr/bin/env python
-
-
-# General-purpose Python library imports
 import httplib
 
-
-# Third party library imports
 from termcolor import cprint
 
 
@@ -14,16 +8,15 @@ class AppScaleLogger():
   response, prints them to the user and saves them for debugging purposes.
   """
 
-
   # The location where we remotely dump logs to
   LOGS_HOST = "logs.appscale.com"
 
-
   # The headers necessary for posting data to the remote logs service.
   HEADERS = {
-    'Content-Type' : 'application/x-www-form-urlencoded'
+    'Content-Type': 'application/x-www-form-urlencoded'
   }
 
+  is_verbose = False
 
   @classmethod
   def log(cls, message):
@@ -34,7 +27,6 @@ class AppScaleLogger():
     """
     print message
 
-
   @classmethod
   def warn(cls, message):
     """Prints the specified message with red text as well as to a file.
@@ -43,7 +35,6 @@ class AppScaleLogger():
       message: A str representing the message to warn the user with.
     """
     cprint(message, 'red')
-
 
   @classmethod
   def success(cls, message):
@@ -54,9 +45,8 @@ class AppScaleLogger():
     """
     cprint(message, 'green')
 
-
   @classmethod
-  def verbose(cls, message, is_verbose):
+  def verbose(cls, message, is_verbose=None):
     """Prints the specified message if we're running in 'verbose' mode, and
     always logs it.
 
@@ -65,7 +55,7 @@ class AppScaleLogger():
       is_verbose: A bool that indicates whether or not the message should be
         printed to stdout.
     """
-    if is_verbose:
+    if is_verbose or (is_verbose is None and cls.is_verbose):
       print message
 
 
@@ -101,6 +91,6 @@ class AppScaleLogger():
       conn.close()
     except Exception as exception:
       cls.verbose("Unable to log {0} state: saw exception {1}".format(state,
-        str(exception)), options.verbose)
+        str(exception)))
 
     return params

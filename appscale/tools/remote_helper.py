@@ -248,11 +248,10 @@ class RemoteHelper(object):
       public_ip: The IP address of the machine.
     """
     AppScaleLogger.log("Enabling root ssh on {0}".format(public_ip))
-    cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT, options.verbose)
+    cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT)
 
-    cls.enable_root_login(public_ip, options.keyname, options.infrastructure,
-                          options.verbose)
-    cls.copy_ssh_keys_to_node(public_ip, options.keyname, options.verbose)
+    cls.enable_root_login(public_ip, options.keyname, options.infrastructure)
+    cls.copy_ssh_keys_to_node(public_ip, options.keyname)
 
   @classmethod
   def start_head_node(cls, options, my_id, node_layout):
@@ -278,8 +277,7 @@ class RemoteHelper(object):
         The message in this exception indicates why the crash occurred.
     """
     secret_key = LocalState.generate_secret_key(options.keyname)
-    AppScaleLogger.verbose("Secret key is {0}".
-                           format(secret_key), options.verbose)
+    AppScaleLogger.verbose("Secret key is {0}".format(secret_key))
     head_node = node_layout.head_node().public_ip
 
     AppScaleLogger.log("Log in to your head node: ssh -i {0} root@{1}".format(
@@ -305,10 +303,9 @@ class RemoteHelper(object):
 
     cls.copy_deployment_credentials(head_node, options)
 
-    cls.run_user_commands(head_node, options.user_commands, options.keyname,
-                          options.verbose)
+    cls.run_user_commands(head_node, options.user_commands, options.keyname)
 
-    cls.start_remote_appcontroller(head_node, options.keyname, options.verbose)
+    cls.start_remote_appcontroller(head_node, options.keyname)
     AppScaleLogger.log("Head node successfully initialized at {0}.".
                        format(head_node))
     AppScaleLogger.remote_log_tools_state(
@@ -317,8 +314,7 @@ class RemoteHelper(object):
     # Construct serverside compatible parameters.
     deployment_params = LocalState.generate_deployment_params(
       options, node_layout, additional_params)
-    AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)),
-                           options.verbose)
+    AppScaleLogger.verbose(str(LocalState.obscure_dict(deployment_params)))
 
     acc = AppControllerClient(head_node, secret_key)
     try:
@@ -327,7 +323,7 @@ class RemoteHelper(object):
       AppScaleLogger.warn(u'Saw Exception while setting AC parameters: {0}'.
                           format(str(exception)))
       message = RemoteHelper.collect_appcontroller_crashlog(
-        head_node, options.keyname, options.verbose)
+        head_node, options.keyname)
       raise AppControllerException(message)
 
 
@@ -356,7 +352,7 @@ class RemoteHelper(object):
     return instance_ids, public_ips, private_ips
 
   @classmethod
-  def sleep_until_port_is_open(cls, host, port, is_verbose):
+  def sleep_until_port_is_open(cls, host, port, is_verbose=None):
     """Queries the given host to see if the named port is open, and if not,
     waits until it is.
 
@@ -373,8 +369,8 @@ class RemoteHelper(object):
     while sleep_time > 0:
       if cls.is_port_open(host, port, is_verbose):
         return
-      AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open".\
-        format(host, port, cls.WAIT_TIME), is_verbose)
+      AppScaleLogger.verbose("Waiting {2} second(s) for {0}:{1} to open"
+                             .format(host, port, cls.WAIT_TIME), is_verbose)
       time.sleep(cls.WAIT_TIME)
       sleep_time -= cls.WAIT_TIME
     raise TimeoutException("Port {}:{} did not open in time. "
@@ -382,7 +378,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def is_port_open(cls, host, port, is_verbose):
+  def is_port_open(cls, host, port, is_verbose=None):
     """Queries the given host to see if the named port is open.
 
     Args:
@@ -403,7 +399,7 @@ class RemoteHelper(object):
       return False
 
   @classmethod
-  def merge_authorized_keys(cls, host, keyname, user, is_verbose):
+  def merge_authorized_keys(cls, host, keyname, user, is_verbose=None):
     """ Adds the contents of the user's authorized_keys file to the root's
     authorized_keys file.
 
@@ -438,7 +434,7 @@ class RemoteHelper(object):
     return
 
   @classmethod
-  def enable_root_login(cls, host, keyname, infrastructure, is_verbose):
+  def enable_root_login(cls, host, keyname, infrastructure, is_verbose=None):
     """Logs into the named host and alters its ssh configuration to enable the
     root user to directly log in.
 
@@ -477,7 +473,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def ssh(cls, host, keyname, command, is_verbose, user='root',
+  def ssh(cls, host, keyname, command, is_verbose=None, user='root',
             num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Logs into the named host and executes the given command.
 
@@ -499,8 +495,8 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def scp(cls, host, keyname, source, dest, is_verbose, user='root',
-    num_retries=LocalState.DEFAULT_NUM_RETRIES):
+  def scp(cls, host, keyname, source, dest, is_verbose=None, user='root',
+          num_retries=LocalState.DEFAULT_NUM_RETRIES):
     """Securely copies a file from this machine to the named machine.
 
     Args:
@@ -525,7 +521,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def scp_remote_to_local(cls, host, keyname, source, dest, is_verbose,
+  def scp_remote_to_local(cls, host, keyname, source, dest, is_verbose=None,
     user='root'):
     """Securely copies a file from a remote machine to this machine.
 
@@ -551,7 +547,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_ssh_keys_to_node(cls, host, keyname, is_verbose):
+  def copy_ssh_keys_to_node(cls, host, keyname, is_verbose=None):
     """Sets the given SSH keypair as the default key for the named host,
     enabling it to log into other machines in the AppScale deployment without
     being prompted for a password or explicitly requiring the key to be
@@ -570,7 +566,7 @@ class RemoteHelper(object):
       is_verbose)
 
   @classmethod
-  def ensure_machine_is_compatible(cls, host, keyname, is_verbose):
+  def ensure_machine_is_compatible(cls, host, keyname, is_verbose=None):
     """Verifies that the specified host has AppScale installed on it.
 
     This also validates that the host has the right version of AppScale
@@ -603,7 +599,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def does_host_have_location(cls, host, keyname, location, is_verbose):
+  def does_host_have_location(cls, host, keyname, location, is_verbose=None):
     """Logs into the specified host with the given keyname and checks to see if
     the named directory exists there.
 
@@ -628,7 +624,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def get_host_appscale_version(cls, host, keyname, is_verbose):
+  def get_host_appscale_version(cls, host, keyname, is_verbose=None):
     """Logs into the specified host with the given keyname and checks to see
     what version of AppScale is installed there.
 
@@ -655,7 +651,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def rsync_files(cls, host, keyname, local_appscale_dir, is_verbose):
+  def rsync_files(cls, host, keyname, local_appscale_dir, is_verbose=None):
     """Copies over an AppScale source directory from this machine to the
     specified host.
 
@@ -696,28 +692,28 @@ class RemoteHelper(object):
     """
     local_secret_key = LocalState.get_secret_key_location(options.keyname)
     cls.scp(host, options.keyname, local_secret_key,
-      '{}/secret.key'.format(cls.CONFIG_DIR), options.verbose)
+      '{}/secret.key'.format(cls.CONFIG_DIR))
 
     local_ssh_key = LocalState.get_key_path_from_name(options.keyname)
     cls.scp(host, options.keyname, local_ssh_key,
-      '{}/ssh.key'.format(cls.CONFIG_DIR), options.verbose)
+      '{}/ssh.key'.format(cls.CONFIG_DIR))
 
-    LocalState.generate_ssl_cert(options.keyname, options.verbose)
+    LocalState.generate_ssl_cert(options.keyname)
 
     local_cert = LocalState.get_certificate_location(options.keyname)
     cls.scp(host, options.keyname, local_cert,
-      '{}/certs/mycert.pem'.format(cls.CONFIG_DIR), options.verbose)
+      '{}/certs/mycert.pem'.format(cls.CONFIG_DIR))
 
     local_private_key = LocalState.get_private_key_location(options.keyname)
     cls.scp(host, options.keyname, local_private_key,
-      '{}/certs/mykey.pem'.format(cls.CONFIG_DIR), options.verbose)
+      '{}/certs/mykey.pem'.format(cls.CONFIG_DIR))
 
     hash_id = subprocess.Popen(["openssl", "x509", "-hash", "-noout", "-in",
       LocalState.get_certificate_location(options.keyname)],
       stdout=subprocess.PIPE).communicate()[0]
     symlink_cert = 'ln -fs {}/certs/mycert.pem /etc/ssl/certs/{}.0'.\
       format(cls.CONFIG_DIR, hash_id.rstrip())
-    cls.ssh(host, options.keyname, symlink_cert, options.verbose)
+    cls.ssh(host, options.keyname, symlink_cert)
 
     # In Google Compute Engine, we also need to copy over our client_secrets
     # file and the OAuth2 file that the user has approved for use with their
@@ -729,14 +725,14 @@ class RemoteHelper(object):
         raise AppScaleException('{} does not exist.'.format(secrets_location))
       secrets_type = GCEAgent.get_secrets_type(secrets_location)
       cls.scp(host, options.keyname, secrets_location,
-        '{}/client_secrets.json'.format(cls.CONFIG_DIR), options.verbose)
+        '{}/client_secrets.json'.format(cls.CONFIG_DIR))
       if secrets_type == CredentialTypes.OAUTH:
         local_oauth = LocalState.get_oauth2_storage_location(options.keyname)
         cls.scp(host, options.keyname, local_oauth,
-          '{}/oauth2.dat'.format(cls.CONFIG_DIR), options.verbose)
+          '{}/oauth2.dat'.format(cls.CONFIG_DIR))
 
   @classmethod
-  def run_user_commands(cls, host, commands, keyname, is_verbose):
+  def run_user_commands(cls, host, commands, keyname, is_verbose=None):
     """Runs any commands specified by the user before the AppController is
     started.
 
@@ -757,7 +753,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def start_remote_appcontroller(cls, host, keyname, is_verbose):
+  def start_remote_appcontroller(cls, host, keyname, is_verbose=None):
     """Starts the AppController daemon on the specified host.
 
     Args:
@@ -779,7 +775,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_local_metadata(cls, host, keyname, is_verbose):
+  def copy_local_metadata(cls, host, keyname, is_verbose=None):
     """Copies the locations.json file found locally (which
     contain metadata about this AppScale deployment) to the specified host.
 
@@ -920,7 +916,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def terminate_cloud_infrastructure(cls, keyname, is_verbose):
+  def terminate_cloud_infrastructure(cls, keyname, is_verbose=None):
     """Powers off all machines in the currently running AppScale deployment.
 
     Args:
@@ -937,7 +933,10 @@ class RemoteHelper(object):
     agent = InfrastructureAgentFactory.create_agent(
       LocalState.get_infrastructure(keyname))
     params = agent.get_cloud_params(keyname)
-    params['IS_VERBOSE'] = is_verbose
+    if is_verbose is not None:
+      params['IS_VERBOSE'] = is_verbose
+    else:
+      params['IS_VERBOSE'] = AppScaleLogger.is_verbose
     params['autoscale_agent'] = False
 
     # We want to terminate also the pending instances.
@@ -970,7 +969,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def unmount_persistent_disk(cls, host, keyname, is_verbose):
+  def unmount_persistent_disk(cls, host, keyname, is_verbose=None):
     """Unmounts the persistent disk that was previously mounted on the named
     machine.
 
@@ -990,7 +989,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def terminate_virtualized_cluster(cls, keyname, clean, is_verbose):
+  def terminate_virtualized_cluster(cls, keyname, clean, is_verbose=None):
     """Stops all API services running on all nodes in the currently running
     AppScale deployment.
 
@@ -1060,7 +1059,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def stop_remote_appcontroller(cls, host, keyname, is_verbose, clean=False):
+  def stop_remote_appcontroller(cls, host, keyname, is_verbose=None, clean=False):
     """Stops the AppController daemon on the specified host.
 
     Args:
@@ -1077,7 +1076,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose,
+  def copy_app_to_host(cls, app_location, app_id, keyname, is_verbose=None,
                        extras=None, custom_service_yaml=None):
     """Copies the given application to a machine running the Login service
     within an AppScale deployment.
@@ -1141,7 +1140,7 @@ class RemoteHelper(object):
 
 
   @classmethod
-  def collect_appcontroller_crashlog(cls, host, keyname, is_verbose):
+  def collect_appcontroller_crashlog(cls, host, keyname, is_verbose=None):
     """ Reads the crashlog that the AppController writes on its own machine
     indicating why it crashed, so that we can pass this information on to the
     user.

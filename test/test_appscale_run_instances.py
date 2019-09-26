@@ -181,8 +181,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+    self.fake_ec2.should_receive('get_all_instances') \
+      .and_return(no_instances) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     # finally, inject the mocked EC2 in
@@ -268,7 +269,7 @@ EC2_SECRET_KEY: 'baz'
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
                 "-o UserKnownHostsFile=/dev/null root@public1 ",
-                False, 5,
+                None, 5,
                 stdin="cp /root/appscale/AppController/scripts/appcontroller "
                       "/etc/init.d/")
 
@@ -276,13 +277,13 @@ EC2_SECRET_KEY: 'baz'
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
                 "-o UserKnownHostsFile=/dev/null root@{} ".format(IP_1),
-                False, 5, stdin="chmod +x /etc/init.d/appcontroller")
+                None, 5, stdin="chmod +x /etc/init.d/appcontroller")
 
     self.local_state.should_receive('shell').\
       with_args("ssh -i /root/.appscale/boobazblargfoo.key -o LogLevel=quiet "
                 "-o NumberOfPasswordPrompts=0 -o StrictHostkeyChecking=no "
                 "-o UserKnownHostsFile=/dev/null root@public1 ",
-                False, 5,
+                None, 5,
                 stdin="cp /root/appscale/AppController/scripts/appcontroller "
                       "/etc/init.d/")
 
@@ -322,13 +323,13 @@ EC2_SECRET_KEY: 'baz'
 
     # mock out copying over the keys
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*.key'),False,5)
+      .with_args(re.compile('^scp .*.key'), None, 5)
 
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^openssl'),False,stdin=None)\
+      .with_args(re.compile('^openssl'), None, stdin=None)\
       .and_return()
 
     self.local_state.should_receive('shell').with_args(
@@ -349,23 +350,23 @@ EC2_SECRET_KEY: 'baz'
     locations_file = '{}/locations-bookey.yaml'.\
       format(RemoteHelper.CONFIG_DIR)
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*{}'.format(locations_file)), False, 5)\
+      .with_args(re.compile('^scp .*{}'.format(locations_file)), None, 5)\
       .and_return()
 
     locations_json = '{}/locations-bookey.json'.\
       format(RemoteHelper.CONFIG_DIR)
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*{}'.format(locations_json)), False, 5)\
+      .with_args(re.compile('^scp .*{}'.format(locations_json)), None, 5)\
       .and_return()
 
     user_locations = '/root/.appscale/locations-bookey.json'
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*{}'.format(user_locations)), False, 5)\
+      .with_args(re.compile('^scp .*{}'.format(user_locations)), None, 5)\
       .and_return()
 
     # Assume the secret key was copied successfully.
     self.local_state.should_receive('shell')\
-      .with_args(re.compile('^scp .*.secret'), False, 5)\
+      .with_args(re.compile('^scp .*.secret'), None, 5)\
       .and_return()
 
     flexmock(AppControllerClient)
@@ -451,30 +452,30 @@ EC2_SECRET_KEY: 'baz'
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return(
+      None, 5, stdin='ls').and_return(
       'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin='sudo touch /root/.ssh/authorized_keys').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+      re.compile('ssh'), None, 5, stdin='mktemp').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin=re.compile(
         'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
       )
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin=re.compile(
         'sudo sed -n '
         '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
@@ -482,21 +483,24 @@ EC2_SECRET_KEY: 'baz'
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
+      re.compile('ssh'), None, 5, stdin=re.compile('rm -f ')
+    ).and_return()
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), None, 5, stdin=re.compile('rm -rf ')
     ).and_return()
 
     # and assume that we can copy over our ssh keys fine
     self.local_state.should_receive('shell').\
-      with_args(re.compile('scp .*[r|d]sa'), False, 5).and_return()
+      with_args(re.compile('scp .*[r|d]sa'), None, 5).and_return()
     self.local_state.should_receive('shell').\
-      with_args(re.compile('scp .*{0}'.format(self.keyname)), False, 5).\
+      with_args(re.compile('scp .*{0}'.format(self.keyname)), None, 5).\
       and_return()
 
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+      stdin=None)
 
     self.local_state.should_receive('shell').with_args(
       re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
@@ -514,11 +518,11 @@ EC2_SECRET_KEY: 'baz'
 
     # copying over the locations yaml and json files should be fine
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
+      None, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
     # same for the secret key
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
+      None, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)
@@ -540,9 +544,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
       instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+    self.fake_ec2.should_receive('get_all_instances') \
       .and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     argv = [
@@ -610,30 +614,30 @@ EC2_SECRET_KEY: 'baz'
 
     # assume that root login is not enabled
     self.local_state.should_receive('shell').with_args(re.compile('ssh'),
-      False, 5, stdin='ls').and_return(
+      None, 5, stdin='ls').and_return(
       'Please login as the user "ubuntu" rather than the user "root"')
 
     # assume that we can enable root login
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin='sudo touch /root/.ssh/authorized_keys').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin='sudo chmod 600 /root/.ssh/authorized_keys').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin='mktemp').and_return()
+      re.compile('ssh'), None, 5, stdin='mktemp').and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin=re.compile(
         'sudo sort -u ~/.ssh/authorized_keys /root/.ssh/authorized_keys -o '
       )
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5,
+      re.compile('ssh'), None, 5,
       stdin=re.compile(
         'sudo sed -n '
         '\'\/\.\*Please login\/d; w\/root\/\.ssh\/authorized_keys\' '
@@ -641,20 +645,23 @@ EC2_SECRET_KEY: 'baz'
     ).and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('ssh'), False, 5, stdin=re.compile('rm -f ')
+      re.compile('ssh'), None, 5, stdin=re.compile('rm -f ')
+    ).and_return()
+    self.local_state.should_receive('shell').with_args(
+      re.compile('ssh'), None, 5, stdin=re.compile('rm -rf ')
     ).and_return()
 
     # and assume that we can copy over our ssh keys fine
     self.local_state.should_receive('shell').with_args(re.compile('scp .*[r|d]sa'),
-      False, 5).and_return()
+      None, 5).and_return()
     self.local_state.should_receive('shell').with_args(re.compile('scp .*{0}'
-      .format(self.keyname)), False, 5).and_return()
+      .format(self.keyname)), None, 5).and_return()
 
     self.setup_appscale_compatibility_mocks()
 
     # mock out generating the private key
     self.local_state.should_receive('shell').with_args(re.compile('openssl'),
-      False, stdin=None)
+      None, stdin=None)
 
     self.local_state.should_receive('shell').with_args(
       re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
@@ -672,11 +679,11 @@ EC2_SECRET_KEY: 'baz'
 
     # copying over the locations json file should be fine
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
+      None, 5, stdin=re.compile('locations-{0}'.format(self.keyname)))
 
     # same for the secret key
     self.local_state.should_receive('shell').with_args(re.compile('scp'),
-      False, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
+      None, 5, stdin=re.compile('{0}.secret'.format(self.keyname)))
 
     flexmock(RemoteHelper).should_receive('copy_deployment_credentials')
     flexmock(AppControllerClient)
@@ -699,9 +706,9 @@ EC2_SECRET_KEY: 'baz'
     running_reservation = flexmock(name='running_reservation',
                                    instances=[running_instance])
 
-    self.fake_ec2.should_receive('get_all_instances').and_return(no_instances) \
+    self.fake_ec2.should_receive('get_all_instances') \
       .and_return(no_instances) \
-      .and_return(no_instances).and_return(pending_reservation) \
+      .and_return(pending_reservation) \
       .and_return(running_reservation)
 
     argv = [

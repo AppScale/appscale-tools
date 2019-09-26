@@ -105,7 +105,7 @@ class TestLocalState(unittest.TestCase):
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
       login_host='public1', aws_subnet_id=None, aws_vpc_id=None,
-      fdb_clusterfile_content=None, update='code_dir')
+      fdb_clusterfile_content=None, postgres_dsn=None, update='code_dir')
     node_layout = NodeLayout({
       'table' : 'cassandra',
       'infrastructure' : "ec2",
@@ -144,6 +144,7 @@ class TestLocalState(unittest.TestCase):
       'aws_subnet_id': None,
       'aws_vpc_id': None,
       'fdb_clusterfile_content': None,
+      'postgres_dsn': None,
       'update': 'code_dir'
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
@@ -164,7 +165,7 @@ class TestLocalState(unittest.TestCase):
       default_max_appserver_memory=ParseArgs.DEFAULT_MAX_APPSERVER_MEMORY,
       EC2_ACCESS_KEY='baz', EC2_SECRET_KEY='baz', EC2_URL='',
       login_host=None, aws_subnet_id=None, aws_vpc_id=None,
-      fdb_clusterfile_content=None, update='')
+      fdb_clusterfile_content=None, postgres_dsn=None, update='')
     node_layout = NodeLayout({
       'table': 'cassandra',
       'infrastructure': "ec2",
@@ -202,7 +203,8 @@ class TestLocalState(unittest.TestCase):
       'EC2_URL': '',
       'aws_subnet_id': None,
       'aws_vpc_id': None,
-      'fdb_clusterfile_content': None
+      'fdb_clusterfile_content': None,
+      'postgres_dsn': None
     }
     actual = LocalState.generate_deployment_params(options, node_layout,
       {'max_spot_price': '1.23'})

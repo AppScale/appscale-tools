@@ -14,6 +14,8 @@ import yaml
 
 
 # AppScale-specific imports
+from appscale.tools.appscale_logger import AppScaleLogger
+
 try:
   from appscale.agents.azure_agent import AzureAgent
 except ImportError:
@@ -164,6 +166,7 @@ class ParseArgs(object):
     if self.args.version:
       raise SystemExit(APPSCALE_VERSION)
 
+    AppScaleLogger.is_verbose = self.args.verbose
     self.validate_allowed_flags(function)
 
 
@@ -324,6 +327,8 @@ class ParseArgs(object):
           "starting each AppController")
       self.parser.add_argument('--fdb_clusterfile_content',
         help="a string representing content of FoundationDB clusterfile")
+      self.parser.add_argument('--postgres_dsn',
+        help="a string representing Postgres DSN string")
     elif function == "appscale-gather-logs":
       self.parser.add_argument('--keyname', '-k', default=self.DEFAULT_KEYNAME,
         help="the keypair name to use")

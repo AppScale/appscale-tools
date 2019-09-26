@@ -408,7 +408,7 @@ Available commands:
       'Invalid IP address in {}'.format(all_ips)
     return all_ips
 
-  def can_ssh_to_ip(self, ip, keyname, is_verbose):
+  def can_ssh_to_ip(self, ip, keyname, is_verbose=None):
     """ Attempts to SSH into the machine located at the given IP address with the
     given SSH key.
 
@@ -585,7 +585,7 @@ Available commands:
     AppScaleTools.update_queues(options.file, options.keyname, options.project)
     try:
       AppScaleTools.update_dispatch(options.file, options.keyname,
-                                    options.project, options.verbose)
+                                    options.project)
     except (AdminError, AppScaleException) as e:
       AppScaleLogger.warn('Request to update dispatch failed, if your '
                           'dispatch references undeployed services, ignore '
