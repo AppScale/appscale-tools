@@ -333,7 +333,7 @@ EC2_SECRET_KEY: 'baz'
       .and_return()
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
+      re.compile('^ssh'), None, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks(IP_1)
     self.setup_appcontroller_mocks(IP_1, IP_1)
@@ -503,7 +503,7 @@ EC2_SECRET_KEY: 'baz'
       stdin=None)
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
+      re.compile('^ssh'), None, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks('elastic-ip')
     self.setup_appcontroller_mocks('elastic-ip', 'private1')
@@ -664,7 +664,7 @@ EC2_SECRET_KEY: 'baz'
       None, stdin=None)
 
     self.local_state.should_receive('shell').with_args(
-      re.compile('^ssh'), False, 5, stdin='systemctl start appscale-controller')
+      re.compile('^ssh'), None, 5, stdin='systemctl start appscale-controller')
 
     self.setup_socket_mocks('public1')
     self.setup_appcontroller_mocks('public1', 'private1')
@@ -763,6 +763,9 @@ EC2_SECRET_KEY: 'baz'
     AppControllerClient.should_receive('set_admin_role').and_return('true')
     AppControllerClient.should_receive('get_property').\
       and_return({'login': IP_1})
+
+    flexmock(AppScaleLogger)
+    AppScaleLogger.should_receive('remote_log_tools_state').and_return()
 
     # don't use a 192.168.X.Y IP here, since sometimes we set our virtual
     # machines to boot with those addresses (and that can mess up our tests).
