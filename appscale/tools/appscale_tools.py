@@ -1026,7 +1026,7 @@ class AppScaleTools(object):
 
     remote_file_path = RemoteHelper.copy_app_to_host(
       file_location, version.project_id, options.keyname,
-      extras, custom_service_yaml)
+      extras=extras, custom_service_yaml=custom_service_yaml)
 
     AppScaleLogger.log(
       'Deploying service {} for {}'.format(version.service_id,
