@@ -33,6 +33,7 @@ from appscale.tools.local_state import APPSCALE_VERSION, LocalState
 from appscale.tools.node_layout import NodeLayout
 from appscale.tools.remote_helper import RemoteHelper
 
+from appscale.agents.base_agent import BaseAgent
 from appscale.agents.factory import InfrastructureAgentFactory
 
 
@@ -773,7 +774,10 @@ class AppScaleTools(object):
     node_layout = NodeLayout(options)
 
     if options.infrastructure:
-      if (not options.test and not options.force and
+      disk_auto = InfrastructureAgentFactory.agent_has_flag(
+          options.infrastructure, BaseAgent.FLAG_DISK_AUTO)
+
+      if (not options.test and not options.force and not disk_auto and
           not (options.disks or node_layout.are_disks_used())):
         LocalState.ensure_user_wants_to_run_without_disks()
 

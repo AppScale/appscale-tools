@@ -249,6 +249,8 @@ class ParseArgs(object):
         help="the id for the vpc in the aws region to spawn instances in.")
       self.parser.add_argument('--aws_subnet_id',
         help="the id for the subnet in the aws region to spawn instances in.")
+      self.parser.add_argument('--aws_launch_template_id',
+        help="the id for the launch template in the aws region to spawn instances in.")
 
       # Google Compute Engine-specific flags
       gce_group = self.parser.add_mutually_exclusive_group()
@@ -667,6 +669,13 @@ class ParseArgs(object):
         raise BadConfigurationException("Can't specify a static IP " + \
           "when infrastructure is not specified.")
 
+      return
+
+    # Verify ec2t settings
+    if self.args.infrastructure == 'ec2t':
+      if not self.args.aws_launch_template_id:
+        raise BadConfigurationException(("Need a launch template id"
+          " (aws_launch_template_id) when using the ec2t agent"))
       return
 
     # Make sure the user gave us an ami/emi if running in a cloud.

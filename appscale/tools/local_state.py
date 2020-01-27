@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 
 # First-party Python imports
 import fnmatch
@@ -29,6 +30,8 @@ from .custom_exceptions import AppScalefileException
 from .custom_exceptions import BadConfigurationException
 from .custom_exceptions import ShellException
 
+from appscale.agents.base_agent import BaseAgent
+from appscale.agents.factory import InfrastructureAgentFactory
 
 # The version of the AppScale Tools we're running on.
 APPSCALE_VERSION = "3.8.1"
@@ -245,6 +248,8 @@ class LocalState(object):
         iaas_creds['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
         iaas_creds['EC2_SECRET_KEY'] = options.EC2_SECRET_KEY
         iaas_creds['EC2_URL'] = options.EC2_URL
+      elif options.infrastructure in ['ec2t']:
+        iaas_creds['aws_launch_template_id'] = options.aws_launch_template_id
       elif options.infrastructure == 'azure':
         iaas_creds['azure_subscription_id'] = options.azure_subscription_id
         iaas_creds['azure_app_id'] = options.azure_app_id
@@ -407,11 +412,12 @@ class LocalState(object):
     # write our yaml metadata file
     appscalefile_contents = {
       'infrastructure' : infrastructure,
-      'group' : options.group,
     }
 
-    if infrastructure != 'xen':
-      appscalefile_contents['zone'] = options.zone
+    if infrastructure != 'ec2t':
+      appscalefile_contents['group'] = options.group
+      if infrastructure != 'xen':
+        appscalefile_contents['zone'] = options.zone
 
     if infrastructure == 'gce':
       appscalefile_contents['project'] = options.project
@@ -419,6 +425,8 @@ class LocalState(object):
       appscalefile_contents['EC2_ACCESS_KEY'] = options.EC2_ACCESS_KEY
       appscalefile_contents['EC2_SECRET_KEY'] = options.EC2_SECRET_KEY
       appscalefile_contents['EC2_URL'] = options.EC2_URL
+    elif infrastructure == 'ec2t':
+      appscalefile_contents['aws_launch_template_id'] = options.aws_launch_template_id
     elif infrastructure == 'azure':
       appscalefile_contents['azure_subscription_id'] = options.azure_subscription_id
       appscalefile_contents['azure_app_id'] = options.azure_app_id
@@ -1242,6 +1250,13 @@ class LocalState(object):
 
     # Don't write to the AppScalefile if there are no changes to make to it.
     if 'keyname' in yaml_contents and 'group' in yaml_contents:
+      return True
+
+    # Update AppScalefile if agent requires it
+    if ('infrastructure' in yaml_contents and
+        InfrastructureAgentFactory.agent_has_flag(
+            yaml_contents['infrastructure'],
+            BaseAgent.FLAG_KEY_AUTO)):
       return True
 
     file_contents += "\n# Automatically added by the AppScale Tools: "

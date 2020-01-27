@@ -24,7 +24,8 @@ from .custom_exceptions import AppScaleException
 from .custom_exceptions import BadConfigurationException
 from .custom_exceptions import ShellException
 from .custom_exceptions import TimeoutException
-from appscale.agents.base_agent import AgentRuntimeException
+from appscale.agents.base_agent import (
+    AgentRuntimeException, BaseAgent)
 from appscale.agents.gce_agent import CredentialTypes
 from appscale.agents.gce_agent import GCEAgent
 from appscale.agents.factory import InfrastructureAgentFactory
@@ -250,6 +251,11 @@ class RemoteHelper(object):
     AppScaleLogger.log("Enabling root ssh on {0}".format(public_ip))
     cls.sleep_until_port_is_open(public_ip, cls.SSH_PORT)
 
+    if InfrastructureAgentFactory.agent_has_flag(
+            options.infrastructure, BaseAgent.FLAG_SSH_AUTO):
+      cls.sleep_until_ssh_is_configured(public_ip, options.keyname)
+      return
+
     cls.enable_root_login(public_ip, options.keyname, options.infrastructure)
     cls.copy_ssh_keys_to_node(public_ip, options.keyname)
 
@@ -376,6 +382,31 @@ class RemoteHelper(object):
     raise TimeoutException("Port {}:{} did not open in time. "
                            "Aborting...".format(host, port))
 
+  @classmethod
+  def sleep_until_ssh_is_configured(cls, host, keyname, is_verbose=None):
+    """Queries the given host to see if SSH is open, and if not,
+    waits until it is.
+
+    Args:
+      host: A str representing the machine that we should log into.
+      keyname: A str representing the name of the SSH keypair to log in with.
+      is_verbose: A bool indicating verbose logging
+    Raises:
+      TimeoutException if SSH does not open in a certain amount of time.
+    """
+    sleep_time = cls.MAX_WAIT_TIME
+    while sleep_time > 0:
+      try:
+        cls.ssh(host, keyname, 'ls /', is_verbose)
+        return
+      except ShellException:
+        pass  # Wait and retry
+      AppScaleLogger.verbose("Waiting {1} second(s) for {0} to open"
+                             .format(host, cls.WAIT_TIME), is_verbose)
+      time.sleep(cls.WAIT_TIME)
+      sleep_time -= cls.WAIT_TIME
+    raise TimeoutException("Host SSH {} did not open in time. "
+                           "Aborting...".format(host))
 
   @classmethod
   def is_port_open(cls, host, port, is_verbose=None):
