@@ -47,65 +47,14 @@ class TestAppScaleLogger(unittest.TestCase):
     self.my_id = "12345"
 
     self.expected = {
-      "EC2_ACCESS_KEY" : None,
-      "EC2_SECRET_KEY" : None,
-      "EC2_URL" : None,
-      "admin_pass" : None,
-      "admin_user" : None,
-      "default_min_appservers" : 1,
       "autoscale" : True,
-      "client_secrets" : None,
-      "disks" : None,
-      "min_machines" : 1,
-      "max_machines" : 1,
       "infrastructure" : "ec2",
-      "machine" : "ami-ABCDEFG",
-      "flower_password" : ParseArgs.DEFAULT_FLOWER_PASSWORD,
-      "force" : False,
-      "group" : "blargscale",
-      "instance_type" : "m3.medium",
-      "ips" : None,
-      "ips_layout" : None,
-      "keyname" : "appscale",
-      "login_host" : None,
-      "default_max_appserver_memory" : 400,
-      "max_spot_price": None,
-      "oauth2_storage" : None,
-      "project" : None,
-      "replication" : None,
-      "rsync_source" : None,
-      "static_ip" : None,
-      "table" : "cassandra",
-      "test" : False,
-      "use_spot_instances" : False,
-      "user_commands" : [],
-      "verbose" : False,
-      "version" : False,
-      "zone" : "my-zone-1b",
-      "aws_subnet_id" : None,
-      "aws_vpc_id" : None,
-      "azure_subscription_id" : None,
-      "azure_app_id" : None,
-      "azure_app_secret_key" : None,
-      "azure_tenant_id" : None,
-      "azure_resource_group" : None,
-      "azure_group_tag" : None,
-      "azure_storage_account" : None,
-      "clear_datastore" : False,
-      'EC2_ACCESS_KEY': 'baz',
-      'EC2_SECRET_KEY': 'baz',
-      'EC2_URL': '',
-      'fdb_clusterfile_content': None,
-      'postgres_dsn': None,
-      'update': ['common']
     }
 
     # finally, construct a http payload for mocking that the below
     # tests can use
-    self.payload = "?boo=baz&min=1&max=1&infrastructure=ec2" + \
-      "&machine=ami-ABCDEFG&force=False&group=appscale" + \
-      "&instance_type=m3.medium&keyname=appscale&n=None" + \
-      "table=cassandra&test=False&version=False"
+    self.payload = ("?boo=baz&my_id=12345&state=started&version=X.Y.Z"
+                    "&infrastructure=ec2&autoscale=True")
 
 
   def test_remote_log_tools_state_when_remote_is_up(self):
@@ -113,7 +62,7 @@ class TestAppScaleLogger(unittest.TestCase):
     fake_connection = flexmock(name="fake_connection")
     fake_connection.should_receive('request').with_args('POST',
       '/upload', self.payload, AppScaleLogger.HEADERS) \
-      .and_return()
+      .and_return().once()
     flexmock(httplib).should_receive('HTTPConnection') \
       .and_return(fake_connection)
 

@@ -1,4 +1,5 @@
 import httplib
+import os
 
 from termcolor import cprint
 
@@ -74,13 +75,18 @@ class AppScaleLogger():
     Returns:
       A dict containing the debugging information that was logged.
     """
+    if 'false' == os.environ.get('APPSCALE_TRACKING'):
+      return {}
+
     # turn namespace into a dict
-    params = vars(options)
+    keys = ('autoscale', 'infrastructure')
+    params_full = vars(options)
+    params = {key: params_full[key] for key in keys}
 
     # next, turn it into a string that we can send over the wire
     payload = "?boo=baz&my_id={0}&state={1}&version={2}".format(my_id, state,
       version)
-    for key, value in params.iteritems():
+    for key, value in params.items():
       payload += "&{0}={1}".format(key, value)
 
     # http post the result
